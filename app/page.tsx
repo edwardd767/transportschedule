@@ -98,7 +98,6 @@ const frontDeskMenu = [
     label: 'Inhouse Guest',
     detail: 'In House: 82 Room(s) | 91 Guest(s)',
     svg: inhouseGuestSvg,
-    extra: 'Total Deposit: 48 Room(s) | MYR 9,203.00',
   },
   {
     key: 'transport',
