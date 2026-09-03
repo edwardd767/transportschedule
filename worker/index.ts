@@ -5,6 +5,8 @@ import {
   type TransportState,
 } from '../lib/transport-state';
 import { ApiError, queryNeon, type Query } from './neon';
+import { privateLinkSha256 } from './private-link-config';
+import { privateKeyPattern } from '../lib/private-link';
 
 type Env = { DATABASE_URL?: string; TRANSPORT_PASSWORD?: string };
 function passwordStatus(password: string | undefined) {
@@ -81,6 +83,17 @@ async function authenticated(request: Request, secret: string) {
     encoder.encode(parts.slice(0, 3).join('.')),
   );
 }
+async function privateAccess(request: Request, verifier: string) {
+  const token =
+    request.headers.get('Authorization')?.replace(/^Bearer /, '') ?? '';
+  if (!privateKeyPattern.test(token) || !/^[a-f0-9]{64}$/.test(verifier))
+    return false;
+  const digest = await crypto.subtle.digest('SHA-256', encoder.encode(token));
+  const hash = Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, '0'),
+  ).join('');
+  return hash === verifier;
+}
 async function jsonBody(
   request: Request,
   limit: number,
@@ -150,7 +163,10 @@ function decode(row: string[]): TransportRecord {
   return { revision, state };
 }
 
-export function createWorker(query: Query = queryNeon) {
+export function createWorker(
+  query: Query = queryNeon,
+  verifier = privateLinkSha256,
+) {
   return {
     async fetch(request: Request, env: Env): Promise<Response> {
       const origin = request.headers.get('Origin');
@@ -177,11 +193,12 @@ export function createWorker(query: Query = queryNeon) {
         const path = new URL(request.url).pathname;
         if (request.method === 'GET' && (path === '/health' || path === '/')) {
           return reply({
-            apiVersion: 1,
+            apiVersion: 2,
             diagnosticsVersion: 2,
             service: 'HotelX Transport API',
             status: 'ready',
             storageConfigured: Boolean(env.DATABASE_URL),
+            privateLinkConfigured: /^[a-f0-9]{64}$/.test(verifier),
             signInConfigured:
               passwordStatus(env.TRANSPORT_PASSWORD) === 'ready',
             signInStatus: passwordStatus(env.TRANSPORT_PASSWORD),
@@ -196,13 +213,14 @@ export function createWorker(query: Query = queryNeon) {
             503,
           );
         const secret = env.TRANSPORT_PASSWORD;
-        if (!secret || passwordStatus(secret) !== 'ready')
-          throw new ApiError(
-            'SIGN_IN_CONFIGURATION',
-            'Set the TRANSPORT_PASSWORD Worker secret to a password of 16–256 characters.',
-            503,
-          );
+        const hasPrivateAccess = await privateAccess(request, verifier);
         if (path === '/session' && request.method === 'POST') {
+          if (!secret || passwordStatus(secret) !== 'ready')
+            throw new ApiError(
+              'SIGN_IN_CONFIGURATION',
+              'Password access is not configured.',
+              503,
+            );
           // Per-isolate throttling supplements a strong shared prototype password.
           const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
           const now = Date.now();
@@ -236,10 +254,13 @@ export function createWorker(query: Query = queryNeon) {
             expiresIn: expirySeconds,
           });
         }
-        if (!(await authenticated(request, secret)))
+        if (
+          !hasPrivateAccess &&
+          !(secret && (await authenticated(request, secret)))
+        )
           throw new ApiError(
             'SIGN_IN_REQUIRED',
-            'Sign in to access saved transport data.',
+            'Open your private access link to use the shared transport data.',
             401,
           );
         const connection = env.DATABASE_URL.trim();

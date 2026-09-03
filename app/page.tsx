@@ -1051,7 +1051,7 @@ function HomeContent({ store }: { store: TransportData }) {
                     <div className="demo-note">
                       {store.mode === 'cloud'
                         ? 'Shared transport data. Changes are saved after confirmation from the database.'
-                        : 'Demo mode: changes reset on refresh. Sign in to saved data to keep transport changes.'}
+                        : 'Demo mode: changes reset on refresh. Open your private link to save transport changes.'}
                     </div>
                   </div>
                 </section>
@@ -1505,7 +1505,7 @@ function HomeContent({ store }: { store: TransportData }) {
               </p>
               <p>
                 Boats, capacities and guest records start as demonstration data.
-                Sign in to saved data to keep transport changes across
+                Open your private link to keep transport changes across
                 refreshes. Hotel reservations, payments, notifications and
                 operator systems are not connected.
               </p>

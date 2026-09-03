@@ -8,7 +8,7 @@ await build({
   outfile: 'dist/worker/hotelx-transport-api.js',
   minify: false,
   banner: {
-    js: '// HotelX Transport API. Paste the whole file into the Cloudflare Worker editor.\n// Required secrets: DATABASE_URL and TRANSPORT_PASSWORD (16+ characters).',
+    js: '// HotelX Transport API. Paste the whole file into the Cloudflare Worker editor.\n// Required secret: DATABASE_URL. Private-link verifier is included; TRANSPORT_PASSWORD supports legacy sessions only.',
   },
 });
 console.log('Worker ready: dist/worker/hotelx-transport-api.js');

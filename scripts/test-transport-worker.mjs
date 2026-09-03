@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { build } from 'esbuild';
 
 async function bundle(entry) {
@@ -17,6 +18,26 @@ async function bundle(entry) {
 }
 const { createWorker } = await bundle('worker/index.ts');
 const { queryNeon } = await bundle('worker/neon.ts');
+const { privateAccessFromHash } = await bundle('lib/private-link.ts');
+const privateToken = 'hx_link_v1_' + 'A'.repeat(43);
+const verifier = createHash('sha256').update(privateToken).digest('hex');
+assert.deepEqual(privateAccessFromHash(''), { present: false, token: '' });
+assert.deepEqual(privateAccessFromHash('#schedule'), {
+  present: false,
+  token: '',
+});
+assert.deepEqual(privateAccessFromHash('#access=' + privateToken), {
+  present: true,
+  token: privateToken,
+});
+for (const hash of [
+  '#access=',
+  '#access=bad',
+  '#access=' + privateToken + '&access=' + privateToken,
+  '#access=' + privateToken + 'A',
+]) {
+  assert.deepEqual(privateAccessFromHash(hash), { present: true, token: '' });
+}
 const secret = 'test-only-prototype-password-9238';
 const env = {
   DATABASE_URL:
@@ -60,7 +81,7 @@ async function query(_connection, sql, params) {
   stored = { revision: stored.revision + 1, state: JSON.parse(params[0]) };
   return [[String(stored.revision)]];
 }
-const worker = createWorker(query);
+const worker = createWorker(query, verifier);
 let ip = 1;
 async function call(
   path,
@@ -92,7 +113,8 @@ async function call(
     data: response.status === 204 ? null : await response.json(),
   };
 }
-assert.equal((await call('/health')).data.apiVersion, 1);
+assert.equal((await call('/health')).data.apiVersion, 2);
+assert.equal((await call('/health')).data.privateLinkConfigured, true);
 for (const [password, status] of [
   [undefined, 'missing'],
   ['', 'missing'],
@@ -128,7 +150,7 @@ assert.equal(
 );
 const login = await call('/session', { body: { password: secret } });
 assert.equal(login.status, 200);
-const token = login.data.token;
+let token = login.data.token;
 assert.equal(
   (
     await call('/state', {
@@ -162,6 +184,44 @@ assert.equal(
   preflight.response.headers.get('Access-Control-Allow-Origin'),
   'https://edwardd767.github.io',
 );
+// A public hash cannot be used as the access key; malformed/revoked links fail closed.
+for (const invalid of [
+  verifier,
+  privateToken + 'A',
+  'hx_link_v1_' + 'B'.repeat(43),
+]) {
+  assert.equal(
+    (
+      await call('/state', {
+        token: invalid,
+        environment: { DATABASE_URL: env.DATABASE_URL },
+      })
+    ).status,
+    401,
+  );
+}
+assert.equal(
+  (
+    await call('/state', {
+      token: privateToken,
+      service: createWorker(query, '0'.repeat(64)),
+    })
+  ).status,
+  401,
+);
+assert.equal(
+  (
+    await call('/state', {
+      token: privateToken,
+      service: createWorker(query, ''),
+    })
+  ).status,
+  401,
+);
+assert.equal(reads, 0, 'invalid private links never query the database');
+// Exercise all subsequent persistence and concurrent-write tests with private-link access only.
+token = privateToken;
+delete env.TRANSPORT_PASSWORD;
 const initial = await Promise.all([
   call('/state', { token }),
   call('/state', { token }),
@@ -180,7 +240,10 @@ const noteAction = (notes) => ({
 const save = (action) =>
   call('/action', { token, body: { revision: stored.revision, action } });
 assert.equal((await save(noteAction('Saved test note'))).status, 200);
-const reloaded = await call('/state', { token, service: createWorker(query) });
+const reloaded = await call('/state', {
+  token,
+  service: createWorker(query, verifier),
+});
 assert.equal(
   reloaded.data.state.dayNotes['2026-09-04'].notes,
   'Saved test note',
@@ -327,7 +390,7 @@ assert.ok(
 );
 const broken = createWorker(async () => {
   throw new Error(env.DATABASE_URL);
-});
+}, verifier);
 const failed = await call('/state', { token, service: broken });
 assert.equal(failed.status, 500);
 assert.ok(!JSON.stringify(failed.data).includes('postgresql'));

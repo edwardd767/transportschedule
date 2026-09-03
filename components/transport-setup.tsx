@@ -565,7 +565,7 @@ export function TransportSetup({
         </p>
       </div>
       <p className="demo-note">
-        Sign in to saved data to keep your setup across refreshes. Demo mode
+        Open your private link to keep your setup across refreshes. Demo mode
         uses sample configuration.
       </p>
       <Dialog

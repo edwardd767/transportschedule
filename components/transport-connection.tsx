@@ -17,23 +17,19 @@ export function TransportRecovery() {
   return (
     <div className="transport-recovery" aria-live="polite">
       {store.pending && <p>{store.pending}</p>}
-      {store.mode === 'cloud' && (store.needsReload || !store.signedIn) && (
+      {store.mode === 'cloud' && (store.needsReload || !store.connected) && (
         <>
           <p>{store.error || 'Reload saved data before making changes.'}</p>
-          {store.signedIn ? (
-            <button
-              type="button"
-              className="secondary-button"
-              disabled={Boolean(store.pending)}
-              onClick={() => {
-                void store.reload().catch(() => {});
-              }}
-            >
-              Reload saved data
-            </button>
-          ) : (
-            <TransportConnection store={store} />
-          )}
+          <button
+            type="button"
+            className="secondary-button"
+            disabled={Boolean(store.pending)}
+            onClick={() => {
+              void store.reload().catch(() => {});
+            }}
+          >
+            Reload saved data
+          </button>
         </>
       )}
     </div>
@@ -42,132 +38,82 @@ export function TransportRecovery() {
 
 export function TransportConnection({ store }: { store: TransportData }) {
   const [open, setOpen] = useState(false);
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const busy = Boolean(store.pending);
   return (
     <>
       <button
         type="button"
         className="connection-button"
-        onClick={() => {
-          setOpen(true);
-          setError('');
-        }}
+        onClick={() => setOpen(true)}
       >
-        <Cloud size={16} />{' '}
-        <span>
+        <Cloud size={16} />
+        <span aria-live="polite">
           {store.pending ||
             (store.mode === 'cloud'
-              ? store.signedIn
-                ? 'Saved data'
-                : 'Sign in again'
-              : 'Sign in to saved data')}
+              ? store.connected
+                ? 'Connected'
+                : 'Link unavailable'
+              : 'Demo mode')}
         </span>
       </button>
       <Dialog
         open={open}
         onOpenChange={(value) => {
-          if (!busy) {
-            setOpen(value);
-            setPassword('');
-          }
+          if (!busy) setOpen(value);
         }}
       >
         <DialogContent className="hotel-dialog">
           <DialogHeader>
-            <DialogTitle>Saved transport data</DialogTitle>
+            <DialogTitle>
+              {store.mode === 'cloud' ? 'Shared transport data' : 'Demo mode'}
+            </DialogTitle>
             <DialogDescription>
-              {store.signedIn
-                ? 'Changes are saved to your shared transport database.'
-                : 'Sign in with the prototype password set by your administrator.'}
+              {store.mode === 'cloud'
+                ? 'Your private link opens the shared schedule. Changes are saved when you save a form.'
+                : 'Open your private access link to load and save shared transport data.'}
             </DialogDescription>
           </DialogHeader>
-          {store.signedIn ? (
-            <div className="hotel-form">
-              <p>
-                Last loaded version: {store.revision}. Reload to see changes
-                made on another device.
-              </p>
-              <button
-                className="secondary-button"
-                disabled={busy}
-                onClick={async () => {
-                  try {
-                    await store.reload();
-                    setError('');
-                  } catch (e) {
-                    setError((e as Error).message);
-                  }
-                }}
-              >
-                <RefreshCw size={16} /> Reload saved data
-              </button>
-              <button
-                className="secondary-button"
-                disabled={busy}
-                onClick={() => {
-                  store.signOut();
-                  setOpen(false);
-                }}
-              >
-                Sign out
-              </button>
-            </div>
-          ) : (
-            <form
-              className="hotel-form"
-              onSubmit={async (event) => {
-                event.preventDefault();
-                setError('');
-                try {
-                  await store.signIn(password);
-                  setPassword('');
-                  setOpen(false);
-                } catch (e) {
-                  setError((e as Error).message);
-                }
-              }}
-            >
-              {store.mode === 'demo' && (
-                <p className="helper-text">
-                  Signing in loads the shared schedule. Unsaved demo changes are
-                  not uploaded.
+          <div className="hotel-form">
+            {store.mode === 'cloud' ? (
+              <>
+                <p>
+                  Bookmark your private link to return here. Reload to see
+                  changes made on another device.
                 </p>
-              )}
-              <label>
-                Prototype password
-                <input
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  minLength={16}
-                  maxLength={256}
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                />
-              </label>
-              <button className="primary-button" disabled={busy} type="submit">
-                {busy ? store.pending : 'Sign in'}
-              </button>
-              {store.mode === 'cloud' && (
+                {store.connected && (
+                  <p className="helper-text">
+                    Last loaded version: {store.revision}.
+                  </p>
+                )}
                 <button
-                  className="secondary-button"
                   type="button"
+                  className="secondary-button"
                   disabled={busy}
                   onClick={() => {
-                    store.signOut();
+                    void store.reload().catch(() => {});
+                  }}
+                >
+                  <RefreshCw size={16} /> Reload saved data
+                </button>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={busy}
+                  onClick={() => {
+                    store.useDemo();
                     setOpen(false);
                   }}
                 >
                   Return to demo
                 </button>
-              )}
-            </form>
-          )}
-          {(error || store.error) && (
+              </>
+            ) : (
+              <p>Demo changes reset when the page is refreshed.</p>
+            )}
+          </div>
+          {store.error && (
             <p className="form-error" role="alert">
-              {error || store.error}
+              {store.error}
             </p>
           )}
         </DialogContent>

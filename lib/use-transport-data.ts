@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
+import { privateAccessFromHash } from './private-link';
 import {
   applyTransportAction,
   newTransportState,
@@ -42,7 +43,7 @@ async function request(path: string, token: string, body?: unknown) {
     throw new RequestError(
       typeof data.error === 'string'
         ? data.error
-        : 'Deploy the full Transport API in Cloudflare before signing in.',
+        : 'The transport service is unavailable. Please reload saved data.',
       response.status,
     );
   return data;
@@ -64,15 +65,6 @@ function record(data: unknown): TransportRecord {
   }
   return value;
 }
-function remember(token: string) {
-  try {
-    if (token) sessionStorage.setItem(sessionKey, token);
-    else sessionStorage.removeItem(sessionKey);
-  } catch {
-    /* Session can still work in this tab until refresh. */
-  }
-}
-
 export function useTransportData() {
   const [data, setData] = useState<TransportRecord>(() => ({
     revision: 0,
@@ -82,7 +74,7 @@ export function useTransportData() {
   const [mode, setMode] = useState<'demo' | 'cloud'>('demo');
   const modeRef = useRef(mode);
   const tokenRef = useRef('');
-  const [signedIn, setSignedIn] = useState(false);
+  const [connected, setConnected] = useState(false);
   const [pending, setPending] = useState('');
   const busy = useRef(false);
   const reloadRequired = useRef(false);
@@ -110,9 +102,8 @@ export function useTransportData() {
   function failed(error: unknown, writing: boolean) {
     const e = error as Error;
     if (e instanceof RequestError && e.status === 401) {
-      tokenRef.current = '';
-      remember('');
-      setSignedIn(false);
+      setConnected(false);
+      markReload(true);
     }
     if (
       writing &&
@@ -125,13 +116,17 @@ export function useTransportData() {
     setError(e.message);
   }
   async function reload() {
-    if (!tokenRef.current) throw new Error('Sign in to reload saved data.');
     begin('Loading saved data…');
     try {
+      if (!tokenRef.current)
+        throw new RequestError(
+          'This private link is incomplete. Open the full link supplied by your administrator.',
+          401,
+        );
       replace(record(await request('/state', tokenRef.current)));
       modeRef.current = 'cloud';
       setMode('cloud');
-      setSignedIn(true);
+      setConnected(true);
       markReload(false);
     } catch (error) {
       failed(error, false);
@@ -141,54 +136,40 @@ export function useTransportData() {
     }
   }
   const restored = useRef(false);
-  const restoreSession = useEffectEvent(async () => {
+  const openPrivateLink = useEffectEvent(async () => {
     if (restored.current) return;
     restored.current = true;
-    let token = '';
     try {
-      token = sessionStorage.getItem(sessionKey) ?? '';
+      sessionStorage.removeItem(sessionKey);
     } catch {
       /* No browser storage. */
     }
-    if (!token) return;
-    tokenRef.current = token;
+    const access = privateAccessFromHash(window.location.hash);
+    if (!access.present) return;
+    tokenRef.current = access.token;
     modeRef.current = 'cloud';
     setMode('cloud');
     markReload(true);
     await reload();
   });
   useEffect(() => {
-    // Restore once. Subsequent reloads are deliberate, preserving open form drafts.
-    void restoreSession().catch(() => {});
+    // The bookmark retains access without storing a password or a session token.
+    void openPrivateLink().catch(() => {});
+    const onHashChange = () => {
+      window.location.reload();
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
-  async function signIn(password: string) {
-    begin('Signing in…');
-    try {
-      const result = await request('/session', '', { password });
-      if (typeof result?.token !== 'string')
-        throw new RequestError(
-          'Deploy the full Transport API before signing in.',
-        );
-      const saved = record(await request('/state', result.token));
-      tokenRef.current = result.token;
-      remember(result.token);
-      replace(saved);
-      modeRef.current = 'cloud';
-      setMode('cloud');
-      setSignedIn(true);
-      markReload(false);
-    } catch (error) {
-      failed(error, false);
-      throw error;
-    } finally {
-      finish();
-    }
-  }
-  function signOut() {
+  function useDemo() {
     if (busy.current) return;
     tokenRef.current = '';
-    remember('');
-    setSignedIn(false);
+    window.history.replaceState(
+      null,
+      '',
+      window.location.pathname + window.location.search,
+    );
+    setConnected(false);
     modeRef.current = 'demo';
     setMode('demo');
     markReload(false);
@@ -207,7 +188,9 @@ export function useTransportData() {
       return next.state;
     }
     if (!tokenRef.current)
-      throw new Error('Sign in again to save your changes.');
+      throw new Error(
+        'Open your complete private access link to save changes.',
+      );
     if (reloadRequired.current)
       throw new Error('Reload saved data, review your form, then save again.');
     begin('Saving…');
@@ -231,13 +214,12 @@ export function useTransportData() {
     state: data.state,
     revision: data.revision,
     mode,
-    signedIn,
+    connected,
     pending,
     error,
     needsReload,
     run,
-    signIn,
-    signOut,
+    useDemo,
     reload,
   };
 }
