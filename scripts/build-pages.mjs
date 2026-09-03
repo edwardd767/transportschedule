@@ -13,7 +13,7 @@ if (result.status !== 0) process.exit(result.status ?? 1);
 
 const output = new URL('../dist/client/', import.meta.url);
 const html = readFileSync(new URL('index.html', output), 'utf8');
-if (!html.includes('Transport Listing') || !html.includes('/transportschedule/')) {
+if (!html.includes('Booking Listing') || !html.includes('/transportschedule/')) {
   throw new Error('GitHub Pages export is missing the app or its repository asset prefix.');
 }
 // Vinext emits assetPrefix directories physically. GitHub already mounts this
