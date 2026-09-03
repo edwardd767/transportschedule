@@ -20,7 +20,6 @@ import {
   Languages,
   List,
   LogOut,
-  Menu,
   Plus,
   Search,
   Settings,
@@ -337,7 +336,11 @@ export default function Home() {
       <header className="topbar">
         <div className="brand">
           <SidebarTrigger className="menu-button">
-            <Menu size={25} />
+            <img
+              src="/Hamburger.png"
+              alt="Menu"
+              className="hamburger-icon"
+            />
           </SidebarTrigger>
           <span>HotelX</span>
         </div>

@@ -139,6 +139,11 @@ p {
   width: 30px !important;
   height: 40px !important;
 }
+.hamburger-icon {
+  height: 26px;
+  width: auto;
+  display: block;
+}
 .top-tools {
   display: flex;
   align-items: center;
