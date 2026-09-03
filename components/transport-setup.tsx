@@ -234,13 +234,9 @@ export function TransportSetup({
             <MapPin size={17} />
             Routes & locations
           </TabsTrigger>
-          <TabsTrigger value="boats">
+          <TabsTrigger value="fleet">
             <Ship size={17} />
-            Boats
-          </TabsTrigger>
-          <TabsTrigger value="operators">
-            <Building2 size={17} />
-            Operators
+            Boats & operators
           </TabsTrigger>
           <TabsTrigger value="rules">
             <Clock3 size={17} />
@@ -298,88 +294,37 @@ export function TransportSetup({
             </div>
           </div>
         </TabsContent>
-        <TabsContent value="boats">
+        <TabsContent value="fleet">
           <div className="setup-panel">
             <div className="setup-panel-heading">
               <div>
-                <h3>Boats & seat capacities</h3>
+                <h3>Boats & transport operators</h3>
                 <p>
-                  Available boats appear when creating a trip for their
-                  operator.
+                  Manage service providers and their boats together in one
+                  place.
                 </p>
               </div>
-              <button className="primary-button" onClick={() => open('boat')}>
-                <Plus size={17} /> Add boat
-              </button>
+              <div className="form-actions">
+                <button
+                  className="secondary-button"
+                  aria-busy={pending}
+                  onClick={() => open('operator')}
+                >
+                  <Plus size={17} /> Add operator
+                </button>
+                <button
+                  className="primary-button"
+                  onClick={() => open('boat')}
+                >
+                  <Plus size={17} /> Add boat
+                </button>
+              </div>
             </div>
-            <Table className="setup-table">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Boat</TableHead>
-                  <TableHead>Operator</TableHead>
-                  <TableHead>Seat capacity</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>
-                    <span className="sr-only">Actions</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {config.boats.map((b) => (
-                  <TableRow key={b.id}>
-                    <TableCell>
-                      <span className="table-name">
-                        <Ship size={18} />
-                        {b.name}
-                      </span>
-                    </TableCell>
-                    <TableCell>{operatorName(b.operatorId)}</TableCell>
-                    <TableCell>
-                      <span className="seat-cell">
-                        <Users size={15} />
-                        {b.capacity} seats
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        className={`status-pill ${b.status === 'Active' ? 'boarding' : b.status === 'Maintenance' ? 'full' : 'cancelled'}`}
-                      >
-                        {b.status}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <button
-                        className="edit-button"
-                        aria-label={`Edit boat ${b.name}`}
-                        onClick={() => open('boat', b)}
-                      >
-                        <Pencil size={16} />
-                        <span>Edit</span>
-                      </button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </TabsContent>
-        <TabsContent value="operators">
-          <div className="setup-panel">
-            <div className="setup-panel-heading">
-              <div>
-                <h3>Transport operators</h3>
-                <p>
-                  Keep the contact details of your hotel team or service
-                  provider.
-                </p>
-              </div>
-              <button
-                className="primary-button"
-                aria-busy={pending}
-                onClick={() => open('operator')}
-              >
-                <Plus size={17} /> Add operator
-              </button>
+
+            <div className="settings-section-label">
+              <Building2 size={18} />
+              <h4>Operators</h4>
+              <span>{config.operators.length} configured</span>
             </div>
             <Table className="setup-table">
               <TableHeader>
@@ -421,6 +366,61 @@ export function TransportSetup({
                         className="edit-button"
                         aria-label={`Edit operator ${o.name}`}
                         onClick={() => open('operator', o)}
+                      >
+                        <Pencil size={16} />
+                        <span>Edit</span>
+                      </button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+
+            <div className="settings-section-label">
+              <Ship size={18} />
+              <h4>Boats</h4>
+              <span>{config.boats.length} configured</span>
+            </div>
+            <Table className="setup-table">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Boat</TableHead>
+                  <TableHead>Operator</TableHead>
+                  <TableHead>Seat capacity</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {config.boats.map((b) => (
+                  <TableRow key={b.id}>
+                    <TableCell>
+                      <span className="table-name">
+                        <Ship size={18} />
+                        {b.name}
+                      </span>
+                    </TableCell>
+                    <TableCell>{operatorName(b.operatorId)}</TableCell>
+                    <TableCell>
+                      <span className="seat-cell">
+                        <Users size={15} />
+                        {b.capacity} seats
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={`status-pill ${b.status === 'Active' ? 'boarding' : b.status === 'Maintenance' ? 'full' : 'cancelled'}`}
+                      >
+                        {b.status}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <button
+                        className="edit-button"
+                        aria-label={`Edit boat ${b.name}`}
+                        onClick={() => open('boat', b)}
                       >
                         <Pencil size={16} />
                         <span>Edit</span>
