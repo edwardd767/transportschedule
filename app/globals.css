@@ -64,9 +64,6 @@
   box-sizing: border-box;
   border-color: var(--border);
 }
-html {
-  zoom: 0.9;
-}
 body {
   margin: 0;
   font-family: var(--font-hotelx), 'Segoe UI', sans-serif;
