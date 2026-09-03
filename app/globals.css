@@ -918,13 +918,11 @@ p {
   box-shadow: 0 4px 12px #00000012;
 }
 .frontdesk-icon {
-  width: 44px;
-  height: 44px;
+  width: 34px;
+  height: 34px;
   flex: none;
   display: grid;
   place-items: center;
-  border-radius: 9px;
-  background: #fff0da;
   color: #e3890e;
 }
 .frontdesk-body {

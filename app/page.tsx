@@ -567,9 +567,9 @@ export default function Home() {
                   >
                     <span className="frontdesk-icon">
                       {item.svg ? (
-                        <SvgIcon size={22} markup={item.svg} />
+                        <SvgIcon size={30} markup={item.svg} />
                       ) : Icon ? (
-                        <Icon size={22} />
+                        <Icon size={30} />
                       ) : null}
                     </span>
                     <span className="frontdesk-body">
