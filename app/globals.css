@@ -64,13 +64,15 @@
   box-sizing: border-box;
   border-color: var(--border);
 }
+html {
+  zoom: 0.9;
+}
 body {
   margin: 0;
   font-family: var(--font-hotelx), 'Segoe UI', sans-serif;
   font-size: 16px;
   color: var(--foreground);
   background: var(--background);
-  zoom: 0.9;
 }
 button,
 input {
