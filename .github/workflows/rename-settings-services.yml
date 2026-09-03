@@ -1,0 +1,64 @@
+name: Rename transport settings terminology
+
+on:
+  push:
+    paths:
+      - '.github/workflows/rename-settings-services.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  rename-settings:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Rename boats to services in Settings UI
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('components/transport-setup.tsx')
+          text = path.read_text()
+
+          replacements = [
+              ('Manage the routes, boats and defaults used when creating trips.', 'Manage the routes, services and defaults used when creating trips.'),
+              ('<span>Available boats</span>', '<span>Available services</span>'),
+              ('Boats & operators', 'Services & operators'),
+              ('<h3>Boats & transport operators</h3>', '<h3>Transport services & operators</h3>'),
+              ('Manage service providers and their boats together in one\n                  place.', 'Manage operators and transport services such as boats, taxis and transfers\n                  together in one place.'),
+              ('<Plus size={17} /> Add boat', '<Plus size={17} /> Add service'),
+              ('<h4>Boats</h4>', '<h4>Services</h4>'),
+              ('<TableHead>Boat</TableHead>', '<TableHead>Service</TableHead>'),
+              ('<TableHead>Seat capacity</TableHead>', '<TableHead>Passenger capacity</TableHead>'),
+              ("? 'Set the boat’s operator, capacity and availability.'", "? 'Set the service’s operator, capacity and availability.'"),
+              ('Boat name', 'Service name'),
+              ('label="Boat operator"', 'label="Service operator"'),
+              ('label="Boat status"', 'label="Service status"'),
+              ('Use the operator-approved passenger capacity. Boats in\n                    maintenance or inactive status are unavailable for new\n                    trips.', 'Use the operator-approved passenger capacity. Services in\n                    maintenance or inactive status are unavailable for new\n                    trips.'),
+              ('Boat turnaround (minutes)', 'Service turnaround (minutes)'),
+              ('route, boat, capacity and instructions', 'route, service, capacity and instructions'),
+              ('<Save size={16} /> Save {editor.kind}', "<Save size={16} /> Save {editor.kind === 'boat' ? 'service' : editor.kind}"),
+              ("{isExisting ? 'Edit' : 'Add'} {editor?.kind}", "{isExisting ? 'Edit' : 'Add'} {editor?.kind === 'boat' ? 'service' : editor?.kind}"),
+          ]
+
+          missing = [old for old, _ in replacements if old not in text]
+          if missing:
+              raise SystemExit('Expected text not found: ' + repr(missing))
+
+          for old, new in replacements:
+              text = text.replace(old, new)
+
+          path.write_text(text)
+          PY
+      - name: Commit UI terminology update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add components/transport-setup.tsx
+          git diff --cached --quiet && exit 0
+          git commit -m "Rename boats to services in transport settings"
+          git push origin main
