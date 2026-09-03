@@ -1,5 +1,11 @@
 # HotelX Transport Schedule
 
+## Open the app
+
+**[Open HotelX Transport Schedule](https://edwardd767.github.io/transportschedule/)**
+
+The page includes **Transport → Schedule** and **Hotel Settings → Transport Setup**. This is a browser prototype with sample data; changes reset when the page is refreshed.
+
 An interactive first UI prototype based on HotelX's existing Booking screen: white navigation, orange property banner, left sidebar and status-striped listing cards.
 
 ## Included
@@ -23,7 +29,9 @@ This is not connected to the live HotelX application, reservations, payments, no
 
 Node 22.13 or newer is required. Install with `npm ci`, then run `npm run dev`. `npm run build` creates the deployable output. Source is in `app/page.tsx`, styles in `app/globals.css`, and sample schedule and validation in `lib/transport.ts`.
 
-The source checkout retains the user's GitHub repository as `origin`. Sites hosting metadata points to a private preview, separate from GitHub.
+`npm run build:pages` exports and stages the app in `dist/pages`, with assets addressed under `/transportschedule/` for GitHub Pages. This single-page prototype switches screens using browser state, so the Pages build uses an asset prefix while retaining the root static route. The **Deploy to GitHub Pages** workflow builds and publishes this output on each push to `main`. Its status appears in the repository’s Actions tab.
+
+The standard `npm run build` still produces the existing Sites version. Sites hosting metadata points to a separate private preview.
 
 ## Verification
 
