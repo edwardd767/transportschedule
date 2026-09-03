@@ -342,9 +342,6 @@ export default function Home() {
           <span>HotelX</span>
         </div>
         <div className="top-tools">
-          <span className="prototype-label">
-            Prototype <i /> Sample data
-          </span>
           <button
             className="icon-button help-button"
             aria-label="About this prototype"
