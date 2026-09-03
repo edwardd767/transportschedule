@@ -36,6 +36,8 @@ import {
 } from '@/components/ui/sidebar';
 import { Choice } from '@/components/hotel-choice';
 import { TransportSetup } from '@/components/transport-setup';
+import { Bookings } from '@/components/bookings';
+import { sampleBookings } from '@/lib/bookings';
 import {
   Sheet,
   SheetContent,
@@ -68,7 +70,13 @@ export default function Home() {
   const [date, setDate] = useState('2026-08-03');
   const [route, setRoute] = useState('all');
   const [query, setQuery] = useState('');
-  const [view, setView] = useState<'schedule' | 'setup'>('schedule');
+  const [view, setView] = useState<'schedule' | 'setup' | 'booking'>(
+    'schedule',
+  );
+  const [bookingReference, setBookingReference] = useState<string | null>(null);
+  const activeBooking =
+    sampleBookings.find((booking) => booking.reference === bookingReference) ??
+    null;
   const [setup, setSetup] = useState(initialSetup);
   const [trips, setTrips] = useState(initialTrips);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -337,7 +345,11 @@ export default function Home() {
       <header className="topbar">
         <div className="brand">
           <SidebarTrigger className="menu-button">
-            <img src={hamburgerIcon.src} alt="Menu" className="hamburger-icon" />
+            <img
+              src={hamburgerIcon.src}
+              alt="Menu"
+              className="hamburger-icon"
+            />
           </SidebarTrigger>
           <span>HotelX</span>
         </div>
@@ -362,7 +374,14 @@ export default function Home() {
             <div className="profile-role">Hotel administrator</div>
           </div>
           <nav className="main-nav" aria-label="Main navigation">
-            <button disabled title="Existing hotel module">
+            <button
+              className={view === 'booking' ? 'active' : ''}
+              aria-current={view === 'booking' ? 'page' : undefined}
+              onClick={() => {
+                setBookingReference(null);
+                setView('booking');
+              }}
+            >
               <CalendarDays />
               Booking
             </button>
@@ -415,20 +434,52 @@ export default function Home() {
       </Sidebar>
       <main className="workspace">
         <div className="property-banner">
-          <div>
-            <small>HMS</small>
-            <strong>HOTEL PARADISE</strong>
+          <div className="property-identity">
+            {view === 'booking' && activeBooking && (
+              <button
+                className="booking-back"
+                aria-label="Back to booking listing"
+                onClick={() => setBookingReference(null)}
+              >
+                <ChevronLeft size={24} />
+              </button>
+            )}
+            <div>
+              <small>HMS</small>
+              <strong>HOTEL PARADISE</strong>
+            </div>
           </div>
-          <span className="property-switch">
-            <ArrowRightLeft size={18} />
-          </span>
+          {!(view === 'booking' && activeBooking) && (
+            <span className="property-switch">
+              <ArrowRightLeft size={18} />
+            </span>
+          )}
           <div className="breadcrumb">
-            {view === 'setup' ? 'Hotel Settings' : 'Transport'}{' '}
-            <ChevronRight size={14} />{' '}
-            {view === 'setup' ? 'Transport Setup' : 'Schedule'}
+            {view === 'booking' ? (
+              <span>{activeBooking ? '... / Booking' : 'Booking'}</span>
+            ) : (
+              <>
+                {view === 'setup' ? 'Hotel Settings' : 'Transport'}{' '}
+                <ChevronRight size={14} />{' '}
+                {view === 'setup' ? 'Transport Setup' : 'Schedule'}
+              </>
+            )}
           </div>
         </div>
-        {view === 'setup' ? (
+        {view === 'booking' ? (
+          <Bookings
+            booking={activeBooking}
+            onSelect={(booking) => setBookingReference(booking.reference)}
+            onNotice={setNotice}
+            onOpenTransport={(booking) => {
+              setDate(booking.arrival);
+              setRoute('all');
+              setStatusFilter('all');
+              setQuery('');
+              setView('schedule');
+            }}
+          />
+        ) : view === 'setup' ? (
           <div className="settings-scroll" key="setup">
             <TransportSetup
               config={setup}
@@ -1210,8 +1261,10 @@ export default function Home() {
                 notifications and operator systems are not connected.
               </p>
               <p>
-                Transport Setup is available under Hotel Settings. Other HotelX
-                sections are included as visual context.
+                Booking includes a sample listing and guest details, with a
+                Transport card that opens the arrival-date schedule. Transport
+                Setup is available under Hotel Settings. Other HotelX sections
+                are included as visual context.
               </p>
               <button
                 className="primary-button"

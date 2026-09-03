@@ -4,12 +4,14 @@
 
 **[Open HotelX Transport Schedule](https://edwardd767.github.io/transportschedule/)**
 
-The page includes **Transport → Schedule** and **Hotel Settings → Transport Setup**. This is a browser prototype with sample data; changes reset when the page is refreshed.
+The page includes **Booking → Booking Details**, **Transport → Schedule** and **Hotel Settings → Transport Setup**. This is a browser prototype with sample data; changes reset when the page is refreshed.
 
 An interactive first UI prototype based on HotelX's existing Booking screen: white navigation, orange property banner, left sidebar and status-striped listing cards.
 
 ## Included
 
+- Booking listing and booking details based on the supplied HotelX screens. The first five rows match the reference; the remaining rows are clearly labelled sample guests. Search, status and arrival-date filters, sorting, and the back button work in the preview.
+- A Transport card immediately after Room Upgrade opens the existing schedule for the booking's arrival date. It does not assign passengers or create a transfer reservation. Other hotel booking actions are reference cards and show a notice when selected.
 - Daily trip listing, date navigation, route and status filters, and guest/trip search.
 - Hotel Settings → Transport Setup, with editable operators, directional routes and boarding locations, boats, seat capacities, operating hours, turnaround times, reporting lead times and notes.
 - Setup drives new trip selectors, operator matching, capacity and timing. Existing departures retain a snapshot of the original configuration.
