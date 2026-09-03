@@ -10,8 +10,6 @@ import { flushSync } from 'react-dom';
 import {
   ArrowRight,
   ArrowRightLeft,
-  BedDouble,
-  BellRing,
   CalendarDays,
   ChartNoAxesCombined,
   ChevronLeft,
@@ -19,20 +17,26 @@ import {
   CircleHelp,
   Clock3,
   ConciergeBell,
-  DoorOpen,
   Languages,
   List,
   LogOut,
-  MapPin,
   Plus,
   Search,
   Settings,
   Ship,
   Users,
-  UsersRound,
   Waves,
 } from 'lucide-react';
 import hamburgerIcon from './Hamburger.png';
+import {
+  checkinSvg,
+  groupCheckinSvg,
+  checkoutSvg,
+  roomAssignmentSvg,
+  stayViewSvg,
+  inhouseGuestSvg,
+  serviceRequestSvg,
+} from './frontdesk-icons';
 import {
   SidebarProvider,
   Sidebar,
@@ -71,66 +75,32 @@ import {
   type Trip,
 } from '@/lib/transport';
 
-function CheckinIcon({ size = 24 }: { size?: number }) {
+function SvgIcon({ size = 24, markup }: { size?: number; markup: string }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       width={size}
       height={size}
       viewBox="0 0 30 30"
-    >
-      <g transform="translate(20694 12675)">
-        <g transform="translate(-20691.746 -12673.062)">
-          <path
-            d="M166.572,0l-7.654,21.532h-7.654a.758.758,0,0,1-.765-.765v-20A.758.758,0,0,1,151.265,0Zm0,0"
-            transform="translate(-142.347 0)"
-            fill="#575f64"
-          />
-          <path
-            d="M308.919,0l-7.654,21.532H300.5V0Zm0,0"
-            transform="translate(-284.693)"
-            fill="#32393f"
-          />
-          <path
-            d="M12.408,153.368l-3.061-2.3a.771.771,0,0,0-1.194.643v.765H1.265a.758.758,0,0,0-.765.765v1.531a.758.758,0,0,0,.765.765H8.153v.765a.771.771,0,0,0,1.194.643l3.061-2.3a.782.782,0,0,0,0-1.286Zm0,0"
-            transform="translate(0 -143.245)"
-            fill="#9cdd05"
-          />
-          <path
-            d="M12.746,211a.778.778,0,0,1-.337.643l-3.061,2.3a.771.771,0,0,1-1.194-.643v-.765H1.265a.758.758,0,0,1-.765-.765V211Zm0,0"
-            transform="translate(0 -200.234)"
-            fill="#6b0"
-          />
-          <path
-            d="M300.888,26.025a.765.765,0,0,1-.388-.666v-20a.765.765,0,0,1,.371-.656L308.525.11a.765.765,0,0,1,1.159.656v20a.765.765,0,0,1-.372.656l-7.654,4.592A.766.766,0,0,1,300.888,26.025Zm0,0"
-            transform="translate(-284.694 0)"
-            fill="#ff9100"
-          />
-          <path
-            d="M362.058,271.765a.765.765,0,1,1-.765-.765A.765.765,0,0,1,362.058,271.765Zm0,0"
-            transform="translate(-341.658 -257.173)"
-            fill="#32393f"
-          />
-        </g>
-      </g>
-    </svg>
+      dangerouslySetInnerHTML={{ __html: markup }}
+    />
   );
 }
 
 const frontDeskMenu = [
-  { key: 'check-in', label: 'Check-in', detail: 'Check-in: 1 out of 1', icon: CheckinIcon },
-  { key: 'group-check-in', label: 'Group Check In', detail: 'Check-in: 0 out of 0', icon: UsersRound },
-  { key: 'check-out', label: 'Check Out', detail: 'Check-Out: 1 out of 8', icon: LogOut },
-  { key: 'room-assignment', label: 'Room Assignment', detail: 'Assign Room: 0', icon: BedDouble },
-  { key: 'stay-view', label: 'Stay View', detail: 'Guest Room Location', icon: MapPin },
+  { key: 'check-in', label: 'Check-in', detail: 'Check-in: 1 out of 1', svg: checkinSvg },
+  { key: 'group-check-in', label: 'Group Check In', detail: 'Check-in: 0 out of 0', svg: groupCheckinSvg },
+  { key: 'check-out', label: 'Check Out', detail: 'Check-Out: 1 out of 8', svg: checkoutSvg },
+  { key: 'room-assignment', label: 'Room Assignment', detail: 'Assign Room: 0', svg: roomAssignmentSvg },
+  { key: 'stay-view', label: 'Stay View', detail: 'Guest Room Location', svg: stayViewSvg },
   {
     key: 'inhouse-guest',
     label: 'Inhouse Guest',
     detail: 'In House: 82 Room(s) | 91 Guest(s)',
-    icon: DoorOpen,
+    svg: inhouseGuestSvg,
     extra: 'Total Deposit: 48 Room(s) | MYR 9,203.00',
   },
-  { key: 'service-request', label: 'Service Request', detail: 'Task To Complete: 0', icon: BellRing },
+  { key: 'service-request', label: 'Service Request', detail: 'Task To Complete: 0', svg: serviceRequestSvg },
 ];
 
 export default function Home() {
@@ -578,7 +548,6 @@ export default function Home() {
             </div>
             <div className="frontdesk-menu">
               {frontDeskMenu.map((item) => {
-                const Icon = item.icon;
                 return (
                   <button
                     key={item.key}
@@ -590,7 +559,7 @@ export default function Home() {
                     }
                   >
                     <span className="frontdesk-icon">
-                      <Icon size={22} />
+                      <SvgIcon size={22} markup={item.svg} />
                     </span>
                     <span className="frontdesk-body">
                       <strong>{item.label}</strong>
