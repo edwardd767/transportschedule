@@ -1,9 +1,9 @@
 import { readdir, readFile } from 'node:fs/promises';
-import { statSync, existsSync } from 'node:fs';
+import { statSync, existsSync, mkdirSync } from 'node:fs';
 import { extname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { tmpdir } from 'node:os';
 
-const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const INBOX = fileURLToPath(new URL('../inbox/', import.meta.url));
 
 const TEXT_EXT = new Set([
@@ -15,6 +15,8 @@ const TEXT_EXT = new Set([
 const IMAGE_EXT = new Set([
   '.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.avif', '.ico',
 ]);
+
+const DOC_EXT = new Set(['.pdf', '.docx', '.doc']);
 
 const MAX_TEXT_BYTES = 256 * 1024;
 
@@ -68,9 +70,7 @@ function readImageMeta(buf) {
   if (buf.toString('ascii', 0, 4) === 'RIFF' && buf.toString('ascii', 8, 12) === 'WEBP') {
     const kind = buf.toString('ascii', 12, 16);
     if (kind === 'VP8X' && buf.length >= 30) {
-      const w = buf.readUIntLE(24, 3) + 1;
-      const h = buf.readUIntLE(27, 3) + 1;
-      return { format: 'WebP', width: w, height: h };
+      return { format: 'WebP', width: buf.readUIntLE(24, 3) + 1, height: buf.readUIntLE(27, 3) + 1 };
     }
     if (kind === 'VP8 ' && buf.length >= 30) {
       return { format: 'WebP', width: buf.readUInt16LE(26) & 0x3fff, height: buf.readUInt16LE(28) & 0x3fff };
@@ -98,6 +98,25 @@ function fmtBytes(n) {
   return `${(n / 1024 / 1024).toFixed(2)} MB`;
 }
 
+async function loadOcr() {
+  try {
+    const mod = await import('tesseract.js');
+    return mod.createWorker;
+  } catch {
+    return null;
+  }
+}
+
+async function extractDocText(file) {
+  try {
+    const { extractText } = await import('mammoth');
+    const result = await extractText({ path: file });
+    return result.value;
+  } catch {
+    return null;
+  }
+}
+
 async function main() {
   if (!existsSync(INBOX)) {
     console.log(`No inbox folder yet. Create it at: ${INBOX}`);
@@ -110,12 +129,26 @@ async function main() {
   }
   console.log(`INBOX: ${INBOX}`);
   console.log(`FILES: ${files.length}`);
+
+  const createWorker = await loadOcr();
+  let worker = null;
+  if (createWorker) {
+    try {
+      const cachePath = join(tmpdir(), 'tesseract.js-cache');
+      mkdirSync(cachePath, { recursive: true });
+      worker = await createWorker('eng', 1, { logger: () => {}, cachePath });
+    } catch {
+      worker = null;
+    }
+  }
+
   console.log('='.repeat(80));
   for (const file of files) {
     const rel = relative(INBOX, file).split('\\').join('/');
     const size = statSync(file).size;
     const ext = extname(file).toLowerCase();
     console.log(`\n### ${rel}  [${fmtBytes(size)}]`);
+
     if (IMAGE_EXT.has(ext)) {
       const buf = await readFile(file);
       const meta = readImageMeta(buf);
@@ -124,9 +157,36 @@ async function main() {
       } else {
         console.log(`  type: image/${ext.slice(1)}  (dimensions unknown)`);
       }
-      console.log('  NOTE: image content is not readable by the current model. Provide text/SVG or describe it.');
+      if (worker) {
+        try {
+          const { data } = await worker.recognize(file);
+          const text = (data.text || '').trim();
+          console.log('  OCR TEXT:');
+          if (text) {
+            for (const line of text.split('\n')) console.log(`    ${line}`);
+          } else {
+            console.log('    (no text detected)');
+          }
+        } catch (err) {
+          console.log(`  (OCR failed: ${err.message})`);
+        }
+      } else {
+        console.log('  (OCR not available: install tesseract.js)');
+      }
+      console.log('  NOTE: OCR reads only text; colors, layout and spacing still need a written description or SVG.');
       continue;
     }
+
+    if (DOC_EXT.has(ext)) {
+      const text = await extractDocText(file);
+      if (text != null) {
+        console.log(text.trim());
+      } else {
+        console.log(`  (cannot extract text from ${ext} — install "mammoth" for .docx or provide a text file)`);
+      }
+      continue;
+    }
+
     if (!TEXT_EXT.has(ext)) {
       const buf = await readFile(file);
       if (looksBinary(buf)) {
@@ -137,6 +197,7 @@ async function main() {
       }
       continue;
     }
+
     const buf = await readFile(file);
     if (buf.length > MAX_TEXT_BYTES) {
       console.log(`  (content truncated: ${fmtBytes(buf.length)} exceeds limit)`);
@@ -145,6 +206,10 @@ async function main() {
     } else {
       console.log(buf.toString('utf8'));
     }
+  }
+
+  if (worker) {
+    try { await worker.terminate(); } catch {}
   }
   console.log('\n' + '='.repeat(80));
   console.log('END');
