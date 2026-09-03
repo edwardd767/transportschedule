@@ -1,5 +1,5 @@
 'use client';
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -48,11 +48,13 @@ export function TransportSetup({
   onChange,
   onBack,
   onNotice,
+  scheduleTemplates,
 }: {
   config: Setup;
   onChange: (value: Setup) => void;
   onBack: () => void;
   onNotice: (message: string) => void;
+  scheduleTemplates: ReactNode;
 }) {
   const [tab, setTab] = useState('routes');
   const [editor, setEditor] = useState<Editor | null>(null);
@@ -240,7 +242,9 @@ export function TransportSetup({
             <Clock3 size={17} />
             Operating rules
           </TabsTrigger>
+          <TabsTrigger value="templates">Schedule templates</TabsTrigger>
         </TabsList>
+        <TabsContent value="templates">{scheduleTemplates}</TabsContent>
         <TabsContent value="routes">
           <div className="setup-panel">
             <div className="setup-panel-heading">

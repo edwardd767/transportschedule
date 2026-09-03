@@ -35,6 +35,8 @@ jobs:
         run: npm ci
       - name: Build GitHub Pages site
         run: npm run build:pages
+      - name: Verify transport planning rules
+        run: node scripts/test-transport-planning.mjs
       - name: Upload website
         uses: actions/upload-pages-artifact@v5.0.0
         with:

@@ -64,11 +64,13 @@ export function Bookings({
   onSelect,
   onOpenTransport,
   onNotice,
+  transportSummary,
 }: {
   booking: Booking | null;
   onSelect: (booking: Booking) => void;
   onOpenTransport: (booking: Booking) => void;
   onNotice: (message: string) => void;
+  transportSummary?: string;
 }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -130,7 +132,10 @@ export function Bookings({
       { title: 'Rooming List', description: rooms },
       { title: 'Room Assignment', description: assignments },
       { title: 'Room Upgrade', description: assignments },
-      { title: 'Transport' },
+      {
+        title: 'Transport',
+        description: transportSummary || 'Arrival and return transfers',
+      },
       { title: 'Special Request' },
       { title: 'Remarks' },
     ];

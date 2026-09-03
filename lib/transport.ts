@@ -1,5 +1,6 @@
 export type Group = {
   id: string;
+  bookingId?: string;
   reference: string;
   name: string;
   adults: number;

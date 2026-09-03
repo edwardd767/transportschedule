@@ -1,0 +1,413 @@
+'use client';
+import { useState } from 'react';
+import { CalendarDays, Pencil, Plus } from 'lucide-react';
+import { Choice } from '@/components/hotel-choice';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import {
+  generateTemplate,
+  validateTemplate,
+  type ScheduleTemplate,
+} from '@/lib/transport-planning';
+import { tripFromSetup, type TransportSetup, type Trip } from '@/lib/transport';
+
+export function ScheduleTemplates({
+  setup,
+  templates,
+  trips,
+  onChange,
+  onGenerate,
+}: {
+  setup: TransportSetup;
+  templates: ScheduleTemplate[];
+  trips: Trip[];
+  onChange: (templates: ScheduleTemplate[]) => void;
+  onGenerate: (template: ScheduleTemplate) => void;
+}) {
+  const [draft, setDraft] = useState<ScheduleTemplate | null>(null);
+  const [times, setTimes] = useState('');
+  const [excluded, setExcluded] = useState('');
+  const [preview, setPreview] = useState<{
+    template: ScheduleTemplate;
+    added: Trip[];
+    skipped: number;
+  } | null>(null);
+  const [error, setError] = useState('');
+  function open(template?: ScheduleTemplate) {
+    const route = setup.routes.find(
+      (item) =>
+        item.active &&
+        setup.operators.some(
+          (operator) => operator.id === item.operatorId && operator.active,
+        ),
+    );
+    const value = template ?? {
+      id: crypto.randomUUID(),
+      name: '',
+      routeId: route?.id ?? '',
+      boatId:
+        setup.boats.find(
+          (item) =>
+            item.operatorId === route?.operatorId && item.status === 'Active',
+        )?.id ?? '',
+      startDate: '2026-09-01',
+      endDate: '2026-09-30',
+      weekdays: [1, 2, 3, 4, 5, 6, 0],
+      times: ['09:30'],
+      excludedDates: [],
+    };
+    setDraft({ ...value });
+    setTimes(value.times.join(', '));
+    setExcluded(value.excludedDates.join(', '));
+    setError('');
+  }
+  const routes = setup.routes.filter(
+    (item) =>
+      item.active &&
+      setup.operators.some(
+        (operator) => operator.id === item.operatorId && operator.active,
+      ),
+  );
+  const boats = setup.boats.filter(
+    (item) =>
+      item.status === 'Active' &&
+      item.operatorId ===
+        routes.find((route) => route.id === draft?.routeId)?.operatorId,
+  );
+  return (
+    <div className="setup-panel">
+      <div className="setup-panel-heading">
+        <div>
+          <h3>Schedule templates</h3>
+          <p>
+            Generate departures for selected weekdays, then adjust individual
+            trips in the schedule.
+          </p>
+        </div>
+        <button className="primary-button" onClick={() => open()}>
+          <Plus size={17} /> Add template
+        </button>
+      </div>
+      <div className="template-list">
+        {templates.length ? (
+          templates.map((template) => (
+            <div className="template-card" key={template.id}>
+              <CalendarDays size={24} />
+              <div>
+                <strong>{template.name}</strong>
+                <p>
+                  {
+                    setup.boats.find((boat) => boat.id === template.boatId)
+                      ?.name
+                  }{' '}
+                  ·{' '}
+                  {
+                    setup.routes.find((route) => route.id === template.routeId)
+                      ?.origin
+                  }{' '}
+                  →{' '}
+                  {
+                    setup.routes.find((route) => route.id === template.routeId)
+                      ?.destination
+                  }
+                </p>
+                <small>
+                  {template.startDate} – {template.endDate} ·{' '}
+                  {template.times.join(', ')}
+                </small>
+              </div>
+              <button
+                className="edit-button"
+                aria-label={`Edit ${template.name}`}
+                onClick={() => open(template)}
+              >
+                <Pencil size={15} /> Edit
+              </button>
+              <button
+                className="secondary-button"
+                onClick={() => {
+                  setError('');
+                  try {
+                    const result = generateTemplate(trips, setup, template);
+                    setPreview({
+                      template,
+                      added: result.added,
+                      skipped: result.skipped,
+                    });
+                  } catch (error) {
+                    setError((error as Error).message);
+                  }
+                }}
+              >
+                Generate trips
+              </button>
+            </div>
+          ))
+        ) : (
+          <div className="empty-state small">
+            <CalendarDays size={28} />
+            <h3>No schedule templates yet</h3>
+            <p>Create a template with a route, boat, times and date range.</p>
+          </div>
+        )}
+      </div>
+      {error && !draft && !preview && (
+        <p role="alert" className="form-error template-error">
+          {error}
+        </p>
+      )}
+      <p className="template-help">
+        Templates generate new trips only. Existing, rescheduled and cancelled
+        generated trips are preserved. Duplicate departures are skipped.
+      </p>
+      <Dialog
+        open={draft !== null}
+        onOpenChange={(open) => !open && setDraft(null)}
+      >
+        <DialogContent className="hotel-dialog template-dialog">
+          <DialogHeader>
+            <DialogTitle>
+              {templates.some((item) => item.id === draft?.id)
+                ? 'Edit schedule template'
+                : 'New schedule template'}
+            </DialogTitle>
+            <DialogDescription>
+              Choose one boat and travel direction for this template.
+            </DialogDescription>
+          </DialogHeader>
+          {draft && (
+            <form
+              className="hotel-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                try {
+                  const value = validateTemplate({
+                    ...draft,
+                    name: draft.name.trim(),
+                    times: times
+                      .split(',')
+                      .map((value) => value.trim())
+                      .filter(Boolean),
+                    excludedDates: excluded
+                      .split(',')
+                      .map((value) => value.trim())
+                      .filter(Boolean),
+                  });
+                  tripFromSetup(setup, {
+                    id: 'validation',
+                    date: value.startDate,
+                    time: value.times[0],
+                    routeId: value.routeId,
+                    boatId: value.boatId,
+                  });
+                  onChange(
+                    templates.some((item) => item.id === value.id)
+                      ? templates.map((item) =>
+                          item.id === value.id ? value : item,
+                        )
+                      : [...templates, value],
+                  );
+                  setDraft(null);
+                } catch (error) {
+                  setError((error as Error).message);
+                }
+              }}
+            >
+              <label>
+                Template name
+                <input
+                  required
+                  maxLength={80}
+                  value={draft.name}
+                  onChange={(event) =>
+                    setDraft({ ...draft, name: event.target.value })
+                  }
+                  placeholder="e.g. September arrivals"
+                />
+              </label>
+              <div className="form-grid">
+                <label>
+                  Route
+                  <Choice
+                    label="Template route"
+                    value={draft.routeId}
+                    onChange={(routeId) =>
+                      setDraft({
+                        ...draft,
+                        routeId,
+                        boatId:
+                          setup.boats.find(
+                            (boat) =>
+                              boat.operatorId ===
+                                routes.find((route) => route.id === routeId)
+                                  ?.operatorId && boat.status === 'Active',
+                          )?.id ?? '',
+                      })
+                    }
+                    items={routes.map((route) => ({
+                      value: route.id,
+                      label: `${route.origin} → ${route.destination}`,
+                    }))}
+                  />
+                </label>
+                <label>
+                  Boat
+                  <Choice
+                    label="Template boat"
+                    value={draft.boatId}
+                    onChange={(boatId) => setDraft({ ...draft, boatId })}
+                    items={boats.map((boat) => ({
+                      value: boat.id,
+                      label: `${boat.name} · ${boat.capacity} seats`,
+                    }))}
+                  />
+                </label>
+              </div>
+              <div className="form-grid">
+                <label>
+                  From
+                  <input
+                    type="date"
+                    required
+                    value={draft.startDate}
+                    onChange={(event) =>
+                      setDraft({ ...draft, startDate: event.target.value })
+                    }
+                  />
+                </label>
+                <label>
+                  Until
+                  <input
+                    type="date"
+                    required
+                    min={draft.startDate}
+                    value={draft.endDate}
+                    onChange={(event) =>
+                      setDraft({ ...draft, endDate: event.target.value })
+                    }
+                  />
+                </label>
+              </div>
+              <fieldset className="template-weekdays">
+                <legend>Operating weekdays</legend>
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(
+                  (label, index) => (
+                    <label key={label}>
+                      <input
+                        type="checkbox"
+                        checked={draft.weekdays.includes(index)}
+                        onChange={(event) =>
+                          setDraft({
+                            ...draft,
+                            weekdays: event.target.checked
+                              ? [...draft.weekdays, index]
+                              : draft.weekdays.filter((day) => day !== index),
+                          })
+                        }
+                      />
+                      {label}
+                    </label>
+                  ),
+                )}
+              </fieldset>
+              <label>
+                Departure times
+                <input
+                  required
+                  value={times}
+                  onChange={(event) => setTimes(event.target.value)}
+                  placeholder="09:30, 11:00, 12:30"
+                />
+              </label>
+              <label>
+                Exclude dates (optional)
+                <input
+                  value={excluded}
+                  onChange={(event) => setExcluded(event.target.value)}
+                  placeholder="2026-09-05, 2026-09-12"
+                />
+              </label>
+              {error && (
+                <p className="form-error" role="alert">
+                  {error}
+                </p>
+              )}
+              <div className="form-actions">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => setDraft(null)}
+                >
+                  Cancel
+                </button>
+                <button className="primary-button">Save template</button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={preview !== null}
+        onOpenChange={(open) => !open && setPreview(null)}
+      >
+        <DialogContent className="hotel-dialog template-dialog">
+          <DialogHeader>
+            <DialogTitle>Generate departures</DialogTitle>
+            <DialogDescription>{preview?.template.name}</DialogDescription>
+          </DialogHeader>
+          {preview && (
+            <>
+              <p>
+                {preview.added.length} new trips · {preview.skipped} existing
+                departures skipped
+              </p>
+              <div className="template-preview">
+                {preview.added.slice(0, 12).map((trip) => (
+                  <p key={trip.id}>
+                    {trip.date} · {trip.time} · {trip.boat} · {trip.origin} →{' '}
+                    {trip.destination}
+                  </p>
+                ))}
+                {preview.added.length > 12 && (
+                  <p>And {preview.added.length - 12} more departures.</p>
+                )}
+              </div>
+              {error && (
+                <p role="alert" className="form-error">
+                  {error}
+                </p>
+              )}
+              <div className="form-actions">
+                <button
+                  className="secondary-button"
+                  onClick={() => setPreview(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="primary-button"
+                  disabled={!preview.added.length}
+                  onClick={() => {
+                    try {
+                      onGenerate(preview.template);
+                      setPreview(null);
+                    } catch (error) {
+                      setError((error as Error).message);
+                    }
+                  }}
+                >
+                  Generate {preview.added.length} trips
+                </button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

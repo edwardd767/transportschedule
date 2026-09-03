@@ -46,7 +46,18 @@ import {
 import { Choice } from '@/components/hotel-choice';
 import { TransportSetup } from '@/components/transport-setup';
 import { Bookings } from '@/components/bookings';
-import { sampleBookings } from '@/lib/bookings';
+import { sampleBookings, type Booking } from '@/lib/bookings';
+import { MonthTimetable } from '@/components/month-timetable';
+import { ScheduleTemplates } from '@/components/schedule-templates';
+import { BookingTransfers } from '@/components/booking-transfers';
+import { EditTransportTrip } from '@/components/edit-transport-trip';
+import {
+  assignBookingTransfers,
+  editScheduledTrip,
+  generateTemplate,
+  initialDayNotes,
+  type ScheduleTemplate,
+} from '@/lib/transport-planning';
 import {
   Sheet,
   SheetContent,
@@ -88,11 +99,36 @@ function SvgIcon({ size = 24, markup }: { size?: number; markup: string }) {
 }
 
 const frontDeskMenu = [
-  { key: 'check-in', label: 'Check-in', detail: 'Check-in: 1 out of 1', svg: checkinSvg },
-  { key: 'group-check-in', label: 'Group Check In', detail: 'Check-in: 0 out of 0', svg: groupCheckinSvg },
-  { key: 'check-out', label: 'Check Out', detail: 'Check-Out: 1 out of 8', svg: checkoutSvg },
-  { key: 'room-assignment', label: 'Room Assignment', detail: 'Assign Room: 0', svg: roomAssignmentSvg },
-  { key: 'stay-view', label: 'Stay View', detail: 'Guest Room Location', svg: stayViewSvg },
+  {
+    key: 'check-in',
+    label: 'Check-in',
+    detail: 'Check-in: 1 out of 1',
+    svg: checkinSvg,
+  },
+  {
+    key: 'group-check-in',
+    label: 'Group Check In',
+    detail: 'Check-in: 0 out of 0',
+    svg: groupCheckinSvg,
+  },
+  {
+    key: 'check-out',
+    label: 'Check Out',
+    detail: 'Check-Out: 1 out of 8',
+    svg: checkoutSvg,
+  },
+  {
+    key: 'room-assignment',
+    label: 'Room Assignment',
+    detail: 'Assign Room: 0',
+    svg: roomAssignmentSvg,
+  },
+  {
+    key: 'stay-view',
+    label: 'Stay View',
+    detail: 'Guest Room Location',
+    svg: stayViewSvg,
+  },
   {
     key: 'inhouse-guest',
     label: 'Inhouse Guest',
@@ -106,7 +142,12 @@ const frontDeskMenu = [
     icon: Ship,
     view: 'schedule' as const,
   },
-  { key: 'service-request', label: 'Service Request', detail: 'Task To Complete: 0', svg: serviceRequestSvg },
+  {
+    key: 'service-request',
+    label: 'Service Request',
+    detail: 'Task To Complete: 0',
+    svg: serviceRequestSvg,
+  },
 ];
 
 export default function Home() {
@@ -122,11 +163,17 @@ export default function Home() {
     null;
   const [setup, setSetup] = useState(initialSetup);
   const [trips, setTrips] = useState(initialTrips);
+  const [scheduleView, setScheduleView] = useState<'day' | 'month'>('day');
+  const [boatFilter, setBoatFilter] = useState('all');
+  const [templates, setTemplates] = useState<ScheduleTemplate[]>([]);
+  const [dayNotes, setDayNotes] = useState(initialDayNotes);
+  const [transferBooking, setTransferBooking] = useState<Booking | null>(null);
+  const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = trips.find((t) => t.id === selectedId) ?? null;
-  const [dialog, setDialog] = useState<
-    'trip' | 'passengers' | 'calendar' | 'help' | null
-  >(null);
+  const [dialog, setDialog] = useState<'trip' | 'passengers' | 'help' | null>(
+    null,
+  );
   const [formRoute, setFormRoute] = useState('inbound');
   const [formBoat, setFormBoat] = useState('boat-3');
   const [error, setError] = useState('');
@@ -148,7 +195,6 @@ export default function Home() {
   function openDialog(value: typeof dialog) {
     setError('');
     setDialog(value);
-    if (value === 'calendar') setMonth(date.slice(0, 7));
     if (value === 'trip') {
       const selectedRoute =
         activeRoutes.find((r) => r.id === formRoute) ?? activeRoutes[0];
@@ -193,6 +239,8 @@ export default function Home() {
       });
       setTrips(addTrip(trips, trip, setup.rules));
       setDate(trip.date);
+      setMonth(trip.date.slice(0, 7));
+      setBoatFilter('all');
       setRoute('all');
       setQuery('');
       setStatusFilter('all');
@@ -371,6 +419,7 @@ export default function Home() {
   const shown = daily.filter(
     (t) =>
       (route === 'all' || t.direction === route) &&
+      (boatFilter === 'all' || t.boatId === boatFilter) &&
       (statusFilter === 'all' || statusOf(t) === statusFilter) &&
       `${t.id} ${t.boat} ${t.time} ${t.groups.map((g) => `${g.name} ${g.reference}`).join(' ')}`
         .toLowerCase()
@@ -521,13 +570,22 @@ export default function Home() {
             booking={activeBooking}
             onSelect={(booking) => setBookingReference(booking.reference)}
             onNotice={setNotice}
-            onOpenTransport={(booking) => {
-              setDate(booking.arrival);
-              setRoute('all');
-              setStatusFilter('all');
-              setQuery('');
-              setView('schedule');
-            }}
+            transportSummary={
+              activeBooking
+                ? trips
+                    .filter((trip) =>
+                      trip.groups.some(
+                        (group) => group.bookingId === activeBooking.reference,
+                      ),
+                    )
+                    .map(
+                      (trip) =>
+                        `${trip.toHotel ? 'Arrival' : 'Return'}: ${trip.date} ${trip.time} · ${trip.boat}${trip.status === 'Cancelled' ? ' (Cancelled — reassign)' : ''}`,
+                    )
+                    .join(' | ')
+                : undefined
+            }
+            onOpenTransport={setTransferBooking}
           />
         ) : view === 'setup' ? (
           <div className="settings-scroll" key="setup">
@@ -536,6 +594,26 @@ export default function Home() {
               onChange={setSetup}
               onBack={() => setView('schedule')}
               onNotice={setNotice}
+              scheduleTemplates={
+                <ScheduleTemplates
+                  setup={setup}
+                  templates={templates}
+                  trips={trips}
+                  onChange={setTemplates}
+                  onGenerate={(template) => {
+                    const result = generateTemplate(trips, setup, template);
+                    setTrips(result.trips);
+                    setDate(template.startDate);
+                    setMonth(template.startDate.slice(0, 7));
+                    setScheduleView('month');
+                    setBoatFilter('all');
+                    setRoute('all');
+                    setNotice(
+                      `${result.added.length} departures generated. ${result.skipped} existing departures skipped.`,
+                    );
+                  }}
+                />
+              }
             />
           </div>
         ) : view === 'frontdesk' ? (
@@ -575,7 +653,6 @@ export default function Home() {
                     <span className="frontdesk-body">
                       <strong>{item.label}</strong>
                       <small>{item.detail}</small>
-                      {item.extra && <em>{item.extra}</em>}
                     </span>
                     <ChevronRight size={18} className="frontdesk-chevron" />
                   </button>
@@ -588,255 +665,371 @@ export default function Home() {
             <div className="listing-title">
               <div>
                 <h1>
-                  Transport Listing <span>({daily.length})</span>
+                  {scheduleView === 'month'
+                    ? 'Transport Calendar'
+                    : 'Transport Listing'}{' '}
+                  <span>
+                    (
+                    {scheduleView === 'month'
+                      ? trips.filter((trip) => trip.date.startsWith(month))
+                          .length
+                      : daily.length}
+                    )
+                  </span>
                 </h1>
                 <span className="context-tag">
                   <Ship size={14} /> Speedboat
                 </span>
               </div>
-              <button
-                className="primary-button"
-                onClick={() => openDialog('trip')}
-              >
-                <Plus size={19} /> Add trip
-              </button>
-            </div>
-            <div className="day-summary">
-              <div>
-                <span className="summary-icon">
-                  <CalendarDays />
-                </span>
-                <div>
-                  <small>Total trips</small>
-                  <strong>{daily.length}</strong>
-                </div>
-              </div>
-              <div>
-                <span className="summary-icon blue">
-                  <Users />
-                </span>
-                <div>
-                  <small>Passengers booked</small>
-                  <strong>{pax}</strong>
-                </div>
-              </div>
-              <div>
-                <span className="summary-icon green">
-                  <Ship />
-                </span>
-                <div>
-                  <small>Seats available</small>
-                  <strong>{seats}</strong>
-                </div>
-              </div>
-              <div className="summary-note">
-                <Waves size={22} />
-                <span>
-                  August 2026 schedule<small>Source: customer timetable</small>
-                </span>
-              </div>
-            </div>
-            <section
-              className="schedule-surface"
-              aria-label="Transport schedule"
-            >
-              <div className="filterbar">
-                <div className="date-picker">
-                  <button
-                    aria-label="Previous day"
-                    onClick={() => setDate(moveDate(date, -1))}
-                  >
-                    <ChevronLeft size={19} />
-                  </button>
-                  <label>
-                    <CalendarDays size={19} />
-                    <input
-                      type="date"
-                      aria-label="Travel date"
-                      value={date}
-                      onChange={(e) =>
-                        e.target.value && setDate(e.target.value)
-                      }
-                    />
-                  </label>
-                  <button
-                    aria-label="Next day"
-                    onClick={() => setDate(moveDate(date, 1))}
-                  >
-                    <ChevronRight size={19} />
-                  </button>
-                </div>
-                <Choice
-                  label="Route"
-                  value={route}
-                  onChange={setRoute}
-                  items={[
-                    { value: 'all', label: 'All routes' },
-                    ...setup.routes.map((r) => ({
-                      value: r.id,
-                      label: `${r.origin} → ${r.destination}`,
-                    })),
-                  ]}
-                />
-                <label className="search-field">
-                  <Search size={18} />
-                  <input
-                    aria-label="Search trips"
-                    placeholder="Search trip, boat or guest"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                  />
-                </label>
-                <button
-                  className="calendar-button"
-                  aria-label="Open monthly schedule"
-                  onClick={() => openDialog('calendar')}
+              <div className="schedule-view-actions">
+                <div
+                  className="schedule-view-switch"
+                  aria-label="Schedule view"
                 >
-                  <CalendarDays size={19} />
-                  <span>Month</span>
+                  <button
+                    aria-pressed={scheduleView === 'day'}
+                    onClick={() => setScheduleView('day')}
+                  >
+                    <List size={16} /> Day list
+                  </button>
+                  <button
+                    aria-pressed={scheduleView === 'month'}
+                    onClick={() => {
+                      setMonth(date.slice(0, 7));
+                      setScheduleView('month');
+                    }}
+                  >
+                    <CalendarDays size={16} /> Month calendar
+                  </button>
+                </div>
+                <button
+                  className="primary-button"
+                  onClick={() => {
+                    if (scheduleView === 'month' && !date.startsWith(month))
+                      setDate(`${month}-01`);
+                    openDialog('trip');
+                  }}
+                >
+                  <Plus size={19} /> Add trip
                 </button>
               </div>
-              <div className="list-subhead">
-                <h2>{formatDate(date)}</h2>
-                <Choice
-                  value={statusFilter}
-                  onChange={setStatusFilter}
-                  label="Trip status"
-                  items={[
-                    'all',
-                    'Boarding',
-                    'Scheduled',
-                    'Full',
-                    'Delayed',
-                    'Cancelled',
-                    'Completed',
-                  ].map((s) => ({
-                    value: s,
-                    label: s === 'all' ? 'All statuses' : s,
-                  }))}
-                />
-              </div>
-              <div
-                className="schedule-scroll"
-                role="region"
-                aria-label="Trip list"
-                tabIndex={0}
-                key={`${date}-${route}-${statusFilter}-${query}`}
-              >
-                <div className="trip-list">
-                  {shown.length ? (
-                    shown
-                      .sort((a, b) => a.time.localeCompare(b.time))
-                      .map((t) => {
-                        const booked = countPassengers(t);
-                        const status = statusOf(t);
-                        const closed = ['Cancelled', 'Completed'].includes(
-                          t.status,
-                        );
-                        return (
-                          <button
-                            className={`trip-card status-${status.toLowerCase()}`}
-                            key={t.id}
-                            onClick={() => {
-                              setSelectedId(t.id);
-                              setError('');
-                            }}
-                          >
-                            <div className="departure">
-                              <strong>{t.time}</strong>
-                              <small>Departure</small>
-                            </div>
-                            <div className="trip-route">
-                              <strong>
-                                {t.origin}
-                                <ArrowRight size={18} />
-                                {t.destination}
-                              </strong>
-                              <span>
-                                {t.id}
-                                <b>·</b>
-                                <Ship size={14} />
-                                {t.boat}
-                                <b>·</b>
-                                {t.durationMinutes} min
-                              </span>
-                            </div>
-                            <div className="capacity">
-                              <span>
-                                <Users size={16} />
-                                <strong>{booked}</strong> / {t.capacity}{' '}
-                                passengers
-                              </span>
-                              <div className="capacity-track">
-                                <i
-                                  style={{
-                                    width: `${(booked / t.capacity) * 100}%`,
-                                  }}
-                                />
-                              </div>
-                              <small>
-                                {closed
-                                  ? 'Booking closed'
-                                  : t.capacity - booked === 0
-                                    ? 'All seats booked'
-                                    : `${t.capacity - booked} seats available`}
-                              </small>
-                            </div>
-                            <div className="trip-state">
-                              <span
-                                className={`status-pill ${status.toLowerCase()}`}
-                              >
-                                <i />
-                                {status}
-                              </span>
-                              <small>
-                                {t.toHotel ? 'To hotel' : 'From hotel'}
-                              </small>
-                            </div>
-                            <ChevronRight className="card-chevron" size={22} />
-                          </button>
-                        );
-                      })
-                  ) : (
-                    <div className="empty-state">
-                      <Ship size={36} />
-                      <h3>No trips found</h3>
-                      <p>Choose another date or adjust your search.</p>
+            </div>
+            {scheduleView === 'month' ? (
+              <MonthTimetable
+                month={month}
+                onMonth={setMonth}
+                trips={trips}
+                setup={setup}
+                boat={boatFilter}
+                route={route}
+                onBoat={setBoatFilter}
+                onRoute={setRoute}
+                notes={dayNotes}
+                onNote={(date, note) => {
+                  setDayNotes((previous) => ({ ...previous, [date]: note }));
+                  setNotice('Daily notes saved.');
+                }}
+                onDay={(date) => {
+                  setDate(date);
+                  setStatusFilter('all');
+                  setQuery('');
+                  setScheduleView('day');
+                }}
+                onTrip={(trip) => {
+                  setSelectedId(trip.id);
+                  setError('');
+                }}
+                onAdd={(date) => {
+                  setDate(date);
+                  openDialog('trip');
+                }}
+              />
+            ) : (
+              <>
+                <div className="day-summary">
+                  <div>
+                    <span className="summary-icon">
+                      <CalendarDays />
+                    </span>
+                    <div>
+                      <small>Total trips</small>
+                      <strong>{daily.length}</strong>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="summary-icon blue">
+                      <Users />
+                    </span>
+                    <div>
+                      <small>Passengers booked</small>
+                      <strong>{pax}</strong>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="summary-icon green">
+                      <Ship />
+                    </span>
+                    <div>
+                      <small>Seats available</small>
+                      <strong>{seats}</strong>
+                    </div>
+                  </div>
+                  <div className="summary-note">
+                    <Waves size={22} />
+                    <span>
+                      {new Date(`${date}T12:00:00`).toLocaleDateString(
+                        'en-GB',
+                        { month: 'long', year: 'numeric' },
+                      )}{' '}
+                      schedule
+                      <small>
+                        {date.startsWith('2026-08')
+                          ? 'Customer timetable + added trips'
+                          : 'Scheduled departures'}
+                      </small>
+                    </span>
+                  </div>
+                </div>
+                <section
+                  className="schedule-surface"
+                  aria-label="Transport schedule"
+                >
+                  <div className="filterbar">
+                    <div className="date-picker">
                       <button
-                        className="secondary-button"
-                        onClick={() => {
-                          setQuery('');
-                          setStatusFilter('all');
-                          setRoute('all');
-                        }}
+                        aria-label="Previous day"
+                        onClick={() => setDate(moveDate(date, -1))}
                       >
-                        Clear filters
+                        <ChevronLeft size={19} />
+                      </button>
+                      <label>
+                        <CalendarDays size={19} />
+                        <input
+                          type="date"
+                          aria-label="Travel date"
+                          value={date}
+                          onChange={(e) =>
+                            e.target.value && setDate(e.target.value)
+                          }
+                        />
+                      </label>
+                      <button
+                        aria-label="Next day"
+                        onClick={() => setDate(moveDate(date, 1))}
+                      >
+                        <ChevronRight size={19} />
                       </button>
                     </div>
-                  )}
-                </div>
-                <footer className="schedule-footer">
-                  <span>
-                    Showing {shown.length} of {daily.length} trips
-                  </span>
-                  <span>
-                    <Clock3 size={14} /> All times are local · Malaysia (GMT+8)
-                  </span>
-                </footer>
-                <div className="operating-note">
-                  <Waves size={19} />
-                  <p>
-                    <strong>Operating notes</strong> Service hours for new
-                    trips: {setup.rules.start}–{setup.rules.end}. Departures are
-                    subject to operator confirmation and weather conditions.
-                  </p>
-                </div>
-                <div className="demo-note">
-                  Preview with sample passengers and capacities. Changes in this
-                  prototype reset when the page is refreshed.
-                </div>
-              </div>
-            </section>
+                    <Choice
+                      label="Route"
+                      value={route}
+                      onChange={setRoute}
+                      items={[
+                        { value: 'all', label: 'All routes' },
+                        ...setup.routes.map((r) => ({
+                          value: r.id,
+                          label: `${r.origin} → ${r.destination}`,
+                        })),
+                      ]}
+                    />
+                    <Choice
+                      label="Filter trips by boat"
+                      value={boatFilter}
+                      onChange={setBoatFilter}
+                      items={[
+                        { value: 'all', label: 'All boats' },
+                        ...setup.boats.map((boat) => ({
+                          value: boat.id,
+                          label: boat.name,
+                        })),
+                      ]}
+                    />
+                    <label className="search-field">
+                      <Search size={18} />
+                      <input
+                        aria-label="Search trips"
+                        placeholder="Search trip, boat or guest"
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                      />
+                    </label>
+                    <button
+                      className="calendar-button"
+                      aria-label="Open monthly schedule"
+                      onClick={() => {
+                        setMonth(date.slice(0, 7));
+                        setScheduleView('month');
+                      }}
+                    >
+                      <CalendarDays size={19} />
+                      <span>Month</span>
+                    </button>
+                  </div>
+                  <div className="list-subhead">
+                    <h2>{formatDate(date)}</h2>
+                    <Choice
+                      value={statusFilter}
+                      onChange={setStatusFilter}
+                      label="Trip status"
+                      items={[
+                        'all',
+                        'Boarding',
+                        'Scheduled',
+                        'Full',
+                        'Delayed',
+                        'Cancelled',
+                        'Completed',
+                      ].map((s) => ({
+                        value: s,
+                        label: s === 'all' ? 'All statuses' : s,
+                      }))}
+                    />
+                  </div>
+                  <div
+                    className="schedule-scroll"
+                    role="region"
+                    aria-label="Trip list"
+                    tabIndex={0}
+                    key={`${date}-${route}-${boatFilter}-${statusFilter}-${query}`}
+                  >
+                    {dayNotes[date] && (
+                      <div className="day-tide-notes">
+                        <strong>
+                          {dayNotes[date].holiday || 'Daily tide notes'}
+                        </strong>
+                        {dayNotes[date].tide && (
+                          <span>Tide window: {dayNotes[date].tide}</span>
+                        )}
+                        {dayNotes[date].restricted && (
+                          <span>Restricted: {dayNotes[date].restricted}</span>
+                        )}
+                        {dayNotes[date].notes && (
+                          <span>{dayNotes[date].notes}</span>
+                        )}
+                      </div>
+                    )}
+                    <div className="trip-list">
+                      {shown.length ? (
+                        shown
+                          .sort((a, b) => a.time.localeCompare(b.time))
+                          .map((t) => {
+                            const booked = countPassengers(t);
+                            const status = statusOf(t);
+                            const closed = ['Cancelled', 'Completed'].includes(
+                              t.status,
+                            );
+                            return (
+                              <button
+                                className={`trip-card status-${status.toLowerCase()}`}
+                                key={t.id}
+                                onClick={() => {
+                                  setSelectedId(t.id);
+                                  setError('');
+                                }}
+                              >
+                                <div className="departure">
+                                  <strong>{t.time}</strong>
+                                  <small>Departure</small>
+                                </div>
+                                <div className="trip-route">
+                                  <strong>
+                                    {t.origin}
+                                    <ArrowRight size={18} />
+                                    {t.destination}
+                                  </strong>
+                                  <span>
+                                    {t.id}
+                                    <b>·</b>
+                                    <Ship size={14} />
+                                    {t.boat}
+                                    <b>·</b>
+                                    {t.durationMinutes} min
+                                  </span>
+                                </div>
+                                <div className="capacity">
+                                  <span>
+                                    <Users size={16} />
+                                    <strong>{booked}</strong> / {t.capacity}{' '}
+                                    passengers
+                                  </span>
+                                  <div className="capacity-track">
+                                    <i
+                                      style={{
+                                        width: `${(booked / t.capacity) * 100}%`,
+                                      }}
+                                    />
+                                  </div>
+                                  <small>
+                                    {closed
+                                      ? 'Booking closed'
+                                      : t.capacity - booked === 0
+                                        ? 'All seats booked'
+                                        : `${t.capacity - booked} seats available`}
+                                  </small>
+                                </div>
+                                <div className="trip-state">
+                                  <span
+                                    className={`status-pill ${status.toLowerCase()}`}
+                                  >
+                                    <i />
+                                    {status}
+                                  </span>
+                                  <small>
+                                    {t.toHotel ? 'To hotel' : 'From hotel'}
+                                  </small>
+                                </div>
+                                <ChevronRight
+                                  className="card-chevron"
+                                  size={22}
+                                />
+                              </button>
+                            );
+                          })
+                      ) : (
+                        <div className="empty-state">
+                          <Ship size={36} />
+                          <h3>No trips found</h3>
+                          <p>Choose another date or adjust your search.</p>
+                          <button
+                            className="secondary-button"
+                            onClick={() => {
+                              setQuery('');
+                              setStatusFilter('all');
+                              setRoute('all');
+                              setBoatFilter('all');
+                            }}
+                          >
+                            Clear filters
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <footer className="schedule-footer">
+                      <span>
+                        Showing {shown.length} of {daily.length} trips
+                      </span>
+                      <span>
+                        <Clock3 size={14} /> All times are local · Malaysia
+                        (GMT+8)
+                      </span>
+                    </footer>
+                    <div className="operating-note">
+                      <Waves size={19} />
+                      <p>
+                        <strong>Operating notes</strong> Service hours for new
+                        trips: {setup.rules.start}–{setup.rules.end}. Departures
+                        are subject to operator confirmation and weather
+                        conditions.
+                      </p>
+                    </div>
+                    <div className="demo-note">
+                      Preview with sample passengers and capacities. Changes in
+                      this prototype reset when the page is refreshed.
+                    </div>
+                  </div>
+                </section>
+              </>
+            )}
           </>
         )}
       </main>
@@ -905,6 +1098,17 @@ export default function Home() {
                     ].map((s) => ({ value: s, label: s }))}
                   />
                 </div>
+                <button
+                  className="secondary-button edit-departure-button"
+                  disabled={
+                    selected.status === 'Completed' ||
+                    selected.status === 'Cancelled' ||
+                    selected.groups.some((group) => group.boarded)
+                  }
+                  onClick={() => setEditingTrip(selected)}
+                >
+                  Edit departure
+                </button>
                 {error && !dialog && (
                   <p role="alert" className="form-error">
                     {error}
@@ -1033,7 +1237,7 @@ export default function Home() {
                         <dt>Schedule source</dt>
                         <dd>
                           Customer’s August 2026 timetable; added trips are
-                          manual preview entries.
+                          manual or template-generated preview entries.
                         </dd>
                       </div>
                       <div>
@@ -1091,27 +1295,21 @@ export default function Home() {
           }
         }}
       >
-        <DialogContent
-          className={`hotel-dialog ${dialog === 'calendar' ? 'calendar-dialog' : ''}`}
-        >
+        <DialogContent className="hotel-dialog">
           <DialogHeader>
             <DialogTitle>
               {dialog === 'trip'
                 ? 'Add a speedboat trip'
                 : dialog === 'passengers'
                   ? 'Add passengers'
-                  : dialog === 'calendar'
-                    ? 'Monthly schedule'
-                    : 'HotelX Transport prototype'}
+                  : 'HotelX Transport prototype'}
             </DialogTitle>
             <DialogDescription>
               {dialog === 'trip'
                 ? 'Enter a departure confirmed by your transport operator.'
                 : dialog === 'passengers'
                   ? `${selected?.time} · ${selected ? selected.capacity - countPassengers(selected) : 0} seats available`
-                  : dialog === 'calendar'
-                    ? 'Select a date to see its departures.'
-                    : 'An initial transport workflow within the HotelX layout.'}
+                  : 'An initial transport workflow within the HotelX layout.'}
             </DialogDescription>
           </DialogHeader>
           {dialog === 'trip' && (
@@ -1259,90 +1457,6 @@ export default function Home() {
               </div>
             </form>
           )}
-          {dialog === 'calendar' && (
-            <>
-              <div className="month-heading">
-                <button
-                  className="icon-button"
-                  aria-label="Previous month"
-                  onClick={() =>
-                    setMonth(moveDate(`${month}-01`, -1).slice(0, 7))
-                  }
-                >
-                  <ChevronLeft />
-                </button>
-                <strong>
-                  {new Date(`${month}-01T12:00:00`).toLocaleDateString(
-                    'en-GB',
-                    { month: 'long', year: 'numeric' },
-                  )}
-                </strong>
-                <button
-                  className="icon-button"
-                  aria-label="Next month"
-                  onClick={() =>
-                    setMonth(moveDate(`${month}-01`, 32).slice(0, 7))
-                  }
-                >
-                  <ChevronRight />
-                </button>
-              </div>
-              <div className="month-grid">
-                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
-                  <span className="weekday" key={d}>
-                    {d}
-                  </span>
-                ))}
-                {Array.from(
-                  {
-                    length: (new Date(`${month}-01T12:00:00`).getDay() + 6) % 7,
-                  },
-                  (_, i) => (
-                    <span key={`blank-${i}`} />
-                  ),
-                )}
-                {Array.from(
-                  {
-                    length: new Date(
-                      Number(month.slice(0, 4)),
-                      Number(month.slice(5, 7)),
-                      0,
-                    ).getDate(),
-                  },
-                  (_, i) => {
-                    const d = `${month}-${String(i + 1).padStart(2, '0')}`;
-                    const dayTrips = trips.filter((t) => t.date === d);
-                    return (
-                      <button
-                        key={d}
-                        aria-label={`${formatDate(d)}, ${dayTrips.length} trips`}
-                        className={`month-day ${date === d ? 'selected' : ''}`}
-                        onClick={() => {
-                          setDate(d);
-                          setQuery('');
-                          setRoute('all');
-                          setStatusFilter('all');
-                          setDialog(null);
-                        }}
-                      >
-                        <strong>{i + 1}</strong>
-                        <span>
-                          {dayTrips.length
-                            ? `${dayTrips.length} trips`
-                            : 'No trips'}
-                        </span>
-                        {dayTrips.length > 0 && <i />}
-                      </button>
-                    );
-                  },
-                )}
-              </div>
-              <p className="helper-text">
-                August departures are from the supplied timetable. Passenger
-                activity is demonstrated on 3 August.
-              </p>
-            </>
-          )}
           {dialog === 'help' && (
             <div className="help-content">
               <p>
@@ -1357,9 +1471,9 @@ export default function Home() {
               </p>
               <p>
                 Booking includes a sample listing and guest details, with a
-                Transport card that opens the arrival-date schedule. Transport
-                Setup is available under Hotel Settings. Other HotelX sections
-                are included as visual context.
+                Transport card for assigning arrival and return departures.
+                Transport Setup is available under Hotel Settings. Other HotelX
+                sections are included as visual context.
               </p>
               <button
                 className="primary-button"
@@ -1371,6 +1485,44 @@ export default function Home() {
           )}
         </DialogContent>
       </Dialog>
+      {transferBooking && (
+        <BookingTransfers
+          key={transferBooking.reference}
+          booking={transferBooking}
+          trips={trips}
+          onClose={() => setTransferBooking(null)}
+          onSave={(selection) => {
+            setTrips(assignBookingTransfers(trips, transferBooking, selection));
+            setNotice('Booking transfers saved. Seat availability updated.');
+          }}
+          onCalendar={(date) => {
+            setTransferBooking(null);
+            setDate(date);
+            setMonth(date.slice(0, 7));
+            setRoute('all');
+            setBoatFilter('all');
+            setView('schedule');
+            setScheduleView('month');
+          }}
+        />
+      )}
+      {editingTrip && (
+        <EditTransportTrip
+          key={editingTrip.id}
+          trip={editingTrip}
+          setup={setup}
+          onClose={() => setEditingTrip(null)}
+          onSave={(values) => {
+            const current = trips.find((trip) => trip.id === editingTrip.id);
+            if (!current)
+              throw new Error('This departure is no longer available.');
+            setTrips(editScheduledTrip(trips, setup, current, values));
+            setDate(values.date);
+            setMonth(values.date.slice(0, 7));
+            setNotice('Departure updated. Existing passengers have been kept.');
+          }}
+        />
+      )}
     </SidebarProvider>
   );
 }
