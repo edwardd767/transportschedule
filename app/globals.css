@@ -70,6 +70,7 @@ body {
   font-size: 16px;
   color: var(--foreground);
   background: var(--background);
+  zoom: 0.9;
 }
 button,
 input {
