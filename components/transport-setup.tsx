@@ -202,7 +202,7 @@ export function TransportSetup({
         </span>
         <div>
           <h2>Set up your transport service</h2>
-          <p>Manage the routes, boats and defaults used when creating trips.</p>
+          <p>Manage the routes, services and defaults used when creating trips.</p>
         </div>
       </div>
       <div className="setup-counts">
@@ -216,7 +216,7 @@ export function TransportSetup({
           <strong>
             {config.boats.filter((b) => b.status === 'Active').length}
           </strong>
-          <span>Available boats</span>
+          <span>Available services</span>
         </div>
         <div>
           <Building2 />
@@ -236,7 +236,7 @@ export function TransportSetup({
           </TabsTrigger>
           <TabsTrigger value="fleet">
             <Ship size={17} />
-            Boats & operators
+            Services & operators
           </TabsTrigger>
           <TabsTrigger value="rules">
             <Clock3 size={17} />
@@ -298,10 +298,10 @@ export function TransportSetup({
           <div className="setup-panel">
             <div className="setup-panel-heading">
               <div>
-                <h3>Boats & transport operators</h3>
+                <h3>Transport services & operators</h3>
                 <p>
-                  Manage service providers and their boats together in one
-                  place.
+                  Manage operators and transport services such as boats, taxis and transfers
+                  together in one place.
                 </p>
               </div>
               <div className="form-actions">
@@ -316,7 +316,7 @@ export function TransportSetup({
                   className="primary-button"
                   onClick={() => open('boat')}
                 >
-                  <Plus size={17} /> Add boat
+                  <Plus size={17} /> Add service
                 </button>
               </div>
             </div>
@@ -378,15 +378,15 @@ export function TransportSetup({
 
             <div className="settings-section-label">
               <Ship size={18} />
-              <h4>Boats</h4>
+              <h4>Services</h4>
               <span>{config.boats.length} configured</span>
             </div>
             <Table className="setup-table">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Boat</TableHead>
+                  <TableHead>Service</TableHead>
                   <TableHead>Operator</TableHead>
-                  <TableHead>Seat capacity</TableHead>
+                  <TableHead>Passenger capacity</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>
                     <span className="sr-only">Actions</span>
@@ -475,7 +475,7 @@ export function TransportSetup({
               </div>
               <div className="form-grid">
                 <label>
-                  Boat turnaround (minutes)
+                  Service turnaround (minutes)
                   <input
                     required
                     type="number"
@@ -560,7 +560,7 @@ export function TransportSetup({
         <Settings2 size={18} />
         <p>
           Setup changes apply to new trips. Existing departures retain their
-          route, boat, capacity and instructions so current bookings stay
+          route, service, capacity and instructions so current bookings stay
           consistent.
         </p>
       </div>
@@ -577,13 +577,13 @@ export function TransportSetup({
         <DialogContent className="hotel-dialog setup-dialog">
           <DialogHeader>
             <DialogTitle>
-              {isExisting ? 'Edit' : 'Add'} {editor?.kind}
+              {isExisting ? 'Edit' : 'Add'} {editor?.kind === 'boat' ? 'service' : editor?.kind}
             </DialogTitle>
             <DialogDescription>
               {editor?.kind === 'route'
                 ? 'Define a direction, operator and boarding point.'
                 : editor?.kind === 'boat'
-                  ? 'Set the boat’s operator, capacity and availability.'
+                  ? 'Set the service’s operator, capacity and availability.'
                   : 'Add the service provider and contact details.'}
             </DialogDescription>
           </DialogHeader>
@@ -685,7 +685,7 @@ export function TransportSetup({
               {editor.kind === 'boat' && (
                 <>
                   <label>
-                    Boat name
+                    Service name
                     <input
                       required
                       maxLength={70}
@@ -697,7 +697,7 @@ export function TransportSetup({
                   <label>
                     Operator
                     <Choice
-                      label="Boat operator"
+                      label="Service operator"
                       value={editor.record.operatorId}
                       onChange={(v) => updateDraft({ operatorId: v })}
                       items={operatorOptions}
@@ -720,7 +720,7 @@ export function TransportSetup({
                     <label>
                       Status
                       <Choice
-                        label="Boat status"
+                        label="Service status"
                         value={editor.record.status}
                         onChange={(v) =>
                           updateDraft({ status: v as Boat['status'] })
@@ -732,7 +732,7 @@ export function TransportSetup({
                     </label>
                   </div>
                   <p className="helper-text">
-                    Use the operator-approved passenger capacity. Boats in
+                    Use the operator-approved passenger capacity. Services in
                     maintenance or inactive status are unavailable for new
                     trips.
                   </p>
@@ -811,7 +811,7 @@ export function TransportSetup({
                   className="primary-button"
                   disabled={pending}
                 >
-                  <Save size={16} /> Save {editor.kind}
+                  <Save size={16} /> Save {editor.kind === 'boat' ? 'service' : editor.kind}
                 </button>
               </div>
             </form>
