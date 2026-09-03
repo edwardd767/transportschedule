@@ -331,7 +331,7 @@ export default function Home() {
     .reduce((n, t) => n + t.capacity - countPassengers(t), 0);
   return (
     <SidebarProvider
-      style={{ '--sidebar-width': '280px' } as CSSProperties}
+      style={{ '--sidebar-width': '232px' } as CSSProperties}
       className="hotel-shell"
     >
       <header className="topbar">
@@ -429,12 +429,14 @@ export default function Home() {
           </div>
         </div>
         {view === 'setup' ? (
-          <TransportSetup
-            config={setup}
-            onChange={setSetup}
-            onBack={() => setView('schedule')}
-            onNotice={setNotice}
-          />
+          <div className="settings-scroll" key="setup">
+            <TransportSetup
+              config={setup}
+              onChange={setSetup}
+              onBack={() => setView('schedule')}
+              onNotice={setNotice}
+            />
+          </div>
         ) : (
           <>
             <div className="listing-title">
@@ -568,119 +570,127 @@ export default function Home() {
                   }))}
                 />
               </div>
-              <div className="trip-list">
-                {shown.length ? (
-                  shown
-                    .sort((a, b) => a.time.localeCompare(b.time))
-                    .map((t) => {
-                      const booked = countPassengers(t);
-                      const status = statusOf(t);
-                      const closed = ['Cancelled', 'Completed'].includes(
-                        t.status,
-                      );
-                      return (
-                        <button
-                          className={`trip-card status-${status.toLowerCase()}`}
-                          key={t.id}
-                          onClick={() => {
-                            setSelectedId(t.id);
-                            setError('');
-                          }}
-                        >
-                          <div className="departure">
-                            <strong>{t.time}</strong>
-                            <small>Departure</small>
-                          </div>
-                          <div className="trip-route">
-                            <strong>
-                              {t.origin}
-                              <ArrowRight size={18} />
-                              {t.destination}
-                            </strong>
-                            <span>
-                              {t.id}
-                              <b>·</b>
-                              <Ship size={14} />
-                              {t.boat}
-                              <b>·</b>
-                              {t.durationMinutes} min
-                            </span>
-                          </div>
-                          <div className="capacity">
-                            <span>
-                              <Users size={16} />
-                              <strong>{booked}</strong> / {t.capacity}{' '}
-                              passengers
-                            </span>
-                            <div className="capacity-track">
-                              <i
-                                style={{
-                                  width: `${(booked / t.capacity) * 100}%`,
-                                }}
-                              />
+              <div
+                className="schedule-scroll"
+                role="region"
+                aria-label="Trip list"
+                tabIndex={0}
+                key={`${date}-${route}-${statusFilter}-${query}`}
+              >
+                <div className="trip-list">
+                  {shown.length ? (
+                    shown
+                      .sort((a, b) => a.time.localeCompare(b.time))
+                      .map((t) => {
+                        const booked = countPassengers(t);
+                        const status = statusOf(t);
+                        const closed = ['Cancelled', 'Completed'].includes(
+                          t.status,
+                        );
+                        return (
+                          <button
+                            className={`trip-card status-${status.toLowerCase()}`}
+                            key={t.id}
+                            onClick={() => {
+                              setSelectedId(t.id);
+                              setError('');
+                            }}
+                          >
+                            <div className="departure">
+                              <strong>{t.time}</strong>
+                              <small>Departure</small>
                             </div>
-                            <small>
-                              {closed
-                                ? 'Booking closed'
-                                : t.capacity - booked === 0
-                                  ? 'All seats booked'
-                                  : `${t.capacity - booked} seats available`}
-                            </small>
-                          </div>
-                          <div className="trip-state">
-                            <span
-                              className={`status-pill ${status.toLowerCase()}`}
-                            >
-                              <i />
-                              {status}
-                            </span>
-                            <small>
-                              {t.toHotel ? 'To hotel' : 'From hotel'}
-                            </small>
-                          </div>
-                          <ChevronRight className="card-chevron" size={22} />
-                        </button>
-                      );
-                    })
-                ) : (
-                  <div className="empty-state">
-                    <Ship size={36} />
-                    <h3>No trips found</h3>
-                    <p>Choose another date or adjust your search.</p>
-                    <button
-                      className="secondary-button"
-                      onClick={() => {
-                        setQuery('');
-                        setStatusFilter('all');
-                        setRoute('all');
-                      }}
-                    >
-                      Clear filters
-                    </button>
-                  </div>
-                )}
+                            <div className="trip-route">
+                              <strong>
+                                {t.origin}
+                                <ArrowRight size={18} />
+                                {t.destination}
+                              </strong>
+                              <span>
+                                {t.id}
+                                <b>·</b>
+                                <Ship size={14} />
+                                {t.boat}
+                                <b>·</b>
+                                {t.durationMinutes} min
+                              </span>
+                            </div>
+                            <div className="capacity">
+                              <span>
+                                <Users size={16} />
+                                <strong>{booked}</strong> / {t.capacity}{' '}
+                                passengers
+                              </span>
+                              <div className="capacity-track">
+                                <i
+                                  style={{
+                                    width: `${(booked / t.capacity) * 100}%`,
+                                  }}
+                                />
+                              </div>
+                              <small>
+                                {closed
+                                  ? 'Booking closed'
+                                  : t.capacity - booked === 0
+                                    ? 'All seats booked'
+                                    : `${t.capacity - booked} seats available`}
+                              </small>
+                            </div>
+                            <div className="trip-state">
+                              <span
+                                className={`status-pill ${status.toLowerCase()}`}
+                              >
+                                <i />
+                                {status}
+                              </span>
+                              <small>
+                                {t.toHotel ? 'To hotel' : 'From hotel'}
+                              </small>
+                            </div>
+                            <ChevronRight className="card-chevron" size={22} />
+                          </button>
+                        );
+                      })
+                  ) : (
+                    <div className="empty-state">
+                      <Ship size={36} />
+                      <h3>No trips found</h3>
+                      <p>Choose another date or adjust your search.</p>
+                      <button
+                        className="secondary-button"
+                        onClick={() => {
+                          setQuery('');
+                          setStatusFilter('all');
+                          setRoute('all');
+                        }}
+                      >
+                        Clear filters
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <footer className="schedule-footer">
+                  <span>
+                    Showing {shown.length} of {daily.length} trips
+                  </span>
+                  <span>
+                    <Clock3 size={14} /> All times are local · Malaysia (GMT+8)
+                  </span>
+                </footer>
+                <div className="operating-note">
+                  <Waves size={19} />
+                  <p>
+                    <strong>Operating notes</strong> Service hours for new
+                    trips: {setup.rules.start}–{setup.rules.end}. Departures are
+                    subject to operator confirmation and weather conditions.
+                  </p>
+                </div>
+                <div className="demo-note">
+                  Preview with sample passengers and capacities. Changes in this
+                  prototype reset when the page is refreshed.
+                </div>
               </div>
-              <footer className="schedule-footer">
-                <span>
-                  Showing {shown.length} of {daily.length} trips
-                </span>
-                <span>
-                  <Clock3 size={14} /> All times are local · Malaysia (GMT+8)
-                </span>
-              </footer>
             </section>
-            <div className="operating-note">
-              <Waves size={19} />
-              <p>
-                <strong>Operating notes</strong> Service hours for new trips:{' '}
-                {setup.rules.start}–{setup.rules.end}. Departures are subject to
-                operator confirmation and weather conditions.
-              </p>
-            </div>
-            <div className="demo-note">
-              Preview with sample passengers and capacities. Changes in this
-              prototype reset when the page is refreshed.
-            </div>
           </>
         )}
       </main>

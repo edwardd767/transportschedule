@@ -113,10 +113,14 @@ p {
   margin: 0;
 }
 .hotel-shell {
-  padding-top: 76px;
+  --topbar-height: 60px;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  padding-top: var(--topbar-height);
 }
 .topbar {
-  height: 76px;
+  height: var(--topbar-height);
   position: fixed;
   inset: 0 0 auto;
   z-index: 40;
@@ -124,15 +128,15 @@ p {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 32px;
+  padding: 0 20px;
   box-shadow: 0 2px 8px #00000020;
 }
 .brand {
   display: flex;
   align-items: center;
-  gap: 23px;
+  gap: 18px;
   font-weight: 700;
-  font-size: 25px;
+  font-size: 22px;
   letter-spacing: -0.7px;
 }
 .menu-button {
@@ -172,14 +176,15 @@ p {
   background: #999;
 }
 .hotel-sidebar[data-slot='sidebar-container'] {
-  top: 76px;
-  height: calc(100svh - 76px);
+  top: var(--topbar-height);
+  height: calc(100dvh - var(--topbar-height));
   border-right: 1px solid #ebebed;
 }
 .profile {
   position: relative;
-  min-height: 187px;
-  padding: 25px 24px 19px;
+  min-height: 148px;
+  flex-shrink: 0;
+  padding: 18px 18px 14px;
   background:
     radial-gradient(ellipse at 95% 13%, #fcd967 0 24%, transparent 24.5%),
     radial-gradient(ellipse at -4% -10%, #ffd85c 0 29%, transparent 29.5%),
@@ -192,28 +197,28 @@ p {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 67px;
+  height: 57px;
   background: #805826aa;
 }
 .avatar {
   position: relative;
   display: grid;
   place-items: center;
-  width: 57px;
-  height: 57px;
+  width: 46px;
+  height: 46px;
   background: #fff9;
   border: 3px solid #fffc;
   border-radius: 50%;
   color: #90552b;
   font-weight: 600;
-  font-size: 20px;
-  margin-bottom: 20px;
+  font-size: 17px;
+  margin-bottom: 14px;
 }
 .profile-name {
   position: relative;
   color: #fff;
   font-weight: 700;
-  font-size: 19px;
+  font-size: 16px;
   line-height: 1.3;
 }
 .profile-role {
@@ -222,26 +227,26 @@ p {
   font-size: 13px;
 }
 .main-nav {
-  padding: 16px 13px;
+  padding: 12px 10px;
 }
 .main-nav > button {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 12px;
   width: 100%;
   text-align: left;
-  height: 56px;
-  padding: 0 14px;
+  min-height: 46px;
+  padding: 10px 12px;
   border: 0;
   border-radius: 7px;
   background: transparent;
   color: #292929;
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 500;
 }
 .main-nav > button > svg {
-  width: 23px;
-  height: 23px;
+  width: 20px;
+  height: 20px;
   color: #5788b0;
   stroke-width: 1.8;
 }
@@ -262,7 +267,7 @@ p {
   border-radius: 4px;
 }
 .subnav {
-  padding: 12px 0 16px 52px;
+  padding: 8px 0 12px 44px;
   font-size: 14px;
   color: #b16906;
 }
@@ -278,8 +283,8 @@ p {
 .sidebar-foot {
   display: flex;
   gap: 12px;
-  margin: auto 20px 24px;
-  padding-top: 20px;
+  margin: auto 16px 16px;
+  padding-top: 14px;
   border-top: 1px solid #eee;
   font-size: 11px;
   font-weight: 600;
@@ -306,7 +311,40 @@ p {
 .workspace {
   width: 100%;
   min-width: 0;
-  padding: 28px 26px 30px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 16px 20px 12px;
+}
+/* The header stays in normal flow; only the remaining content area scrolls. */
+.workspace > .property-banner,
+.workspace > .listing-title,
+.workspace > .day-summary,
+.schedule-surface > .filterbar,
+.schedule-surface > .list-subhead {
+  flex-shrink: 0;
+}
+.schedule-surface {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.schedule-scroll,
+.settings-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+  padding: 3px 5px 8px 3px;
+  margin: 0 -3px;
+}
+.schedule-scroll:focus-visible {
+  outline: 2px solid #df8600;
+  outline-offset: -2px;
+  border-radius: 6px;
 }
 .property-banner {
   position: relative;
@@ -314,10 +352,10 @@ p {
     radial-gradient(ellipse at 83% 105%, #ffbd14 0 39%, transparent 39.5%),
     radial-gradient(ellipse at 38% -55%, #f57818 0 51%, transparent 51.5%),
     linear-gradient(110deg, #f89912, #ffa524 65%, #f67e1b);
-  min-height: 95px;
+  min-height: 76px;
   display: flex;
   justify-content: space-between;
-  padding: 13px 17px 38px;
+  padding: 8px 14px 30px;
   overflow: hidden;
 }
 .property-banner small {
@@ -327,7 +365,7 @@ p {
   font-weight: 600;
 }
 .property-banner strong {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
 }
 .property-switch {
@@ -346,12 +384,12 @@ p {
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 7px 17px;
+  padding: 4px 14px;
   border-top: 1px solid #ffffff6b;
   display: flex;
   align-items: center;
   gap: 9px;
-  font-size: 13px;
+  font-size: 12px;
   background: #f0801319;
 }
 .listing-title {
@@ -359,7 +397,7 @@ p {
   align-items: center;
   justify-content: space-between;
   background: #fff;
-  padding: 15px 18px;
+  padding: 9px 14px;
   box-shadow: 0 3px 7px #0000000b;
   gap: 10px;
 }
@@ -369,7 +407,7 @@ p {
   align-items: center;
 }
 .listing-title h1 {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 650;
   letter-spacing: -0.35px;
 }
@@ -393,8 +431,8 @@ p {
   justify-content: center;
   gap: 7px;
   border-radius: 6px;
-  min-height: 39px;
-  padding: 9px 15px;
+  min-height: 36px;
+  padding: 6px 12px;
   font-size: 14px;
   font-weight: 600;
   white-space: nowrap;
@@ -426,15 +464,15 @@ p {
   background: #fff;
   border: 1px solid #e8e8eb;
   border-radius: 8px;
-  margin: 21px 0 20px;
-  padding: 19px 16px;
+  margin: 12px 0;
+  padding: 10px 14px;
 }
 .day-summary > div {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
   border-right: 1px solid #ececef;
-  padding: 0 18px;
+  padding: 0 14px;
 }
 .day-summary > div:first-child {
   padding-left: 0;
@@ -445,14 +483,14 @@ p {
 .summary-icon {
   display: grid;
   place-items: center;
-  width: 42px;
-  height: 42px;
+  width: 34px;
+  height: 34px;
   border-radius: 9px;
   background: #fff3e2;
   color: #df880e;
 }
 .summary-icon svg {
-  width: 21px;
+  width: 18px;
 }
 .summary-icon.blue {
   background: #eff3ff;
@@ -470,7 +508,7 @@ p {
 }
 .day-summary strong {
   display: block;
-  font-size: 23px;
+  font-size: 20px;
   font-weight: 600;
   line-height: 1.4;
 }
@@ -489,9 +527,10 @@ p {
 }
 .filterbar {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
-  margin-bottom: 21px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
 }
 .date-picker {
   display: flex;
@@ -499,12 +538,12 @@ p {
   background: #fff;
   border: 1px solid #e1e2e6;
   border-radius: 6px;
-  min-height: 42px;
+  min-height: 36px;
 }
 .date-picker > button {
   display: grid;
   place-items: center;
-  padding: 10px;
+  padding: 8px;
   border: 0;
   background: none;
   color: #7c7d85;
@@ -530,13 +569,13 @@ p {
   width: 13px;
 }
 .hotel-select[data-slot='select-trigger'] {
-  height: 42px;
+  height: 36px;
   min-width: 152px;
   background: #fff;
   border: 1px solid #e1e2e6;
   border-radius: 6px;
   font-size: 13px;
-  padding: 10px 12px;
+  padding: 7px 10px;
 }
 .search-field {
   display: flex;
@@ -548,10 +587,10 @@ p {
   flex: 1;
   background: #fff;
   border: 1px solid #e1e2e6;
-  padding: 10px 13px;
+  padding: 7px 10px;
   border-radius: 6px;
   color: #9596a0;
-  height: 42px;
+  height: 36px;
 }
 .search-field input {
   width: 100%;
@@ -575,7 +614,7 @@ p {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 0 1px 13px;
+  margin: 0 1px 6px;
   gap: 15px;
 }
 .list-subhead h2 {
@@ -615,15 +654,15 @@ p {
 .trip-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 .trip-card {
   position: relative;
   display: grid;
-  grid-template-columns: 90px minmax(225px, 1fr) 172px 100px 22px;
+  grid-template-columns: 80px minmax(200px, 1fr) 185px 105px 18px;
   align-items: center;
-  gap: 24px;
-  padding: 24px 20px 24px 25px;
+  gap: 20px;
+  padding: 14px 16px 14px 20px;
   width: 100%;
   text-align: left;
   border: 1px solid #e6e6e9;
@@ -631,15 +670,16 @@ p {
   background: #fff;
   box-shadow: 0 2px 6px #00000008;
   overflow: hidden;
-  min-height: 111px;
+  min-height: 86px;
+  flex-shrink: 0;
 }
 .trip-card:before {
   content: '';
   position: absolute;
   left: 0;
-  top: 17px;
-  bottom: 17px;
-  width: 5px;
+  top: 12px;
+  bottom: 12px;
+  width: 4px;
   background: #4169da;
 }
 .trip-card.status-boarding:before {
@@ -666,7 +706,7 @@ p {
   border-right: 1px solid #ececef;
 }
 .departure strong {
-  font-size: 23px;
+  font-size: 20px;
   font-weight: 600;
   letter-spacing: -0.5px;
   color: #31343c;
@@ -684,6 +724,8 @@ p {
   gap: 12px;
   font-size: 16px;
   font-weight: 600;
+  flex-wrap: wrap;
+  overflow-wrap: anywhere;
 }
 .trip-route > strong svg {
   color: #aaa;
@@ -694,7 +736,9 @@ p {
   gap: 7px;
   font-size: 11px;
   color: #797a83;
-  margin-top: 9px;
+  margin-top: 5px;
+  flex-wrap: wrap;
+  overflow-wrap: anywhere;
 }
 .trip-route b {
   font-weight: 400;
@@ -721,7 +765,7 @@ p {
   background: #edf0f7;
   border-radius: 6px;
   overflow: hidden;
-  margin: 8px 0 5px;
+  margin: 5px 0 4px;
 }
 .capacity-track > i {
   display: block;
@@ -778,7 +822,7 @@ p {
   display: block;
   font-size: 10px;
   color: #95959c;
-  margin-top: 8px;
+  margin-top: 5px;
 }
 .card-chevron {
   color: #60636d;
@@ -851,50 +895,12 @@ p {
   padding: 14px 22px;
   border-radius: 8px;
 }
-@media (min-width: 1650px) {
-  .workspace {
-    padding: 30px 32px;
-  }
-  .hotel-shell {
-    --sidebar-width: 320px !important;
-  }
-  .trip-card {
-    grid-template-columns: 110px minmax(260px, 1fr) 210px 120px 24px;
-    gap: 32px;
-  }
-  .trip-route > strong {
-    font-size: 18px;
-  }
-  .trip-route > span,
-  .capacity > span {
-    font-size: 13px;
-  }
-  .status-pill {
-    font-size: 12px;
-  }
-  .trip-state > small,
-  .capacity > small {
-    font-size: 12px;
-  }
-  .day-summary small {
-    font-size: 14px;
-  }
-  .summary-note small {
-    font-size: 12px;
-  }
-  .day-summary .summary-note {
-    font-size: 13px;
-  }
-  .status-legend {
-    font-size: 12px;
-  }
-}
 @media (max-width: 1250px) {
   .hotel-shell {
     --sidebar-width: 230px !important;
   }
   .workspace {
-    padding: 22px 20px;
+    padding: 14px 16px 10px;
   }
   .main-nav > button {
     font-size: 15px;
@@ -916,7 +922,7 @@ p {
   .trip-card {
     grid-template-columns: 77px minmax(190px, 1fr) 139px 85px 16px;
     gap: 14px;
-    padding: 23px 15px 23px 20px;
+    padding: 14px 15px 14px 18px;
   }
   .trip-route > strong {
     font-size: 14px;
@@ -927,7 +933,7 @@ p {
     gap: 4px;
   }
   .departure strong {
-    font-size: 21px;
+    font-size: 20px;
   }
   .status-legend {
     gap: 8px;
@@ -983,8 +989,8 @@ p {
     flex-wrap: wrap;
   }
   .trip-card {
-    padding-top: 17px;
-    padding-bottom: 17px;
+    padding-top: 12px;
+    padding-bottom: 12px;
   }
   .trip-state > small {
     font-size: 10px;
@@ -1011,11 +1017,10 @@ p {
 }
 @media (max-width: 767px) {
   .hotel-shell {
-    padding-top: 64px;
+    --topbar-height: 56px;
   }
   .topbar {
-    height: 64px;
-    padding: 0 18px;
+    padding: 0 14px;
   }
   .brand {
     gap: 15px;
@@ -1033,13 +1038,10 @@ p {
     padding: 5px 9px;
   }
   .workspace {
-    padding: 16px 13px;
-  }
-  .property-banner {
-    min-height: 89px;
+    padding: 10px 12px 8px;
   }
   .listing-title {
-    padding: 13px;
+    padding: 8px 10px;
   }
   .listing-title h1 {
     font-size: 16px;
@@ -1049,8 +1051,8 @@ p {
     padding: 8px 11px;
   }
   .day-summary {
-    padding: 14px 10px;
-    margin: 15px 0;
+    padding: 8px 10px;
+    margin: 8px 0;
     gap: 8px;
   }
   .day-summary > div {
@@ -1084,7 +1086,6 @@ p {
   }
   .search-field {
     flex-basis: 100%;
-    height: 39px;
   }
   .list-subhead h2 {
     font-size: 13px;
@@ -1095,12 +1096,12 @@ p {
   }
   .list-subhead {
     gap: 9px;
-    margin-top: 18px;
+    margin-top: 0;
   }
   .trip-card {
     grid-template-columns: 65px minmax(140px, 1fr) 78px;
     gap: 10px;
-    padding: 17px 12px 17px 17px;
+    padding: 12px 10px 12px 14px;
   }
   .trip-route > strong {
     font-size: 13px;
@@ -1177,11 +1178,11 @@ p {
   display: flex;
   align-items: center;
   gap: 7px;
-  min-height: 42px;
+  min-height: 36px;
   border: 1px solid #e1e2e6;
   background: #fff;
   border-radius: 6px;
-  padding: 8px 12px;
+  padding: 6px 10px;
   font-size: 14px;
   color: #545963;
 }
@@ -1240,7 +1241,7 @@ p {
   display: flex;
   gap: 16px;
   align-items: center;
-  margin: 27px 0 23px;
+  margin: 18px 0;
 }
 .setup-icon {
   display: grid;
@@ -1266,11 +1267,11 @@ p {
 .setup-counts {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  margin: 0 0 26px;
+  margin: 0 0 18px;
   background: #fff;
   border: 1px solid #e6e6eb;
   border-radius: 8px;
-  padding: 20px 22px;
+  padding: 14px 18px;
   gap: 20px;
 }
 .setup-counts > div {
@@ -1334,7 +1335,7 @@ p {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 24px;
+  padding: 18px;
   border-bottom: 1px solid #e9e9ee;
 }
 .setup-panel-heading h3 {
@@ -1348,13 +1349,13 @@ p {
   line-height: 1.7;
 }
 .route-setup-list {
-  padding: 8px 24px;
+  padding: 4px 18px;
 }
 .route-setup-card {
   display: flex;
   align-items: center;
   gap: 18px;
-  padding: 23px 0;
+  padding: 16px 0;
   border-bottom: 1px solid #ececf0;
 }
 .route-setup-card:last-child {
@@ -1428,7 +1429,7 @@ p {
   padding: 12px 22px;
 }
 .setup-table td {
-  padding: 22px;
+  padding: 16px 18px;
   font-size: 14px;
   color: #727987;
   white-space: normal;
@@ -1483,11 +1484,11 @@ p {
   gap: 0;
 }
 .rules-content {
-  padding: 24px;
+  padding: 18px;
   max-width: 820px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 .settings-section-label {
   display: flex;
@@ -1571,10 +1572,10 @@ p {
     display: none;
   }
   .setup-panel-heading {
-    padding: 20px;
+    padding: 16px;
   }
   .setup-counts {
-    padding: 17px;
+    padding: 14px;
     gap: 14px;
   }
   .setup-counts > div {
@@ -1587,7 +1588,7 @@ p {
 @media (max-width: 767px) {
   .setup-intro {
     gap: 12px;
-    margin: 23px 0;
+    margin: 16px 0;
   }
   .setup-intro h2 {
     font-size: 17px;
@@ -2121,7 +2122,7 @@ p {
   font-size: 14px;
 }
 .trip-route > strong {
-  font-size: 16px;
+  font-size: 14px;
 }
 .status-pill {
   font-size: 12px;
@@ -2189,8 +2190,8 @@ p {
     align-self: center;
   }
   .trip-card {
-    padding-top: 17px;
-    padding-bottom: 17px;
+    padding-top: 12px;
+    padding-bottom: 12px;
   }
 }
 @media (max-width: 767px) {
@@ -2223,7 +2224,7 @@ p {
     min-width: 89px;
   }
   .trip-card {
-    grid-template-columns: 65px minmax(128px, 1fr) 91px;
+    grid-template-columns: 58px minmax(0, 1fr) 91px;
     gap: 9px;
   }
   .trip-route > strong {
@@ -2269,7 +2270,7 @@ p {
   }
   .day-summary {
     gap: 0;
-    padding: 12px 9px;
+    padding: 8px 9px;
   }
   .day-summary > div {
     padding: 0 8px;
@@ -2310,5 +2311,20 @@ p {
   }
   .form-grid {
     gap: 12px;
+  }
+}
+
+/* Keep content reachable in landscape or when an on-screen keyboard reduces height. */
+@media (max-height: 480px) {
+  .workspace {
+    overflow-y: auto;
+  }
+  .schedule-surface {
+    flex: none;
+    height: 320px;
+  }
+  .settings-scroll {
+    flex: none;
+    overflow: visible;
   }
 }
