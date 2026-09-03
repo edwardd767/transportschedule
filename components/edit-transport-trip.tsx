@@ -1,4 +1,9 @@
 'use client';
+import { useContext } from 'react';
+import {
+  TransportDataContext,
+  TransportRecovery,
+} from './transport-connection';
 import { useState } from 'react';
 import { Choice } from '@/components/hotel-choice';
 import {
@@ -23,8 +28,9 @@ export function EditTransportTrip({
     time: string;
     boatId: string;
     routeId: string;
-  }) => void;
+  }) => Promise<void>;
 }) {
+  const pending = Boolean(useContext(TransportDataContext)?.pending);
   const [values, setValues] = useState({
     date: trip.date,
     time: trip.time,
@@ -55,12 +61,13 @@ export function EditTransportTrip({
             assignments will be kept.
           </DialogDescription>
         </DialogHeader>
+        <TransportRecovery />
         <form
           className="hotel-form"
-          onSubmit={(event) => {
+          onSubmit={async (event) => {
             event.preventDefault();
             try {
-              onSave(values);
+              await onSave(values);
               onClose();
             } catch (error) {
               setError((error as Error).message);
@@ -141,7 +148,9 @@ export function EditTransportTrip({
             >
               Cancel
             </button>
-            <button className="primary-button">Save departure</button>
+            <button className="primary-button" disabled={pending}>
+              Save departure
+            </button>
           </div>
         </form>
       </DialogContent>

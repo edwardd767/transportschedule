@@ -25,7 +25,7 @@ An interactive first UI prototype based on HotelX's existing Booking screen: whi
 
 Departure times are transcribed from `Speedboat Schedule 2026 - AUG'26.pdf`. The source PDF and the reference screenshot are not included. Each direction is a separate departure; the time in the opposite column is not an arrival time.
 
-Boat assignments, starting 16-seat capacities, reporting lead time, reservations, passenger names and operational statuses are sample data. Passenger activity is initially populated on 3 August 2026. Other August dates start with the source timetable and empty manifests. September begins without departures; create trips or generate a template before assigning a September transfer. All edits, including templates, daily notes and booking transfers, are held in memory and reset on refresh.
+Boat assignments, starting 16-seat capacities, reporting lead time, reservations, passenger names and operational statuses are sample data. Passenger activity is initially populated on 3 August 2026. Other August dates start with the source timetable and empty manifests. September begins without departures; create trips or generate a template before assigning a September transfer. In demo mode, edits reset on refresh. **Sign in to saved data** enables shared transport persistence through the separately deployed Cloudflare Worker and Neon PostgreSQL. See [database setup and deployment](database/README.md).
 
 PDF tide windows are reference text, not automatic sailing authorization or a departure generator. Ambiguous source text is retained: 14 August lists 17:30–15:00 and is flagged for operator confirmation.
 
@@ -41,6 +41,6 @@ The standard `npm run build` still produces the existing Sites version. Sites ho
 
 ## Verification
 
-Run `node scripts/test-transport-planning.mjs` for calendar boundaries, template exclusions and duplicate handling, atomic generation, capacity checks, reassignment, transfer order and boarded/completed protection. These checks also run in the Pages deployment workflow.
+Run `npm run test:transport` for planning rules and authenticated API tests, including competing saves, refresh reloads, atomic transfers and safe database redirects. API tests use a mock database; live persistence must be checked after Worker deployment. These checks also run in the Pages workflow. `npm run build:worker` creates a standalone JavaScript file for the Cloudflare dashboard.
 
 Production compilation, TypeScript validation and transport-rule checks are run before handoff. Optional WebMCP tools (`list_transport_trips`, `open_transport_trip`) are feature-detected. Their runtime checks could not run because the browser tool failed to initialize its kernel assets on this host. UI interactions and those optional tools have not been browser-tested. UI review is required before production use.

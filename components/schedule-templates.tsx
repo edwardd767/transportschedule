@@ -1,4 +1,9 @@
 'use client';
+import { useContext } from 'react';
+import {
+  TransportDataContext,
+  TransportRecovery,
+} from './transport-connection';
 import { useState } from 'react';
 import { CalendarDays, Pencil, Plus } from 'lucide-react';
 import { Choice } from '@/components/hotel-choice';
@@ -26,9 +31,10 @@ export function ScheduleTemplates({
   setup: TransportSetup;
   templates: ScheduleTemplate[];
   trips: Trip[];
-  onChange: (templates: ScheduleTemplate[]) => void;
-  onGenerate: (template: ScheduleTemplate) => void;
+  onChange: (templates: ScheduleTemplate[]) => Promise<void>;
+  onGenerate: (template: ScheduleTemplate) => Promise<void>;
 }) {
+  const pending = Boolean(useContext(TransportDataContext)?.pending);
   const [draft, setDraft] = useState<ScheduleTemplate | null>(null);
   const [times, setTimes] = useState('');
   const [excluded, setExcluded] = useState('');
@@ -180,10 +186,11 @@ export function ScheduleTemplates({
               Choose one boat and travel direction for this template.
             </DialogDescription>
           </DialogHeader>
+          <TransportRecovery />
           {draft && (
             <form
               className="hotel-form"
-              onSubmit={(event) => {
+              onSubmit={async (event) => {
                 event.preventDefault();
                 try {
                   const value = validateTemplate({
@@ -205,7 +212,7 @@ export function ScheduleTemplates({
                     routeId: value.routeId,
                     boatId: value.boatId,
                   });
-                  onChange(
+                  await onChange(
                     templates.some((item) => item.id === value.id)
                       ? templates.map((item) =>
                           item.id === value.id ? value : item,
@@ -345,7 +352,9 @@ export function ScheduleTemplates({
                 >
                   Cancel
                 </button>
-                <button className="primary-button">Save template</button>
+                <button className="primary-button" disabled={pending}>
+                  Save template
+                </button>
               </div>
             </form>
           )}
@@ -360,6 +369,7 @@ export function ScheduleTemplates({
             <DialogTitle>Generate departures</DialogTitle>
             <DialogDescription>{preview?.template.name}</DialogDescription>
           </DialogHeader>
+          <TransportRecovery />
           {preview && (
             <>
               <p>
@@ -391,10 +401,11 @@ export function ScheduleTemplates({
                 </button>
                 <button
                   className="primary-button"
-                  disabled={!preview.added.length}
-                  onClick={() => {
+                  aria-busy={pending}
+                  disabled={pending || !preview.added.length}
+                  onClick={async () => {
                     try {
-                      onGenerate(preview.template);
+                      await onGenerate(preview.template);
                       setPreview(null);
                     } catch (error) {
                       setError((error as Error).message);

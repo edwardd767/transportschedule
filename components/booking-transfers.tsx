@@ -1,4 +1,9 @@
 'use client';
+import { useContext } from 'react';
+import {
+  TransportDataContext,
+  TransportRecovery,
+} from './transport-connection';
 import { useState } from 'react';
 import { CalendarDays, Ship } from 'lucide-react';
 import {
@@ -22,9 +27,10 @@ export function BookingTransfers({
   booking: Booking;
   trips: Trip[];
   onClose: () => void;
-  onSave: (selection: BookingTransferSelection) => void;
+  onSave: (selection: BookingTransferSelection) => Promise<void>;
   onCalendar: (date: string) => void;
 }) {
+  const pending = Boolean(useContext(TransportDataContext)?.pending);
   const linked = trips.filter((trip) =>
     trip.groups.some((group) => group.bookingId === booking.reference),
   );
@@ -67,12 +73,13 @@ export function BookingTransfers({
             {booking.reference} · {booking.guest} · {booking.guests} guests
           </DialogDescription>
         </DialogHeader>
+        <TransportRecovery />
         <form
           className="hotel-form"
-          onSubmit={(event) => {
+          onSubmit={async (event) => {
             event.preventDefault();
             try {
-              onSave(selection);
+              await onSave(selection);
               onClose();
             } catch (error) {
               setError((error as Error).message);
@@ -252,7 +259,9 @@ export function BookingTransfers({
             </button>
             <button
               className="primary-button"
+              aria-busy={pending}
               disabled={
+                pending ||
                 blocked ||
                 (!linked.length && !selection.arrivalId && !selection.returnId)
               }

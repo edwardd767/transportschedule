@@ -1,4 +1,9 @@
 'use client';
+import { useContext } from 'react';
+import {
+  TransportDataContext,
+  TransportRecovery,
+} from './transport-connection';
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Pencil, Plus } from 'lucide-react';
 import { Choice } from '@/components/hotel-choice';
@@ -46,16 +51,18 @@ export function MonthTimetable({
   onBoat: (value: string) => void;
   onRoute: (value: string) => void;
   notes: Record<string, DayNote>;
-  onNote: (date: string, note: DayNote) => void;
+  onNote: (date: string, note: DayNote) => Promise<void>;
   onDay: (date: string) => void;
   onTrip: (trip: Trip) => void;
   onAdd: (date: string) => void;
 }) {
+  const pending = Boolean(useContext(TransportDataContext)?.pending);
   const [editing, setEditing] = useState<{
     date: string;
     note: DayNote;
   } | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const [error, setError] = useState('');
   const dates = monthDates(month);
   const filtered = trips.filter(
     (trip) =>
@@ -335,13 +342,19 @@ export function MonthTimetable({
               {editing ? formatDate(editing.date) : ''}
             </DialogDescription>
           </DialogHeader>
+          <TransportRecovery />
           {editing && (
             <form
               className="hotel-form"
-              onSubmit={(event) => {
+              onSubmit={async (event) => {
                 event.preventDefault();
-                onNote(editing.date, editing.note);
-                setEditing(null);
+                try {
+                  await onNote(editing.date, editing.note);
+                  setError('');
+                  setEditing(null);
+                } catch (e) {
+                  setError((e as Error).message);
+                }
               }}
             >
               {(
@@ -370,6 +383,11 @@ export function MonthTimetable({
               <p className="helper-text">
                 These notes do not create or cancel departures.
               </p>
+              {error && (
+                <p className="form-error" role="alert">
+                  {error}
+                </p>
+              )}
               <div className="form-actions">
                 <button
                   type="button"
@@ -378,7 +396,9 @@ export function MonthTimetable({
                 >
                   Cancel
                 </button>
-                <button className="primary-button">Save notes</button>
+                <button className="primary-button" disabled={pending}>
+                  Save notes
+                </button>
               </div>
             </form>
           )}

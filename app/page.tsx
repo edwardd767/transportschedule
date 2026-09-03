@@ -52,12 +52,12 @@ import { ScheduleTemplates } from '@/components/schedule-templates';
 import { BookingTransfers } from '@/components/booking-transfers';
 import { EditTransportTrip } from '@/components/edit-transport-trip';
 import {
-  assignBookingTransfers,
-  editScheduledTrip,
-  generateTemplate,
-  initialDayNotes,
-  type ScheduleTemplate,
-} from '@/lib/transport-planning';
+  TransportConnection,
+  TransportDataContext,
+  TransportRecovery,
+} from '@/components/transport-connection';
+import { useTransportData, type TransportData } from '@/lib/use-transport-data';
+import { generateTemplate } from '@/lib/transport-planning';
 import {
   Sheet,
   SheetContent,
@@ -74,15 +74,10 @@ import {
 } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
-  initialTrips,
-  initialSetup,
   tripFromSetup,
-  addMinutes,
   countPassengers,
   formatDate,
   moveDate,
-  addGroupToTrip,
-  addTrip,
   type Trip,
 } from '@/lib/transport';
 
@@ -151,6 +146,15 @@ const frontDeskMenu = [
 ];
 
 export default function Home() {
+  const store = useTransportData();
+  return (
+    <TransportDataContext.Provider value={store}>
+      <HomeContent store={store} />
+    </TransportDataContext.Provider>
+  );
+}
+
+function HomeContent({ store }: { store: TransportData }) {
   const [date, setDate] = useState('2026-08-03');
   const [route, setRoute] = useState('all');
   const [query, setQuery] = useState('');
@@ -161,12 +165,9 @@ export default function Home() {
   const activeBooking =
     sampleBookings.find((booking) => booking.reference === bookingReference) ??
     null;
-  const [setup, setSetup] = useState(initialSetup);
-  const [trips, setTrips] = useState(initialTrips);
+  const { setup, trips, templates, dayNotes } = store.state;
   const [scheduleView, setScheduleView] = useState<'day' | 'month'>('day');
   const [boatFilter, setBoatFilter] = useState('all');
-  const [templates, setTemplates] = useState<ScheduleTemplate[]>([]);
-  const [dayNotes, setDayNotes] = useState(initialDayNotes);
   const [transferBooking, setTransferBooking] = useState<Booking | null>(null);
   const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -181,7 +182,9 @@ export default function Home() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [month, setMonth] = useState('2026-08');
   const tripState = useRef(trips);
-  tripState.current = trips;
+  useEffect(() => {
+    tripState.current = trips;
+  }, [trips]);
   const activeRoutes = setup.routes.filter(
     (r) =>
       r.active &&
@@ -218,15 +221,12 @@ export default function Home() {
       )?.id ?? '',
     );
   }
-  function updateTrip(trip: Trip) {
-    setTrips((previous) => previous.map((t) => (t.id === trip.id ? trip : t)));
-  }
   function statusOf(t: Trip) {
     return t.status === 'Scheduled' && countPassengers(t) >= t.capacity
       ? 'Full'
       : t.status;
   }
-  function saveTrip(event: FormEvent<HTMLFormElement>) {
+  async function saveTrip(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     try {
@@ -237,7 +237,16 @@ export default function Home() {
         routeId: formRoute,
         boatId: formBoat,
       });
-      setTrips(addTrip(trips, trip, setup.rules));
+      await store.run({
+        type: 'addTrip',
+        values: {
+          id: trip.id,
+          date: trip.date,
+          time: trip.time,
+          routeId: formRoute,
+          boatId: formBoat,
+        },
+      });
       setDate(trip.date);
       setMonth(trip.date.slice(0, 7));
       setBoatFilter('all');
@@ -246,41 +255,52 @@ export default function Home() {
       setStatusFilter('all');
       setDialog(null);
       setNotice(
-        `${trip.time} ${trip.origin} → ${trip.destination} trip added to the preview.`,
+        `${trip.time} ${trip.origin} → ${trip.destination} trip added.`,
       );
     } catch (e) {
       setError((e as Error).message);
     }
   }
-  function savePassengers(event: FormEvent<HTMLFormElement>) {
+  async function savePassengers(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!selected) return;
     const form = new FormData(event.currentTarget);
     try {
-      const next = addGroupToTrip(selected, {
-        id: crypto.randomUUID(),
-        name: String(form.get('name')),
-        reference: String(form.get('reference')),
-        adults: Number(form.get('adults')),
-        children: Number(form.get('children')),
-        boarded: false,
+      await store.run({
+        type: 'passengers',
+        tripId: selected.id,
+        group: {
+          id: crypto.randomUUID(),
+          name: String(form.get('name')),
+          reference: String(form.get('reference')),
+          adults: Number(form.get('adults')),
+          children: Number(form.get('children')),
+          boarded: false,
+        },
       });
-      updateTrip(next);
       setDialog(null);
       setNotice('Passengers added. Seat availability has been updated.');
     } catch (e) {
       setError((e as Error).message);
     }
   }
-  function changeStatus(value: string) {
+  async function changeStatus(value: string) {
     if (!selected) return;
     if (value === 'Completed' && selected.groups.some((g) => !g.boarded)) {
       setError('Board all assigned parties before completing this trip.');
       return;
     }
-    updateTrip({ ...selected, status: value as Trip['status'] });
-    setError('');
-    setNotice(`Trip ${selected.id} is now ${value.toLowerCase()}.`);
+    try {
+      await store.run({
+        type: 'status',
+        tripId: selected.id,
+        status: value as Trip['status'],
+      });
+      setError('');
+      setNotice(`Trip ${selected.id} is now ${value.toLowerCase()}.`);
+    } catch (e) {
+      setError((e as Error).message);
+    }
   }
   function downloadManifest(trip: Trip) {
     const cell = (value: unknown) => {
@@ -446,6 +466,7 @@ export default function Home() {
           <span>HotelX</span>
         </div>
         <div className="top-tools">
+          <TransportConnection store={store} />
           <button
             className="icon-button help-button"
             aria-label="About this prototype"
@@ -590,8 +611,11 @@ export default function Home() {
         ) : view === 'setup' ? (
           <div className="settings-scroll" key="setup">
             <TransportSetup
+              key={store.mode}
               config={setup}
-              onChange={setSetup}
+              onChange={async (value) => {
+                await store.run({ type: 'setup', value });
+              }}
               onBack={() => setView('schedule')}
               onNotice={setNotice}
               scheduleTemplates={
@@ -599,10 +623,12 @@ export default function Home() {
                   setup={setup}
                   templates={templates}
                   trips={trips}
-                  onChange={setTemplates}
-                  onGenerate={(template) => {
+                  onChange={async (value) => {
+                    await store.run({ type: 'templates', value });
+                  }}
+                  onGenerate={async (template) => {
                     const result = generateTemplate(trips, setup, template);
-                    setTrips(result.trips);
+                    await store.run({ type: 'generate', template });
                     setDate(template.startDate);
                     setMonth(template.startDate.slice(0, 7));
                     setScheduleView('month');
@@ -725,8 +751,8 @@ export default function Home() {
                 onBoat={setBoatFilter}
                 onRoute={setRoute}
                 notes={dayNotes}
-                onNote={(date, note) => {
-                  setDayNotes((previous) => ({ ...previous, [date]: note }));
+                onNote={async (date, note) => {
+                  await store.run({ type: 'dayNote', date, note });
                   setNotice('Daily notes saved.');
                 }}
                 onDay={(date) => {
@@ -1023,8 +1049,9 @@ export default function Home() {
                       </p>
                     </div>
                     <div className="demo-note">
-                      Preview with sample passengers and capacities. Changes in
-                      this prototype reset when the page is refreshed.
+                      {store.mode === 'cloud'
+                        ? 'Shared transport data. Changes are saved after confirmation from the database.'
+                        : 'Demo mode: changes reset on refresh. Sign in to saved data to keep transport changes.'}
                     </div>
                   </div>
                 </section>
@@ -1068,6 +1095,7 @@ export default function Home() {
                   {formatDate(selected.date)} · {selected.time}
                 </SheetDescription>
               </SheetHeader>
+              <TransportRecovery />
               <div className="sheet-body">
                 <div className="trip-facts">
                   <div>
@@ -1184,17 +1212,23 @@ export default function Home() {
                             </div>
                             <button
                               className={`board-button ${g.boarded ? 'is-boarded' : ''}`}
-                              disabled={selected.status !== 'Boarding'}
-                              onClick={() =>
-                                updateTrip({
-                                  ...selected,
-                                  groups: selected.groups.map((group) =>
-                                    group.id === g.id
-                                      ? { ...group, boarded: !group.boarded }
-                                      : group,
-                                  ),
-                                })
+                              disabled={
+                                selected.status !== 'Boarding' ||
+                                Boolean(store.pending)
                               }
+                              onClick={async () => {
+                                try {
+                                  await store.run({
+                                    type: 'board',
+                                    tripId: selected.id,
+                                    groupId: g.id,
+                                    boarded: !g.boarded,
+                                  });
+                                  setError('');
+                                } catch (e) {
+                                  setError((e as Error).message);
+                                }
+                              }}
                             >
                               {g.boarded ? 'Boarded ✓' : 'Board party'}
                             </button>
@@ -1312,6 +1346,7 @@ export default function Home() {
                   : 'An initial transport workflow within the HotelX layout.'}
             </DialogDescription>
           </DialogHeader>
+          <TransportRecovery />
           {dialog === 'trip' && (
             <form onSubmit={saveTrip} className="hotel-form">
               <div className="form-grid">
@@ -1377,7 +1412,7 @@ export default function Home() {
                 <button
                   className="primary-button"
                   type="submit"
-                  disabled={!formRoute || !formBoat}
+                  disabled={Boolean(store.pending) || !formRoute || !formBoat}
                 >
                   Add trip
                 </button>
@@ -1451,7 +1486,11 @@ export default function Home() {
                 >
                   Cancel
                 </button>
-                <button className="primary-button" type="submit">
+                <button
+                  className="primary-button"
+                  type="submit"
+                  disabled={Boolean(store.pending)}
+                >
                   Confirm passengers
                 </button>
               </div>
@@ -1465,9 +1504,10 @@ export default function Home() {
                 parties as boarded.
               </p>
               <p>
-                Boats, capacities and guest records are demonstration data. All
-                changes reset on refresh. Hotel reservations, payments,
-                notifications and operator systems are not connected.
+                Boats, capacities and guest records start as demonstration data.
+                Sign in to saved data to keep transport changes across
+                refreshes. Hotel reservations, payments, notifications and
+                operator systems are not connected.
               </p>
               <p>
                 Booking includes a sample listing and guest details, with a
@@ -1491,8 +1531,12 @@ export default function Home() {
           booking={transferBooking}
           trips={trips}
           onClose={() => setTransferBooking(null)}
-          onSave={(selection) => {
-            setTrips(assignBookingTransfers(trips, transferBooking, selection));
+          onSave={async (selection) => {
+            await store.run({
+              type: 'transfers',
+              bookingReference: transferBooking.reference,
+              selection,
+            });
             setNotice('Booking transfers saved. Seat availability updated.');
           }}
           onCalendar={(date) => {
@@ -1512,11 +1556,14 @@ export default function Home() {
           trip={editingTrip}
           setup={setup}
           onClose={() => setEditingTrip(null)}
-          onSave={(values) => {
+          onSave={async (values) => {
             const current = trips.find((trip) => trip.id === editingTrip.id);
             if (!current)
               throw new Error('This departure is no longer available.');
-            setTrips(editScheduledTrip(trips, setup, current, values));
+            await store.run({
+              type: 'editTrip',
+              values: { ...values, id: current.id },
+            });
             setDate(values.date);
             setMonth(values.date.slice(0, 7));
             setNotice('Departure updated. Existing passengers have been kept.');

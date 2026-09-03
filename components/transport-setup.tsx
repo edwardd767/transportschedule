@@ -1,4 +1,9 @@
 'use client';
+import { useContext } from 'react';
+import {
+  TransportDataContext,
+  TransportRecovery,
+} from './transport-connection';
 import { useState, type FormEvent, type ReactNode } from 'react';
 import {
   ArrowLeft,
@@ -51,11 +56,12 @@ export function TransportSetup({
   scheduleTemplates,
 }: {
   config: Setup;
-  onChange: (value: Setup) => void;
+  onChange: (value: Setup) => Promise<void>;
   onBack: () => void;
   onNotice: (message: string) => void;
   scheduleTemplates: ReactNode;
 }) {
+  const pending = Boolean(useContext(TransportDataContext)?.pending);
   const [tab, setTab] = useState('routes');
   const [editor, setEditor] = useState<Editor | null>(null);
   const [error, setError] = useState('');
@@ -116,7 +122,7 @@ export function TransportSetup({
         : null,
     );
   }
-  function save(event: FormEvent<HTMLFormElement>) {
+  async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!editor) return;
     try {
@@ -151,19 +157,17 @@ export function TransportSetup({
             : [...config.operators, record],
         };
       }
-      onChange(validateSetup(next));
-      onNotice(
-        `${editor.kind[0].toUpperCase() + editor.kind.slice(1)} saved in the preview.`,
-      );
+      await onChange(validateSetup(next));
+      onNotice(`${editor.kind[0].toUpperCase() + editor.kind.slice(1)} saved.`);
       setEditor(null);
     } catch (e) {
       setError((e as Error).message);
     }
   }
-  function saveRules(event: FormEvent<HTMLFormElement>) {
+  async function saveRules(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     try {
-      onChange(validateSetup({ ...config, rules }));
+      await onChange(validateSetup({ ...config, rules }));
       setRulesError('');
       onNotice('Operating rules saved for new departures.');
     } catch (e) {
@@ -371,6 +375,7 @@ export function TransportSetup({
               </div>
               <button
                 className="primary-button"
+                aria-busy={pending}
                 onClick={() => open('operator')}
               >
                 <Plus size={17} /> Add operator
@@ -539,7 +544,11 @@ export function TransportSetup({
                 >
                   Discard changes
                 </button>
-                <button type="submit" className="primary-button">
+                <button
+                  type="submit"
+                  className="primary-button"
+                  disabled={pending}
+                >
                   <Save size={16} /> Save operating rules
                 </button>
               </div>
@@ -556,8 +565,8 @@ export function TransportSetup({
         </p>
       </div>
       <p className="demo-note">
-        Setup is saved for this preview session. Refreshing restores the sample
-        configuration.
+        Sign in to saved data to keep your setup across refreshes. Demo mode
+        uses sample configuration.
       </p>
       <Dialog
         open={editor !== null}
@@ -578,6 +587,7 @@ export function TransportSetup({
                   : 'Add the service provider and contact details.'}
             </DialogDescription>
           </DialogHeader>
+          <TransportRecovery />
           {editor && (
             <form className="hotel-form" onSubmit={save}>
               {editor.kind === 'route' && (
@@ -796,7 +806,11 @@ export function TransportSetup({
                 >
                   Cancel
                 </button>
-                <button type="submit" className="primary-button">
+                <button
+                  type="submit"
+                  className="primary-button"
+                  disabled={pending}
+                >
                   <Save size={16} /> Save {editor.kind}
                 </button>
               </div>
