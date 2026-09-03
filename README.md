@@ -15,7 +15,7 @@ An interactive first UI prototype based on HotelX's existing Booking screen: whi
 - Daily trip listing, date navigation, boat, route and status filters, and guest/trip search.
 - Hotel Settings → Transport Setup, with editable operators, directional routes and boarding locations, boats, seat capacities, operating hours, turnaround times, reporting lead times and notes.
 - Setup drives new trip selectors, operator matching, capacity and timing. Existing departures retain a snapshot of the original configuration.
-- Full monthly timetable using the customer-supplied August 2026 departures, with directions, boats, passenger counts, status, tide windows and holidays. Select a date for its list or a departure for its details; show all departures to expand busy dates.
+- The monthly calendar defaults to a full-month overview fitted to the available screen, with direction counts and first-departure details when space allows. Select a date for all trips or enable **Expanded timetable** for every departure, boat, passenger count, status and tide note. Holiday markers and the daily-note editor remain available in the compact view.
 - Schedule Templates in Transport Setup: date ranges, weekdays, times, boat/route selection, excluded dates, and a preview before generation. Existing departures are skipped and manual changes to generated trips are preserved. The whole generation is rejected if any new departure conflicts.
 - Individual departure editing preserves passengers and checks capacity, overlap, operating hours, and linked arrival/return order. Daily calendar notes are editable separately from departures.
 - Trip details, sample reservation parties, capacity control, boarding and status updates.

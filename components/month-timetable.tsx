@@ -1,11 +1,6 @@
 'use client';
 import { useState } from 'react';
-import {
-  ChevronLeft,
-  ChevronRight,
-  Pencil,
-  Plus,
-} from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, Plus } from 'lucide-react';
 import { Choice } from '@/components/hotel-choice';
 import {
   Dialog,
@@ -61,6 +56,7 @@ export function MonthTimetable({
     note: DayNote;
   } | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const dates = monthDates(month);
   const filtered = trips.filter(
     (trip) =>
       trip.date.startsWith(month) &&
@@ -129,7 +125,7 @@ export function MonthTimetable({
             checked={showAll}
             onChange={(event) => setShowAll(event.target.checked)}
           />{' '}
-          Show all departures
+          Expanded timetable
         </label>
         <span className="timetable-count">{filtered.length} trips</span>
       </div>
@@ -137,39 +133,38 @@ export function MonthTimetable({
         <span className="direction-in">● To hotel</span>
         <span className="direction-out">● From hotel</span>
         <span>
-          Seats shown as booked / capacity. Select a time for trip details.
+          {showAll
+            ? 'Seats shown as booked / capacity. Select a time for trip details.'
+            : 'Trips by direction. Select a date for all departures; use the pencil for daily notes.'}
         </span>
       </div>
       <div
-        className="timetable-scroll"
+        className={`timetable-scroll ${showAll ? 'timetable-expanded' : 'timetable-fit'}`}
         key={month}
         tabIndex={0}
         role="region"
         aria-label="Calendar dates and departures"
       >
-        <div className="timetable-grid">
+        <div
+          className="timetable-grid"
+          style={
+            showAll
+              ? undefined
+              : {
+                  gridTemplateRows: `28px repeat(${dates.length / 7}, minmax(0, 1fr))`,
+                }
+          }
+        >
           {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
             <div className="timetable-weekday" key={day}>
               {day}
             </div>
           ))}
-          {monthDates(month).map((date, index) => {
+          {dates.map((date, index) => {
             if (!date)
               return <div className="timetable-blank" key={`blank-${index}`} />;
             const daily = byDate.get(date) ?? [];
             const note = notes[date] ?? emptyDayNote;
-            const hidden = showAll
-              ? 0
-              : [true, false].reduce(
-                  (count, direction) =>
-                    count +
-                    Math.max(
-                      0,
-                      daily.filter((trip) => trip.toHotel === direction)
-                        .length - 3,
-                    ),
-                  0,
-                );
             return (
               <article className="timetable-day" key={date}>
                 <div className="timetable-date">
@@ -178,108 +173,157 @@ export function MonthTimetable({
                     aria-label={`Open ${formatDate(date)}, ${daily.length} trips`}
                   >
                     <strong>{Number(date.slice(-2))}</strong>
+                    {!showAll && note.holiday && (
+                      <i className="compact-holiday" title={note.holiday}>
+                        <span className="sr-only">{note.holiday}</span>
+                      </i>
+                    )}
                     <span>{daily.length} trips</span>
                   </button>
                   <button
-                    className="icon-button"
+                    className={`icon-button ${note.notes ? 'has-daily-note' : ''}`}
+                    title={note.holiday || note.notes || 'Daily notes'}
                     aria-label={`Edit notes for ${formatDate(date)}`}
                     onClick={() => setEditing({ date, note: { ...note } })}
                   >
                     <Pencil size={13} />
                   </button>
                 </div>
-                {note.holiday && (
-                  <div className="timetable-holiday">{note.holiday}</div>
-                )}
-                {daily.length ? (
-                  <div className="timetable-directions">
+                {!showAll ? (
+                  <div className="compact-directions">
                     {[true, false].map((direction) => {
                       const departures = daily.filter(
                         (trip) => trip.toHotel === direction,
                       );
+                      const first = departures[0];
+                      const label = direction ? 'To hotel' : 'From hotel';
                       return (
-                        <div
+                        <button
                           key={String(direction)}
-                          className={
-                            direction ? 'direction-in' : 'direction-out'
-                          }
+                          className={`compact-direction ${direction ? 'direction-in' : 'direction-out'}`}
+                          onClick={() => onDay(date)}
+                          title={`${formatDate(date)} · ${label}: ${departures.length} trips${first ? ` · First departure ${first.time}, ${first.boat}` : ''}`}
+                          aria-label={`${formatDate(date)}, ${departures.length} ${label.toLowerCase()} trips. Open day listing.`}
                         >
-                          <h3>{direction ? 'To hotel' : 'From hotel'}</h3>
-                          {(showAll ? departures : departures.slice(0, 3)).map(
-                            (trip) => {
-                              const booked = countPassengers(trip);
-                              const status =
-                                trip.status === 'Scheduled' &&
-                                booked >= trip.capacity
-                                  ? 'Full'
-                                  : trip.status;
-                              return (
-                                <button
-                                  key={trip.id}
-                                  className={`calendar-departure ${trip.status === 'Cancelled' ? 'is-cancelled' : ''}`}
-                                  onClick={() => onTrip(trip)}
-                                  aria-label={`${trip.time}, ${trip.origin} to ${trip.destination}, ${trip.boat}, ${booked} of ${trip.capacity} seats booked, ${status}`}
-                                >
-                                  <strong>{trip.time}</strong>
-                                  <span>{trip.boat}</span>
-                                  <small>
-                                    {trip.origin} → {trip.destination}
-                                  </small>
-                                  <span className="calendar-seats">
-                                    {booked}/{trip.capacity}
-                                    {status !== 'Scheduled' && <b>{status}</b>}
-                                  </span>
-                                </button>
-                              );
-                            },
+                          <span className="compact-trip-count">
+                            <b>{departures.length}</b>
+                            <span>
+                              {departures.length === 1 ? 'trip' : 'trips'}
+                            </span>
+                          </span>
+                          {first && (
+                            <>
+                              <strong className="compact-first-time">
+                                {first.time}
+                              </strong>
+                              <span className="compact-first-boat">
+                                {first.boat}
+                              </span>
+                            </>
                           )}
-                          {!departures.length && (
-                            <span className="calendar-no-direction">—</span>
-                          )}
-                        </div>
+                        </button>
                       );
                     })}
                   </div>
                 ) : (
-                  <button
-                    className="calendar-empty-day"
-                    onClick={() => onAdd(date)}
-                  >
-                    <Plus size={15} /> Add departure
-                  </button>
-                )}
-                {hidden > 0 && (
-                  <button className="calendar-more" onClick={() => onDay(date)}>
-                    View all {daily.length} trips <ChevronRight size={13} />
-                  </button>
-                )}
-                {(note.tide || note.restricted || note.notes) && (
-                  <div className="timetable-notes">
-                    {note.tide && (
-                      <p>
-                        <span>Tide window</span>
-                        {note.tide}
-                      </p>
+                  <>
+                    {note.holiday && (
+                      <div className="timetable-holiday">{note.holiday}</div>
                     )}
-                    {note.restricted && (
-                      <p className="tide-restricted">
-                        <span>Restricted window</span>
-                        {note.restricted}
-                      </p>
+                    {daily.length ? (
+                      <div className="timetable-directions">
+                        {[true, false].map((direction) => {
+                          const departures = daily.filter(
+                            (trip) => trip.toHotel === direction,
+                          );
+                          return (
+                            <div
+                              key={String(direction)}
+                              className={
+                                direction ? 'direction-in' : 'direction-out'
+                              }
+                            >
+                              <h3>{direction ? 'To hotel' : 'From hotel'}</h3>
+                              {departures.map((trip) => {
+                                const booked = countPassengers(trip);
+                                const status =
+                                  trip.status === 'Scheduled' &&
+                                  booked >= trip.capacity
+                                    ? 'Full'
+                                    : trip.status;
+                                return (
+                                  <button
+                                    key={trip.id}
+                                    className={`calendar-departure ${trip.status === 'Cancelled' ? 'is-cancelled' : ''}`}
+                                    onClick={() => onTrip(trip)}
+                                    aria-label={`${trip.time}, ${trip.origin} to ${trip.destination}, ${trip.boat}, ${booked} of ${trip.capacity} seats booked, ${status}`}
+                                  >
+                                    <strong>{trip.time}</strong>
+                                    <span>{trip.boat}</span>
+                                    <small>
+                                      {trip.origin} → {trip.destination}
+                                    </small>
+                                    <span className="calendar-seats">
+                                      {booked}/{trip.capacity}
+                                      {status !== 'Scheduled' && (
+                                        <b>{status}</b>
+                                      )}
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                              {!departures.length && (
+                                <span className="calendar-no-direction">—</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <button
+                        className="calendar-empty-day"
+                        onClick={() => onAdd(date)}
+                      >
+                        <Plus size={15} /> Add departure
+                      </button>
                     )}
-                    {note.notes && <p className="tide-note">{note.notes}</p>}
-                  </div>
+                    {(note.tide || note.restricted || note.notes) && (
+                      <div className="timetable-notes">
+                        {note.tide && (
+                          <p>
+                            <span>Tide window</span>
+                            {note.tide}
+                          </p>
+                        )}
+                        {note.restricted && (
+                          <p className="tide-restricted">
+                            <span>Restricted window</span>
+                            {note.restricted}
+                          </p>
+                        )}
+                        {note.notes && (
+                          <p className="tide-note">{note.notes}</p>
+                        )}
+                      </div>
+                    )}
+                  </>
                 )}
               </article>
             );
           })}
         </div>
-        <p className="calendar-source">
-          August timetable and tide windows: supplied customer PDF. Tide notes
-          are reference information; operating hours and boat availability are
-          checked separately when adding trips.
-        </p>
       </div>
+      <p className={`calendar-source ${showAll ? '' : 'calendar-fit-source'}`}>
+        {showAll ? (
+          <>
+            August timetable and tide windows: supplied customer PDF. Tide notes
+            are reference information; operating hours and boat availability are
+            checked separately when adding trips.
+          </>
+        ) : (
+          'Month overview · Counts follow your boat and route filters. Times shown are the first departures. Expand the timetable for every trip.'
+        )}
+      </p>
       <Dialog
         open={editing !== null}
         onOpenChange={(open) => !open && setEditing(null)}
