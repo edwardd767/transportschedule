@@ -267,18 +267,40 @@ p {
   border-radius: 4px;
 }
 .subnav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   padding: 8px 0 12px 44px;
   font-size: 14px;
   color: #b16906;
 }
+.subnav button,
+.subnav span {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+}
+.subnav button {
+  background: none;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  color: inherit;
+  font-size: inherit;
+  cursor: pointer;
+}
+.subnav button:before,
 .subnav span:before {
   content: '';
-  display: inline-block;
   width: 5px;
   height: 5px;
   border-radius: 50%;
   background: var(--orange);
-  margin: 0 11px 2px 0;
+  flex: none;
+}
+.subnav button.active {
+  color: #ae5b00;
+  font-weight: 600;
 }
 .sidebar-foot {
   display: flex;

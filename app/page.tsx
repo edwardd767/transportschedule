@@ -100,6 +100,13 @@ const frontDeskMenu = [
     svg: inhouseGuestSvg,
     extra: 'Total Deposit: 48 Room(s) | MYR 9,203.00',
   },
+  {
+    key: 'transport',
+    label: 'Transport',
+    detail: 'Speedboat schedule & passengers',
+    icon: Ship,
+    view: 'schedule' as const,
+  },
   { key: 'service-request', label: 'Service Request', detail: 'Task To Complete: 0', svg: serviceRequestSvg },
 ];
 
@@ -423,29 +430,25 @@ export default function Home() {
               Booking
             </button>
             <button
-              className={view === 'frontdesk' ? 'active' : ''}
-              aria-current={view === 'frontdesk' ? 'page' : undefined}
+              className={
+                view === 'frontdesk' || view === 'schedule' ? 'active' : ''
+              }
+              aria-current={
+                view === 'frontdesk' || view === 'schedule' ? 'page' : undefined
+              }
               onClick={() => setView('frontdesk')}
             >
               <ConciergeBell />
               Front Desk
             </button>
-            {view === 'frontdesk' && (
+            {(view === 'frontdesk' || view === 'schedule') && (
               <div className="subnav">
-                <span>Front Desk</span>
-              </div>
-            )}
-            <button
-              className={view === 'schedule' ? 'active' : ''}
-              aria-current={view === 'schedule' ? 'page' : undefined}
-              onClick={() => setView('schedule')}
-            >
-              <Ship />
-              Transport<span className="new-label">NEW</span>
-            </button>
-            {view === 'schedule' && (
-              <div className="subnav">
-                <span>Schedule</span>
+                <button
+                  className={view === 'schedule' ? 'active' : ''}
+                  onClick={() => setView('schedule')}
+                >
+                  Transport
+                </button>
               </div>
             )}
             <button disabled title="Existing hotel module">
@@ -548,18 +551,27 @@ export default function Home() {
             </div>
             <div className="frontdesk-menu">
               {frontDeskMenu.map((item) => {
+                const Icon = item.icon;
                 return (
                   <button
                     key={item.key}
                     className="frontdesk-item"
-                    onClick={() =>
-                      setNotice(
-                        `${item.label} is a preview entry and is not connected to live hotel data.`,
-                      )
-                    }
+                    onClick={() => {
+                      if (item.view) {
+                        setView(item.view);
+                      } else {
+                        setNotice(
+                          `${item.label} is a preview entry and is not connected to live hotel data.`,
+                        );
+                      }
+                    }}
                   >
                     <span className="frontdesk-icon">
-                      <SvgIcon size={22} markup={item.svg} />
+                      {item.svg ? (
+                        <SvgIcon size={22} markup={item.svg} />
+                      ) : Icon ? (
+                        <Icon size={22} />
+                      ) : null}
                     </span>
                     <span className="frontdesk-body">
                       <strong>{item.label}</strong>
