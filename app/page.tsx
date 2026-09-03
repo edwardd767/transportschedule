@@ -115,7 +115,7 @@ export default function Home() {
   const [query, setQuery] = useState('');
   const [view, setView] = useState<
     'schedule' | 'setup' | 'booking' | 'frontdesk'
-  >('schedule');
+  >('booking');
   const [bookingReference, setBookingReference] = useState<string | null>(null);
   const activeBooking =
     sampleBookings.find((booking) => booking.reference === bookingReference) ??
