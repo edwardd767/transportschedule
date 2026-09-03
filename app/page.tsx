@@ -10,6 +10,8 @@ import { flushSync } from 'react-dom';
 import {
   ArrowRight,
   ArrowRightLeft,
+  BedDouble,
+  BellRing,
   CalendarDays,
   ChartNoAxesCombined,
   ChevronLeft,
@@ -17,14 +19,18 @@ import {
   CircleHelp,
   Clock3,
   ConciergeBell,
+  DoorOpen,
   Languages,
   List,
+  LogIn,
   LogOut,
+  MapPin,
   Plus,
   Search,
   Settings,
   Ship,
   Users,
+  UsersRound,
   Waves,
 } from 'lucide-react';
 import hamburgerIcon from './Hamburger.png';
@@ -66,13 +72,29 @@ import {
   type Trip,
 } from '@/lib/transport';
 
+const frontDeskMenu = [
+  { key: 'check-in', label: 'Check-in', detail: 'Check-in: 1 out of 1', icon: LogIn },
+  { key: 'group-check-in', label: 'Group Check In', detail: 'Check-in: 0 out of 0', icon: UsersRound },
+  { key: 'check-out', label: 'Check Out', detail: 'Check-Out: 1 out of 8', icon: LogOut },
+  { key: 'room-assignment', label: 'Room Assignment', detail: 'Assign Room: 0', icon: BedDouble },
+  { key: 'stay-view', label: 'Stay View', detail: 'Guest Room Location', icon: MapPin },
+  {
+    key: 'inhouse-guest',
+    label: 'Inhouse Guest',
+    detail: 'In House: 82 Room(s) | 91 Guest(s)',
+    icon: DoorOpen,
+    extra: 'Total Deposit: 48 Room(s) | MYR 9,203.00',
+  },
+  { key: 'service-request', label: 'Service Request', detail: 'Task To Complete: 0', icon: BellRing },
+];
+
 export default function Home() {
   const [date, setDate] = useState('2026-08-03');
   const [route, setRoute] = useState('all');
   const [query, setQuery] = useState('');
-  const [view, setView] = useState<'schedule' | 'setup' | 'booking'>(
-    'schedule',
-  );
+  const [view, setView] = useState<
+    'schedule' | 'setup' | 'booking' | 'frontdesk'
+  >('schedule');
   const [bookingReference, setBookingReference] = useState<string | null>(null);
   const activeBooking =
     sampleBookings.find((booking) => booking.reference === bookingReference) ??
@@ -385,10 +407,19 @@ export default function Home() {
               <CalendarDays />
               Booking
             </button>
-            <button disabled title="Existing hotel module">
+            <button
+              className={view === 'frontdesk' ? 'active' : ''}
+              aria-current={view === 'frontdesk' ? 'page' : undefined}
+              onClick={() => setView('frontdesk')}
+            >
               <ConciergeBell />
               Front Desk
             </button>
+            {view === 'frontdesk' && (
+              <div className="subnav">
+                <span>Front Desk</span>
+              </div>
+            )}
             <button
               className={view === 'schedule' ? 'active' : ''}
               aria-current={view === 'schedule' ? 'page' : undefined}
@@ -457,6 +488,8 @@ export default function Home() {
           <div className="breadcrumb">
             {view === 'booking' ? (
               <span>{activeBooking ? '... / Booking' : 'Booking'}</span>
+            ) : view === 'frontdesk' ? (
+              <span>Front Desk</span>
             ) : (
               <>
                 {view === 'setup' ? 'Hotel Settings' : 'Transport'}{' '}
@@ -487,6 +520,47 @@ export default function Home() {
               onBack={() => setView('schedule')}
               onNotice={setNotice}
             />
+          </div>
+        ) : view === 'frontdesk' ? (
+          <div className="frontdesk-scroll" key="frontdesk">
+            <div className="listing-title">
+              <div>
+                <h1>Front Desk</h1>
+                <span className="context-tag">
+                  <ConciergeBell size={14} /> Operations
+                </span>
+              </div>
+            </div>
+            <div className="frontdesk-menu">
+              {frontDeskMenu.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.key}
+                    className="frontdesk-item"
+                    onClick={() =>
+                      setNotice(
+                        `${item.label} is a preview entry and is not connected to live hotel data.`,
+                      )
+                    }
+                  >
+                    <span className="frontdesk-icon">
+                      <Icon size={22} />
+                    </span>
+                    <span className="frontdesk-body">
+                      <strong>{item.label}</strong>
+                      <small>{item.detail}</small>
+                      {item.extra && <em>{item.extra}</em>}
+                    </span>
+                    <ChevronRight size={18} className="frontdesk-chevron" />
+                  </button>
+                );
+              })}
+            </div>
+            <div className="demo-note">
+              Preview Front Desk menu with sample counts. Features are not
+              connected to the live hotel system.
+            </div>
           </div>
         ) : (
           <>

@@ -865,6 +865,77 @@ p {
   text-align: center;
   margin-top: 17px;
 }
+.frontdesk-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+  padding: 3px 5px 8px 3px;
+  margin: 0 -3px;
+}
+.frontdesk-menu {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.frontdesk-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+  background: #fff;
+  border: 1px solid #e9e9ec;
+  border-radius: 9px;
+  padding: 16px;
+  box-shadow: 0 2px 6px #0000000a;
+}
+.frontdesk-item:hover {
+  border-color: #f3c382;
+  box-shadow: 0 4px 12px #00000012;
+}
+.frontdesk-icon {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: #fff0da;
+  color: #e3890e;
+}
+.frontdesk-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.frontdesk-body strong {
+  font-size: 15px;
+  font-weight: 600;
+  color: #292929;
+}
+.frontdesk-body small {
+  font-size: 12px;
+  color: #7a7c84;
+}
+.frontdesk-body em {
+  font-style: normal;
+  font-size: 11px;
+  color: #b16906;
+  font-weight: 600;
+}
+.frontdesk-chevron {
+  margin-left: auto;
+  flex: none;
+  color: #c4c6cc;
+}
+@media (max-width: 900px) {
+  .frontdesk-menu {
+    grid-template-columns: 1fr;
+  }
+}
 .empty-state {
   text-align: center;
   padding: 60px 20px;
