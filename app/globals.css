@@ -3447,6 +3447,43 @@ p {
   color: #ab6a09;
   background: #fff3d9;
 }
+.timetable-fit .timetable-day.has-event {
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+.timetable-fit .timetable-day.has-event .timetable-date {
+  height: 20px;
+  margin-bottom: 2px;
+}
+.timetable-fit .timetable-day.has-event .compact-event {
+  height: 19px;
+  min-height: 19px;
+  margin-bottom: 3px;
+  padding: 1px 4px;
+}
+.timetable-fit .timetable-day.has-event .compact-directions {
+  gap: 4px;
+}
+.timetable-fit .timetable-day.has-event .compact-direction {
+  min-height: 24px;
+  height: 24px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3px;
+  padding: 2px 4px;
+  line-height: 16px;
+  overflow: hidden;
+}
+.timetable-fit .timetable-day.has-event .compact-trip-count > span,
+.timetable-fit .timetable-day.has-event .compact-first-boat {
+  display: none;
+}
+.timetable-fit .timetable-day.has-event .compact-first-time {
+  display: block;
+  flex-shrink: 0;
+  font-size: 12px;
+}
 .compact-directions {
   display: none;
   grid-template-columns: repeat(2, minmax(0, 1fr));
