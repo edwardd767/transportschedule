@@ -27,6 +27,7 @@ import {
   Users,
   Waves,
 } from 'lucide-react';
+import hamburgerIcon from './Hamburger.png';
 import {
   SidebarProvider,
   Sidebar,
@@ -336,11 +337,7 @@ export default function Home() {
       <header className="topbar">
         <div className="brand">
           <SidebarTrigger className="menu-button">
-            <img
-              src="/Hamburger.png"
-              alt="Menu"
-              className="hamburger-icon"
-            />
+            <img src={hamburgerIcon.src} alt="Menu" className="hamburger-icon" />
           </SidebarTrigger>
           <span>HotelX</span>
         </div>
