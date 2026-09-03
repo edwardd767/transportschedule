@@ -158,7 +158,7 @@ export function TransportSetup({
         };
       }
       await onChange(validateSetup(next));
-      onNotice(`${editor.kind[0].toUpperCase() + editor.kind.slice(1)} saved.`);
+      onNotice(`${editor.kind === 'boat' ? 'Service' : editor.kind[0].toUpperCase() + editor.kind.slice(1)} saved.`);
       setEditor(null);
     } catch (e) {
       setError((e as Error).message);
@@ -189,7 +189,7 @@ export function TransportSetup({
         <div>
           <h1>Transport Setup</h1>
           <span className="context-tag">
-            <Ship size={14} /> Speedboat
+            <Ship size={14} /> Transport
           </span>
         </div>
         <button className="secondary-button" onClick={onBack}>
@@ -419,7 +419,7 @@ export function TransportSetup({
                     <TableCell>
                       <button
                         className="edit-button"
-                        aria-label={`Edit boat ${b.name}`}
+                        aria-label={`Edit service ${b.name}`}
                         onClick={() => open('boat', b)}
                       >
                         <Pencil size={16} />
@@ -509,7 +509,7 @@ export function TransportSetup({
               </div>
               <p className="helper-text">
                 Trips must finish within service hours. Turnaround time reserves
-                the boat after its journey. Reporting lead time is shown with
+                the service after its journey. Reporting lead time is shown with
                 new trip instructions.
               </p>
               <label>
@@ -524,8 +524,8 @@ export function TransportSetup({
                 />
               </label>
               <p className="helper-text">
-                Tide and weather notes guide staff; the prototype does not
-                calculate tide availability. The reporting lead time is an
+                Weather and operating notes guide staff; the prototype does not
+                calculate external service availability. The reporting lead time is an
                 editable demonstration default.
               </p>
               {rulesError && (
@@ -691,7 +691,7 @@ export function TransportSetup({
                       maxLength={70}
                       value={editor.record.name}
                       onChange={(e) => updateDraft({ name: e.target.value })}
-                      placeholder="e.g. Rawa 04"
+                      placeholder="e.g. Island Transfer 01"
                     />
                   </label>
                   <label>
