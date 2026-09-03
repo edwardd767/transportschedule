@@ -875,8 +875,8 @@ p {
   margin: 0 -3px;
 }
 .frontdesk-menu {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 12px;
   margin-top: 12px;
 }
@@ -930,11 +930,6 @@ p {
   margin-left: auto;
   flex: none;
   color: #c4c6cc;
-}
-@media (max-width: 900px) {
-  .frontdesk-menu {
-    grid-template-columns: 1fr;
-  }
 }
 .empty-state {
   text-align: center;
