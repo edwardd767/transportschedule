@@ -27,8 +27,8 @@ export const sampleBookings: Booking[] = [
   {
     reference: 'P003496',
     guest: 'Edward Jacob',
-    arrival: '2026-08-31',
-    departure: '2026-09-03',
+    arrival: '2026-09-01',
+    departure: '2026-09-04',
     status: 'Inhouse',
     rooms: [{ code: 'DLK', count: 2 }],
     assignedRooms: 2,
@@ -39,8 +39,8 @@ export const sampleBookings: Booking[] = [
   {
     reference: 'P003495',
     guest: 'Chia',
-    arrival: '2026-08-29',
-    departure: '2026-08-30',
+    arrival: '2026-09-03',
+    departure: '2026-09-04',
     status: 'No Show',
     rooms: [{ code: 'SPK', count: 1 }],
     assignedRooms: 0,
@@ -51,8 +51,8 @@ export const sampleBookings: Booking[] = [
   {
     reference: 'P003494',
     guest: 'Ms.Khor',
-    arrival: '2026-08-29',
-    departure: '2026-08-30',
+    arrival: '2026-09-03',
+    departure: '2026-09-04',
     status: 'No Show',
     rooms: [
       { code: 'SPK', count: 1 },
@@ -66,8 +66,8 @@ export const sampleBookings: Booking[] = [
   {
     reference: 'P003493',
     guest: 'Tini',
-    arrival: '2026-08-29',
-    departure: '2026-08-30',
+    arrival: '2026-09-04',
+    departure: '2026-09-05',
     status: 'No Show',
     rooms: [{ code: 'SPK', count: 1 }],
     assignedRooms: 0,
@@ -78,8 +78,8 @@ export const sampleBookings: Booking[] = [
   {
     reference: 'P003492',
     guest: 'Aaron',
-    arrival: '2026-08-29',
-    departure: '2026-09-03',
+    arrival: '2026-09-05',
+    departure: '2026-09-10',
     status: 'Inhouse',
     rooms: [
       { code: 'SPK', count: 1 },
@@ -94,8 +94,8 @@ export const sampleBookings: Booking[] = [
   {
     reference: 'P003491',
     guest: 'Nurzaim',
-    arrival: '2026-08-28',
-    departure: '2026-08-30',
+    arrival: '2026-09-02',
+    departure: '2026-09-04',
     status: 'Booked',
     rooms: [{ code: 'SPK', count: 1 }],
     assignedRooms: 0,
@@ -106,8 +106,8 @@ export const sampleBookings: Booking[] = [
   {
     reference: 'P003490',
     guest: 'Syuhaidah',
-    arrival: '2026-08-28',
-    departure: '2026-09-01',
+    arrival: '2026-09-06',
+    departure: '2026-09-10',
     status: 'Checkout',
     rooms: [{ code: 'DLK', count: 1 }],
     assignedRooms: 1,
@@ -118,8 +118,8 @@ export const sampleBookings: Booking[] = [
   {
     reference: 'P003489',
     guest: 'Helmy',
-    arrival: '2026-08-30',
-    departure: '2026-09-02',
+    arrival: '2026-09-07',
+    departure: '2026-09-10',
     status: 'Booked',
     rooms: [{ code: 'SPT', count: 1 }],
     assignedRooms: 0,
@@ -130,8 +130,8 @@ export const sampleBookings: Booking[] = [
   {
     reference: 'P003488',
     guest: 'Afiefah',
-    arrival: '2026-08-31',
-    departure: '2026-09-04',
+    arrival: '2026-09-09',
+    departure: '2026-09-13',
     status: 'Booked',
     rooms: [{ code: 'DLK', count: 1 }],
     assignedRooms: 0,
