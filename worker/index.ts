@@ -7,6 +7,12 @@ import {
 import { ApiError, queryNeon, type Query } from './neon';
 
 type Env = { DATABASE_URL?: string; TRANSPORT_PASSWORD?: string };
+function passwordStatus(password: string | undefined) {
+  if (!password) return 'missing';
+  if (password.length < 16) return 'too_short';
+  if (password.length > 256) return 'too_long';
+  return 'ready';
+}
 const encoder = new TextEncoder();
 const allowedOrigins = new Set([
   'https://edwardd767.github.io',
@@ -172,12 +178,13 @@ export function createWorker(query: Query = queryNeon) {
         if (request.method === 'GET' && (path === '/health' || path === '/')) {
           return reply({
             apiVersion: 1,
+            diagnosticsVersion: 2,
             service: 'HotelX Transport API',
             status: 'ready',
             storageConfigured: Boolean(env.DATABASE_URL),
-            signInConfigured: Boolean(
-              env.TRANSPORT_PASSWORD && env.TRANSPORT_PASSWORD.length >= 16,
-            ),
+            signInConfigured:
+              passwordStatus(env.TRANSPORT_PASSWORD) === 'ready',
+            signInStatus: passwordStatus(env.TRANSPORT_PASSWORD),
           });
         }
         if (!['/session', '/state', '/action'].includes(path))
@@ -189,7 +196,7 @@ export function createWorker(query: Query = queryNeon) {
             503,
           );
         const secret = env.TRANSPORT_PASSWORD;
-        if (!secret || secret.length < 16 || secret.length > 256)
+        if (!secret || passwordStatus(secret) !== 'ready')
           throw new ApiError(
             'SIGN_IN_CONFIGURATION',
             'Set the TRANSPORT_PASSWORD Worker secret to a password of 16–256 characters.',

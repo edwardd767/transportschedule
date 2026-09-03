@@ -93,6 +93,31 @@ async function call(
   };
 }
 assert.equal((await call('/health')).data.apiVersion, 1);
+for (const [password, status] of [
+  [undefined, 'missing'],
+  ['', 'missing'],
+  ['a'.repeat(15), 'too_short'],
+  ['a'.repeat(16), 'ready'],
+  ['a'.repeat(256), 'ready'],
+  ['a'.repeat(257), 'too_long'],
+]) {
+  const environment = { ...env, TRANSPORT_PASSWORD: password };
+  const health = await call('/health', { environment });
+  assert.equal(health.data.diagnosticsVersion, 2);
+  assert.equal(health.data.signInStatus, status);
+  assert.equal(health.data.signInConfigured, status === 'ready');
+  if (password)
+    assert.ok(
+      !JSON.stringify(health.data).includes(password),
+      'health must not reveal the password',
+    );
+  const session = await call('/session', { environment, body: { password } });
+  assert.equal(
+    session.status,
+    status === 'ready' ? 200 : 503,
+    'health and sign-in use the same configuration rules',
+  );
+}
 assert.equal(reads, 0, 'health does not wake the database');
 assert.equal((await call('/state')).status, 401);
 assert.equal((await call('/action', { body: {} })).status, 401);

@@ -37,6 +37,12 @@ Both deployments are needed: pushing the repository publishes the frontend
 through GitHub Actions; it does not automatically deploy the standalone Worker.
 The existing GitHub Pages URL remains unchanged.
 
+If sign-in configuration is false, health diagnostics version 2 reports
+`signInStatus` as `missing`, `too_short`, or `too_long`. Correct the secret in
+Cloudflare and deploy it. The accepted length is 16–256 characters. `ready`
+means the deployed secret passes this check; no password value or exact length
+is returned by health diagnostics.
+
 ## What is saved
 
 Operators, boats, routes, rules, departures, passenger parties, boarding/status,
