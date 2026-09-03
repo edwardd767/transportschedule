@@ -15,12 +15,22 @@ export type Operator = {
   email: string;
   active: boolean;
 };
+export type ServiceType =
+  | 'Speedboat'
+  | 'Taxi Pickup'
+  | 'Taxi Drop-off'
+  | 'Hotel Van'
+  | 'Shuttle'
+  | 'Other';
+export type ServiceBookingMode = 'Scheduled' | 'OnDemand';
 export type Boat = {
   id: string;
   name: string;
   operatorId: string;
   capacity: number;
   status: 'Active' | 'Maintenance' | 'Inactive';
+  serviceType: ServiceType;
+  bookingMode: ServiceBookingMode;
 };
 export type TransportRoute = {
   id: string;
@@ -49,20 +59,42 @@ export const initialSetup: TransportSetup = {
   operators: [
     {
       id: 'operator-1',
-      name: 'Hotel Boat Services',
+      name: 'Hotel Transport Services',
       contact: '',
       phone: '',
       email: '',
       active: true,
     },
   ],
-  boats: [1, 2, 3].map((n) => ({
-    id: `boat-${n}`,
-    name: `Rawa 0${n}`,
-    operatorId: 'operator-1',
-    capacity: 16,
-    status: 'Active',
-  })),
+  boats: [
+    ...[1, 2, 3].map((n) => ({
+      id: `boat-${n}`,
+      name: `Rawa 0${n}`,
+      operatorId: 'operator-1',
+      capacity: 16,
+      status: 'Active' as const,
+      serviceType: 'Speedboat' as const,
+      bookingMode: 'Scheduled' as const,
+    })),
+    {
+      id: 'taxi-pickup',
+      name: 'Taxi Pickup',
+      operatorId: 'operator-1',
+      capacity: 4,
+      status: 'Active',
+      serviceType: 'Taxi Pickup',
+      bookingMode: 'OnDemand',
+    },
+    {
+      id: 'taxi-dropoff',
+      name: 'Taxi Drop-off',
+      operatorId: 'operator-1',
+      capacity: 4,
+      status: 'Active',
+      serviceType: 'Taxi Drop-off',
+      bookingMode: 'OnDemand',
+    },
+  ],
   routes: [
     {
       id: 'inbound',
@@ -135,7 +167,7 @@ export function validateSetup(setup: TransportSetup) {
     );
   for (const [label, items] of [
     ['operator', setup.operators],
-    ['boat', setup.boats],
+    ['service', setup.boats],
   ] as const) {
     const names = items.map((i) => i.name.trim().toLowerCase());
     if (names.some((n) => !n) || new Set(names).size !== names.length)
@@ -143,9 +175,9 @@ export function validateSetup(setup: TransportSetup) {
   }
   for (const boat of setup.boats) {
     if (!Number.isInteger(boat.capacity) || boat.capacity < 1)
-      throw new Error('Boat capacity must be at least one whole seat.');
+      throw new Error('Service capacity must be at least one whole passenger.');
     if (!setup.operators.some((o) => o.id === boat.operatorId))
-      throw new Error('Choose an operator for each boat.');
+      throw new Error('Choose an operator for each service.');
   }
   for (const route of setup.routes) {
     if (
@@ -188,13 +220,13 @@ export function tripFromSetup(
   );
   if (!route || !boat)
     throw new Error(
-      'Select an active route and available boat in Transport Setup.',
+      'Select an active route and available scheduled service in Transport Setup.',
     );
   const operator = setup.operators.find(
     (o) => o.id === route.operatorId && o.active,
   );
   if (!operator || boat.operatorId !== route.operatorId)
-    throw new Error('Select a boat belonging to the active route operator.');
+    throw new Error('Select a scheduled service belonging to the active route operator.');
   return {
     id: values.id,
     date: values.date,

@@ -42,6 +42,8 @@ import {
   type TransportRoute,
   type Boat,
   type Operator,
+  type ServiceBookingMode,
+  type ServiceType,
 } from '@/lib/transport';
 
 type Editor =
@@ -100,6 +102,8 @@ export function TransportSetup({
           operatorId,
           capacity: 16,
           status: 'Active',
+          serviceType: 'Speedboat',
+          bookingMode: 'Scheduled',
         },
       });
     if (kind === 'operator')
@@ -385,6 +389,7 @@ export function TransportSetup({
               <TableHeader>
                 <TableRow>
                   <TableHead>Service</TableHead>
+                  <TableHead>Type / booking</TableHead>
                   <TableHead>Operator</TableHead>
                   <TableHead>Passenger capacity</TableHead>
                   <TableHead>Status</TableHead>
@@ -401,6 +406,16 @@ export function TransportSetup({
                         <Ship size={18} />
                         {b.name}
                       </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="contact-cell">
+                        {b.serviceType ?? 'Speedboat'}
+                        <small>
+                          {(b.bookingMode ?? 'Scheduled') === 'Scheduled'
+                            ? 'Scheduled timetable'
+                            : 'On-demand booking'}
+                        </small>
+                      </div>
                     </TableCell>
                     <TableCell>{operatorName(b.operatorId)}</TableCell>
                     <TableCell>
@@ -694,6 +709,45 @@ export function TransportSetup({
                       placeholder="e.g. Island Transfer 01"
                     />
                   </label>
+                  <div className="form-grid">
+                    <label>
+                      Service type
+                      <Choice
+                        label="Service type"
+                        value={editor.record.serviceType ?? 'Speedboat'}
+                        onChange={(v) => {
+                          const serviceType = v as ServiceType;
+                          const bookingMode: ServiceBookingMode =
+                            serviceType === 'Speedboat' || serviceType === 'Shuttle'
+                              ? 'Scheduled'
+                              : 'OnDemand';
+                          updateDraft({ serviceType, bookingMode });
+                        }}
+                        items={[
+                          'Speedboat',
+                          'Taxi Pickup',
+                          'Taxi Drop-off',
+                          'Hotel Van',
+                          'Shuttle',
+                          'Other',
+                        ].map((v) => ({ value: v, label: v }))}
+                      />
+                    </label>
+                    <label>
+                      Booking method
+                      <Choice
+                        label="Booking method"
+                        value={editor.record.bookingMode ?? 'Scheduled'}
+                        onChange={(v) =>
+                          updateDraft({ bookingMode: v as ServiceBookingMode })
+                        }
+                        items={[
+                          { value: 'Scheduled', label: 'Scheduled timetable' },
+                          { value: 'OnDemand', label: 'On-demand booking' },
+                        ]}
+                      />
+                    </label>
+                  </div>
                   <label>
                     Operator
                     <Choice
@@ -732,9 +786,9 @@ export function TransportSetup({
                     </label>
                   </div>
                   <p className="helper-text">
-                    Use the operator-approved passenger capacity. Services in
-                    maintenance or inactive status are unavailable for new
-                    trips.
+                    Scheduled services appear in the timetable and reserve seats.
+                    On-demand services such as taxis are entered directly in the
+                    guest booking. Capacity is the maximum passengers for one service.
                   </p>
                 </>
               )}

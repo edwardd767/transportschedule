@@ -1,6 +1,7 @@
 import {
   applyTransportAction,
   newTransportState,
+  normalizeTransportState,
   type TransportRecord,
   type TransportState,
 } from '../lib/transport-state';
@@ -160,7 +161,7 @@ function decode(row: string[]): TransportRecord {
       'The saved data needs administrator attention.',
       503,
     );
-  return { revision, state };
+  return { revision, state: normalizeTransportState(state) };
 }
 
 export function createWorker(

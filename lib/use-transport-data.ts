@@ -4,6 +4,7 @@ import { privateAccessFromHash } from './private-link';
 import {
   applyTransportAction,
   newTransportState,
+  normalizeTransportState,
   type TransportAction,
   type TransportRecord,
 } from './transport-state';
@@ -63,7 +64,7 @@ function record(data: unknown): TransportRecord {
       'The server did not return saved transport data. Check the Transport API deployment.',
     );
   }
-  return value;
+  return { ...value, state: normalizeTransportState(value.state) };
 }
 export function useTransportData() {
   const [data, setData] = useState<TransportRecord>(() => ({

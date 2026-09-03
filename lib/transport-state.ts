@@ -8,6 +8,8 @@ import {
   type TransportSetup,
   type Trip,
   type Group,
+  type ServiceBookingMode,
+  type ServiceType,
 } from './transport';
 import {
   initialDayNotes,
@@ -21,12 +23,19 @@ import {
   type BookingTransferSelection,
 } from './transport-planning';
 import { sampleBookings } from './bookings';
+import {
+  addBookingTransportLeg,
+  removeBookingTransportLeg,
+  type BookingTransportLeg,
+  type BookingTransportLegInput,
+} from './booking-transport';
 
 export type TransportState = {
   setup: TransportSetup;
   trips: Trip[];
   templates: ScheduleTemplate[];
   dayNotes: Record<string, DayNote>;
+  bookingLegs: BookingTransportLeg[];
 };
 export type DepartureInput = {
   id: string;
@@ -46,6 +55,16 @@ export type TransportAction =
   | { type: 'status'; tripId: string; status: Trip['status'] }
   | { type: 'board'; tripId: string; groupId: string; boarded: boolean }
   | {
+      type: 'bookingTransportAdd';
+      bookingReference: string;
+      values: BookingTransportLegInput;
+    }
+  | {
+      type: 'bookingTransportRemove';
+      bookingReference: string;
+      legId: string;
+    }
+  | {
       type: 'transfers';
       bookingReference: string;
       selection: BookingTransferSelection;
@@ -57,7 +76,27 @@ export function newTransportState(): TransportState {
     trips: initialTrips,
     templates: [],
     dayNotes: initialDayNotes,
+    bookingLegs: [],
   });
+}
+
+export function normalizeTransportState(state: TransportState): TransportState {
+  return {
+    ...state,
+    setup: {
+      ...state.setup,
+      boats: state.setup.boats.map((service) => {
+        const type = service.serviceType ?? 'Speedboat';
+        return {
+          ...service,
+          serviceType: type,
+          bookingMode:
+            service.bookingMode ?? (type === 'Speedboat' ? 'Scheduled' : 'OnDemand'),
+        };
+      }),
+    },
+    bookingLegs: Array.isArray(state.bookingLegs) ? state.bookingLegs : [],
+  };
 }
 
 function object(value: unknown): Record<string, unknown> {
@@ -139,13 +178,34 @@ function setup(value: unknown): TransportSetup {
   const boats = list(v.boats).map((item) => {
     const b = object(item);
     if (!['Active', 'Maintenance', 'Inactive'].includes(String(b.status)))
-      throw new Error('Choose a valid boat status.');
+      throw new Error('Choose a valid service status.');
+    const allowedTypes: ServiceType[] = [
+      'Speedboat',
+      'Taxi Pickup',
+      'Taxi Drop-off',
+      'Hotel Van',
+      'Shuttle',
+      'Other',
+    ];
+    const serviceType = allowedTypes.includes(String(b.serviceType) as ServiceType)
+      ? (String(b.serviceType) as ServiceType)
+      : 'Speedboat';
+    const allowedModes: ServiceBookingMode[] = ['Scheduled', 'OnDemand'];
+    const bookingMode = allowedModes.includes(
+      String(b.bookingMode) as ServiceBookingMode,
+    )
+      ? (String(b.bookingMode) as ServiceBookingMode)
+      : serviceType === 'Speedboat'
+        ? 'Scheduled'
+        : 'OnDemand';
     return {
-      id: text(b.id, 'boat ID'),
-      name: text(b.name, 'boat name'),
+      id: text(b.id, 'service ID'),
+      name: text(b.name, 'service name'),
       operatorId: text(b.operatorId, 'operator'),
       capacity: number(b.capacity, 'capacity', 1),
       status: b.status as TransportSetup['boats'][number]['status'],
+      serviceType,
+      bookingMode,
     };
   });
   const routes = list(v.routes).map((item) => {
@@ -213,7 +273,7 @@ export function applyTransportAction(
           !state.setup.boats.some((b) => b.id === t.boatId)
         )
           throw new Error(
-            'Choose an existing route and boat for each template.',
+            'Choose an existing route and scheduled service for each template.',
           );
       }
       return { ...state, templates };
@@ -322,6 +382,63 @@ export function applyTransportAction(
           g.id === groupId ? { ...g, boarded: boolean(action.boarded) } : g,
         ),
       });
+    }
+    case 'bookingTransportAdd': {
+      const booking = sampleBookings.find(
+        (b) =>
+          b.reference === text(action.bookingReference, 'booking reference'),
+      );
+      if (!booking) throw new Error('This demo booking does not exist.');
+      const v = object(action.values);
+      const direction = String(v.direction);
+      if (direction !== 'arrival' && direction !== 'departure')
+        throw new Error('Choose arrival or departure transport.');
+      const values: BookingTransportLegInput = {
+        id: text(v.id, 'transport leg ID', true, 200),
+        direction,
+        serviceId: text(v.serviceId, 'service'),
+        tripId: text(v.tripId, 'departure', false, 200),
+        date: text(v.date, 'date', false, 10),
+        time: text(v.time, 'time', false, 5),
+        pickup: text(v.pickup, 'pickup location', false, 150),
+        dropoff: text(v.dropoff, 'drop-off location', false, 150),
+        passengers: number(v.passengers, 'passengers', 1, booking.guests),
+        flightNo: text(v.flightNo, 'flight/reference', false, 80),
+        vehicle: text(v.vehicle, 'vehicle', false, 100),
+        driver: text(v.driver, 'driver', false, 100),
+        remarks: text(v.remarks, 'remarks', false, 1000),
+      };
+      const normalized = normalizeTransportState(state);
+      const result = addBookingTransportLeg(
+        normalized.trips,
+        normalized.setup,
+        normalized.bookingLegs,
+        booking,
+        values,
+      );
+      return {
+        ...normalized,
+        trips: result.trips,
+        bookingLegs: [...normalized.bookingLegs, result.leg],
+      };
+    }
+    case 'bookingTransportRemove': {
+      const bookingReference = text(
+        action.bookingReference,
+        'booking reference',
+      );
+      const normalized = normalizeTransportState(state);
+      const result = removeBookingTransportLeg(
+        normalized.trips,
+        normalized.bookingLegs,
+        bookingReference,
+        text(action.legId, 'transport leg ID', true, 200),
+      );
+      return {
+        ...normalized,
+        trips: result.trips,
+        bookingLegs: result.legs,
+      };
     }
     case 'transfers': {
       const booking = sampleBookings.find(

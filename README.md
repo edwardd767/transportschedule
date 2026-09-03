@@ -11,9 +11,9 @@ An interactive first UI prototype based on HotelX's existing Booking screen: whi
 ## Included
 
 - Booking listing and booking details based on the supplied HotelX screens, using demonstration guest records. Search, status and arrival-date filters, sorting, and the back button work in the preview.
-- Booking → Transport assigns arrival and return trips, starting with check-in/check-out dates. Assignments appear in the same passenger manifests used by the schedule. Seat checks are atomic across both legs; reassignment releases the previous seats. Boarded/completed transfers are protected. Other hotel booking actions remain reference cards.
+- Booking → Transport supports multiple arrival and departure legs. Scheduled services reserve an existing departure and update its passenger manifest, while on-demand services such as taxi pickup/drop-off capture date, time, pickup, drop-off, vehicle/driver and remarks directly in the booking.
 - Daily trip listing, date navigation, boat, route and status filters, and guest/trip search.
-- Hotel Settings → Transport Setup, with editable operators, directional routes and boarding locations, boats, seat capacities, operating hours, turnaround times, reporting lead times and notes.
+- Hotel Settings → Transport Setup, with editable operators, directional routes and boarding locations, transport services, service types, booking methods and passenger capacities, operating hours, turnaround times, reporting lead times and notes.
 - Setup drives new trip selectors, operator matching, capacity and timing. Existing departures retain a snapshot of the original configuration.
 - The monthly calendar defaults to a full-month overview fitted to the available screen, with direction counts and first-departure details when space allows. Select a date for all trips or enable **Expanded timetable** for every departure, boat, passenger count, status and tide note. Holiday markers and the daily-note editor remain available in the compact view.
 - Schedule Templates in Transport Setup: date ranges, weekdays, times, boat/route selection, excluded dates, and a preview before generation. Existing departures are skipped and manual changes to generated trips are preserved. The whole generation is rejected if any new departure conflicts.

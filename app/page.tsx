@@ -165,7 +165,7 @@ function HomeContent({ store }: { store: TransportData }) {
   const activeBooking =
     sampleBookings.find((booking) => booking.reference === bookingReference) ??
     null;
-  const { setup, trips, templates, dayNotes } = store.state;
+  const { setup, trips, templates, dayNotes, bookingLegs } = store.state;
   const [scheduleView, setScheduleView] = useState<'day' | 'month'>('day');
   const [boatFilter, setBoatFilter] = useState('all');
   const [transferBooking, setTransferBooking] = useState<Booking | null>(null);
@@ -593,17 +593,34 @@ function HomeContent({ store }: { store: TransportData }) {
             onNotice={setNotice}
             transportSummary={
               activeBooking
-                ? trips
-                    .filter((trip) =>
-                      trip.groups.some(
-                        (group) => group.bookingId === activeBooking.reference,
+                ? [
+                    ...bookingLegs
+                      .filter(
+                        (leg) =>
+                          leg.bookingReference === activeBooking.reference,
+                      )
+                      .map(
+                        (leg) =>
+                          `${leg.direction === 'arrival' ? 'Arrival' : 'Departure'}: ${leg.date} ${leg.time} · ${leg.serviceName}`,
                       ),
-                    )
-                    .map(
-                      (trip) =>
-                        `${trip.toHotel ? 'Arrival' : 'Return'}: ${trip.date} ${trip.time} · ${trip.boat}${trip.status === 'Cancelled' ? ' (Cancelled — reassign)' : ''}`,
-                    )
-                    .join(' | ')
+                    ...trips
+                      .filter(
+                        (trip) =>
+                          !bookingLegs.some(
+                            (leg) =>
+                              leg.bookingReference === activeBooking.reference &&
+                              leg.tripId === trip.id,
+                          ) &&
+                          trip.groups.some(
+                            (group) =>
+                              group.bookingId === activeBooking.reference,
+                          ),
+                      )
+                      .map(
+                        (trip) =>
+                          `${trip.toHotel ? 'Arrival' : 'Departure'}: ${trip.date} ${trip.time} · ${trip.boat}${trip.status === 'Cancelled' ? ' (Cancelled — reassign)' : ''}`,
+                      ),
+                  ].join(' | ')
                 : undefined
             }
             onOpenTransport={setTransferBooking}
@@ -1511,7 +1528,7 @@ function HomeContent({ store }: { store: TransportData }) {
               </p>
               <p>
                 Booking includes a sample listing and guest details, with a
-                Transport card for assigning arrival and return departures.
+                Transport card for adding scheduled or on-demand arrival and departure services.
                 Transport Setup is available under Hotel Settings. Other HotelX
                 sections are included as visual context.
               </p>
@@ -1530,14 +1547,24 @@ function HomeContent({ store }: { store: TransportData }) {
           key={transferBooking.reference}
           booking={transferBooking}
           trips={trips}
+          setup={setup}
+          bookingLegs={bookingLegs}
           onClose={() => setTransferBooking(null)}
-          onSave={async (selection) => {
+          onAdd={async (values) => {
             await store.run({
-              type: 'transfers',
+              type: 'bookingTransportAdd',
               bookingReference: transferBooking.reference,
-              selection,
+              values,
             });
-            setNotice('Booking transfers saved. Seat availability updated.');
+            setNotice('Transport added to booking.');
+          }}
+          onRemove={async (legId) => {
+            await store.run({
+              type: 'bookingTransportRemove',
+              bookingReference: transferBooking.reference,
+              legId,
+            });
+            setNotice('Transport removed from booking.');
           }}
           onCalendar={(date) => {
             setTransferBooking(null);
