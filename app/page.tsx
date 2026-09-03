@@ -582,10 +582,6 @@ export default function Home() {
                 );
               })}
             </div>
-            <div className="demo-note">
-              Preview Front Desk menu with sample counts. Features are not
-              connected to the live hotel system.
-            </div>
           </div>
         ) : (
           <>
