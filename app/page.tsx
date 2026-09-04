@@ -285,11 +285,20 @@ function HomeContent({ store }: { store: TransportData }) {
   }
   async function changeStatus(value: string) {
     if (!selected) return;
-    if (value === 'Completed' && selected.groups.some((g) => !g.boarded)) {
-      setError('Board all assigned parties before completing this trip.');
-      return;
-    }
     try {
+      // Boarding is no longer a user-facing workflow. Mark any legacy
+      // passenger flags internally before completing so the existing
+      // private API remains backward compatible.
+      if (value === 'Completed') {
+        for (const group of selected.groups.filter((g) => !g.boarded)) {
+          await store.run({
+            type: 'board',
+            tripId: selected.id,
+            groupId: group.id,
+            boarded: true,
+          });
+        }
+      }
       await store.run({
         type: 'status',
         tripId: selected.id,
@@ -912,7 +921,6 @@ function HomeContent({ store }: { store: TransportData }) {
                       label="Trip status"
                       items={[
                         'all',
-                        'Boarding',
                         'Scheduled',
                         'Full',
                         'Delayed',
@@ -1116,7 +1124,6 @@ function HomeContent({ store }: { store: TransportData }) {
                     onChange={changeStatus}
                     items={[
                       'Scheduled',
-                      'Boarding',
                       'Delayed',
                       'Cancelled',
                       'Completed',
@@ -1127,8 +1134,7 @@ function HomeContent({ store }: { store: TransportData }) {
                   className="secondary-button edit-departure-button"
                   disabled={
                     selected.status === 'Completed' ||
-                    selected.status === 'Cancelled' ||
-                    selected.groups.some((group) => group.boarded)
+                    selected.status === 'Cancelled'
                   }
                   onClick={() => setEditingTrip(selected)}
                 >
@@ -1154,14 +1160,6 @@ function HomeContent({ store }: { store: TransportData }) {
                           <span>/ {selected.capacity}</span>
                         </strong>
                         <small>Seats booked</small>
-                      </div>
-                      <div>
-                        <strong>
-                          {selected.groups
-                            .filter((g) => g.boarded)
-                            .reduce((n, g) => n + g.adults + g.children, 0)}
-                        </strong>
-                        <small>Passengers boarded</small>
                       </div>
                     </div>
                     <div className="passenger-heading">
@@ -1198,28 +1196,6 @@ function HomeContent({ store }: { store: TransportData }) {
                                   : ''}
                               </small>
                             </div>
-                            <button
-                              className={`board-button ${g.boarded ? 'is-boarded' : ''}`}
-                              disabled={
-                                selected.status !== 'Boarding' ||
-                                Boolean(store.pending)
-                              }
-                              onClick={async () => {
-                                try {
-                                  await store.run({
-                                    type: 'board',
-                                    tripId: selected.id,
-                                    groupId: g.id,
-                                    boarded: !g.boarded,
-                                  });
-                                  setError('');
-                                } catch (e) {
-                                  setError((e as Error).message);
-                                }
-                              }}
-                            >
-                              {g.boarded ? 'Boarded ✓' : 'Board party'}
-                            </button>
                           </div>
                         ))
                       ) : (
@@ -1232,10 +1208,6 @@ function HomeContent({ store }: { store: TransportData }) {
                         </div>
                       )}
                     </div>
-                    <p className="helper-text">
-                      Boarding applies to everyone in a reservation party. Set
-                      the trip to Boarding to update attendance.
-                    </p>
                 </div>
               </div>
               <div className="sheet-actions">

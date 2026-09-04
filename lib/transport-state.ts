@@ -95,6 +95,9 @@ export function normalizeTransportState(state: TransportState): TransportState {
         };
       }),
     },
+    trips: state.trips.map((trip) =>
+      trip.status === 'Boarding' ? { ...trip, status: 'Scheduled' } : trip,
+    ),
     bookingLegs: Array.isArray(state.bookingLegs) ? state.bookingLegs : [],
   };
 }

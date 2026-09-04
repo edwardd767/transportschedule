@@ -427,7 +427,7 @@ export const initialTrips: Trip[] = Object.entries(august).flatMap(
             routeId: leg ? 'outbound' : 'inbound',
             boatId: `boat-${(index % 2) + 1}`,
           }),
-          status: demo && index === 0 && leg === 0 ? 'Boarding' : 'Scheduled',
+          status: 'Scheduled',
           groups,
         } as Trip;
       }),
