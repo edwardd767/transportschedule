@@ -6,6 +6,7 @@ import {
   type TransportState,
 } from '../lib/transport-state';
 import { ApiError, queryNeon, type Query } from './neon';
+import { createNormalizedTransportStorage } from './normalized-storage';
 import { privateLinkSha256 } from './private-link-config';
 import { privateKeyPattern } from '../lib/private-link';
 
@@ -24,12 +25,6 @@ const allowedOrigins = new Set([
 const expirySeconds = 12 * 60 * 60;
 const recordId = 'hotel-paradise';
 const rate = new Map<string, { until: number; attempts: number }>();
-const readSql =
-  'SELECT revision::text, state::text FROM public.hotelx_transport_state WHERE id = $1';
-const insertSql =
-  'INSERT INTO public.hotelx_transport_state (id, state) VALUES ($1, $2::jsonb) ON CONFLICT (id) DO NOTHING RETURNING revision::text, state::text';
-const updateSql =
-  'UPDATE public.hotelx_transport_state SET state = $1::jsonb, revision = revision + 1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND revision = $3::integer RETURNING revision::text';
 
 async function key(secret: string) {
   return crypto.subtle.importKey(
@@ -168,6 +163,7 @@ export function createWorker(
   query: Query = queryNeon,
   verifier = privateLinkSha256,
 ) {
+  const storage = createNormalizedTransportStorage(query);
   return {
     async fetch(request: Request, env: Env): Promise<Response> {
       const origin = request.headers.get('Origin');
@@ -194,11 +190,13 @@ export function createWorker(
         const path = new URL(request.url).pathname;
         if (request.method === 'GET' && (path === '/health' || path === '/')) {
           return reply({
-            apiVersion: 2,
-            diagnosticsVersion: 2,
+            apiVersion: 3,
+            diagnosticsVersion: 3,
             service: 'HotelX Transport API',
             status: 'ready',
             storageConfigured: Boolean(env.DATABASE_URL),
+            storageModel: 'normalized-tables',
+            storageSchemaVersion: 2,
             privateLinkConfigured: /^[a-f0-9]{64}$/.test(verifier),
             signInConfigured:
               passwordStatus(env.TRANSPORT_PASSWORD) === 'ready',
@@ -266,20 +264,12 @@ export function createWorker(
           );
         const connection = env.DATABASE_URL.trim();
         if (path === '/state' && request.method === 'GET') {
-          const rows = await query(connection, readSql, [recordId]);
-          if (rows.length) return reply(decode(rows[0]));
-          const inserted = await query(connection, insertSql, [
+          const row = await storage.readOrInitialize(
+            connection,
             recordId,
-            JSON.stringify(newTransportState()),
-          ]);
-          if (inserted.length) return reply(decode(inserted[0]));
-          const existing = await query(connection, readSql, [recordId]);
-          if (!existing.length)
-            throw new ApiError(
-              'STORAGE_INIT',
-              'Could not initialize transport storage. Try again.',
-            );
-          return reply(decode(existing[0]));
+            newTransportState(),
+          );
+          return reply(decode(row));
         }
         if (path === '/action' && request.method === 'POST') {
           const body = await jsonBody(request, 256 * 1024);
@@ -289,14 +279,14 @@ export function createWorker(
               'Reload saved data before saving.',
               400,
             );
-          const rows = await query(connection, readSql, [recordId]);
-          if (!rows.length)
+          const row = await storage.read(connection, recordId);
+          if (!row)
             throw new ApiError(
               'RELOAD_REQUIRED',
               'Reload saved data before saving.',
               409,
             );
-          const current = decode(rows[0]);
+          const current = decode(row);
           if (current.revision !== body.revision)
             throw new ApiError(
               'CONFLICT',
@@ -316,18 +306,19 @@ export function createWorker(
               'The prototype data has reached its size limit.',
               413,
             );
-          const saved = await query(connection, updateSql, [
-            encoded,
+          const savedRevision = await storage.save(
+            connection,
             recordId,
-            String(current.revision),
-          ]);
-          if (!saved.length)
+            current.revision,
+            state,
+          );
+          if (!savedRevision)
             throw new ApiError(
               'CONFLICT',
               'Someone else saved changes. Reload saved data, review your form, then save again.',
               409,
             );
-          return reply({ revision: Number(saved[0][0]), state });
+          return reply({ revision: savedRevision, state });
         }
         throw new ApiError('METHOD', 'This method is not supported.', 405);
       } catch (error) {

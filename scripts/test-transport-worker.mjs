@@ -45,13 +45,15 @@ const env = {
   TRANSPORT_PASSWORD: secret,
 };
 let stored,
+  legacyStored,
   reads = 0,
   writes = 0,
   inserts = 0;
 let synchronizeReads = false,
   waiting = [];
 async function query(_connection, sql, params) {
-  if (sql.startsWith('SELECT')) {
+  if (/^CREATE (?:TABLE|INDEX|OR REPLACE FUNCTION)/.test(sql)) return [];
+  if (sql.includes('/* normalized-read */')) {
     reads++;
     const result = stored
       ? [[String(stored.revision), JSON.stringify(stored.state)]]
@@ -66,20 +68,28 @@ async function query(_connection, sql, params) {
       });
     return result;
   }
-  if (sql.startsWith('INSERT')) {
-    if (stored) return [];
+  if (sql.includes('/* normalized-legacy-exists */'))
+    return [[legacyStored ? 'public.hotelx_transport_state' : '']];
+  if (sql.includes('/* normalized-legacy-read */'))
+    return legacyStored
+      ? [[String(legacyStored.revision), JSON.stringify(legacyStored.state)]]
+      : [];
+  if (sql.includes('/* normalized-initialize */')) {
+    if (stored) return [[null]];
     inserts++;
-    stored = { revision: 1, state: JSON.parse(params[1]) };
-    return [['1', JSON.stringify(stored.state)]];
+    stored = { revision: Number(params[1]), state: JSON.parse(params[2]) };
+    return [[String(stored.revision)]];
   }
-  assert.match(
-    sql,
-    /WHERE id = \$2 AND revision = \$3::integer RETURNING revision::text/,
-  );
-  if (stored.revision !== Number(params[2])) return [];
-  writes++;
-  stored = { revision: stored.revision + 1, state: JSON.parse(params[0]) };
-  return [[String(stored.revision)]];
+  if (sql.includes('/* normalized-save */')) {
+    if (!stored || stored.revision !== Number(params[1])) return [[null]];
+    writes++;
+    stored = {
+      revision: stored.revision + 1,
+      state: JSON.parse(params[2]),
+    };
+    return [[String(stored.revision)]];
+  }
+  throw new Error('Unexpected mock SQL: ' + sql.slice(0, 80));
 }
 const worker = createWorker(query, verifier);
 let ip = 1;
@@ -113,7 +123,9 @@ async function call(
     data: response.status === 204 ? null : await response.json(),
   };
 }
-assert.equal((await call('/health')).data.apiVersion, 2);
+assert.equal((await call('/health')).data.apiVersion, 3);
+assert.equal((await call('/health')).data.storageModel, 'normalized-tables');
+assert.equal((await call('/health')).data.storageSchemaVersion, 2);
 assert.equal((await call('/health')).data.privateLinkConfigured, true);
 for (const [password, status] of [
   [undefined, 'missing'],
@@ -125,7 +137,7 @@ for (const [password, status] of [
 ]) {
   const environment = { ...env, TRANSPORT_PASSWORD: password };
   const health = await call('/health', { environment });
-  assert.equal(health.data.diagnosticsVersion, 2);
+  assert.equal(health.data.diagnosticsVersion, 3);
   assert.equal(health.data.signInStatus, status);
   assert.equal(health.data.signInConfigured, status === 'ready');
   if (password)
@@ -232,6 +244,20 @@ assert.ok(
   ),
 );
 assert.equal(inserts, 1, 'racing initial loads seed only once');
+
+const migratedState = structuredClone(stored.state);
+const migratedRevision = stored.revision + 7;
+stored = undefined;
+legacyStored = { revision: migratedRevision, state: migratedState };
+const migrated = await call('/state', {
+  token,
+  service: createWorker(query, verifier),
+});
+assert.equal(migrated.status, 200);
+assert.equal(migrated.data.revision, migratedRevision);
+assert.deepEqual(migrated.data.state, migratedState);
+assert.equal(stored.revision, migratedRevision);
+legacyStored = undefined;
 const noteAction = (notes) => ({
   type: 'dayNote',
   date: '2026-09-04',
@@ -248,7 +274,7 @@ assert.equal(
   reloaded.data.state.dayNotes['2026-09-04'].notes,
   'Saved test note',
 );
-assert.equal(inserts, 1, 'new Worker instance does not reset saved data');
+assert.equal(inserts, 2, 'new Worker instance does not reset saved data');
 assert.equal(
   (
     await call('/action', {
