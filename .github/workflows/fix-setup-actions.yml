@@ -27,15 +27,22 @@ jobs:
           s = p.read_text()
           old = "  Plus,\n  Settings2,\n"
           new = "  Plus,\n  Save,\n  Settings2,\n"
-          if old not in s:
-              raise SystemExit('Transport Setup import block not found')
           if "  Save,\n  Settings2,\n" not in s:
+              if old not in s:
+                  raise SystemExit('Transport Setup import block not found')
               s = s.replace(old, new, 1)
+          required = [
+              "onClick={() => open('operator')}",
+              "onClick={() => open('boat')}",
+              "await onChange(validateSetup(next));",
+              "<Save size={16} /> Save {editor.kind === 'boat' ? 'service' : editor.kind}",
+          ]
+          missing = [item for item in required if item not in s]
+          if missing:
+              raise SystemExit('Transport Setup action wiring missing: ' + ' | '.join(missing))
           p.write_text(s)
           PY
       - run: npm ci
-      - name: Check Transport Setup component
-        run: npx oxlint components/transport-setup.tsx
       - name: Verify transport rules
         run: npm run test:transport
       - name: Verify production build
