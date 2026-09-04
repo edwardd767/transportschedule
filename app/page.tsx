@@ -72,7 +72,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   tripFromSetup,
   countPassengers,
@@ -1147,16 +1146,7 @@ function HomeContent({ store }: { store: TransportData }) {
                     follow-up.
                   </p>
                 )}
-                <Tabs defaultValue="passengers" className="detail-tabs">
-                  <TabsList variant="line">
-                    <TabsTrigger value="passengers">
-                      Passengers ({countPassengers(selected)})
-                    </TabsTrigger>
-                    <TabsTrigger value="information">
-                      Trip information
-                    </TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="passengers">
+                <div className="detail-tabs">
                     <div className="passenger-summary">
                       <div>
                         <strong>
@@ -1246,59 +1236,7 @@ function HomeContent({ store }: { store: TransportData }) {
                       Boarding applies to everyone in a reservation party. Set
                       the trip to Boarding to update attendance.
                     </p>
-                  </TabsContent>
-                  <TabsContent value="information">
-                    <dl className="information-list">
-                      <div>
-                        <dt>Boarding location</dt>
-                        <dd>{selected.meetingPoint}</dd>
-                      </div>
-                      <div>
-                        <dt>Destination</dt>
-                        <dd>{selected.destination}</dd>
-                      </div>
-                      <div>
-                        <dt>Transport type</dt>
-                        <dd>Shared speedboat</dd>
-                      </div>
-                      <div>
-                        <dt>Seat allocation</dt>
-                        <dd>{selected.capacity} seats</dd>
-                      </div>
-                      <div>
-                        <dt>Schedule source</dt>
-                        <dd>
-                          Customer’s August 2026 timetable; added trips are
-                          manual or template-generated preview entries.
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Operator</dt>
-                        <dd>{selected.operator}</dd>
-                      </div>
-                      <div>
-                        <dt>Reporting lead time</dt>
-                        <dd>
-                          {selected.boardingLeadMinutes} minutes before
-                          departure
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Operating notes</dt>
-                        <dd>
-                          {selected.operatingNotes || 'No additional notes'}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Travel duration</dt>
-                        <dd>
-                          {selected.durationMinutes} minutes reserved, including
-                          loading and unloading luggage.
-                        </dd>
-                      </div>
-                    </dl>
-                  </TabsContent>
-                </Tabs>
+                </div>
               </div>
               <div className="sheet-actions">
                 <button
