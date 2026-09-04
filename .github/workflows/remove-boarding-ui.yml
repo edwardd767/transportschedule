@@ -1,0 +1,101 @@
+name: Remove Boarding UI
+
+on:
+  push:
+    paths:
+      - '.github/workflows/remove-boarding-ui.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: main
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Remove boarding UI and migrate legacy boarding status
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          # 1) Remove Boarding controls from the Transport status screen.
+          p = Path('app/page.tsx')
+          s = p.read_text()
+
+          s = s.replace("                        'Boarding',\n                        'Scheduled',\n", "                        'Scheduled',\n", 1)
+          s = s.replace("                      'Scheduled',\n                      'Boarding',\n                      'Delayed',\n", "                      'Scheduled',\n                      'Delayed',\n", 1)
+
+          old_complete = """    if (value === 'Completed' && selected.groups.some((g) => !g.boarded)) {\n      setError('Board all assigned parties before completing this trip.');\n      return;\n    }\n    try {\n      await store.run({\n        type: 'status',\n        tripId: selected.id,\n        status: value as Trip['status'],\n      });\n"""
+          new_complete = """    try {\n      // Boarding is no longer a user-facing workflow. Mark any legacy\n      // passenger flags internally before completing so the existing\n      // private API remains backward compatible.\n      if (value === 'Completed') {\n        for (const group of selected.groups.filter((g) => !g.boarded)) {\n          await store.run({\n            type: 'board',\n            tripId: selected.id,\n            groupId: group.id,\n            boarded: true,\n          });\n        }\n      }\n      await store.run({\n        type: 'status',\n        tripId: selected.id,\n        status: value as Trip['status'],\n      });\n"""
+          if old_complete not in s:
+              raise SystemExit('Completion boarding guard not found')
+          s = s.replace(old_complete, new_complete, 1)
+
+          old_edit = """                  disabled={\n                    selected.status === 'Completed' ||\n                    selected.status === 'Cancelled' ||\n                    selected.groups.some((group) => group.boarded)\n                  }\n"""
+          new_edit = """                  disabled={\n                    selected.status === 'Completed' ||\n                    selected.status === 'Cancelled'\n                  }\n"""
+          if old_edit not in s:
+              raise SystemExit('Edit departure boarding restriction not found')
+          s = s.replace(old_edit, new_edit, 1)
+
+          old_boarded_summary = """                      <div>\n                        <strong>\n                          {selected.groups\n                            .filter((g) => g.boarded)\n                            .reduce((n, g) => n + g.adults + g.children, 0)}\n                        </strong>\n                        <small>Passengers boarded</small>\n                      </div>\n"""
+          if old_boarded_summary not in s:
+              raise SystemExit('Passengers boarded summary not found')
+          s = s.replace(old_boarded_summary, '', 1)
+
+          board_start = s.find('                            <button\n                              className={`board-button')
+          if board_start < 0:
+              raise SystemExit('Board party button start not found')
+          board_end_marker = '                            </button>\n'
+          board_end = s.find(board_end_marker, board_start)
+          if board_end < 0:
+              raise SystemExit('Board party button end not found')
+          board_end += len(board_end_marker)
+          s = s[:board_start] + s[board_end:]
+
+          old_helper = """                    <p className=\"helper-text\">\n                      Boarding applies to everyone in a reservation party. Set\n                      the trip to Boarding to update attendance.\n                    </p>\n"""
+          if old_helper not in s:
+              raise SystemExit('Boarding helper text not found')
+          s = s.replace(old_helper, '', 1)
+
+          if "'Boarding'," in s or 'Board party' in s or 'Passengers boarded' in s:
+              raise SystemExit('Visible boarding UI still exists in page.tsx')
+          p.write_text(s)
+
+          # 2) Demo data should no longer start with a Boarding status.
+          p = Path('lib/transport.ts')
+          s = p.read_text()
+          old_demo = "          status: demo && index === 0 && leg === 0 ? 'Boarding' : 'Scheduled',\n"
+          if old_demo not in s:
+              raise SystemExit('Demo Boarding status not found')
+          s = s.replace(old_demo, "          status: 'Scheduled',\n", 1)
+          p.write_text(s)
+
+          # 3) Existing cloud records saved as Boarding are displayed as Scheduled.
+          p = Path('lib/transport-state.ts')
+          s = p.read_text()
+          marker = """    },\n    bookingLegs: Array.isArray(state.bookingLegs) ? state.bookingLegs : [],\n"""
+          replacement = """    },\n    trips: state.trips.map((trip) =>\n      trip.status === 'Boarding' ? { ...trip, status: 'Scheduled' } : trip,\n    ),\n    bookingLegs: Array.isArray(state.bookingLegs) ? state.bookingLegs : [],\n"""
+          if marker not in s:
+              raise SystemExit('normalizeTransportState marker not found')
+          s = s.replace(marker, replacement, 1)
+          p.write_text(s)
+          PY
+      - run: npm ci
+      - name: Verify transport rules
+        run: npm run test:transport
+      - name: Verify production build
+        run: npm run build:pages
+      - name: Commit change
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/page.tsx lib/transport.ts lib/transport-state.ts
+          git diff --cached --quiet && exit 0
+          git commit -m "Remove boarding controls and status"
+          git push origin main
