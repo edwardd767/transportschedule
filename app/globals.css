@@ -1597,6 +1597,9 @@ p {
   margin-left: auto;
   font-size: 12px;
 }
+.setup-panel > .settings-section-label {
+  padding: 0 18px 2px;
+}
 .rules-form textarea {
   width: 100%;
   border: 1px solid #dfe1e6;
@@ -3296,6 +3299,31 @@ p {
   background: #fff;
   border-radius: 5px;
   cursor: pointer;
+}
+.transfer-options .transfer-option > span {
+  flex: 1;
+  min-width: 0;
+}
+.transport-remove-button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #7c7f84;
+  flex-shrink: 0;
+}
+.transport-remove-button:hover {
+  background: #f4f4f5;
+  color: #55585d;
+}
+.transport-remove-button:disabled {
+  opacity: 0.45;
 }
 .transfer-option:has(input:checked) {
   border-color: #e99b33;

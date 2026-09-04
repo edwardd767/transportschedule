@@ -879,6 +879,20 @@ function HomeContent({ store }: { store: TransportData }) {
                         })),
                       ]}
                     />
+                    <Choice
+                      value={statusFilter}
+                      onChange={setStatusFilter}
+                      label="Trip status"
+                      items={[
+                        'all',
+                        'Scheduled',
+                        'Full',
+                        'Cancelled',
+                      ].map((s) => ({
+                        value: s,
+                        label: s === 'all' ? 'All statuses' : s,
+                      }))}
+                    />
                     <label className="search-field">
                       <Search size={18} />
                       <input
@@ -902,20 +916,6 @@ function HomeContent({ store }: { store: TransportData }) {
                   </div>
                   <div className="list-subhead">
                     <h2>{formatDate(date)}</h2>
-                    <Choice
-                      value={statusFilter}
-                      onChange={setStatusFilter}
-                      label="Trip status"
-                      items={[
-                        'all',
-                        'Scheduled',
-                        'Full',
-                        'Cancelled',
-                      ].map((s) => ({
-                        value: s,
-                        label: s === 'all' ? 'All statuses' : s,
-                      }))}
-                    />
                   </div>
                   <div
                     className="schedule-scroll"

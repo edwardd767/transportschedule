@@ -1,7 +1,7 @@
 'use client';
 
 import { useContext, useMemo, useState, type FormEvent } from 'react';
-import { CalendarDays, Car, MapPin, Plus, Ship, Trash2, Users } from 'lucide-react';
+import { CalendarDays, Car, MapPin, Plus, Ship, Users } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -26,6 +26,23 @@ import {
 
 function ServiceIcon({ type }: { type: string }) {
   return type === 'Speedboat' ? <Ship size={17} /> : <Car size={17} />;
+}
+
+function DeleteIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path
+        fill="currentColor"
+        d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-2 6h10l-.7 11.1A2 2 0 0 1 14.3 22h-4.6a2 2 0 0 1-2-1.9L7 9Z"
+      />
+    </svg>
+  );
 }
 
 export function BookingTransfers({
@@ -166,7 +183,9 @@ export function BookingTransfers({
               </span>
               <button
                 type="button"
-                className="edit-button"
+                className="transport-remove-button"
+                aria-label={`Remove ${leg.serviceName}`}
+                title="Remove transport"
                 disabled={pending}
                 onClick={async () => {
                   try {
@@ -177,7 +196,7 @@ export function BookingTransfers({
                   }
                 }}
               >
-                <Trash2 size={15} /> Remove
+                <DeleteIcon size={18} />
               </button>
             </div>
           ))}
