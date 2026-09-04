@@ -274,5 +274,11 @@ assert.equal(stored.revision, migratedRevision);
 legacyStored = undefined;
 """
 s = replace_once(s, migration_marker, migration_test, 'legacy migration test')
+s = replace_once(
+    s,
+    "assert.equal(inserts, 1, 'new Worker instance does not reset saved data');",
+    "assert.equal(inserts, 2, 'new Worker instance does not reset saved data');",
+    'post-migration insert count',
+)
 
 p.write_text(s)
