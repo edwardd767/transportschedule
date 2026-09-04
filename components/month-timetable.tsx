@@ -73,9 +73,6 @@ export function MonthTimetable({
   const byDate = new Map<string, Trip[]>();
   for (const trip of [...filtered].sort((a, b) => a.time.localeCompare(b.time)))
     byDate.set(trip.date, [...(byDate.get(trip.date) ?? []), trip]);
-  const monthEvents = dates.flatMap((date) =>
-    date && notes[date]?.holiday ? [{ date, name: notes[date].holiday }] : [],
-  );
   return (
     <section className="timetable" aria-label="Monthly transport timetable">
       <div className="timetable-controls">
@@ -148,24 +145,6 @@ export function MonthTimetable({
             : 'Trips by direction. Select a date for all departures; use the pencil for daily notes.'}
         </span>
       </div>
-      {monthEvents.length > 0 && (
-        <div
-          className="timetable-events"
-          aria-label="Public holidays and events this month"
-        >
-          <strong>Holidays &amp; events</strong>
-          {monthEvents.map((event) => (
-            <button
-              key={event.date}
-              type="button"
-              onClick={() => onDay(event.date)}
-            >
-              <b>{Number(event.date.slice(-2))}</b>
-              <span>{event.name}</span>
-            </button>
-          ))}
-        </div>
-      )}
       <div
         className={`timetable-scroll ${showAll ? 'timetable-expanded' : 'timetable-fit'}`}
         key={month}
@@ -195,7 +174,7 @@ export function MonthTimetable({
             const note = notes[date] ?? emptyDayNote;
             return (
               <article
-                className={`timetable-day ${index % 7 >= 5 ? 'is-weekend' : ''} ${note.holiday ? 'has-event' : ''}`}
+                className={`timetable-day ${index % 7 >= 5 ? 'is-weekend' : ''}`}
                 key={date}
               >
                 <div className="timetable-date">
@@ -215,25 +194,13 @@ export function MonthTimetable({
                   </button>
                   <button
                     className={`icon-button ${note.notes ? 'has-daily-note' : ''}`}
-                    title={note.holiday || note.notes || 'Daily notes'}
+                    title={note.notes || note.tide || note.restricted || 'Daily notes'}
                     aria-label={`Edit notes for ${formatDate(date)}`}
                     onClick={() => setEditing({ date, note: { ...note } })}
                   >
                     <Pencil size={13} />
                   </button>
                 </div>
-                {note.holiday && (
-                  <button
-                    type="button"
-                    className="compact-event"
-                    title={note.holiday}
-                    aria-label={`${note.holiday} on ${formatDate(date)}. Open day listing.`}
-                    onClick={() => onDay(date)}
-                  >
-                    <span>Event</span>
-                    <strong>{note.holiday}</strong>
-                  </button>
-                )}
                 {!showAll ? (
                   <div className="compact-directions">
                     {[true, false].map((direction) => {
@@ -394,7 +361,6 @@ export function MonthTimetable({
             >
               {(
                 [
-                  ['holiday', 'Holiday / event'],
                   ['tide', 'Tide window'],
                   ['restricted', 'Restricted window'],
                   ['notes', 'Operating notes'],
