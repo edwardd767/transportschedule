@@ -409,16 +409,16 @@ const schemaStatements = [
         'operators', COALESCE((
           SELECT jsonb_agg(
             jsonb_build_object(
-              'id', operator.id,
-              'name', operator.name,
-              'contact', operator.contact,
-              'phone', operator.phone,
-              'email', operator.email,
-              'active', operator.active
-            ) ORDER BY operator.sort_order
+              'id', op.id,
+              'name', op.name,
+              'contact', op.contact,
+              'phone', op.phone,
+              'email', op.email,
+              'active', op.active
+            ) ORDER BY op.sort_order
           )
-          FROM public.hotelx_transport_operators AS operator
-          WHERE operator.property_id = meta.id
+          FROM public.hotelx_transport_operators AS op
+          WHERE op.property_id = meta.id
         ), '[]'::jsonb),
         'boats', COALESCE((
           SELECT jsonb_agg(
