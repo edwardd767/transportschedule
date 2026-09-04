@@ -51,6 +51,7 @@ import { MonthTimetable } from '@/components/month-timetable';
 import { ScheduleTemplates } from '@/components/schedule-templates';
 import { BookingTransfers } from '@/components/booking-transfers';
 import { EditTransportTrip } from '@/components/edit-transport-trip';
+import { TransportListingReport } from '@/components/transport-listing-report';
 import {
   TransportConnection,
   TransportDataContext,
@@ -159,7 +160,7 @@ function HomeContent({ store }: { store: TransportData }) {
   const [route, setRoute] = useState('all');
   const [query, setQuery] = useState('');
   const [view, setView] = useState<
-    'schedule' | 'setup' | 'booking' | 'frontdesk'
+    'schedule' | 'setup' | 'booking' | 'frontdesk' | 'reporting'
   >('booking');
   const [bookingReference, setBookingReference] = useState<string | null>(null);
   const activeBooking =
@@ -520,7 +521,11 @@ function HomeContent({ store }: { store: TransportData }) {
                 </button>
               </div>
             )}
-            <button disabled title="Existing hotel module">
+            <button
+              className={view === 'reporting' ? 'active' : ''}
+              aria-current={view === 'reporting' ? 'page' : undefined}
+              onClick={() => setView('reporting')}
+            >
               <ChartNoAxesCombined />
               Digital Reporting
             </button>
@@ -577,6 +582,10 @@ function HomeContent({ store }: { store: TransportData }) {
               <span>{activeBooking ? '... / Booking' : 'Booking'}</span>
             ) : view === 'frontdesk' ? (
               <span>Front Desk</span>
+            ) : view === 'reporting' ? (
+              <>
+                Digital Reporting <ChevronRight size={14} /> Transport Listing
+              </>
             ) : (
               <>
                 {view === 'setup' ? 'Hotel Settings' : 'Transport'}{' '}
@@ -659,6 +668,12 @@ function HomeContent({ store }: { store: TransportData }) {
               }
             />
           </div>
+        ) : view === 'reporting' ? (
+          <TransportListingReport
+            trips={trips}
+            setup={setup}
+            bookingLegs={bookingLegs}
+          />
         ) : view === 'frontdesk' ? (
           <div className="frontdesk-scroll" key="frontdesk">
             <div className="listing-title">
