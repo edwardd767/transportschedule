@@ -1,0 +1,57 @@
+name: Finalize normalized Worker
+
+on:
+  push:
+    paths:
+      - '.github/workflows/finalize-normalized-worker.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: main
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Avoid PostgreSQL reserved alias
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('worker/normalized-storage.ts')
+          s = p.read_text()
+          s = s.replace('operator.id', 'op.id')
+          s = s.replace('operator.name', 'op.name')
+          s = s.replace('operator.contact', 'op.contact')
+          s = s.replace('operator.phone', 'op.phone')
+          s = s.replace('operator.email', 'op.email')
+          s = s.replace('operator.active', 'op.active')
+          s = s.replace('operator.sort_order', 'op.sort_order')
+          s = s.replace('operator.property_id', 'op.property_id')
+          s = s.replace('AS operator\n', 'AS op\n')
+          if 'AS operator' in s or 'operator.id' in s:
+              raise SystemExit('reserved operator alias remains')
+          p.write_text(s)
+          PY
+      - run: npm ci
+      - name: Verify transport tests
+        run: npm run test:transport
+      - name: Verify Pages build
+        run: npm run build:pages
+      - name: Build deployable Worker
+        run: |
+          npm run build:worker
+          cp dist/worker/hotelx-transport-api.js worker/hotelx-transport-api.deploy.js
+      - name: Commit final normalized Worker
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add worker/normalized-storage.ts worker/hotelx-transport-api.deploy.js
+          git diff --cached --quiet && exit 0
+          git commit -m "Finalize normalized transport Worker bundle"
+          git push origin main
