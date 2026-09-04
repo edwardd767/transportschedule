@@ -286,19 +286,6 @@ function HomeContent({ store }: { store: TransportData }) {
   async function changeStatus(value: string) {
     if (!selected) return;
     try {
-      // Boarding is no longer a user-facing workflow. Mark any legacy
-      // passenger flags internally before completing so the existing
-      // private API remains backward compatible.
-      if (value === 'Completed') {
-        for (const group of selected.groups.filter((g) => !g.boarded)) {
-          await store.run({
-            type: 'board',
-            tripId: selected.id,
-            groupId: group.id,
-            boarded: true,
-          });
-        }
-      }
       await store.run({
         type: 'status',
         tripId: selected.id,
@@ -923,9 +910,7 @@ function HomeContent({ store }: { store: TransportData }) {
                         'all',
                         'Scheduled',
                         'Full',
-                        'Delayed',
                         'Cancelled',
-                        'Completed',
                       ].map((s) => ({
                         value: s,
                         label: s === 'all' ? 'All statuses' : s,
@@ -946,9 +931,7 @@ function HomeContent({ store }: { store: TransportData }) {
                           .map((t) => {
                             const booked = countPassengers(t);
                             const status = statusOf(t);
-                            const closed = ['Cancelled', 'Completed'].includes(
-                              t.status,
-                            );
+                            const closed = t.status === 'Cancelled';
                             return (
                               <button
                                 className={`trip-card status-${status.toLowerCase()}`}
@@ -1122,20 +1105,15 @@ function HomeContent({ store }: { store: TransportData }) {
                     label="Change trip status"
                     value={selected.status}
                     onChange={changeStatus}
-                    items={[
-                      'Scheduled',
-                      'Delayed',
-                      'Cancelled',
-                      'Completed',
-                    ].map((s) => ({ value: s, label: s }))}
+                    items={['Scheduled', 'Cancelled'].map((s) => ({
+                      value: s,
+                      label: s,
+                    }))}
                   />
                 </div>
                 <button
                   className="secondary-button edit-departure-button"
-                  disabled={
-                    selected.status === 'Completed' ||
-                    selected.status === 'Cancelled'
-                  }
+                  disabled={selected.status === 'Cancelled'}
                   onClick={() => setEditingTrip(selected)}
                 >
                   Edit departure
@@ -1168,7 +1146,7 @@ function HomeContent({ store }: { store: TransportData }) {
                         className="text-button"
                         disabled={
                           countPassengers(selected) >= selected.capacity ||
-                          ['Cancelled', 'Completed'].includes(selected.status)
+                          selected.status === 'Cancelled'
                         }
                         onClick={() => openDialog('passengers')}
                       >

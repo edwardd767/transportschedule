@@ -96,7 +96,9 @@ export function normalizeTransportState(state: TransportState): TransportState {
       }),
     },
     trips: state.trips.map((trip) =>
-      trip.status === 'Boarding' ? { ...trip, status: 'Scheduled' } : trip,
+      ['Boarding', 'Delayed', 'Completed'].includes(trip.status)
+        ? { ...trip, status: 'Scheduled' }
+        : trip,
     ),
     bookingLegs: Array.isArray(state.bookingLegs) ? state.bookingLegs : [],
   };
@@ -354,22 +356,9 @@ export function applyTransportAction(
     case 'status': {
       const current = trip();
       if (
-        ![
-          'Scheduled',
-          'Boarding',
-          'Delayed',
-          'Cancelled',
-          'Completed',
-        ].includes(String(action.status))
+        !['Scheduled', 'Cancelled'].includes(String(action.status))
       )
         throw new Error('Choose a valid trip status.');
-      if (
-        action.status === 'Completed' &&
-        current.groups.some((g) => !g.boarded)
-      )
-        throw new Error(
-          'Board all assigned parties before completing this trip.',
-        );
       return replace({ ...current, status: action.status as Trip['status'] });
     }
     case 'board': {

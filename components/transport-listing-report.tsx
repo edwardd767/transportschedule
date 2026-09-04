@@ -71,8 +71,6 @@ function reportDate(value: string) {
 
 function statusClass(status: string) {
   if (status === 'Cancelled') return 'cancelled';
-  if (status === 'Completed') return 'completed';
-  if (status === 'Delayed') return 'full';
   if (status === 'Boarding') return 'boarding';
   return 'scheduled';
 }
