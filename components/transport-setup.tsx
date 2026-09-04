@@ -9,11 +9,9 @@ import {
   ArrowLeft,
   ArrowRight,
   Building2,
-  Clock3,
   MapPin,
   Pencil,
   Plus,
-  Save,
   Settings2,
   Ship,
   Users,
@@ -67,8 +65,6 @@ export function TransportSetup({
   const [tab, setTab] = useState('routes');
   const [editor, setEditor] = useState<Editor | null>(null);
   const [error, setError] = useState('');
-  const [rules, setRules] = useState(config.rules);
-  const [rulesError, setRulesError] = useState('');
   const operatorName = (id: string) =>
     config.operators.find((o) => o.id === id)?.name ?? 'Unassigned';
   const operatorOptions = config.operators.map((o) => ({
@@ -168,16 +164,6 @@ export function TransportSetup({
       setError((e as Error).message);
     }
   }
-  async function saveRules(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    try {
-      await onChange(validateSetup({ ...config, rules }));
-      setRulesError('');
-      onNotice('Operating rules saved for new departures.');
-    } catch (e) {
-      setRulesError((e as Error).message);
-    }
-  }
   const isExisting =
     editor &&
     (editor.kind === 'route'
@@ -206,7 +192,7 @@ export function TransportSetup({
         </span>
         <div>
           <h2>Set up your transport service</h2>
-          <p>Manage the routes, services and defaults used when creating trips.</p>
+          <p>Manage the routes, services and schedule templates used for transport.</p>
         </div>
       </div>
       <div className="setup-counts">
@@ -241,10 +227,6 @@ export function TransportSetup({
           <TabsTrigger value="fleet">
             <Ship size={17} />
             Services & operators
-          </TabsTrigger>
-          <TabsTrigger value="rules">
-            <Clock3 size={17} />
-            Operating rules
           </TabsTrigger>
           <TabsTrigger value="templates">Schedule templates</TabsTrigger>
         </TabsList>
@@ -446,129 +428,6 @@ export function TransportSetup({
               </TableBody>
             </Table>
           </div>
-        </TabsContent>
-        <TabsContent value="rules">
-          <form
-            className="setup-panel rules-form hotel-form"
-            onSubmit={saveRules}
-          >
-            <div className="setup-panel-heading">
-              <div>
-                <h3>Operating rules</h3>
-                <p>Default hours and timing used to validate new departures.</p>
-              </div>
-            </div>
-            <div className="rules-content">
-              <div className="settings-section-label">
-                <Clock3 size={18} />
-                <h4>Service hours</h4>
-                <span>Malaysia · GMT+8</span>
-              </div>
-              <div className="form-grid">
-                <label>
-                  Service starts
-                  <input
-                    required
-                    type="time"
-                    value={rules.start}
-                    onChange={(e) =>
-                      setRules({ ...rules, start: e.target.value })
-                    }
-                  />
-                </label>
-                <label>
-                  Service ends
-                  <input
-                    required
-                    type="time"
-                    value={rules.end}
-                    onChange={(e) =>
-                      setRules({ ...rules, end: e.target.value })
-                    }
-                  />
-                </label>
-              </div>
-              <div className="form-grid">
-                <label>
-                  Service turnaround (minutes)
-                  <input
-                    required
-                    type="number"
-                    min="0"
-                    step="1"
-                    value={rules.turnaroundMinutes}
-                    onChange={(e) =>
-                      setRules({
-                        ...rules,
-                        turnaroundMinutes: Number(e.target.value),
-                      })
-                    }
-                  />
-                </label>
-                <label>
-                  Guest reporting lead time (minutes)
-                  <input
-                    required
-                    type="number"
-                    min="0"
-                    step="1"
-                    value={rules.boardingLeadMinutes}
-                    onChange={(e) =>
-                      setRules({
-                        ...rules,
-                        boardingLeadMinutes: Number(e.target.value),
-                      })
-                    }
-                  />
-                </label>
-              </div>
-              <p className="helper-text">
-                Trips must finish within service hours. Turnaround time reserves
-                the service after its journey. Reporting lead time is shown with
-                new trip instructions.
-              </p>
-              <label>
-                Operating notes
-                <textarea
-                  rows={4}
-                  value={rules.notes}
-                  maxLength={1500}
-                  onChange={(e) =>
-                    setRules({ ...rules, notes: e.target.value })
-                  }
-                />
-              </label>
-              <p className="helper-text">
-                Weather and operating notes guide staff; the prototype does not
-                calculate external service availability. The reporting lead time is an
-                editable demonstration default.
-              </p>
-              {rulesError && (
-                <p role="alert" className="form-error">
-                  {rulesError}
-                </p>
-              )}
-              <div className="form-actions">
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={() => {
-                    setRules(config.rules);
-                    setRulesError('');
-                  }}
-                >
-                  Discard changes
-                </button>
-                <button
-                  type="submit"
-                  className="primary-button"
-                  disabled={pending}
-                >
-                  <Save size={16} /> Save operating rules
-                </button>
-              </div>
-            </div>
-          </form>
         </TabsContent>
       </Tabs>
       <div className="setup-scope-note">

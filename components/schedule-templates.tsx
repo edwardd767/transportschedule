@@ -15,34 +15,24 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import {
-  generateTemplate,
   validateTemplate,
   type ScheduleTemplate,
 } from '@/lib/transport-planning';
-import { tripFromSetup, type TransportSetup, type Trip } from '@/lib/transport';
+import { tripFromSetup, type TransportSetup } from '@/lib/transport';
 
 export function ScheduleTemplates({
   setup,
   templates,
-  trips,
   onChange,
-  onGenerate,
 }: {
   setup: TransportSetup;
   templates: ScheduleTemplate[];
-  trips: Trip[];
   onChange: (templates: ScheduleTemplate[]) => Promise<void>;
-  onGenerate: (template: ScheduleTemplate) => Promise<void>;
 }) {
   const pending = Boolean(useContext(TransportDataContext)?.pending);
   const [draft, setDraft] = useState<ScheduleTemplate | null>(null);
   const [times, setTimes] = useState('');
   const [excluded, setExcluded] = useState('');
-  const [preview, setPreview] = useState<{
-    template: ScheduleTemplate;
-    added: Trip[];
-    skipped: number;
-  } | null>(null);
   const [error, setError] = useState('');
   function open(template?: ScheduleTemplate) {
     const route = setup.routes.find(
@@ -91,8 +81,8 @@ export function ScheduleTemplates({
         <div>
           <h3>Schedule templates</h3>
           <p>
-            Generate departures for selected weekdays, then adjust individual
-            trips in the schedule.
+            Define and save recurring transport schedules. Templates are validated
+            before the record is saved.
           </p>
         </div>
         <button className="primary-button" onClick={() => open()}>
@@ -134,24 +124,6 @@ export function ScheduleTemplates({
               >
                 <Pencil size={15} /> Edit
               </button>
-              <button
-                className="secondary-button"
-                onClick={() => {
-                  setError('');
-                  try {
-                    const result = generateTemplate(trips, setup, template);
-                    setPreview({
-                      template,
-                      added: result.added,
-                      skipped: result.skipped,
-                    });
-                  } catch (error) {
-                    setError((error as Error).message);
-                  }
-                }}
-              >
-                Generate trips
-              </button>
             </div>
           ))
         ) : (
@@ -162,14 +134,14 @@ export function ScheduleTemplates({
           </div>
         )}
       </div>
-      {error && !draft && !preview && (
+      {error && !draft && (
         <p role="alert" className="form-error template-error">
           {error}
         </p>
       )}
       <p className="template-help">
-        Templates generate new trips only. Existing, rescheduled and cancelled
-        generated trips are preserved. Duplicate departures are skipped.
+        Save validates the route, service, travel dates, weekdays and departure
+        times before storing the template. Saving does not generate trips.
       </p>
       <Dialog
         open={draft !== null}
@@ -353,69 +325,10 @@ export function ScheduleTemplates({
                   Cancel
                 </button>
                 <button className="primary-button" disabled={pending}>
-                  Save template
+                  Save
                 </button>
               </div>
             </form>
-          )}
-        </DialogContent>
-      </Dialog>
-      <Dialog
-        open={preview !== null}
-        onOpenChange={(open) => !open && setPreview(null)}
-      >
-        <DialogContent className="hotel-dialog template-dialog">
-          <DialogHeader>
-            <DialogTitle>Generate departures</DialogTitle>
-            <DialogDescription>{preview?.template.name}</DialogDescription>
-          </DialogHeader>
-          <TransportRecovery />
-          {preview && (
-            <>
-              <p>
-                {preview.added.length} new trips · {preview.skipped} existing
-                departures skipped
-              </p>
-              <div className="template-preview">
-                {preview.added.slice(0, 12).map((trip) => (
-                  <p key={trip.id}>
-                    {trip.date} · {trip.time} · {trip.boat} · {trip.origin} →{' '}
-                    {trip.destination}
-                  </p>
-                ))}
-                {preview.added.length > 12 && (
-                  <p>And {preview.added.length - 12} more departures.</p>
-                )}
-              </div>
-              {error && (
-                <p role="alert" className="form-error">
-                  {error}
-                </p>
-              )}
-              <div className="form-actions">
-                <button
-                  className="secondary-button"
-                  onClick={() => setPreview(null)}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="primary-button"
-                  aria-busy={pending}
-                  disabled={pending || !preview.added.length}
-                  onClick={async () => {
-                    try {
-                      await onGenerate(preview.template);
-                      setPreview(null);
-                    } catch (error) {
-                      setError((error as Error).message);
-                    }
-                  }}
-                >
-                  Generate {preview.added.length} trips
-                </button>
-              </div>
-            </>
           )}
         </DialogContent>
       </Dialog>

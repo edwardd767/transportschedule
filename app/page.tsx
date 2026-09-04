@@ -58,7 +58,6 @@ import {
   TransportRecovery,
 } from '@/components/transport-connection';
 import { useTransportData, type TransportData } from '@/lib/use-transport-data';
-import { generateTemplate } from '@/lib/transport-planning';
 import {
   Sheet,
   SheetContent,
@@ -166,7 +165,7 @@ function HomeContent({ store }: { store: TransportData }) {
   const activeBooking =
     sampleBookings.find((booking) => booking.reference === bookingReference) ??
     null;
-  const { setup, trips, templates, dayNotes, bookingLegs } = store.state;
+  const { setup, trips, templates, bookingLegs } = store.state;
   const [scheduleView, setScheduleView] = useState<'day' | 'month'>('day');
   const [boatFilter, setBoatFilter] = useState('all');
   const [transferBooking, setTransferBooking] = useState<Booking | null>(null);
@@ -648,21 +647,9 @@ function HomeContent({ store }: { store: TransportData }) {
                 <ScheduleTemplates
                   setup={setup}
                   templates={templates}
-                  trips={trips}
                   onChange={async (value) => {
                     await store.run({ type: 'templates', value });
-                  }}
-                  onGenerate={async (template) => {
-                    const result = generateTemplate(trips, setup, template);
-                    await store.run({ type: 'generate', template });
-                    setDate(template.startDate);
-                    setMonth(template.startDate.slice(0, 7));
-                    setScheduleView('month');
-                    setBoatFilter('all');
-                    setRoute('all');
-                    setNotice(
-                      `${result.added.length} departures generated. ${result.skipped} existing departures skipped.`,
-                    );
+                    setNotice('Schedule template saved.');
                   }}
                 />
               }
@@ -782,11 +769,6 @@ function HomeContent({ store }: { store: TransportData }) {
                 route={route}
                 onBoat={setBoatFilter}
                 onRoute={setRoute}
-                notes={dayNotes}
-                onNote={async (date, note) => {
-                  await store.run({ type: 'dayNote', date, note });
-                  setNotice('Daily notes saved.');
-                }}
                 onDay={(date) => {
                   setDate(date);
                   setStatusFilter('all');
@@ -950,22 +932,6 @@ function HomeContent({ store }: { store: TransportData }) {
                     tabIndex={0}
                     key={`${date}-${route}-${boatFilter}-${statusFilter}-${query}`}
                   >
-                    {dayNotes[date] && (
-                      <div className="day-tide-notes">
-                        <strong>
-                          {dayNotes[date].holiday || 'Daily tide notes'}
-                        </strong>
-                        {dayNotes[date].tide && (
-                          <span>Tide window: {dayNotes[date].tide}</span>
-                        )}
-                        {dayNotes[date].restricted && (
-                          <span>Restricted: {dayNotes[date].restricted}</span>
-                        )}
-                        {dayNotes[date].notes && (
-                          <span>{dayNotes[date].notes}</span>
-                        )}
-                      </div>
-                    )}
                     <div className="trip-list">
                       {shown.length ? (
                         shown
