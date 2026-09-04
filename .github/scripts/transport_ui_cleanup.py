@@ -1,0 +1,322 @@
+from pathlib import Path
+import re
+
+
+def must_replace(text, old, new, label, count=1):
+    actual = text.count(old)
+    if actual != count:
+        raise SystemExit(f'{label}: expected {count} match(es), found {actual}')
+    return text.replace(old, new, count)
+
+
+# 1) Remove Daily Notes completely from Transport Calendar.
+p = Path('components/month-timetable.tsx')
+s = p.read_text()
+s = must_replace(
+    s,
+    "import { useContext } from 'react';\nimport {\n  TransportDataContext,\n  TransportRecovery,\n} from './transport-connection';\nimport { useState } from 'react';\n",
+    "import { useState } from 'react';\n",
+    'calendar context imports',
+)
+s = must_replace(
+    s,
+    "import { ChevronLeft, ChevronRight, Pencil, Plus } from 'lucide-react';",
+    "import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';",
+    'calendar pencil import',
+)
+dialog_import = """import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+"""
+s = must_replace(s, dialog_import, '', 'calendar dialog imports')
+s = must_replace(
+    s,
+    """import {
+  emptyDayNote,
+  monthDates,
+  shiftMonth,
+  type DayNote,
+} from '@/lib/transport-planning';
+""",
+    "import { monthDates, shiftMonth } from '@/lib/transport-planning';\n",
+    'calendar note imports',
+)
+s = must_replace(s, "  notes,\n  onNote,\n", '', 'calendar note props destructure')
+s = must_replace(
+    s,
+    "  notes: Record<string, DayNote>;\n  onNote: (date: string, note: DayNote) => Promise<void>;\n",
+    '',
+    'calendar note prop types',
+)
+state_block = """  const pending = Boolean(useContext(TransportDataContext)?.pending);
+  const [editing, setEditing] = useState<{
+    date: string;
+    note: DayNote;
+  } | null>(null);
+  const [showAll, setShowAll] = useState(false);
+  const [error, setError] = useState('');
+"""
+s = must_replace(
+    s,
+    state_block,
+    "  const [showAll, setShowAll] = useState(false);\n",
+    'calendar note states',
+)
+s = must_replace(
+    s,
+    "            : 'Trips by direction. Select a date for all departures; use the pencil for daily notes.'}",
+    "            : 'Trips by direction. Select a date for all departures.'}",
+    'calendar helper text',
+)
+s = must_replace(
+    s,
+    "            const note = notes[date] ?? emptyDayNote;\n",
+    '',
+    'calendar daily note lookup',
+)
+pencil_block = """                  <button
+                    className={`icon-button ${note.notes ? 'has-daily-note' : ''}`}
+                    title={note.notes || note.tide || note.restricted || 'Daily notes'}
+                    aria-label={`Edit notes for ${formatDate(date)}`}
+                    onClick={() => setEditing({ date, note: { ...note } })}
+                  >
+                    <Pencil size={13} />
+                  </button>
+"""
+s = must_replace(s, pencil_block, '', 'calendar pencil button')
+notes_block = re.compile(
+    r"\n\s*\{\(note\.tide \|\| note\.restricted \|\| note\.notes\) && \(\n\s*<div className=\"timetable-notes\">.*?\n\s*</div>\n\s*\)\}",
+    re.S,
+)
+s, n = notes_block.subn('', s, count=1)
+if n != 1:
+    raise SystemExit(f'calendar expanded notes: expected 1 match, found {n}')
+dialog_block = re.compile(
+    r"\n\s*<Dialog\n\s*open=\{editing !== null\}.*?\n\s*</Dialog>\n",
+    re.S,
+)
+s, n = dialog_block.subn('\n', s, count=1)
+if n != 1:
+    raise SystemExit(f'calendar daily notes dialog: expected 1 match, found {n}')
+p.write_text(s)
+
+
+# 2) Remove Operating Rules tab and editor from Transport Setup.
+p = Path('components/transport-setup.tsx')
+s = p.read_text()
+s = must_replace(s, "  Clock3,\n", '', 'rules Clock3 import')
+s = must_replace(s, "  Save,\n", '', 'rules Save import')
+s = must_replace(
+    s,
+    "  const [rules, setRules] = useState(config.rules);\n  const [rulesError, setRulesError] = useState('');\n",
+    '',
+    'rules state',
+)
+save_rules = re.compile(
+    r"\n  async function saveRules\(event: FormEvent<HTMLFormElement>\) \{.*?\n  \}\n",
+    re.S,
+)
+s, n = save_rules.subn('\n', s, count=1)
+if n != 1:
+    raise SystemExit(f'saveRules function: expected 1 match, found {n}')
+s = must_replace(
+    s,
+    """          <TabsTrigger value="rules">
+            <Clock3 size={17} />
+            Operating rules
+          </TabsTrigger>
+""",
+    '',
+    'operating rules tab',
+)
+rules_content = re.compile(
+    r"\n\s*<TabsContent value=\"rules\">.*?\n\s*</TabsContent>\n\s*</Tabs>",
+    re.S,
+)
+s, n = rules_content.subn('\n      </Tabs>', s, count=1)
+if n != 1:
+    raise SystemExit(f'operating rules content: expected 1 match, found {n}')
+s = must_replace(
+    s,
+    'Manage the routes, services and defaults used when creating trips.',
+    'Manage the routes, services and schedule templates used for transport.',
+    'setup intro text',
+)
+p.write_text(s)
+
+
+# 3) Schedule Templates: Save validates and stores records only.
+p = Path('components/schedule-templates.tsx')
+s = p.read_text()
+s = must_replace(
+    s,
+    """import {
+  generateTemplate,
+  validateTemplate,
+  type ScheduleTemplate,
+} from '@/lib/transport-planning';
+import { tripFromSetup, type TransportSetup, type Trip } from '@/lib/transport';
+""",
+    """import {
+  validateTemplate,
+  type ScheduleTemplate,
+} from '@/lib/transport-planning';
+import { tripFromSetup, type TransportSetup } from '@/lib/transport';
+""",
+    'template generation imports',
+)
+s = must_replace(
+    s,
+    "  trips,\n  onChange,\n  onGenerate,\n",
+    "  onChange,\n",
+    'template generation props destructure',
+)
+s = must_replace(
+    s,
+    "  trips: Trip[];\n  onChange: (templates: ScheduleTemplate[]) => Promise<void>;\n  onGenerate: (template: ScheduleTemplate) => Promise<void>;\n",
+    "  onChange: (templates: ScheduleTemplate[]) => Promise<void>;\n",
+    'template generation prop types',
+)
+preview_state = """  const [preview, setPreview] = useState<{
+    template: ScheduleTemplate;
+    added: Trip[];
+    skipped: number;
+  } | null>(null);
+"""
+s = must_replace(s, preview_state, '', 'template preview state')
+s = must_replace(
+    s,
+    """          <p>
+            Generate departures for selected weekdays, then adjust individual
+            trips in the schedule.
+          </p>
+""",
+    """          <p>
+            Define and save recurring transport schedules. Templates are validated
+            before the record is saved.
+          </p>
+""",
+    'template heading copy',
+)
+generate_button = re.compile(
+    r"\n\s*<button\n\s*className=\"secondary-button\"\n\s*onClick=\{\(\) => \{\n\s*setError\(''\);\n\s*try \{\n\s*const result = generateTemplate\(trips, setup, template\);.*?\n\s*</button>",
+    re.S,
+)
+s, n = generate_button.subn('', s, count=1)
+if n != 1:
+    raise SystemExit(f'Generate trips card button: expected 1 match, found {n}')
+s = must_replace(
+    s,
+    "      {error && !draft && !preview && (\n",
+    "      {error && !draft && (\n",
+    'template standalone error condition',
+)
+s = must_replace(
+    s,
+    """      <p className="template-help">
+        Templates generate new trips only. Existing, rescheduled and cancelled
+        generated trips are preserved. Duplicate departures are skipped.
+      </p>
+""",
+    """      <p className="template-help">
+        Save validates the route, service, travel dates, weekdays and departure
+        times before storing the template. Saving does not generate trips.
+      </p>
+""",
+    'template help copy',
+)
+s = must_replace(
+    s,
+    "                  Save template\n",
+    "                  Save\n",
+    'template save button label',
+)
+preview_dialog = re.compile(
+    r"\n\s*<Dialog\n\s*open=\{preview !== null\}.*?\n\s*</Dialog>\n",
+    re.S,
+)
+s, n = preview_dialog.subn('\n', s, count=1)
+if n != 1:
+    raise SystemExit(f'Generate departures dialog: expected 1 match, found {n}')
+p.write_text(s)
+
+
+# Main page wiring.
+p = Path('app/page.tsx')
+s = p.read_text()
+s = must_replace(
+    s,
+    "import { generateTemplate } from '@/lib/transport-planning';\n",
+    '',
+    'page generateTemplate import',
+)
+s = must_replace(
+    s,
+    "  const { setup, trips, templates, dayNotes, bookingLegs } = store.state;\n",
+    "  const { setup, trips, templates, bookingLegs } = store.state;\n",
+    'page dayNotes destructure',
+)
+old_template = """                <ScheduleTemplates
+                  setup={setup}
+                  templates={templates}
+                  trips={trips}
+                  onChange={async (value) => {
+                    await store.run({ type: 'templates', value });
+                  }}
+                  onGenerate={async (template) => {
+                    const result = generateTemplate(trips, setup, template);
+                    await store.run({ type: 'generate', template });
+                    setDate(template.startDate);
+                    setMonth(template.startDate.slice(0, 7));
+                    setScheduleView('month');
+                    setBoatFilter('all');
+                    setRoute('all');
+                    setNotice(
+                      `${result.added.length} departures generated. ${result.skipped} existing departures skipped.`,
+                    );
+                  }}
+                />
+"""
+new_template = """                <ScheduleTemplates
+                  setup={setup}
+                  templates={templates}
+                  onChange={async (value) => {
+                    await store.run({ type: 'templates', value });
+                    setNotice('Schedule template saved.');
+                  }}
+                />
+"""
+s = must_replace(s, old_template, new_template, 'page schedule template wiring')
+old_notes_props = """                notes={dayNotes}
+                onNote={async (date, note) => {
+                  await store.run({ type: 'dayNote', date, note });
+                  setNotice('Daily notes saved.');
+                }}
+"""
+s = must_replace(s, old_notes_props, '', 'page calendar notes wiring')
+day_notes_block = re.compile(
+    r"\n\s*\{dayNotes\[date\] && \(\n\s*<div className=\"day-tide-notes\">.*?\n\s*</div>\n\s*\)\}",
+    re.S,
+)
+s, n = day_notes_block.subn('', s, count=1)
+if n != 1:
+    raise SystemExit(f'page day notes display: expected 1 match, found {n}')
+p.write_text(s)
+
+
+# Documentation copy only; no data schema changes.
+p = Path('README.md')
+s = p.read_text()
+s = s.replace(
+    'The daily-note editor remains available for tide windows, restricted windows and operating notes in the compact view.',
+    'The Transport Calendar focuses on scheduled departures and no longer includes daily-note editing.',
+)
+s = s.replace(
+    'Schedule templates can generate departures for selected weekdays and times.',
+    'Schedule templates validate and save recurring schedule records without generating trips.',
+)
+p.write_text(s)
