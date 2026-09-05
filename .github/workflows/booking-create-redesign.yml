@@ -1,0 +1,50 @@
+name: Booking creation redesign
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/booking-create-redesign.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Apply booking creation redesign
+        run: python scripts/apply-booking-create-redesign.py
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify transport rules and API
+        run: npm run test:transport
+
+      - name: Build GitHub Pages site
+        run: npm run build:pages
+
+      - name: Build standalone Cloudflare Worker
+        run: npm run build:worker
+
+      - name: Commit update
+        shell: bash
+        run: |
+          rm .github/workflows/booking-create-redesign.yml scripts/apply-booking-create-redesign.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add components/booking-create.tsx components/bookings.tsx app/page.tsx app/globals.css .github/workflows/booking-create-redesign.yml scripts/apply-booking-create-redesign.py
+          git commit -m 'Redesign HotelX booking creation screen'
+          git push origin HEAD:main
