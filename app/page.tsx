@@ -462,7 +462,7 @@ function HomeContent({ store }: { store: TransportData }) {
     .reduce((n, t) => n + t.capacity - countPassengers(t), 0);
   return (
     <SidebarProvider
-      style={{ '--sidebar-width': '218px' } as CSSProperties}
+      style={{ '--sidebar-width': '205px' } as CSSProperties}
       className="hotel-shell"
     >
       <header className="topbar">
