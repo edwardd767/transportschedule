@@ -38,3 +38,5 @@ jobs:
           git diff --cached --quiet && exit 0
           git commit -m "Add Adult Child and Infant booking counts"
           git push origin main
+
+# Triggered for verified Adult / Child / Infant deployment on 2026-09-05.
