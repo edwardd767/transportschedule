@@ -4809,3 +4809,387 @@ p {
   .timetable-weekday { padding: 5px; font-size: 11px; }
   .timetable-day { padding: 5px; }
 }
+
+
+/* HotelX Rate Setup module */
+.rate-setup-master-page {
+  position: relative;
+  min-height: 100%;
+}
+.rate-setup-module,
+.rate-section-page {
+  position: relative;
+  min-height: 100%;
+}
+.rate-setup-module-menu {
+  padding-bottom: 12px;
+}
+.rate-subpage-backline {
+  display: flex;
+  align-items: center;
+  min-height: 34px;
+  margin-bottom: 6px;
+}
+.rate-subpage-backline button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  background: transparent;
+  color: #6d6d6d;
+  font: inherit;
+  cursor: pointer;
+}
+.rate-row-list {
+  display: grid;
+  gap: 6px;
+  padding: 0 8px 74px;
+}
+.rate-list-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  min-height: 68px;
+  padding: 11px 18px;
+  border: 1px solid #e1e1e1;
+  border-radius: 7px;
+  background: #fff;
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.12);
+  color: #111;
+}
+.rate-list-row.detailed {
+  grid-template-columns: minmax(0, 1fr) auto 32px;
+  gap: 14px;
+}
+.rate-list-row.inactive {
+  color: #8b8b8b;
+  background: #f7f7f7;
+}
+.rate-list-row > strong,
+.rate-row-copy strong {
+  font-size: 14px;
+  font-weight: 800;
+}
+.rate-row-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.rate-row-copy span {
+  font-size: 12px;
+}
+.rate-row-amount {
+  white-space: nowrap;
+}
+.rate-row-actions {
+  position: relative;
+  justify-self: end;
+}
+.rate-row-actions > button,
+.rate-search-button {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #222;
+  cursor: pointer;
+}
+.rate-popup-menu {
+  position: absolute;
+  z-index: 50;
+  top: 31px;
+  right: 0;
+  display: grid;
+  min-width: 130px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+.rate-popup-menu button {
+  min-height: 44px;
+  padding: 9px 16px;
+  border: 0;
+  background: #fff;
+  text-align: left;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.rate-popup-menu button:hover {
+  background: #f4f4f4;
+}
+.rate-popup-menu button:disabled {
+  color: #a9a9a9;
+  cursor: default;
+}
+.season-list-row {
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  gap: 10px;
+}
+.season-color-box {
+  display: inline-block;
+  width: 30px;
+  height: 24px;
+  border-radius: 5px;
+  flex: 0 0 auto;
+}
+.rate-floating-add {
+  position: fixed;
+  right: 24px;
+  bottom: 22px;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border: 0;
+  border-radius: 50%;
+  background: #ff9100;
+  color: #fff;
+  box-shadow: 0 4px 13px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+.rate-list-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  margin: 0 0 8px;
+  padding: 8px 14px;
+  background: #fff;
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.12);
+}
+.rate-list-heading strong {
+  font-size: 14px;
+}
+.rate-list-heading strong span {
+  color: #ff8900;
+}
+.rate-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.rate-search-wrap input {
+  width: min(260px, 34vw);
+  height: 32px;
+  padding: 4px 9px;
+  border: 1px solid #d7d7d7;
+  border-radius: 4px;
+  font: inherit;
+}
+.rate-web-icon {
+  justify-self: end;
+}
+.season-calendar-select-card {
+  margin: 0 8px 6px;
+  padding: 16px 14px 12px;
+  border-radius: 5px;
+  background: #fff;
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.12);
+}
+.season-calendar-select-card > label {
+  display: block;
+  margin-bottom: 8px;
+  color: #888;
+  font-size: 12px;
+}
+.season-calendar-select-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #aaa;
+  padding-bottom: 7px;
+}
+.season-calendar-select-line select {
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
+}
+.season-calendar-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  margin: 0 8px 6px;
+  padding: 8px 14px;
+  background: #ffe3ad;
+  color: #00187d;
+  font-size: 12px;
+}
+.season-calendar-card {
+  margin: 0 8px 68px;
+  padding: 28px 22px 34px;
+  background: #fff;
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.12);
+}
+.season-calendar-nav {
+  display: grid;
+  grid-template-columns: 42px 1fr 42px;
+  align-items: center;
+  margin-bottom: 26px;
+}
+.season-calendar-nav strong {
+  justify-self: center;
+  font-size: 18px;
+}
+.season-calendar-nav button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.season-calendar-nav button:last-child {
+  justify-self: end;
+}
+.season-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 46px);
+  justify-content: center;
+  gap: 6px;
+}
+.weekday-grid {
+  margin-bottom: 8px;
+}
+.weekday-grid span {
+  text-align: center;
+  font-size: 12px;
+}
+.date-grid button {
+  width: 38px;
+  height: 38px;
+  justify-self: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #111;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.date-grid button.marked {
+  color: #111;
+}
+.season-calendar-savebar {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: center;
+  min-height: 58px;
+  padding: 9px;
+  background: rgba(255,255,255,0.97);
+  box-shadow: 0 -2px 7px rgba(0,0,0,0.12);
+}
+.season-calendar-savebar .primary-button {
+  min-width: 150px;
+}
+.rate-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(0, 0, 0, 0.42);
+}
+.rate-modal {
+  width: min(560px, calc(100vw - 36px));
+  max-height: calc(100vh - 36px);
+  overflow: auto;
+  border-radius: 7px;
+  background: #fff;
+  box-shadow: 0 12px 36px rgba(0,0,0,0.3);
+}
+.rate-modal > header,
+.rate-modal > footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 16px;
+}
+.rate-modal > header {
+  border-bottom: 1px solid #eee;
+  color: #ef8500;
+}
+.rate-modal > header button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.rate-modal > footer {
+  justify-content: flex-end;
+  border-top: 1px solid #eee;
+}
+.rate-modal-body {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+.rate-editor-field {
+  display: grid;
+  gap: 5px;
+  color: #777;
+  font-size: 12px;
+}
+.rate-editor-field input,
+.rate-editor-field select {
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 8px;
+  border: 0;
+  border-bottom: 1px solid #aaa;
+  background: #fff;
+  color: #111;
+  font: inherit;
+  font-size: 14px;
+}
+.rate-editor-field input[type='color'] {
+  width: 70px;
+  padding: 2px;
+}
+.rate-editor-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.rate-editor-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.rate-editor-check input {
+  width: 17px;
+  height: 17px;
+}
+
+@media (max-width: 639px) {
+  .rate-row-list { padding-left: 4px; padding-right: 4px; }
+  .rate-list-row { min-height: 62px; padding: 10px 12px; }
+  .rate-list-row.detailed { grid-template-columns: minmax(0, 1fr) auto 28px; gap: 7px; }
+  .rate-list-row > strong, .rate-row-copy strong { font-size: 13px; }
+  .rate-row-copy span, .rate-row-amount { font-size: 11px; }
+  .rate-floating-add { right: 16px; bottom: 16px; width: 52px; height: 52px; }
+  .season-calendar-card { padding: 20px 8px 28px; }
+  .season-calendar-grid { grid-template-columns: repeat(7, 38px); gap: 3px; }
+  .date-grid button { width: 34px; height: 34px; }
+  .rate-editor-grid { grid-template-columns: 1fr; gap: 12px; }
+}

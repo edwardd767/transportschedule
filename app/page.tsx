@@ -48,6 +48,7 @@ import { Choice } from '@/components/hotel-choice';
 import { TransportSetup } from '@/components/transport-setup';
 import { HotelSettingsMenu } from '@/components/hotel-settings-menu';
 import { HotelSettingsDetail } from '@/components/hotel-settings-detail';
+import type { RateSetupSection } from '@/components/rate-setup';
 import { HotelMasterFiles } from '@/components/hotel-master-files';
 import { Bookings } from '@/components/bookings';
 import type { Booking } from '@/lib/bookings';
@@ -177,6 +178,7 @@ function HomeContent({ store }: { store: TransportData }) {
     | 'frontdesk'
     | 'reporting'
   >('booking');
+  const [rateSetupSection, setRateSetupSection] = useState<RateSetupSection | null>(null);
   const [bookingReference, setBookingReference] = useState<string | null>(null);
   const { setup, trips, templates, bookingLegs, hotelMasters, bookings } = store.state;
   const activeBooking =
@@ -579,8 +581,17 @@ function HomeContent({ store }: { store: TransportData }) {
                 <ChevronLeft size={24} />
               </button>
             )}
+            {view === 'ratepolicy' && rateSetupSection && (
+              <button
+                className="booking-back"
+                aria-label="Back to Rate Setup"
+                onClick={() => setRateSetupSection(null)}
+              >
+                <ChevronLeft size={24} />
+              </button>
+            )}
             <div>
-              <small>PMS</small>
+              <small>{['setup', 'hotelsettings', 'hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy'].includes(view) ? 'HMS' : 'PMS'}</small>
               <strong>HOTEL PARADISE</strong>
             </div>
           </div>
@@ -617,7 +628,9 @@ function HomeContent({ store }: { store: TransportData }) {
                             ? 'Room'
                             : view === 'roomstatus'
                               ? 'Room Status'
-                              : 'Rate Policy'}
+                              : rateSetupSection
+                                ? <>Rate Setup <ChevronRight size={14} /> {rateSetupSection === 'season-setup' ? 'Season Setup' : rateSetupSection === 'season-calendar' ? 'Season Calendar' : rateSetupSection === 'rate-element' ? 'Rate Element' : rateSetupSection === 'rate-type' ? 'Rate Type' : 'Rate Setup'}</>
+                                : 'Rate Setup'}
               </>
             ) : (
               <>
@@ -683,7 +696,7 @@ function HomeContent({ store }: { store: TransportData }) {
               onOpenRoomType={() => setView('roomtype')}
               onOpenRoom={() => setView('room')}
               onOpenRoomStatus={() => setView('roomstatus')}
-              onOpenRatePolicy={() => setView('ratepolicy')}
+              onOpenRatePolicy={() => { setRateSetupSection(null); setView('ratepolicy'); }}
               onOpenTransportSetup={() => setView('setup')}
             />
           </div>
@@ -701,7 +714,9 @@ function HomeContent({ store }: { store: TransportData }) {
                         ? 'roomStatus'
                         : 'ratePolicy'
               }
-              onBack={() => setView('hotelsettings')}
+              rateSection={view === 'ratepolicy' ? rateSetupSection : null}
+              onRateSectionChange={setRateSetupSection}
+              onBack={() => { setRateSetupSection(null); setView('hotelsettings'); }}
             />
           </div>
         ) : ['location', 'roomtype', 'room'].includes(view) ? (
