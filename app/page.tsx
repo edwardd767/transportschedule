@@ -180,7 +180,7 @@ function HomeContent({ store }: { store: TransportData }) {
   >('booking');
   const [rateSetupSection, setRateSetupSection] = useState<RateSetupSection | null>(null);
   const [bookingReference, setBookingReference] = useState<string | null>(null);
-  const { setup, trips, templates, bookingLegs, hotelMasters, bookings } = store.state;
+  const { setup, trips, templates, bookingLegs, hotelMasters, bookings, rateSetup } = store.state;
   const activeBooking =
     bookings.find((booking) => booking.reference === bookingReference) ?? null;
   const [scheduleView, setScheduleView] = useState<'day' | 'month'>('day');
@@ -716,6 +716,8 @@ function HomeContent({ store }: { store: TransportData }) {
               }
               rateSection={view === 'ratepolicy' ? rateSetupSection : null}
               onRateSectionChange={setRateSetupSection}
+              rateData={rateSetup}
+              onRateDataChange={async (value) => { await store.run({ type: 'rateSetup', value }); setNotice('Rate Setup saved.'); }}
               onBack={() => { setRateSetupSection(null); setView('hotelsettings'); }}
             />
           </div>

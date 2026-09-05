@@ -37,6 +37,7 @@ import {
   type BookingTransportLeg,
   type BookingTransportLegInput,
 } from './booking-transport';
+import { initialRateSetupData, type RateSetupData } from './rate-setup-data';
 
 export type TransportState = {
   setup: TransportSetup;
@@ -46,6 +47,7 @@ export type TransportState = {
   bookingLegs: BookingTransportLeg[];
   hotelMasters: HotelMasters;
   bookings: Booking[];
+  rateSetup: RateSetupData;
 };
 export type DepartureInput = {
   id: string;
@@ -78,6 +80,7 @@ export type TransportAction =
   | { type: 'hotelRoomTypeSave'; value: HotelRoomType }
   | { type: 'hotelRoomSave'; value: HotelRoom }
   | { type: 'bookingCreate'; value: Booking }
+  | { type: 'rateSetup'; value: RateSetupData }
   | {
       type: 'transfers';
       bookingReference: string;
@@ -93,6 +96,7 @@ export function newTransportState(): TransportState {
     bookingLegs: [],
     hotelMasters: initialHotelMasters,
     bookings: initialBookings,
+    rateSetup: initialRateSetupData,
   });
 }
 
@@ -109,6 +113,16 @@ export function normalizeTransportState(state: TransportState): TransportState {
     Array.isArray(state.bookings) && state.bookings.length
       ? state.bookings
       : structuredClone(initialBookings);
+  const rateSetup =
+    state.rateSetup &&
+    Array.isArray(state.rateSetup.seasons) && state.rateSetup.seasons.length &&
+    state.rateSetup.calendar && typeof state.rateSetup.calendar === 'object' &&
+    Array.isArray(state.rateSetup.elements) && state.rateSetup.elements.length &&
+    Array.isArray(state.rateSetup.rateTypes) && state.rateSetup.rateTypes.length &&
+    Array.isArray(state.rateSetup.ratePlans) && state.rateSetup.ratePlans.length &&
+    Array.isArray(state.rateSetup.validity)
+      ? state.rateSetup
+      : structuredClone(initialRateSetupData);
   return {
     ...state,
     setup: {
@@ -131,6 +145,7 @@ export function normalizeTransportState(state: TransportState): TransportState {
     bookingLegs: Array.isArray(state.bookingLegs) ? state.bookingLegs : [],
     hotelMasters,
     bookings,
+    rateSetup,
   };
 }
 
@@ -170,6 +185,56 @@ function list(value: unknown, max = 200): unknown[] {
 function unique(items: { id: string }[]) {
   if (new Set(items.map((item) => item.id)).size !== items.length)
     throw new Error('Duplicate record identifiers.');
+}
+function decimal(value: unknown, label: string, min = 0, max = 100000000) {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < min || value > max)
+    throw new Error(`Enter a valid ${label}.`);
+  return value;
+}
+function rateSetup(value: unknown): RateSetupData {
+  const v = object(value);
+  const seasons = list(v.seasons, 200).map((entry) => {
+    const row = object(entry);
+    return { id: text(row.id, 'season ID', true, 100), name: text(row.name, 'season name', true, 120).trim(), color: text(row.color, 'season colour', true, 20), active: boolean(row.active) };
+  });
+  unique(seasons);
+  const seasonIds = new Set(seasons.map((item) => item.id));
+  const calendarRaw = object(v.calendar);
+  const calendar: Record<string, string> = {};
+  for (const [date, seasonIdValue] of Object.entries(calendarRaw)) {
+    if (!validDate(date)) throw new Error('Choose a valid season calendar date.');
+    if (typeof seasonIdValue !== 'string' || !seasonIds.has(seasonIdValue)) continue;
+    calendar[date] = seasonIdValue;
+  }
+  const elements = list(v.elements, 1000).map((entry) => {
+    const row = object(entry);
+    const min = number(row.min, 'minimum quantity', 0, 10000);
+    const max = number(row.max, 'maximum quantity', min, 10000);
+    return { id: text(row.id, 'rate element ID', true, 100), name: text(row.name, 'rate element', true, 160).trim(), basis: text(row.basis, 'charge basis', true, 80), min, max, amount: decimal(row.amount, 'rate element amount'), active: boolean(row.active) };
+  });
+  unique(elements);
+  const rateTypes = list(v.rateTypes, 1000).map((entry) => {
+    const row = object(entry);
+    return { id: text(row.id, 'rate type ID', true, 100), name: text(row.name, 'rate type', true, 160).trim(), active: boolean(row.active) };
+  });
+  unique(rateTypes);
+  const ratePlans = list(v.ratePlans, 2000).map((entry) => {
+    const row = object(entry);
+    return { id: text(row.id, 'rate setup ID', true, 100), code: text(row.code, 'rate code', true, 100).trim(), description: text(row.description, 'rate description', true, 240).trim(), updated: text(row.updated, 'last updated date', true, 40), active: boolean(row.active), web: typeof row.web === 'boolean' ? row.web : false };
+  });
+  unique(ratePlans);
+  const ratePlanIds = new Set(ratePlans.map((item) => item.id));
+  const validity = list(v.validity, 4000).map((entry) => {
+    const row = object(entry);
+    const from = text(row.from, 'valid from', true, 10);
+    const to = text(row.to, 'valid to', true, 10);
+    if (!validDate(from) || !validDate(to) || to < from) throw new Error('Validity end date must be on or after the start date.');
+    const rateSetupId = text(row.rateSetupId, 'rate setup', true, 100);
+    if (!ratePlanIds.has(rateSetupId)) throw new Error('Choose an existing Rate Setup for the validity period.');
+    return { id: text(row.id, 'validity ID', true, 100), rateSetupId, from, to, active: boolean(row.active) };
+  });
+  unique(validity);
+  return { seasons, calendar, elements, rateTypes, ratePlans, validity };
 }
 function departure(value: unknown): DepartureInput {
   const v = object(value);
@@ -528,6 +593,9 @@ export function applyTransportAction(
         amount: v.amount,
       };
       return { ...normalized, bookings: [value, ...normalized.bookings] };
+    }
+    case 'rateSetup': {
+      return { ...normalizeTransportState(state), rateSetup: rateSetup(action.value) };
     }
     case 'bookingTransportAdd': {
       const booking = normalizeTransportState(state).bookings.find(

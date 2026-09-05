@@ -10,6 +10,7 @@ import {
   Network,
 } from 'lucide-react';
 import { RateSetupModule, type RateSetupSection } from '@/components/rate-setup';
+import { initialRateSetupData, type RateSetupData } from '@/lib/rate-setup-data';
 
 export type HotelSettingsDetailKind =
   | 'hotelSetup'
@@ -61,11 +62,15 @@ export function HotelSettingsDetail({
   onBack,
   rateSection = null,
   onRateSectionChange = () => {},
+  rateData = initialRateSetupData,
+  onRateDataChange = () => {},
 }: {
   kind: HotelSettingsDetailKind;
   onBack: () => void;
   rateSection?: RateSetupSection | null;
   onRateSectionChange?: (section: RateSetupSection | null) => void;
+  rateData?: RateSetupData;
+  onRateDataChange?: (value: RateSetupData) => void | Promise<void>;
 }) {
   const page = pages[kind];
   const Icon = page.icon;
@@ -73,7 +78,7 @@ export function HotelSettingsDetail({
   if (kind === 'ratePolicy') {
     return (
       <section className="master-page rate-setup-master-page" aria-label="Rate Setup">
-        <RateSetupModule section={rateSection} onSectionChange={onRateSectionChange} />
+        <RateSetupModule section={rateSection} onSectionChange={onRateSectionChange} data={rateData} onChange={onRateDataChange} />
         {!rateSection && (
           <button className="secondary-button master-page-back" type="button" onClick={onBack}>
             <ArrowLeft size={16} /> Back to Hotel Settings

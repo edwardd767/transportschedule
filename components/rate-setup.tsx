@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -13,6 +13,7 @@ import {
   X,
 } from 'lucide-react';
 import { HotelDatePicker } from '@/components/hotel-date-picker';
+import type { RateSetupData, RateValidityItem } from '@/lib/rate-setup-data';
 
 export type RateSetupSection =
   | 'season-setup'
@@ -263,8 +264,7 @@ function SearchHeader({
   );
 }
 
-function SeasonSetupPage() {
-  const [seasons, setSeasons] = useState(initialSeasons);
+function SeasonSetupPage({ seasons, onChange }: { seasons: Season[]; onChange: (value: Season[]) => void | Promise<void> }) {
   const [menuId, setMenuId] = useState<string | null>(null);
   const [editing, setEditing] = useState<Season | null>(null);
   const [draft, setDraft] = useState<Season | null>(null);
@@ -282,12 +282,10 @@ function SeasonSetupPage() {
 
   const save = () => {
     if (!draft || !draft.name.trim()) return;
-    setSeasons((current) => {
-      const exists = current.some((item) => item.id === draft.id);
-      return exists
-        ? current.map((item) => (item.id === draft.id ? { ...draft, name: draft.name.trim() } : item))
-        : [...current, { ...draft, name: draft.name.trim() }];
-    });
+    const exists = seasons.some((item) => item.id === draft.id);
+    void onChange(exists
+      ? seasons.map((item) => (item.id === draft.id ? { ...draft, name: draft.name.trim() } : item))
+      : [...seasons, { ...draft, name: draft.name.trim() }]);
     setEditing(null);
     setDraft(null);
   };
@@ -310,7 +308,7 @@ function SeasonSetupPage() {
                     { label: 'Edit', onClick: () => beginEdit(season) },
                     {
                       label: season.active ? 'Inactive' : 'Active',
-                      onClick: () => setSeasons((current) => current.map((item) => item.id === season.id ? { ...item, active: !item.active } : item)),
+                      onClick: () => { void onChange(seasons.map((item) => item.id === season.id ? { ...item, active: !item.active } : item)); },
                     },
                   ]}
                 />
@@ -348,22 +346,18 @@ function daysForMonth(value: string) {
   return { total, offset };
 }
 
-function SeasonCalendarPage() {
-  const [seasons] = useState(initialSeasons);
-  const [selectedId, setSelectedId] = useState('non-peak');
+function SeasonCalendarPage({ seasons, assignments, onSave }: { seasons: Season[]; assignments: Record<string, string>; onSave: (value: Record<string, string>) => void | Promise<void> }) {
+  const [selectedId, setSelectedId] = useState(seasons.find((item) => item.active)?.id ?? '');
   const [month, setMonth] = useState('2026-09');
-  const [assignments, setAssignments] = useState<Record<string, string>>(() => {
-    const result: Record<string, string> = {};
-    for (let day = 1; day <= 30; day += 1) result[`2026-09-${String(day).padStart(2, '0')}`] = 'non-peak';
-    return result;
-  });
+  const [draftAssignments, setDraftAssignments] = useState<Record<string, string>>(assignments);
   const [saved, setSaved] = useState(false);
+  useEffect(() => setDraftAssignments(assignments), [assignments]);
   const selected = seasons.find((item) => item.id === selectedId) ?? seasons[0];
   const { total, offset } = daysForMonth(month);
 
   const toggleDate = (day: number) => {
     const key = `${month}-${String(day).padStart(2, '0')}`;
-    setAssignments((current) => ({ ...current, [key]: current[key] === selectedId ? '' : selectedId }));
+    setDraftAssignments((current) => ({ ...current, [key]: current[key] === selectedId ? '' : selectedId }));
     setSaved(false);
   };
 
@@ -393,7 +387,7 @@ function SeasonCalendarPage() {
           {Array.from({ length: total }, (_, index) => {
             const day = index + 1;
             const key = `${month}-${String(day).padStart(2, '0')}`;
-            const season = seasons.find((item) => item.id === assignments[key]);
+            const season = seasons.find((item) => item.id === draftAssignments[key]);
             return (
               <button
                 type="button"
@@ -410,14 +404,13 @@ function SeasonCalendarPage() {
         </div>
       </div>
       <div className="season-calendar-savebar">
-        <button className="primary-button" type="button" onClick={() => setSaved(true)}>{saved ? 'Saved' : 'Save'}</button>
+        <button className="primary-button" type="button" onClick={async () => { const cleaned = Object.fromEntries(Object.entries(draftAssignments).filter(([, value]) => value)); await onSave(cleaned); setSaved(true); }}>{saved ? 'Saved' : 'Save'}</button>
       </div>
     </div>
   );
 }
 
-function RateElementPage() {
-  const [items, setItems] = useState(rateElementSeed);
+function RateElementPage({ items, onChange }: { items: RateElementItem[]; onChange: (value: RateElementItem[]) => void | Promise<void> }) {
   const [menuId, setMenuId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [draft, setDraft] = useState<RateElementItem | null>(null);
@@ -425,9 +418,9 @@ function RateElementPage() {
 
   const save = () => {
     if (!draft || !draft.name.trim()) return;
-    setItems((current) => current.some((item) => item.id === draft.id)
-      ? current.map((item) => item.id === draft.id ? { ...draft, name: draft.name.trim() } : item)
-      : [...current, { ...draft, name: draft.name.trim() }]);
+    void onChange(items.some((item) => item.id === draft.id)
+      ? items.map((item) => item.id === draft.id ? { ...draft, name: draft.name.trim() } : item)
+      : [...items, { ...draft, name: draft.name.trim() }]);
     setDraft(null);
   };
 
@@ -444,7 +437,7 @@ function RateElementPage() {
               {menuId === item.id && (
                 <PopupMenu onClose={() => setMenuId(null)} items={[
                   { label: 'Edit', onClick: () => setDraft({ ...item }) },
-                  { label: item.active ? 'Inactive' : 'Active', onClick: () => setItems((current) => current.map((row) => row.id === item.id ? { ...row, active: !row.active } : row)) },
+                  { label: item.active ? 'Inactive' : 'Active', onClick: () => { void onChange(items.map((row) => row.id === item.id ? { ...row, active: !row.active } : row)); } },
                 ]} />
               )}
             </div>
@@ -464,8 +457,7 @@ function RateElementPage() {
   );
 }
 
-function RateTypePage() {
-  const [items, setItems] = useState<RateTypeItem[]>(rateTypeNames.map((name, index) => ({ id: `type-${index + 1}`, name, active: true })));
+function RateTypePage({ items, onChange }: { items: RateTypeItem[]; onChange: (value: RateTypeItem[]) => void | Promise<void> }) {
   const [menuId, setMenuId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [draft, setDraft] = useState<RateTypeItem | null>(null);
@@ -473,9 +465,9 @@ function RateTypePage() {
 
   const save = () => {
     if (!draft || !draft.name.trim()) return;
-    setItems((current) => current.some((item) => item.id === draft.id)
-      ? current.map((item) => item.id === draft.id ? { ...draft, name: draft.name.trim() } : item)
-      : [...current, { ...draft, name: draft.name.trim() }]);
+    void onChange(items.some((item) => item.id === draft.id)
+      ? items.map((item) => item.id === draft.id ? { ...draft, name: draft.name.trim() } : item)
+      : [...items, { ...draft, name: draft.name.trim() }]);
     setDraft(null);
   };
 
@@ -491,7 +483,7 @@ function RateTypePage() {
               {menuId === item.id && (
                 <PopupMenu onClose={() => setMenuId(null)} items={[
                   { label: 'Edit', onClick: () => setDraft({ ...item }) },
-                  { label: item.active ? 'Inactive' : 'Active', onClick: () => setItems((current) => current.map((row) => row.id === item.id ? { ...row, active: !row.active } : row)) },
+                  { label: item.active ? 'Inactive' : 'Active', onClick: () => { void onChange(items.map((row) => row.id === item.id ? { ...row, active: !row.active } : row)); } },
                 ]} />
               )}
             </div>
@@ -508,19 +500,18 @@ function RateTypePage() {
   );
 }
 
-function RateSetupPage() {
-  const [items, setItems] = useState(initialRatePlans);
+function RateSetupPage({ items, validityItems, onChange, onValidityChange }: { items: RatePlanItem[]; validityItems: RateValidityItem[]; onChange: (value: RatePlanItem[]) => void | Promise<void>; onValidityChange: (value: RateValidityItem[]) => void | Promise<void> }) {
   const [menuId, setMenuId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [draft, setDraft] = useState<RatePlanItem | null>(null);
-  const [validity, setValidity] = useState<{ item: RatePlanItem; from: string; to: string } | null>(null);
+  const [validity, setValidity] = useState<{ item: RatePlanItem; id: string; from: string; to: string } | null>(null);
   const filtered = useMemo(() => items.filter((item) => `${item.code} ${item.description}`.toLowerCase().includes(query.toLowerCase())), [items, query]);
 
   const save = () => {
     if (!draft || !draft.code.trim() || !draft.description.trim()) return;
-    setItems((current) => current.some((item) => item.id === draft.id)
-      ? current.map((item) => item.id === draft.id ? { ...draft, code: draft.code.trim(), description: draft.description.trim(), updated: '05 Sep 2026' } : item)
-      : [...current, { ...draft, code: draft.code.trim(), description: draft.description.trim(), updated: '05 Sep 2026' }]);
+    void onChange(items.some((item) => item.id === draft.id)
+      ? items.map((item) => item.id === draft.id ? { ...draft, code: draft.code.trim(), description: draft.description.trim(), updated: '05 Sep 2026' } : item)
+      : [...items, { ...draft, code: draft.code.trim(), description: draft.description.trim(), updated: '05 Sep 2026' }]);
     setDraft(null);
   };
 
@@ -536,7 +527,7 @@ function RateSetupPage() {
               <button type="button" aria-label={`Options for ${item.code}`} onClick={() => setMenuId(menuId === item.id ? null : item.id)}><MoreVertical size={24} /></button>
               {menuId === item.id && (
                 <PopupMenu onClose={() => setMenuId(null)} items={[
-                  { label: 'Validity Period', onClick: () => setValidity({ item, from: '2026-09-05', to: '2026-12-31' }) },
+                  { label: 'Validity Period', onClick: () => { const existing = validityItems.find((row) => row.rateSetupId === item.id && row.active); setValidity({ item, id: existing?.id ?? `validity-${Date.now()}`, from: existing?.from ?? '2026-09-05', to: existing?.to ?? '2026-12-31' }); } },
                   { label: 'Edit', onClick: () => setDraft({ ...item }) },
                 ]} />
               )}
@@ -553,7 +544,7 @@ function RateSetupPage() {
         </EditorModal>
       )}
       {validity && (
-        <EditorModal title={`Validity Period - ${validity.item.code}`} onCancel={() => setValidity(null)} onSave={() => setValidity(null)}>
+        <EditorModal title={`Validity Period - ${validity.item.code}`} onCancel={() => setValidity(null)} onSave={() => { void onValidityChange([...validityItems.filter((row) => row.rateSetupId !== validity.item.id), { id: validity.id, rateSetupId: validity.item.id, from: validity.from, to: validity.to, active: true }]); setValidity(null); }}>
           <div className="rate-editor-grid">
             <label className="rate-editor-field">Valid From<HotelDatePicker value={validity.from} onChange={(value) => setValidity({ ...validity, from: value })} /></label>
             <label className="rate-editor-field">Valid To<HotelDatePicker value={validity.to} onChange={(value) => setValidity({ ...validity, to: value })} /></label>
@@ -567,10 +558,15 @@ function RateSetupPage() {
 export function RateSetupModule({
   section,
   onSectionChange,
+  data,
+  onChange,
 }: {
   section: RateSetupSection | null;
   onSectionChange: (section: RateSetupSection | null) => void;
+  data: RateSetupData;
+  onChange: (value: RateSetupData) => void | Promise<void>;
 }) {
+  const savePart = <K extends keyof RateSetupData>(key: K, value: RateSetupData[K]) => onChange({ ...data, [key]: value });
   if (!section) {
     return (
       <div className="hotel-settings-menu rate-setup-module-menu" aria-label="Rate Setup">
@@ -596,11 +592,11 @@ export function RateSetupModule({
       <div className="rate-subpage-backline">
         <button type="button" onClick={() => onSectionChange(null)}><ChevronLeft size={17} /> Rate Setup</button>
       </div>
-      {section === 'season-setup' ? <SeasonSetupPage /> : null}
-      {section === 'season-calendar' ? <SeasonCalendarPage /> : null}
-      {section === 'rate-element' ? <RateElementPage /> : null}
-      {section === 'rate-type' ? <RateTypePage /> : null}
-      {section === 'rate-setup' ? <RateSetupPage /> : null}
+      {section === 'season-setup' ? <SeasonSetupPage seasons={data.seasons} onChange={(value) => savePart('seasons', value)} /> : null}
+      {section === 'season-calendar' ? <SeasonCalendarPage seasons={data.seasons} assignments={data.calendar} onSave={(value) => savePart('calendar', value)} /> : null}
+      {section === 'rate-element' ? <RateElementPage items={data.elements} onChange={(value) => savePart('elements', value)} /> : null}
+      {section === 'rate-type' ? <RateTypePage items={data.rateTypes} onChange={(value) => savePart('rateTypes', value)} /> : null}
+      {section === 'rate-setup' ? <RateSetupPage items={data.ratePlans} validityItems={data.validity} onChange={(value) => savePart('ratePlans', value)} onValidityChange={(value) => savePart('validity', value)} /> : null}
     </div>
   );
 }

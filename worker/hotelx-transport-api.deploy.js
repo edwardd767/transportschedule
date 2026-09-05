@@ -840,6 +840,118 @@ function removeBookingTransportLeg(trips, legs, bookingReference, legId) {
   };
 }
 
+// lib/rate-setup-data.ts
+var initialRateSeasons = [
+  { id: "non-peak", name: "Non Peak", color: "#25ef1a", active: true },
+  { id: "peak", name: "Peak", color: "#ed0000", active: true },
+  { id: "super-peak", name: "Super Peak", color: "#2341dc", active: true },
+  { id: "public-holidays", name: "Public Holidays", color: "#2bb3a6", active: true }
+];
+var initialRateElements = [
+  ["Banquet Drink", "Per Person", 1, 4, 2],
+  ["Banquet Food", "Per Person", 1, 2, 10],
+  ["BBQ Dinner 2025", "Per Person", 1, 3, 60],
+  ["BBQ Dinner baru", "Per Person", 1, 3, 60],
+  ["Breakfast (Adult)", "Per Person", 1, 2, 20],
+  ["Breakfast Package", "Per Person", 1, 4, 20],
+  ["Breakfast Package Child", "Per Person", 1, 4, 15],
+  ["Breakfast Package Infant", "Per Person", 0, 2, 0],
+  ["Extra Bed", "Per Room", 1, 1, 80],
+  ["Extra Breakfast", "Per Person", 1, 4, 25],
+  ["Airport Transfer", "Per Trip", 1, 6, 120],
+  ["Welcome Drink", "Per Person", 1, 4, 8],
+  ["Late Checkout", "Per Room", 1, 1, 100],
+  ["Early Check-in", "Per Room", 1, 1, 100],
+  ["Dinner Adult", "Per Person", 1, 4, 55],
+  ["Dinner Child", "Per Person", 1, 4, 30],
+  ["Lunch Adult", "Per Person", 1, 4, 45],
+  ["Lunch Child", "Per Person", 1, 4, 25],
+  ["Spa Voucher", "Per Person", 1, 2, 50],
+  ["Laundry Credit", "Per Room", 1, 1, 30],
+  ["Minibar Credit", "Per Room", 1, 1, 25],
+  ["Parking", "Per Vehicle", 1, 2, 10],
+  ["Tourism Package", "Per Person", 1, 4, 35],
+  ["Romantic Setup", "Per Room", 1, 1, 150],
+  ["Anniversary Cake", "Per Room", 1, 1, 80]
+].map((item, index) => ({
+  id: `element-${index + 1}`,
+  name: String(item[0]),
+  basis: String(item[1]),
+  min: Number(item[2]),
+  max: Number(item[3]),
+  amount: Number(item[4]),
+  active: true
+}));
+var rateTypeNames = [
+  "BAR",
+  "COMP",
+  "Corp1",
+  "Monthly - Trillion",
+  "BEST AVAILABLE RATE",
+  "Corporate",
+  "Government",
+  "Citto Inn",
+  "House Use",
+  "Long Stay",
+  "Member Rate",
+  "Online Travel Agent",
+  "Package Rate",
+  "Promotion",
+  "Rack Rate",
+  "Staff Rate",
+  "Travel Agent",
+  "Walk In",
+  "Weekend Rate",
+  "Wholesale"
+];
+var initialRateTypes = rateTypeNames.map((name, index) => ({
+  id: `type-${index + 1}`,
+  name,
+  active: true
+}));
+var firstRatePlans = [
+  ["DU", "DAYUSE", "10 Feb 2021"],
+  ["BAR", "BEST AVAILABLE RATE 2021", "25 Mar 2024"],
+  ["Special Rate", "Special Rate", "26 Jun 2025", false],
+  ["COMP", "COMPLIMENTARY", "27 Jan 2026"],
+  ["HU", "HOUSEUSE", "27 Sep 2022"],
+  ["Promo With BF", "Promotion Rate W Breakfast", "01 Feb 2023", true, true],
+  ["Boss friends promo rate", "Boss friends", "26 Jun 2025", false],
+  ["CORP", "Corporate Rate", "23 Jul 2026"],
+  ["GOV", "Government Rate", "23 Jul 2026"],
+  ["OTA", "Online Travel Agent Rate", "19 Aug 2026", true, true]
+];
+var initialRatePlans = [
+  ...firstRatePlans.map((item, index) => ({
+    id: `rate-${index + 1}`,
+    code: item[0],
+    description: item[1],
+    updated: item[2],
+    active: item[3] ?? true,
+    web: item[4] ?? false
+  })),
+  ...Array.from({ length: 35 }, (_, index) => ({
+    id: `rate-${index + 11}`,
+    code: `RATE${String(index + 11).padStart(2, "0")}`,
+    description: `Hotel Rate Plan ${index + 11}`,
+    updated: index % 3 === 0 ? "27 Aug 2026" : index % 3 === 1 ? "19 Aug 2026" : "23 Jul 2026",
+    active: index % 9 !== 0,
+    web: index % 7 === 0
+  }))
+];
+var initialCalendar = {};
+for (let day = 1; day <= 30; day += 1) {
+  initialCalendar[`2026-09-${String(day).padStart(2, "0")}`] = "non-peak";
+}
+var initialRateSetupData = {
+  seasons: initialRateSeasons,
+  calendar: initialCalendar,
+  elements: initialRateElements,
+  rateTypes: initialRateTypes,
+  ratePlans: initialRatePlans,
+  validity: []
+};
+
 // lib/transport-state.ts
 function newTransportState() {
   return structuredClone({
@@ -849,12 +961,14 @@ function newTransportState() {
     dayNotes: initialDayNotes,
     bookingLegs: [],
     hotelMasters: initialHotelMasters,
-    bookings: initialBookings
+    bookings: initialBookings,
+    rateSetup: initialRateSetupData
   });
 }
 function normalizeTransportState(state) {
   const hotelMasters = state.hotelMasters && Array.isArray(state.hotelMasters.locations) && Array.isArray(state.hotelMasters.roomTypes) && Array.isArray(state.hotelMasters.rooms) && state.hotelMasters.roomTypes.length ? state.hotelMasters : structuredClone(initialHotelMasters);
   const bookings = Array.isArray(state.bookings) && state.bookings.length ? state.bookings : structuredClone(initialBookings);
+  const rateSetup2 = state.rateSetup && Array.isArray(state.rateSetup.seasons) && state.rateSetup.seasons.length && state.rateSetup.calendar && typeof state.rateSetup.calendar === "object" && Array.isArray(state.rateSetup.elements) && state.rateSetup.elements.length && Array.isArray(state.rateSetup.rateTypes) && state.rateSetup.rateTypes.length && Array.isArray(state.rateSetup.ratePlans) && state.rateSetup.ratePlans.length && Array.isArray(state.rateSetup.validity) ? state.rateSetup : structuredClone(initialRateSetupData);
   return {
     ...state,
     setup: {
@@ -873,7 +987,8 @@ function normalizeTransportState(state) {
     ),
     bookingLegs: Array.isArray(state.bookingLegs) ? state.bookingLegs : [],
     hotelMasters,
-    bookings
+    bookings,
+    rateSetup: rateSetup2
   };
 }
 function object(value) {
@@ -903,6 +1018,56 @@ function list(value, max = 200) {
 function unique(items) {
   if (new Set(items.map((item) => item.id)).size !== items.length)
     throw new Error("Duplicate record identifiers.");
+}
+function decimal(value, label, min = 0, max = 1e8) {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < min || value > max)
+    throw new Error(`Enter a valid ${label}.`);
+  return value;
+}
+function rateSetup(value) {
+  const v = object(value);
+  const seasons = list(v.seasons, 200).map((entry) => {
+    const row = object(entry);
+    return { id: text(row.id, "season ID", true, 100), name: text(row.name, "season name", true, 120).trim(), color: text(row.color, "season colour", true, 20), active: boolean(row.active) };
+  });
+  unique(seasons);
+  const seasonIds = new Set(seasons.map((item) => item.id));
+  const calendarRaw = object(v.calendar);
+  const calendar = {};
+  for (const [date, seasonIdValue] of Object.entries(calendarRaw)) {
+    if (!validDate(date)) throw new Error("Choose a valid season calendar date.");
+    if (typeof seasonIdValue !== "string" || !seasonIds.has(seasonIdValue)) continue;
+    calendar[date] = seasonIdValue;
+  }
+  const elements = list(v.elements, 1e3).map((entry) => {
+    const row = object(entry);
+    const min = number(row.min, "minimum quantity", 0, 1e4);
+    const max = number(row.max, "maximum quantity", min, 1e4);
+    return { id: text(row.id, "rate element ID", true, 100), name: text(row.name, "rate element", true, 160).trim(), basis: text(row.basis, "charge basis", true, 80), min, max, amount: decimal(row.amount, "rate element amount"), active: boolean(row.active) };
+  });
+  unique(elements);
+  const rateTypes = list(v.rateTypes, 1e3).map((entry) => {
+    const row = object(entry);
+    return { id: text(row.id, "rate type ID", true, 100), name: text(row.name, "rate type", true, 160).trim(), active: boolean(row.active) };
+  });
+  unique(rateTypes);
+  const ratePlans = list(v.ratePlans, 2e3).map((entry) => {
+    const row = object(entry);
+    return { id: text(row.id, "rate setup ID", true, 100), code: text(row.code, "rate code", true, 100).trim(), description: text(row.description, "rate description", true, 240).trim(), updated: text(row.updated, "last updated date", true, 40), active: boolean(row.active), web: typeof row.web === "boolean" ? row.web : false };
+  });
+  unique(ratePlans);
+  const ratePlanIds = new Set(ratePlans.map((item) => item.id));
+  const validity = list(v.validity, 4e3).map((entry) => {
+    const row = object(entry);
+    const from = text(row.from, "valid from", true, 10);
+    const to = text(row.to, "valid to", true, 10);
+    if (!validDate(from) || !validDate(to) || to < from) throw new Error("Validity end date must be on or after the start date.");
+    const rateSetupId = text(row.rateSetupId, "rate setup", true, 100);
+    if (!ratePlanIds.has(rateSetupId)) throw new Error("Choose an existing Rate Setup for the validity period.");
+    return { id: text(row.id, "validity ID", true, 100), rateSetupId, from, to, active: boolean(row.active) };
+  });
+  unique(validity);
+  return { seasons, calendar, elements, rateTypes, ratePlans, validity };
 }
 function departure(value) {
   const v = object(value);
@@ -1234,6 +1399,9 @@ function applyTransportAction(state, input) {
         amount: v.amount
       };
       return { ...normalized, bookings: [value, ...normalized.bookings] };
+    }
+    case "rateSetup": {
+      return { ...normalizeTransportState(state), rateSetup: rateSetup(action.value) };
     }
     case "bookingTransportAdd": {
       const booking = normalizeTransportState(state).bookings.find(
@@ -1616,6 +1784,84 @@ var schemaStatements = [
     FOREIGN KEY (property_id, booking_reference) REFERENCES public.hotelx_bookings(property_id, reference) ON DELETE CASCADE,
     FOREIGN KEY (property_id, room_type_code) REFERENCES public.hotelx_room_type_master(property_id, code)
   )`,
+  `CREATE TABLE IF NOT EXISTS public.hotelx_season_master (
+    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    id text NOT NULL,
+    sort_order integer NOT NULL,
+    name text NOT NULL,
+    color text NOT NULL DEFAULT '#ff9100',
+    active boolean NOT NULL DEFAULT true,
+    updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (property_id, id)
+  )`,
+  `CREATE TABLE IF NOT EXISTS public.hotelx_season_calendar (
+    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    calendar_date date NOT NULL,
+    season_id text NOT NULL,
+    updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (property_id, calendar_date),
+    FOREIGN KEY (property_id, season_id)
+      REFERENCES public.hotelx_season_master(property_id, id)
+  )`,
+  `CREATE TABLE IF NOT EXISTS public.hotelx_rate_element (
+    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    id text NOT NULL,
+    sort_order integer NOT NULL,
+    name text NOT NULL,
+    basis text NOT NULL,
+    min_qty integer NOT NULL DEFAULT 0 CHECK (min_qty >= 0),
+    max_qty integer NOT NULL DEFAULT 0 CHECK (max_qty >= min_qty),
+    amount numeric(14,2) NOT NULL DEFAULT 0 CHECK (amount >= 0),
+    active boolean NOT NULL DEFAULT true,
+    updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (property_id, id)
+  )`,
+  `CREATE TABLE IF NOT EXISTS public.hotelx_rate_type (
+    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    id text NOT NULL,
+    sort_order integer NOT NULL,
+    name text NOT NULL,
+    active boolean NOT NULL DEFAULT true,
+    updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (property_id, id)
+  )`,
+  `CREATE TABLE IF NOT EXISTS public.hotelx_rate_setup (
+    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    id text NOT NULL,
+    sort_order integer NOT NULL,
+    code text NOT NULL,
+    description text NOT NULL,
+    active boolean NOT NULL DEFAULT true,
+    web boolean NOT NULL DEFAULT false,
+    last_updated_on date,
+    updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (property_id, id),
+    UNIQUE (property_id, code)
+  )`,
+  `CREATE TABLE IF NOT EXISTS public.hotelx_rate_setup_validity (
+    property_id text NOT NULL,
+    rate_setup_id text NOT NULL,
+    id text NOT NULL,
+    sort_order integer NOT NULL,
+    valid_from date NOT NULL,
+    valid_to date NOT NULL,
+    active boolean NOT NULL DEFAULT true,
+    updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (property_id, rate_setup_id, id),
+    FOREIGN KEY (property_id, rate_setup_id)
+      REFERENCES public.hotelx_rate_setup(property_id, id) ON DELETE CASCADE,
+    CHECK (valid_to >= valid_from)
+  )`,
+  `CREATE INDEX IF NOT EXISTS hotelx_season_calendar_season_idx
+    ON public.hotelx_season_calendar(property_id, season_id, calendar_date)`,
+  `CREATE INDEX IF NOT EXISTS hotelx_rate_element_name_idx
+    ON public.hotelx_rate_element(property_id, name)`,
+  `CREATE INDEX IF NOT EXISTS hotelx_rate_type_name_idx
+    ON public.hotelx_rate_type(property_id, name)`,
+  `CREATE INDEX IF NOT EXISTS hotelx_rate_setup_code_idx
+    ON public.hotelx_rate_setup(property_id, code)`,
+  `CREATE INDEX IF NOT EXISTS hotelx_rate_setup_validity_dates_idx
+    ON public.hotelx_rate_setup_validity(property_id, rate_setup_id, valid_from, valid_to)`,
   `CREATE INDEX IF NOT EXISTS hotelx_room_master_type_idx
     ON public.hotelx_room_master(property_id, room_type_code, location_code)`,
   `CREATE INDEX IF NOT EXISTS hotelx_bookings_dates_idx
@@ -1633,6 +1879,12 @@ var schemaStatements = [
   LANGUAGE plpgsql
   AS $$
   BEGIN
+    DELETE FROM public.hotelx_rate_setup_validity WHERE property_id = p_property_id;
+    DELETE FROM public.hotelx_season_calendar WHERE property_id = p_property_id;
+    DELETE FROM public.hotelx_rate_element WHERE property_id = p_property_id;
+    DELETE FROM public.hotelx_rate_type WHERE property_id = p_property_id;
+    DELETE FROM public.hotelx_rate_setup WHERE property_id = p_property_id;
+    DELETE FROM public.hotelx_season_master WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_booking_rooms WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_bookings WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_room_master WHERE property_id = p_property_id;
@@ -1709,6 +1961,31 @@ var schemaStatements = [
     FROM jsonb_array_elements(COALESCE(p_state->'bookings', '[]'::jsonb)) AS booking(value)
     CROSS JOIN LATERAL jsonb_array_elements(COALESCE(booking.value->'rooms', '[]'::jsonb))
       WITH ORDINALITY AS room(value, ordinality);
+
+    INSERT INTO public.hotelx_season_master (property_id, id, sort_order, name, color, active)
+    SELECT p_property_id, item.value->>'id', item.ordinality::integer, item.value->>'name', COALESCE(item.value->>'color', '#ff9100'), COALESCE((item.value->>'active')::boolean, true)
+    FROM jsonb_array_elements(COALESCE(p_state #> '{rateSetup,seasons}', '[]'::jsonb)) WITH ORDINALITY AS item(value, ordinality);
+
+    INSERT INTO public.hotelx_season_calendar (property_id, calendar_date, season_id)
+    SELECT p_property_id, assignment.key::date, assignment.value #>> '{}'
+    FROM jsonb_each(COALESCE(p_state #> '{rateSetup,calendar}', '{}'::jsonb)) AS assignment(key, value)
+    WHERE COALESCE(assignment.value #>> '{}', '') <> '';
+
+    INSERT INTO public.hotelx_rate_element (property_id, id, sort_order, name, basis, min_qty, max_qty, amount, active)
+    SELECT p_property_id, item.value->>'id', item.ordinality::integer, item.value->>'name', item.value->>'basis', COALESCE(NULLIF(item.value->>'min', ''), '0')::integer, COALESCE(NULLIF(item.value->>'max', ''), '0')::integer, COALESCE(NULLIF(item.value->>'amount', ''), '0')::numeric, COALESCE((item.value->>'active')::boolean, true)
+    FROM jsonb_array_elements(COALESCE(p_state #> '{rateSetup,elements}', '[]'::jsonb)) WITH ORDINALITY AS item(value, ordinality);
+
+    INSERT INTO public.hotelx_rate_type (property_id, id, sort_order, name, active)
+    SELECT p_property_id, item.value->>'id', item.ordinality::integer, item.value->>'name', COALESCE((item.value->>'active')::boolean, true)
+    FROM jsonb_array_elements(COALESCE(p_state #> '{rateSetup,rateTypes}', '[]'::jsonb)) WITH ORDINALITY AS item(value, ordinality);
+
+    INSERT INTO public.hotelx_rate_setup (property_id, id, sort_order, code, description, active, web, last_updated_on)
+    SELECT p_property_id, item.value->>'id', item.ordinality::integer, item.value->>'code', item.value->>'description', COALESCE((item.value->>'active')::boolean, true), COALESCE((item.value->>'web')::boolean, false), CASE WHEN COALESCE(item.value->>'updated', '') ~ '^d{2} [A-Za-z]{3} d{4}$' THEN to_date(item.value->>'updated', 'DD Mon YYYY') ELSE NULL END
+    FROM jsonb_array_elements(COALESCE(p_state #> '{rateSetup,ratePlans}', '[]'::jsonb)) WITH ORDINALITY AS item(value, ordinality);
+
+    INSERT INTO public.hotelx_rate_setup_validity (property_id, rate_setup_id, id, sort_order, valid_from, valid_to, active)
+    SELECT p_property_id, item.value->>'rateSetupId', item.value->>'id', item.ordinality::integer, (item.value->>'from')::date, (item.value->>'to')::date, COALESCE((item.value->>'active')::boolean, true)
+    FROM jsonb_array_elements(COALESCE(p_state #> '{rateSetup,validity}', '[]'::jsonb)) WITH ORDINALITY AS item(value, ordinality);
 
     INSERT INTO public.hotelx_transport_rules (
       property_id, start_time, end_time, turnaround_minutes,
@@ -2020,6 +2297,14 @@ var schemaStatements = [
         FROM public.hotelx_bookings AS booking
         WHERE booking.property_id = meta.id
       ), '[]'::jsonb),
+      'rateSetup', jsonb_build_object(
+        'seasons', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', s.id, 'name', s.name, 'color', s.color, 'active', s.active) ORDER BY s.sort_order) FROM public.hotelx_season_master s WHERE s.property_id = meta.id), '[]'::jsonb),
+        'calendar', COALESCE((SELECT jsonb_object_agg(to_char(c.calendar_date, 'YYYY-MM-DD'), c.season_id) FROM public.hotelx_season_calendar c WHERE c.property_id = meta.id), '{}'::jsonb),
+        'elements', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', e.id, 'name', e.name, 'basis', e.basis, 'min', e.min_qty, 'max', e.max_qty, 'amount', e.amount::double precision, 'active', e.active) ORDER BY e.sort_order) FROM public.hotelx_rate_element e WHERE e.property_id = meta.id), '[]'::jsonb),
+        'rateTypes', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', t.id, 'name', t.name, 'active', t.active) ORDER BY t.sort_order) FROM public.hotelx_rate_type t WHERE t.property_id = meta.id), '[]'::jsonb),
+        'ratePlans', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', r.id, 'code', r.code, 'description', r.description, 'updated', COALESCE(to_char(r.last_updated_on, 'DD Mon YYYY'), ''), 'active', r.active, 'web', r.web) ORDER BY r.sort_order) FROM public.hotelx_rate_setup r WHERE r.property_id = meta.id), '[]'::jsonb),
+        'validity', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', v.id, 'rateSetupId', v.rate_setup_id, 'from', to_char(v.valid_from, 'YYYY-MM-DD'), 'to', to_char(v.valid_to, 'YYYY-MM-DD'), 'active', v.active) ORDER BY v.sort_order) FROM public.hotelx_rate_setup_validity v WHERE v.property_id = meta.id), '[]'::jsonb)
+      ),
       'setup', jsonb_build_object(
         'operators', COALESCE((
           SELECT jsonb_agg(
@@ -2220,12 +2505,14 @@ function createNormalizedTransportStorage(query) {
           raw.hotelMasters && Array.isArray(raw.hotelMasters.locations) && Array.isArray(raw.hotelMasters.roomTypes) && raw.hotelMasters.roomTypes.length && Array.isArray(raw.hotelMasters.rooms) && raw.hotelMasters.rooms.length
         );
         const hasBookings = Array.isArray(raw.bookings) && raw.bookings.length > 0;
-        if (!hasMasters || !hasBookings) {
+        const hasRateSetup = Boolean(raw.rateSetup && Array.isArray(raw.rateSetup.seasons) && raw.rateSetup.seasons.length && Array.isArray(raw.rateSetup.elements) && raw.rateSetup.elements.length && Array.isArray(raw.rateSetup.rateTypes) && raw.rateSetup.rateTypes.length && Array.isArray(raw.rateSetup.ratePlans) && raw.rateSetup.ratePlans.length && Array.isArray(raw.rateSetup.validity));
+        if (!hasMasters || !hasBookings || !hasRateSetup) {
           const merged = {
             ...seed,
             ...raw,
             hotelMasters: hasMasters ? raw.hotelMasters : seed.hotelMasters,
-            bookings: hasBookings ? raw.bookings : seed.bookings
+            bookings: hasBookings ? raw.bookings : seed.bookings,
+            rateSetup: hasRateSetup ? raw.rateSetup : seed.rateSetup
           };
           const upgraded = await query(connection, saveSql, [id, current[0], JSON.stringify(merged)]);
           const revision2 = Number(upgraded[0]?.[0]);
@@ -2434,6 +2721,7 @@ function createWorker(query = queryNeon, verifier = privateLinkSha256) {
             storageModel: "normalized-tables",
             storageSchemaVersion: 2,
             hotelMasterSchemaVersion: 1,
+            rateSetupSchemaVersion: 1,
             privateLinkConfigured: /^[a-f0-9]{64}$/.test(verifier),
             signInConfigured: passwordStatus(env.TRANSPORT_PASSWORD) === "ready",
             signInStatus: passwordStatus(env.TRANSPORT_PASSWORD)

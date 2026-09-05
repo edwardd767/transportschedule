@@ -296,6 +296,12 @@ const schemaStatements = [
   LANGUAGE plpgsql
   AS $$
   BEGIN
+    DELETE FROM public.hotelx_rate_setup_validity WHERE property_id = p_property_id;
+    DELETE FROM public.hotelx_season_calendar WHERE property_id = p_property_id;
+    DELETE FROM public.hotelx_rate_element WHERE property_id = p_property_id;
+    DELETE FROM public.hotelx_rate_type WHERE property_id = p_property_id;
+    DELETE FROM public.hotelx_rate_setup WHERE property_id = p_property_id;
+    DELETE FROM public.hotelx_season_master WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_booking_rooms WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_bookings WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_room_master WHERE property_id = p_property_id;
@@ -372,6 +378,31 @@ const schemaStatements = [
     FROM jsonb_array_elements(COALESCE(p_state->'bookings', '[]'::jsonb)) AS booking(value)
     CROSS JOIN LATERAL jsonb_array_elements(COALESCE(booking.value->'rooms', '[]'::jsonb))
       WITH ORDINALITY AS room(value, ordinality);
+
+    INSERT INTO public.hotelx_season_master (property_id, id, sort_order, name, color, active)
+    SELECT p_property_id, item.value->>'id', item.ordinality::integer, item.value->>'name', COALESCE(item.value->>'color', '#ff9100'), COALESCE((item.value->>'active')::boolean, true)
+    FROM jsonb_array_elements(COALESCE(p_state #> '{rateSetup,seasons}', '[]'::jsonb)) WITH ORDINALITY AS item(value, ordinality);
+
+    INSERT INTO public.hotelx_season_calendar (property_id, calendar_date, season_id)
+    SELECT p_property_id, assignment.key::date, assignment.value #>> '{}'
+    FROM jsonb_each(COALESCE(p_state #> '{rateSetup,calendar}', '{}'::jsonb)) AS assignment(key, value)
+    WHERE COALESCE(assignment.value #>> '{}', '') <> '';
+
+    INSERT INTO public.hotelx_rate_element (property_id, id, sort_order, name, basis, min_qty, max_qty, amount, active)
+    SELECT p_property_id, item.value->>'id', item.ordinality::integer, item.value->>'name', item.value->>'basis', COALESCE(NULLIF(item.value->>'min', ''), '0')::integer, COALESCE(NULLIF(item.value->>'max', ''), '0')::integer, COALESCE(NULLIF(item.value->>'amount', ''), '0')::numeric, COALESCE((item.value->>'active')::boolean, true)
+    FROM jsonb_array_elements(COALESCE(p_state #> '{rateSetup,elements}', '[]'::jsonb)) WITH ORDINALITY AS item(value, ordinality);
+
+    INSERT INTO public.hotelx_rate_type (property_id, id, sort_order, name, active)
+    SELECT p_property_id, item.value->>'id', item.ordinality::integer, item.value->>'name', COALESCE((item.value->>'active')::boolean, true)
+    FROM jsonb_array_elements(COALESCE(p_state #> '{rateSetup,rateTypes}', '[]'::jsonb)) WITH ORDINALITY AS item(value, ordinality);
+
+    INSERT INTO public.hotelx_rate_setup (property_id, id, sort_order, code, description, active, web, last_updated_on)
+    SELECT p_property_id, item.value->>'id', item.ordinality::integer, item.value->>'code', item.value->>'description', COALESCE((item.value->>'active')::boolean, true), COALESCE((item.value->>'web')::boolean, false), CASE WHEN COALESCE(item.value->>'updated', '') ~ '^\d{2} [A-Za-z]{3} \d{4}$' THEN to_date(item.value->>'updated', 'DD Mon YYYY') ELSE NULL END
+    FROM jsonb_array_elements(COALESCE(p_state #> '{rateSetup,ratePlans}', '[]'::jsonb)) WITH ORDINALITY AS item(value, ordinality);
+
+    INSERT INTO public.hotelx_rate_setup_validity (property_id, rate_setup_id, id, sort_order, valid_from, valid_to, active)
+    SELECT p_property_id, item.value->>'rateSetupId', item.value->>'id', item.ordinality::integer, (item.value->>'from')::date, (item.value->>'to')::date, COALESCE((item.value->>'active')::boolean, true)
+    FROM jsonb_array_elements(COALESCE(p_state #> '{rateSetup,validity}', '[]'::jsonb)) WITH ORDINALITY AS item(value, ordinality);
 
     INSERT INTO public.hotelx_transport_rules (
       property_id, start_time, end_time, turnaround_minutes,
@@ -683,6 +714,14 @@ const schemaStatements = [
         FROM public.hotelx_bookings AS booking
         WHERE booking.property_id = meta.id
       ), '[]'::jsonb),
+      'rateSetup', jsonb_build_object(
+        'seasons', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', s.id, 'name', s.name, 'color', s.color, 'active', s.active) ORDER BY s.sort_order) FROM public.hotelx_season_master s WHERE s.property_id = meta.id), '[]'::jsonb),
+        'calendar', COALESCE((SELECT jsonb_object_agg(to_char(c.calendar_date, 'YYYY-MM-DD'), c.season_id) FROM public.hotelx_season_calendar c WHERE c.property_id = meta.id), '{}'::jsonb),
+        'elements', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', e.id, 'name', e.name, 'basis', e.basis, 'min', e.min_qty, 'max', e.max_qty, 'amount', e.amount::double precision, 'active', e.active) ORDER BY e.sort_order) FROM public.hotelx_rate_element e WHERE e.property_id = meta.id), '[]'::jsonb),
+        'rateTypes', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', t.id, 'name', t.name, 'active', t.active) ORDER BY t.sort_order) FROM public.hotelx_rate_type t WHERE t.property_id = meta.id), '[]'::jsonb),
+        'ratePlans', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', r.id, 'code', r.code, 'description', r.description, 'updated', COALESCE(to_char(r.last_updated_on, 'DD Mon YYYY'), ''), 'active', r.active, 'web', r.web) ORDER BY r.sort_order) FROM public.hotelx_rate_setup r WHERE r.property_id = meta.id), '[]'::jsonb),
+        'validity', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', v.id, 'rateSetupId', v.rate_setup_id, 'from', to_char(v.valid_from, 'YYYY-MM-DD'), 'to', to_char(v.valid_to, 'YYYY-MM-DD'), 'active', v.active) ORDER BY v.sort_order) FROM public.hotelx_rate_setup_validity v WHERE v.property_id = meta.id), '[]'::jsonb)
+      ),
       'setup', jsonb_build_object(
         'operators', COALESCE((
           SELECT jsonb_agg(
@@ -916,12 +955,14 @@ export function createNormalizedTransportStorage(
           raw.hotelMasters.rooms.length,
         );
         const hasBookings = Array.isArray(raw.bookings) && raw.bookings.length > 0;
-        if (!hasMasters || !hasBookings) {
+        const hasRateSetup = Boolean(raw.rateSetup && Array.isArray(raw.rateSetup.seasons) && raw.rateSetup.seasons.length && Array.isArray(raw.rateSetup.elements) && raw.rateSetup.elements.length && Array.isArray(raw.rateSetup.rateTypes) && raw.rateSetup.rateTypes.length && Array.isArray(raw.rateSetup.ratePlans) && raw.rateSetup.ratePlans.length && Array.isArray(raw.rateSetup.validity));
+        if (!hasMasters || !hasBookings || !hasRateSetup) {
           const merged: TransportState = {
             ...seed,
             ...raw,
             hotelMasters: hasMasters ? raw.hotelMasters! : seed.hotelMasters,
             bookings: hasBookings ? raw.bookings! : seed.bookings,
+            rateSetup: hasRateSetup ? raw.rateSetup! : seed.rateSetup,
           } as TransportState;
           const upgraded = await query(connection, saveSql, [id, current[0], JSON.stringify(merged)]);
           const revision = Number(upgraded[0]?.[0]);
