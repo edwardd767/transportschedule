@@ -127,6 +127,7 @@ assert.equal((await call('/health')).data.apiVersion, 4);
 assert.equal((await call('/health')).data.storageModel, 'normalized-tables');
 assert.equal((await call('/health')).data.storageSchemaVersion, 2);
 assert.equal((await call('/health')).data.hotelMasterSchemaVersion, 1);
+assert.equal((await call('/health')).data.rateSetupSchemaVersion, 1);
 assert.equal((await call('/health')).data.privateLinkConfigured, true);
 for (const [password, status] of [
   [undefined, 'missing'],

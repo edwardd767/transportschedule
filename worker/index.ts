@@ -198,6 +198,7 @@ export function createWorker(
             storageModel: 'normalized-tables',
             storageSchemaVersion: 2,
             hotelMasterSchemaVersion: 1,
+            rateSetupSchemaVersion: 1,
             privateLinkConfigured: /^[a-f0-9]{64}$/.test(verifier),
             signInConfigured:
               passwordStatus(env.TRANSPORT_PASSWORD) === 'ready',
