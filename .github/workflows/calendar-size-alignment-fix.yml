@@ -19,10 +19,212 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-      - name: Compact calendar and fix Day List date alignment
-        env:
-          CALENDAR_CSS_B64: LyogVW5pZmllZCBIb3RlbFggY2FsZW5kYXIgcGlja2VyICovCi5ob3RlbC1kYXRlLWZpZWxkIHsKICB3aWR0aDogMTAwJTsKICBtaW4taGVpZ2h0OiAzOHB4OwogIGRpc3BsYXk6IGlubGluZS1mbGV4OwogIGFsaWduLWl0ZW1zOiBjZW50ZXI7CiAganVzdGlmeS1jb250ZW50OiBzcGFjZS1iZXR3ZWVuOwogIGdhcDogOHB4OwogIHBhZGRpbmc6IDZweCAxMHB4OwogIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWJvcmRlcik7CiAgYm9yZGVyLXJhZGl1czogNnB4OwogIGJhY2tncm91bmQ6ICNmZmY7CiAgY29sb3I6ICMyOTI5Mjk7CiAgdGV4dC1hbGlnbjogbGVmdDsKICBmb250LXdlaWdodDogNDAwOwogIGxpbmUtaGVpZ2h0OiAxOwogIHdoaXRlLXNwYWNlOiBub3dyYXA7Cn0KLmhvdGVsLWRhdGUtZmllbGQ6aG92ZXIgewogIGJvcmRlci1jb2xvcjogI2Q2YTE1ZDsKICBiYWNrZ3JvdW5kOiAjZmZmYWYzOwp9Ci5ob3RlbC1kYXRlLWZpZWxkID4gc3BhbiB7CiAgbWluLXdpZHRoOiAwOwogIG92ZXJmbG93OiBoaWRkZW47CiAgdGV4dC1vdmVyZmxvdzogZWxsaXBzaXM7CiAgd2hpdGUtc3BhY2U6IG5vd3JhcDsKfQouaG90ZWwtZGF0ZS1maWVsZCA+IHN2ZyB7CiAgZmxleDogMCAwIGF1dG87CiAgY29sb3I6ICM1ZjY2NzA7Cn0KLmhvdGVsLW1vbnRoLWZpZWxkIHsKICBtaW4td2lkdGg6IDE3MnB4Owp9CgouaG90ZWwtY2FsZW5kYXItZGlhbG9nIHsKICB3aWR0aDogbWluKDM2MHB4LCBjYWxjKDEwMHZ3IC0gMjRweCkpICFpbXBvcnRhbnQ7CiAgbWF4LXdpZHRoOiAzNjBweCAhaW1wb3J0YW50OwogIHBhZGRpbmc6IDAgIWltcG9ydGFudDsKICBnYXA6IDAgIWltcG9ydGFudDsKICBvdmVyZmxvdzogaGlkZGVuOwogIGJvcmRlci1yYWRpdXM6IDhweCAhaW1wb3J0YW50OwogIGJhY2tncm91bmQ6ICNmZmY7CiAgYm94LXNoYWRvdzogMCAxNHB4IDQ0cHggIzAwMDAwMDM4Owp9Ci5ob3RlbC1jYWxlbmRhci1oZWFkZXIgewogIG1pbi1oZWlnaHQ6IDEwNHB4OwogIGRpc3BsYXk6IGZsZXg7CiAgZmxleC1kaXJlY3Rpb246IGNvbHVtbjsKICBqdXN0aWZ5LWNvbnRlbnQ6IGNlbnRlcjsKICBwYWRkaW5nOiAxNXB4IDI0cHggMTZweDsKICBiYWNrZ3JvdW5kOiB2YXIoLS1vcmFuZ2UpOwogIGNvbG9yOiAjZmZmOwp9Ci5ob3RlbC1jYWxlbmRhci1oZWFkZXIgc21hbGwgewogIG1hcmdpbi1ib3R0b206IDVweDsKICBjb2xvcjogI2ZmZTBiMDsKICBmb250LXNpemU6IDE2cHg7CiAgbGluZS1oZWlnaHQ6IDEuMjsKICBmb250LXdlaWdodDogNDAwOwp9Ci5ob3RlbC1jYWxlbmRhci1oZWFkZXIgc3Ryb25nIHsKICBmb250LXNpemU6IDMwcHg7CiAgbGluZS1oZWlnaHQ6IDEuMDg7CiAgZm9udC13ZWlnaHQ6IDQwMDsKICBsZXR0ZXItc3BhY2luZzogMDsKfQouaG90ZWwtY2FsZW5kYXItbW9udGhiYXIgewogIG1pbi1oZWlnaHQ6IDU0cHg7CiAgZGlzcGxheTogZ3JpZDsKICBncmlkLXRlbXBsYXRlLWNvbHVtbnM6IDQwcHggMWZyIDQwcHg7CiAgYWxpZ24taXRlbXM6IGNlbnRlcjsKICBwYWRkaW5nOiAzcHggMTJweDsKfQouaG90ZWwtY2FsZW5kYXItbW9udGhiYXIgPiBzdHJvbmcgewogIHRleHQtYWxpZ246IGNlbnRlcjsKICBmb250LXNpemU6IDE4cHg7CiAgbGluZS1oZWlnaHQ6IDEuMjsKICBmb250LXdlaWdodDogNDAwOwp9Ci5ob3RlbC1jYWxlbmRhci1uYXYgewogIHdpZHRoOiAzNHB4OwogIGhlaWdodDogMzRweDsKICBkaXNwbGF5OiBncmlkOwogIHBsYWNlLWl0ZW1zOiBjZW50ZXI7CiAgYm9yZGVyOiAwOwogIGJvcmRlci1yYWRpdXM6IDUwJTsKICBiYWNrZ3JvdW5kOiB0cmFuc3BhcmVudDsKICBjb2xvcjogIzc2NzY3NjsKfQouaG90ZWwtY2FsZW5kYXItbmF2OmhvdmVyIHsKICBiYWNrZ3JvdW5kOiAjZjNmM2YzOwp9Ci5ob3RlbC1jYWxlbmRhci1uYXYgc3ZnIHsKICB3aWR0aDogMjBweDsKICBoZWlnaHQ6IDIwcHg7Cn0KLmhvdGVsLWNhbGVuZGFyLXdlZWtkYXlzLAouaG90ZWwtY2FsZW5kYXItZ3JpZCB7CiAgZGlzcGxheTogZ3JpZDsKICBncmlkLXRlbXBsYXRlLWNvbHVtbnM6IHJlcGVhdCg3LCAxZnIpOwogIGFsaWduLWl0ZW1zOiBjZW50ZXI7CiAgcGFkZGluZzogMCAxNHB4Owp9Ci5ob3RlbC1jYWxlbmRhci13ZWVrZGF5cyB7CiAgbWluLWhlaWdodDogMzRweDsKICBjb2xvcjogIzk5OTsKICBmb250LXNpemU6IDEycHg7CiAgdGV4dC1hbGlnbjogY2VudGVyOwp9Ci5ob3RlbC1jYWxlbmRhci1ncmlkIHsKICBncmlkLWF1dG8tcm93czogMzhweDsKICBtaW4taGVpZ2h0OiAyMjhweDsKICBhbGlnbi1jb250ZW50OiBzdGFydDsKICBwYWRkaW5nLWJvdHRvbTogNXB4Owp9Ci5ob3RlbC1jYWxlbmRhci1ncmlkID4gc3BhbiwKLmhvdGVsLWNhbGVuZGFyLWdyaWQgPiBidXR0b24gewogIGp1c3RpZnktc2VsZjogY2VudGVyOwp9Ci5ob3RlbC1jYWxlbmRhci1ncmlkID4gYnV0dG9uIHsKICB3aWR0aDogMzNweDsKICBoZWlnaHQ6IDMzcHg7CiAgYm9yZGVyOiAwOwogIGJvcmRlci1yYWRpdXM6IDUwJTsKICBiYWNrZ3JvdW5kOiB0cmFuc3BhcmVudDsKICBjb2xvcjogIzI5MjkyOTsKICBmb250LXNpemU6IDE0cHg7CiAgbGluZS1oZWlnaHQ6IDMzcHg7CiAgZm9udC13ZWlnaHQ6IDQwMDsKICBwYWRkaW5nOiAwOwp9Ci5ob3RlbC1jYWxlbmRhci1ncmlkID4gYnV0dG9uOmhvdmVyOm5vdCg6ZGlzYWJsZWQpIHsKICBiYWNrZ3JvdW5kOiAjZmZmMWRjOwp9Ci5ob3RlbC1jYWxlbmRhci1ncmlkID4gYnV0dG9uLnNlbGVjdGVkIHsKICBiYWNrZ3JvdW5kOiB2YXIoLS1vcmFuZ2UpOwogIGNvbG9yOiAjZmZmOwp9Ci5ob3RlbC1jYWxlbmRhci1ncmlkID4gYnV0dG9uOmRpc2FibGVkIHsKICBjb2xvcjogI2M3YzdjNzsKICBjdXJzb3I6IGRlZmF1bHQ7Cn0KLmhvdGVsLWNhbGVuZGFyLWFjdGlvbnMgewogIG1pbi1oZWlnaHQ6IDUycHg7CiAgZGlzcGxheTogZmxleDsKICBhbGlnbi1pdGVtczogY2VudGVyOwogIGp1c3RpZnktY29udGVudDogZmxleC1lbmQ7CiAgZ2FwOiAyNHB4OwogIHBhZGRpbmc6IDVweCAyNHB4IDExcHg7Cn0KLmhvdGVsLWNhbGVuZGFyLWFjdGlvbnMgYnV0dG9uIHsKICBib3JkZXI6IDA7CiAgYmFja2dyb3VuZDogdHJhbnNwYXJlbnQ7CiAgY29sb3I6IHZhcigtLW9yYW5nZSk7CiAgZm9udC1zaXplOiAxNHB4OwogIGxpbmUtaGVpZ2h0OiAzMnB4OwogIGZvbnQtd2VpZ2h0OiA2MDA7CiAgcGFkZGluZzogMCAzcHg7Cn0KCi8qIEtlZXAgdGhlIERheSBMaXN0IGRhdGUgbmF2aWdhdGlvbiBjb21wYWN0IGFuZCBhbGlnbmVkIHdpdGggYWxsIGZpbHRlcnMuICovCi5kYXRlLXBpY2tlciB7CiAgZGlzcGxheTogZ3JpZCAhaW1wb3J0YW50OwogIGdyaWQtdGVtcGxhdGUtY29sdW1uczogMzRweCBtaW5tYXgoMTUwcHgsIDFmcpkgMzRweCAhaW1wb3J0YW50OwogIGFsaWduLWl0ZW1zOiBjZW50ZXIgIWltcG9ydGFudDsKICBnYXA6IDAgIWltcG9ydGFudDsKICB3aWR0aDogMjkycHggIWltcG9ydGFudDsKICBtaW4td2lkdGg6IDI5MnB4ICFpbXBvcnRhbnQ7CiAgaGVpZ2h0OiA0MHB4ICFpbXBvcnRhbnQ7CiAgbWluLWhlaWdodDogNDBweCAhaW1wb3J0YW50OwogIHBhZGRpbmc6IDAgM3B4ICFpbXBvcnRhbnQ7CiAgYm9yZGVyOiAxcHggc29saWQgI2RlZGVlMiAhaW1wb3J0YW50OwogIGJvcmRlci1yYWRpdXM6IDdweCAhaW1wb3J0YW50OwogIGJhY2tncm91bmQ6ICNmZmYgIWltcG9ydGFudDsKICBvdmVyZmxvdzogaGlkZGVuOwp9Ci5kYXRlLXBpY2tlciA+IGJ1dHRvbjpub3QoLmhvdGVsLWRhdGUtZmllbGQpIHsKICB3aWR0aDogMzJweCAhaW1wb3J0YW50OwogIG1pbi13aWR0aDogMzJweCAhaW1wb3J0YW50OwogIGhlaWdodDogMzZweCAhaW1wb3J0YW50OwogIG1pbi1oZWlnaHQ6IDM2cHggIWltcG9ydGFudDsKICBkaXNwbGF5OiBncmlkICFpbXBvcnRhbnQ7CiAgcGxhY2UtaXRlbXM6IGNlbnRlciAhaW1wb3J0YW50OwogIHBhZGRpbmc6IDAgIWltcG9ydGFudDsKICBib3JkZXI6IDAgIWltcG9ydGFudDsKICBib3JkZXItcmFkaXVzOiA1cHggIWltcG9ydGFudDsKICBiYWNrZ3JvdW5kOiB0cmFuc3BhcmVudCAhaW1wb3J0YW50OwogIGNvbG9yOiAjNzA3NDdiICFpbXBvcnRhbnQ7Cn0KLmRhdGUtcGlja2VyID4gYnV0dG9uOm5vdCguaG90ZWwtZGF0ZS1maWVsZCk6aG92ZXIgewogIGJhY2tncm91bmQ6ICNmNWY1ZjYgIWltcG9ydGFudDsKfQouZGF0ZS1waWNrZXIgPiAuaG90ZWwtZGF0ZS1maWVsZCB7CiAgbWluLXdpZHRoOiAwICFpbXBvcnRhbnQ7CiAgd2lkdGg6IDEwMCUgIWltcG9ydGFudDsKICBoZWlnaHQ6IDM2cHggIWltcG9ydGFudDsKICBtaW4taGVpZ2h0OiAzNnB4ICFpbXBvcnRhbnQ7CiAgZGlzcGxheTogZmxleCAhaW1wb3J0YW50OwogIGFsaWduLWl0ZW1zOiBjZW50ZXIgIWltcG9ydGFudDsKICBqdXN0aWZ5LWNvbnRlbnQ6IGNlbnRlciAhaW1wb3J0YW50OwogIGdhcDogN3B4ICFpbXBvcnRhbnQ7CiAgcGFkZGluZzogMCA4cHggIWltcG9ydGFudDsKICBib3JkZXI6IDAgIWltcG9ydGFudDsKICBib3JkZXItcmFkaXVzOiAwICFpbXBvcnRhbnQ7CiAgYmFja2dyb3VuZDogdHJhbnNwYXJlbnQgIWltcG9ydGFudDsKICBjb2xvcjogIzNkNDE0NyAhaW1wb3J0YW50OwogIGZvbnQtc2l6ZTogMTRweCAhaW1wb3J0YW50OwogIGxpbmUtaGVpZ2h0OiAzNnB4ICFpbXBvcnRhbnQ7CiAgb3ZlcmZsb3c6IGhpZGRlbjsKfQouZGF0ZS1waWNrZXIgPiAuaG90ZWwtZGF0ZS1maWVsZDpob3ZlciB7CiAgYmFja2dyb3VuZDogI2ZmZmFmMyAhaW1wb3J0YW50Owp9Ci5kYXRlLXBpY2tlciA+IC5ob3RlbC1kYXRlLWZpZWxkID4gc3BhbiB7CiAgZmxleDogMCAxIGF1dG87CiAgbGluZS1oZWlnaHQ6IDEgIWltcG9ydGFudDsKICBvdmVyZmxvdzogaGlkZGVuOwogIHRleHQtb3ZlcmZsb3c6IGVsbGlwc2lzOwogIHdoaXRlLXNwYWNlOiBub3dyYXA7Cn0KLmRhdGUtcGlja2VyID4gLmhvdGVsLWRhdGUtZmllbGQgPiBzdmcgewogIHdpZHRoOiAxN3B4ICFpbXBvcnRhbnQ7CiAgaGVpZ2h0OiAxN3B4ICFpbXBvcnRhbnQ7CiAgZmxleDogMCAwIDE3cHggIWltcG9ydGFudDsKICBtYXJnaW46IDAgIWltcG9ydGFudDsKfQoKLnRyYW5zcG9ydC1yZXBvcnQtZGF0ZSAuaG90ZWwtZGF0ZS1maWVsZCB7CiAgbWluLXdpZHRoOiAxMzJweDsKfQoKQG1lZGlhIChtYXgtd2lkdGg6IDcyMHB4KSB7CiAgLmhvdGVsLWNhbGVuZGFyLWRpYWxvZyB7CiAgICB3aWR0aDogbWluKDM0MHB4LCBjYWxjKDEwMHZ3IC0gMjBweCkpICFpbXBvcnRhbnQ7CiAgICBtYXgtd2lkdGg6IDM0MHB4ICFpbXBvcnRhbnQ7CiAgfQogIC5ob3RlbC1jYWxlbmRhci1oZWFkZXIgewogICAgbWluLWhlaWdodDogOTRweDsKICAgIHBhZGRpbmc6IDEzcHggMjBweCAxNHB4OwogIH0KICAuaG90ZWwtY2FsZW5kYXItaGVhZGVyIHNtYWxsIHsKICAgIGZvbnQtc2l6ZTogMTRweDsKICB9CiAgLmhvdGVsLWNhbGVuZGFyLWhlYWRlciBzdHJvbmcgewogICAgZm9udC1zaXplOiAyNnB4OwogIH0KICAuaG90ZWwtY2FsZW5kYXItbW9udGhiYXIgewogICAgbWluLWhlaWdodDogNTBweDsKICB9CiAgLmhvdGVsLWNhbGVuZGFyLW1vbnRoYmFyID4gc3Ryb25nIHsKICAgIGZvbnQtc2l6ZTogMTdweDsKICB9CiAgLmhvdGVsLWNhbGVuZGFyLXdlZWtkYXlzLAogIC5ob3RlbC1jYWxlbmRhci1ncmlkIHsKICAgIHBhZGRpbmctaW5saW5lOiAxMHB4OwogIH0KICAuaG90ZWwtY2FsZW5kYXItZ3JpZCB7CiAgICBncmlkLWF1dG8tcm93czogMzZweDsKICAgIG1pbi1oZWlnaHQ6IDIxNnB4OwogIH0KICAuaG90ZWwtY2FsZW5kYXItZ3JpZCA+IGJ1dHRvbiB7CiAgICB3aWR0aDogMzFweDsKICAgIGhlaWdodDogMzFweDsKICAgIGxpbmUtaGVpZ2h0OiAzMXB4OwogICAgZm9udC1zaXplOiAxM3B4OwogIH0KICAuaG90ZWwtY2FsZW5kYXItYWN0aW9ucyB7CiAgICBtaW4taGVpZ2h0OiA0OHB4OwogICAgcGFkZGluZzogNHB4IDIwcHggOXB4OwogIH0KICAuZGF0ZS1waWNrZXIgewogICAgd2lkdGg6IDI2MHB4ICFpbXBvcnRhbnQ7CiAgICBtaW4td2lkdGg6IDI2MHB4ICFpbXBvcnRhbnQ7CiAgICBncmlkLXRlbXBsYXRlLWNvbHVtbnM6IDMycHggbWlubWF4KDEzMHB4LCAxZnIpIDMycHggIWltcG9ydGFudDsKICB9Cn0K
-        run: python -c "import os,base64; from pathlib import Path; p=Path('app/globals.css'); s=p.read_text(); m='/* Unified HotelX calendar picker */'; assert m in s; css=base64.b64decode(os.environ['CALENDAR_CSS_B64']).decode(); p.write_text(s.split(m,1)[0].rstrip()+'\n\n'+css+'\n')"
+      - name: Apply compact calendar overrides
+        run: |
+          cat >> app/globals.css <<'CSS'
+
+          /* Compact HotelX calendar sizing and Day List alignment */
+          .hotel-calendar-dialog {
+            width: min(360px, calc(100vw - 24px)) !important;
+            max-width: 360px !important;
+            border-radius: 8px !important;
+            box-shadow: 0 14px 44px #00000038 !important;
+          }
+          .hotel-calendar-header {
+            min-height: 104px !important;
+            padding: 15px 24px 16px !important;
+          }
+          .hotel-calendar-header small {
+            margin-bottom: 5px !important;
+            font-size: 16px !important;
+            line-height: 1.2 !important;
+          }
+          .hotel-calendar-header strong {
+            font-size: 30px !important;
+            line-height: 1.08 !important;
+            letter-spacing: 0 !important;
+          }
+          .hotel-calendar-monthbar {
+            min-height: 54px !important;
+            grid-template-columns: 40px 1fr 40px !important;
+            padding: 3px 12px !important;
+          }
+          .hotel-calendar-monthbar > strong {
+            font-size: 18px !important;
+            line-height: 1.2 !important;
+          }
+          .hotel-calendar-nav {
+            width: 34px !important;
+            height: 34px !important;
+          }
+          .hotel-calendar-nav svg {
+            width: 20px !important;
+            height: 20px !important;
+          }
+          .hotel-calendar-weekdays,
+          .hotel-calendar-grid {
+            padding-left: 14px !important;
+            padding-right: 14px !important;
+          }
+          .hotel-calendar-weekdays {
+            min-height: 34px !important;
+            font-size: 12px !important;
+          }
+          .hotel-calendar-grid {
+            grid-auto-rows: 38px !important;
+            min-height: 228px !important;
+            padding-bottom: 5px !important;
+          }
+          .hotel-calendar-grid > button {
+            width: 33px !important;
+            height: 33px !important;
+            padding: 0 !important;
+            font-size: 14px !important;
+            line-height: 33px !important;
+          }
+          .hotel-calendar-actions {
+            min-height: 52px !important;
+            gap: 24px !important;
+            padding: 5px 24px 11px !important;
+          }
+          .hotel-calendar-actions button {
+            padding: 0 3px !important;
+            font-size: 14px !important;
+            line-height: 32px !important;
+          }
+
+          .hotel-date-field {
+            gap: 8px !important;
+            padding: 6px 10px !important;
+            line-height: 1 !important;
+            white-space: nowrap !important;
+          }
+          .hotel-date-field > span {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+          .hotel-date-field > svg {
+            flex: 0 0 auto;
+          }
+          .hotel-month-field {
+            min-width: 172px !important;
+          }
+
+          .date-picker {
+            display: grid !important;
+            grid-template-columns: 34px minmax(150px, 1fr) 34px !important;
+            align-items: center !important;
+            gap: 0 !important;
+            width: 292px !important;
+            min-width: 292px !important;
+            height: 40px !important;
+            min-height: 40px !important;
+            padding: 0 3px !important;
+            border: 1px solid #dedee2 !important;
+            border-radius: 7px !important;
+            background: #fff !important;
+            overflow: hidden !important;
+          }
+          .date-picker > button:not(.hotel-date-field) {
+            width: 32px !important;
+            min-width: 32px !important;
+            height: 36px !important;
+            min-height: 36px !important;
+            display: grid !important;
+            place-items: center !important;
+            padding: 0 !important;
+            border: 0 !important;
+            border-radius: 5px !important;
+            background: transparent !important;
+            color: #70747b !important;
+          }
+          .date-picker > button:not(.hotel-date-field):hover {
+            background: #f5f5f6 !important;
+          }
+          .date-picker > .hotel-date-field {
+            min-width: 0 !important;
+            width: 100% !important;
+            height: 36px !important;
+            min-height: 36px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 7px !important;
+            padding: 0 8px !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            color: #3d4147 !important;
+            font-size: 14px !important;
+            line-height: 36px !important;
+            overflow: hidden !important;
+          }
+          .date-picker > .hotel-date-field:hover {
+            background: #fffaf3 !important;
+          }
+          .date-picker > .hotel-date-field > span {
+            flex: 0 1 auto !important;
+            line-height: 1 !important;
+          }
+          .date-picker > .hotel-date-field > svg {
+            width: 17px !important;
+            height: 17px !important;
+            flex: 0 0 17px !important;
+            margin: 0 !important;
+          }
+          .transport-report-date .hotel-date-field {
+            min-width: 132px !important;
+          }
+
+          @media (max-width: 720px) {
+            .hotel-calendar-dialog {
+              width: min(340px, calc(100vw - 20px)) !important;
+              max-width: 340px !important;
+            }
+            .hotel-calendar-header {
+              min-height: 94px !important;
+              padding: 13px 20px 14px !important;
+            }
+            .hotel-calendar-header small {
+              font-size: 14px !important;
+            }
+            .hotel-calendar-header strong {
+              font-size: 26px !important;
+            }
+            .hotel-calendar-monthbar {
+              min-height: 50px !important;
+            }
+            .hotel-calendar-monthbar > strong {
+              font-size: 17px !important;
+            }
+            .hotel-calendar-weekdays,
+            .hotel-calendar-grid {
+              padding-left: 10px !important;
+              padding-right: 10px !important;
+            }
+            .hotel-calendar-grid {
+              grid-auto-rows: 36px !important;
+              min-height: 216px !important;
+            }
+            .hotel-calendar-grid > button {
+              width: 31px !important;
+              height: 31px !important;
+              font-size: 13px !important;
+              line-height: 31px !important;
+            }
+            .hotel-calendar-actions {
+              min-height: 48px !important;
+              padding: 4px 20px 9px !important;
+            }
+            .date-picker {
+              width: 260px !important;
+              min-width: 260px !important;
+              grid-template-columns: 32px minmax(130px, 1fr) 32px !important;
+            }
+          }
+          CSS
       - run: npm ci
       - name: Verify transport tests
         run: npm run test:transport
