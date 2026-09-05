@@ -2,11 +2,17 @@
 
 import {
   ArrowLeft,
+  BadgePercent,
   BedDouble,
   Building2,
+  ChevronRight,
   ClipboardList,
+  Grid3X3,
   Layers3,
+  ListChecks,
   Network,
+  ReceiptText,
+  Tags,
 } from 'lucide-react';
 
 export type HotelSettingsDetailKind =
@@ -54,6 +60,45 @@ const pages = {
   },
 } as const;
 
+const ratePolicyItems = [
+  {
+    key: 'rate-type',
+    label: 'Rate Type',
+    detail: 'Hotel Rate Type Setup.',
+    icon: Tags,
+  },
+  {
+    key: 'rate-plan',
+    label: 'Rate Plan',
+    detail: 'Hotel Rate Plan Setup.',
+    icon: ListChecks,
+  },
+  {
+    key: 'rate-plan-grid',
+    label: 'Rate Plan Grid',
+    detail: 'Hotel Rate Plan Grid Setup.',
+    icon: Grid3X3,
+  },
+  {
+    key: 'rate-plan-price-factor',
+    label: 'Rate Plan Price Factor',
+    detail: 'Hotel Rate Plan Price Factor Setup.',
+    icon: BadgePercent,
+  },
+  {
+    key: 'rate-policy',
+    label: 'Rate Policy',
+    detail: 'Hotel Rate Policy Setup.',
+    icon: ClipboardList,
+  },
+  {
+    key: 'service-rate',
+    label: 'Service Rate',
+    detail: 'Service Rate Setup.',
+    icon: ReceiptText,
+  },
+] as const;
+
 export function HotelSettingsDetail({
   kind,
   onBack,
@@ -63,6 +108,39 @@ export function HotelSettingsDetail({
 }) {
   const page = pages[kind];
   const Icon = page.icon;
+
+  if (kind === 'ratePolicy') {
+    return (
+      <section className="master-page" aria-label="Rate Policy">
+        <div className="hotel-settings-menu" aria-label="Rate Policy setup">
+          {ratePolicyItems.map((item) => {
+            const ItemIcon = item.icon;
+            return (
+              <button
+                key={item.key}
+                type="button"
+                className="hotel-settings-card"
+                aria-label={item.label}
+              >
+                <span className="hotel-settings-card-icon" aria-hidden="true">
+                  <ItemIcon size={28} />
+                </span>
+                <span className="hotel-settings-card-copy">
+                  <strong>{item.label}</strong>
+                  <span>{item.detail}</span>
+                </span>
+                <ChevronRight className="hotel-settings-card-arrow" size={28} />
+              </button>
+            );
+          })}
+        </div>
+
+        <button className="secondary-button master-page-back" type="button" onClick={onBack}>
+          <ArrowLeft size={16} /> Back to Hotel Settings
+        </button>
+      </section>
+    );
+  }
 
   return (
     <section className="master-page" aria-label={page.title}>
