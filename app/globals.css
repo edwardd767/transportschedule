@@ -5193,3 +5193,22 @@ p {
   .date-grid button { width: 34px; height: 34px; }
   .rate-editor-grid { grid-template-columns: 1fr; gap: 12px; }
 }
+
+
+/* Booking room occupancy belongs inside Room Type selection */
+.booking-room-occupancy-entry {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  padding: 2px 0 4px;
+}
+.booking-room-occupancy-entry .booking-line-field {
+  min-width: 0;
+}
+@media (max-width: 640px) {
+  .booking-room-occupancy-entry {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}

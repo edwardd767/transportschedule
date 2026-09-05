@@ -18,6 +18,9 @@ type RoomLine = {
   id: string;
   code: string;
   count: number;
+  adults: number;
+  children: number;
+  infants: number;
   rateCode: string;
   roomRate: number;
   promoCode: string;
@@ -72,6 +75,9 @@ export function BookingCreate({
   const [roomDialogOpen, setRoomDialogOpen] = useState(false);
   const [roomType, setRoomType] = useState(activeRoomTypes[0]?.code ?? '');
   const [roomQty, setRoomQty] = useState(1);
+  const [adults, setAdults] = useState(1);
+  const [children, setChildren] = useState(0);
+  const [infants, setInfants] = useState(0);
   const [rateCode, setRateCode] = useState('BAR');
   const [roomRate, setRoomRate] = useState(0);
   const [promoCode, setPromoCode] = useState('NONE');
@@ -96,6 +102,9 @@ export function BookingCreate({
   function resetRoomDraft() {
     setRoomType(activeRoomTypes[0]?.code ?? '');
     setRoomQty(1);
+    setAdults(1);
+    setChildren(0);
+    setInfants(0);
     setRateCode('BAR');
     setRoomRate(0);
     setPromoCode('NONE');
@@ -116,10 +125,31 @@ export function BookingCreate({
       setError(`Only ${selectedRoom.totalRoom} ${selectedRoom.code} room(s) are configured.`);
       return;
     }
+    if (!Number.isSafeInteger(adults) || adults < 1) {
+      setError('Enter at least 1 adult.');
+      return;
+    }
+    if (!Number.isSafeInteger(children) || children < 0) {
+      setError('Enter a valid number of children.');
+      return;
+    }
+    if (!Number.isSafeInteger(infants) || infants < 0) {
+      setError('Enter a valid number of infants.');
+      return;
+    }
+    const roomGuests = adults + children + infants;
+    const roomCapacity = selectedRoom.maxGuest * roomQty;
+    if (roomGuests > roomCapacity) {
+      setError(`Maximum guest capacity for ${roomQty} ${selectedRoom.code} room(s) is ${roomCapacity}.`);
+      return;
+    }
     const line: RoomLine = {
       id: crypto.randomUUID(),
       code: roomType,
       count: roomQty,
+      adults,
+      children,
+      infants,
       rateCode,
       roomRate,
       promoCode: promoCode === 'NONE' ? '' : promoCode,
@@ -138,18 +168,15 @@ export function BookingCreate({
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const bookBy = String(form.get('bookBy') ?? '').trim();
-    const adults = Number(form.get('adults'));
-    const children = Number(form.get('children'));
-    const infants = Number(form.get('infants'));
-    const guests = adults + children + infants;
+    const guests = roomLines.reduce(
+      (total, line) => total + line.adults + line.children + line.infants,
+      0,
+    );
     try {
       setError('');
       setSaving(true);
       if (!bookBy) throw new Error('Book by is required.');
       if (!nights) throw new Error('Departure date must be after the arrival date.');
-      if (!Number.isSafeInteger(adults) || adults < 1) throw new Error('Enter at least 1 adult.');
-      if (!Number.isSafeInteger(children) || children < 0) throw new Error('Enter a valid number of children.');
-      if (!Number.isSafeInteger(infants) || infants < 0) throw new Error('Enter a valid number of infants.');
       if (!segment) throw new Error('Choose a Segment.');
       if (!roomLines.length) throw new Error('Add at least one Room Type.');
       const booking: Booking = {
@@ -214,11 +241,6 @@ export function BookingCreate({
               <span>Night(s)</span>
               <strong>{nights}</strong>
             </div>
-          </div>
-          <div className="booking-occupancy-entry">
-            <label>No. of Adult<input type="number" name="adults" min="1" defaultValue="1" required /></label>
-            <label>No. of Child<input type="number" name="children" min="0" defaultValue="0" required /></label>
-            <label>No. of Infant<input type="number" name="infants" min="0" defaultValue="0" required /></label>
           </div>
         </div>
 
@@ -331,6 +353,11 @@ export function BookingCreate({
             <label className="booking-line-field"><span>Departure Date *</span><input value={prettyDate(departure)} readOnly /></label>
             <label className="booking-line-field booking-choice-field"><span>Room Type *</span><Choice label="Room Type" value={roomType} onChange={setRoomType} items={roomTypeItems} /></label>
             <label className="booking-line-field"><span>No. of Room *</span><input type="number" min="1" value={roomQty} onChange={(event) => setRoomQty(Number(event.target.value))} /></label>
+            <div className="booking-room-occupancy-entry">
+              <label className="booking-line-field"><span>No. of Adult *</span><input type="number" min="1" value={adults} onChange={(event) => setAdults(Number(event.target.value))} /></label>
+              <label className="booking-line-field"><span>No. of Child</span><input type="number" min="0" value={children} onChange={(event) => setChildren(Number(event.target.value))} /></label>
+              <label className="booking-line-field"><span>No. of Infant</span><input type="number" min="0" value={infants} onChange={(event) => setInfants(Number(event.target.value))} /></label>
+            </div>
             <label className="booking-line-field booking-choice-field"><span>Rate Code *</span><Choice label="Rate Code" value={rateCode} onChange={setRateCode} items={[
               { value: 'BAR', label: 'BAR - Best Available Rate' },
               { value: 'CORP', label: 'CORP - Corporate' },
