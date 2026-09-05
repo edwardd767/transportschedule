@@ -34,7 +34,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add components/bookings.tsx lib/bookings.ts lib/transport-state.ts worker/index.ts worker/normalized-storage.ts worker/hotelx-transport-api.deploy.js
+          git add components/bookings.tsx lib/bookings.ts lib/transport-state.ts worker/index.ts worker/normalized-storage.ts worker/hotelx-transport-api.deploy.js scripts/test-transport-worker.mjs
           git diff --cached --quiet && exit 0
           git commit -m "Add Adult Child and Infant booking counts"
           git push origin main
