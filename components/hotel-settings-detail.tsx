@@ -112,6 +112,7 @@ export function HotelSettingsDetail({
               key={item.key}
               type="button"
               className="hotel-settings-card"
+              style={{ gridTemplateColumns: 'minmax(0, 1fr) 28px' }}
               aria-label={item.label}
             >
               <span className="hotel-settings-card-copy">
