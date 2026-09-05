@@ -31,7 +31,7 @@ jobs:
           from pathlib import Path
           path = Path('scripts/apply-rate-setup-module.py')
           text = path.read_text(encoding='utf-8')
-          text = text.replace("r'''\\\\\n", "r'''\n")
+          text = text.replace("r'''\\\n", "r'''\n")
           path.write_text(text, encoding='utf-8')
           PY
 
