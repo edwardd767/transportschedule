@@ -1,0 +1,18 @@
+name: Calendar input audit
+
+on:
+  push:
+    paths:
+      - '.github/workflows/calendar-input-audit.yml'
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: List native date and month inputs
+        run: |
+          echo '--- native date inputs ---'
+          grep -R -n -B 4 -A 7 'type="date"' app components || true
+          echo '--- native month inputs ---'
+          grep -R -n -B 4 -A 7 'type="month"' app components || true
