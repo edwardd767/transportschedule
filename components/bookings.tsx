@@ -131,11 +131,20 @@ export function Bookings({
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const roomCountValue = Number(form.get('roomCount'));
-    const guests = Number(form.get('guests'));
+    const adults = Number(form.get('adults'));
+    const children = Number(form.get('children'));
+    const infants = Number(form.get('infants'));
+    const guests = adults + children + infants;
     const amount = Number(form.get('amount'));
     try {
       setCreating(true);
       setCreateError('');
+      if (!Number.isSafeInteger(adults) || adults < 1)
+        throw new Error('Enter at least 1 adult.');
+      if (!Number.isSafeInteger(children) || children < 0)
+        throw new Error('Enter a valid number of children.');
+      if (!Number.isSafeInteger(infants) || infants < 0)
+        throw new Error('Enter a valid number of infants.');
       const value: Booking = {
         reference: nextBookingReference(bookings),
         guest: String(form.get('guest') ?? ''),
@@ -290,9 +299,11 @@ export function Bookings({
               <label>Departure date<HotelDatePicker name="departure" required defaultValue="2026-09-06" ariaLabel="Departure date" /></label>
             </div>
             <label>Room type<Choice label="Room type" value={createRoomType} onChange={setCreateRoomType} items={roomTypes.filter((item) => item.active).map((item) => ({ value: item.code, label: `${item.code} - ${item.description}` }))} /></label>
-            <div className="two-col">
-              <label>No. of rooms<input type="number" name="roomCount" min="1" defaultValue="1" required /></label>
-              <label>No. of guests<input type="number" name="guests" min="1" defaultValue="1" required /></label>
+            <div className="booking-guest-columns">
+              <label>No. of Rooms<input type="number" name="roomCount" min="1" defaultValue="1" required /></label>
+              <label>No. of Adult<input type="number" name="adults" min="1" defaultValue="1" required /></label>
+              <label>No. of Child<input type="number" name="children" min="0" defaultValue="0" required /></label>
+              <label>No. of Infant<input type="number" name="infants" min="0" defaultValue="0" required /></label>
             </div>
             <label>Booking amount (RM)<input type="number" name="amount" min="0" step="0.01" defaultValue="0" required /></label>
             {createError && <p className="form-error">{createError}</p>}

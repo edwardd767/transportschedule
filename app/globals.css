@@ -4252,11 +4252,12 @@ p {
 .master-save-bar { position:sticky; bottom:0; z-index:5; display:flex; justify-content:center; padding:12px; border-top:1px solid #e4e4e6; background:#fff; box-shadow:0 -3px 10px #00000010; }
 .master-save-bar .primary-button { min-width:160px; justify-content:center; }
 .master-save-bar .primary-button:disabled { background:#ddd; color:#999; }
-.booking-create-dialog { width:min(560px,calc(100vw - 24px)) !important; max-width:560px !important; }
+.booking-create-dialog { width:min(640px,calc(100vw - 24px)) !important; max-width:640px !important; }
 .booking-create-dialog .dialog-form { display:flex; flex-direction:column; gap:14px; }
-.booking-create-dialog .dialog-form > label,.booking-create-dialog .two-col > label { display:flex; flex-direction:column; gap:6px; color:#60666f; font-size:13px; }
+.booking-create-dialog .dialog-form > label,.booking-create-dialog .two-col > label,.booking-create-dialog .booking-guest-columns > label { display:flex; flex-direction:column; gap:6px; color:#60666f; font-size:13px; }
 .booking-create-dialog input { min-height:38px; padding:7px 9px; border:1px solid #dedee2; border-radius:6px; background:#fff; color:#222; }
 .booking-create-dialog .two-col { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.booking-create-dialog .booking-guest-columns { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
 @media (max-width:760px) {
   .master-form-grid { grid-template-columns:1fr; padding:20px 14px 30px; gap:20px; }
   .master-field-wide { grid-column:auto; }
@@ -4265,4 +4266,5 @@ p {
   .roomtype-row { grid-template-columns:70px 1fr 70px 22px; }
   .roomtype-row > :nth-child(4),.roomtype-row > :nth-child(5) { display:none; }
   .booking-create-dialog .two-col { grid-template-columns:1fr; }
+  .booking-create-dialog .booking-guest-columns { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
