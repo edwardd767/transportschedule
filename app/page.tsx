@@ -1,4 +1,5 @@
 'use client';
+import { HotelDatePicker } from '@/components/hotel-date-picker';
 import {
   useEffect,
   useRef,
@@ -847,17 +848,11 @@ function HomeContent({ store }: { store: TransportData }) {
                       >
                         <ChevronLeft size={19} />
                       </button>
-                      <label>
-                        <CalendarDays size={19} />
-                        <input
-                          type="date"
-                          aria-label="Travel date"
-                          value={date}
-                          onChange={(e) =>
-                            e.target.value && setDate(e.target.value)
-                          }
-                        />
-                      </label>
+                      <HotelDatePicker
+                        value={date}
+                        onChange={setDate}
+                        ariaLabel="Travel date"
+                      />
                       <button
                         aria-label="Next day"
                         onClick={() => setDate(moveDate(date, 1))}
@@ -1248,7 +1243,7 @@ function HomeContent({ store }: { store: TransportData }) {
               <div className="form-grid">
                 <label>
                   Travel date
-                  <input type="date" name="date" required defaultValue={date} />
+                  <HotelDatePicker name="date" required defaultValue={date} ariaLabel="Travel date" />
                 </label>
                 <label>
                   Departure time

@@ -1,4 +1,5 @@
 'use client';
+import { HotelDatePicker } from '@/components/hotel-date-picker';
 
 import { useContext, useMemo, useState, type FormEvent } from 'react';
 import { CalendarDays, Car, MapPin, Plus, Ship, Users } from 'lucide-react';
@@ -318,14 +319,14 @@ export function BookingTransfers({
               <>
                 <label className="transfer-date">
                   Travel date
-                  <input
-                    type="date"
+                  <HotelDatePicker
                     required
                     value={travelDate}
-                    onChange={(event) => {
-                      setTravelDate(event.target.value);
+                    onChange={(value) => {
+                      setTravelDate(value);
                       setTripId('');
                     }}
+                    ariaLabel="Travel date"
                   />
                 </label>
                 <div className="transfer-options">
@@ -376,11 +377,11 @@ export function BookingTransfers({
                 <div className="form-grid">
                   <label>
                     Travel date
-                    <input
-                      type="date"
+                    <HotelDatePicker
                       name="date"
                       required
                       defaultValue={adding === 'arrival' ? booking.arrival : booking.departure}
+                      ariaLabel="Travel date"
                     />
                   </label>
                   <label>

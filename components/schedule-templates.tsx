@@ -1,4 +1,5 @@
 'use client';
+import { HotelDatePicker } from '@/components/hotel-date-picker';
 import { useContext } from 'react';
 import {
   TransportDataContext,
@@ -250,25 +251,21 @@ export function ScheduleTemplates({
               <div className="form-grid">
                 <label>
                   From
-                  <input
-                    type="date"
+                  <HotelDatePicker
                     required
                     value={draft.startDate}
-                    onChange={(event) =>
-                      setDraft({ ...draft, startDate: event.target.value })
-                    }
+                    onChange={(startDate) => setDraft({ ...draft, startDate })}
+                    ariaLabel="Template start date"
                   />
                 </label>
                 <label>
                   Until
-                  <input
-                    type="date"
+                  <HotelDatePicker
                     required
                     min={draft.startDate}
                     value={draft.endDate}
-                    onChange={(event) =>
-                      setDraft({ ...draft, endDate: event.target.value })
-                    }
+                    onChange={(endDate) => setDraft({ ...draft, endDate })}
+                    ariaLabel="Template end date"
                   />
                 </label>
               </div>

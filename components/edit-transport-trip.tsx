@@ -1,4 +1,5 @@
 'use client';
+import { HotelDatePicker } from '@/components/hotel-date-picker';
 import { useContext } from 'react';
 import {
   TransportDataContext,
@@ -77,13 +78,11 @@ export function EditTransportTrip({
           <div className="form-grid">
             <label>
               Date
-              <input
-                type="date"
+              <HotelDatePicker
                 required
                 value={values.date}
-                onChange={(event) =>
-                  setValues({ ...values, date: event.target.value })
-                }
+                onChange={(date) => setValues({ ...values, date })}
+                ariaLabel="Departure date"
               />
             </label>
             <label>

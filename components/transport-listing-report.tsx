@@ -1,4 +1,5 @@
 'use client';
+import { HotelDatePicker } from '@/components/hotel-date-picker';
 
 import { useMemo, useState } from 'react';
 import {
@@ -310,12 +311,12 @@ export function TransportListingReport({
           />
         </label>
         <label className="transport-report-date">
-          <CalendarDays size={15} /> From
-          <input type="date" value={fromDate} onChange={(event) => setFromDate(event.target.value)} />
+          From
+          <HotelDatePicker value={fromDate} onChange={setFromDate} ariaLabel="Report from date" />
         </label>
         <label className="transport-report-date">
-          <CalendarDays size={15} /> To
-          <input type="date" value={toDate} onChange={(event) => setToDate(event.target.value)} />
+          To
+          <HotelDatePicker value={toDate} onChange={setToDate} ariaLabel="Report to date" />
         </label>
         <Choice
           label="Direction"

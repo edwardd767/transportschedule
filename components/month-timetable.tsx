@@ -1,4 +1,5 @@
 'use client';
+import { HotelDatePicker } from '@/components/hotel-date-picker';
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { Choice } from '@/components/hotel-choice';
@@ -57,16 +58,13 @@ export function MonthTimetable({
           >
             <ChevronLeft size={20} />
           </button>
-          <label>
-            <span className="sr-only">Timetable month</span>
-            <input
-              type="month"
-              value={month}
-              onChange={(event) =>
-                event.target.value && onMonth(event.target.value)
-              }
-            />
-          </label>
+          <HotelDatePicker
+            mode="month"
+            value={month}
+            onChange={onMonth}
+            ariaLabel="Timetable month"
+            className="hotel-month-field"
+          />
           <button
             className="icon-button"
             aria-label="Next month"

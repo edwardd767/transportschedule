@@ -1,4 +1,5 @@
 'use client';
+import { HotelDatePicker } from '@/components/hotel-date-picker';
 
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -264,10 +265,10 @@ export function Bookings({
           {(calendarOpen || arrivalDate) && (
             <label className="booking-date-filter">
               Arrival date
-              <input
-                type="date"
+              <HotelDatePicker
                 value={arrivalDate}
-                onChange={(event) => setArrivalDate(event.target.value)}
+                onChange={setArrivalDate}
+                ariaLabel="Arrival date"
               />
             </label>
           )}
