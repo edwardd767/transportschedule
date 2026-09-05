@@ -1,0 +1,40 @@
+name: Booking occupancy upgrade
+
+on:
+  push:
+    paths:
+      - '.github/workflows/booking-occupancy-upgrade.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: main
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Apply Adult Child Infant booking upgrade
+        run: python scripts/apply-booking-occupancy-upgrade.py
+      - run: npm ci
+      - name: Verify transport tests
+        run: npm run test:transport
+      - name: Verify Pages build
+        run: npm run build:pages
+      - name: Verify Worker build
+        run: npm run build:worker
+      - name: Refresh deployable Worker bundle
+        run: cp dist/worker/hotelx-transport-api.js worker/hotelx-transport-api.deploy.js
+      - name: Commit booking occupancy upgrade
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add components/bookings.tsx lib/bookings.ts lib/transport-state.ts worker/index.ts worker/normalized-storage.ts worker/hotelx-transport-api.deploy.js
+          git diff --cached --quiet && exit 0
+          git commit -m "Add Adult Child and Infant booking counts"
+          git push origin main
