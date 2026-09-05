@@ -68,7 +68,7 @@ replace_once(
 replace_once(
     'worker/normalized-storage.ts',
     "  `CREATE TABLE IF NOT EXISTS public.hotelx_booking_rooms (",
-    "  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS adult_count integer NOT NULL DEFAULT 1`,\n  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS child_count integer NOT NULL DEFAULT 0`,\n  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS infant_count integer NOT NULL DEFAULT 0`,\n  `CREATE TABLE IF NOT EXISTS public.hotelx_booking_rooms (",
+    "  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS adult_count integer NOT NULL DEFAULT 1`,\n  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS child_count integer NOT NULL DEFAULT 0`,\n  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS infant_count integer NOT NULL DEFAULT 0`,\n  `UPDATE public.hotelx_bookings\n    SET adult_count = guests\n    WHERE adult_count = 1 AND child_count = 0 AND infant_count = 0 AND guests > 1`,\n  `CREATE TABLE IF NOT EXISTS public.hotelx_booking_rooms (",
     'booking table alter statements',
 )
 replace_once(
@@ -102,6 +102,32 @@ replace_once(
     "            hotelMasterSchemaVersion: 1,\n            privateLinkConfigured:",
     "            hotelMasterSchemaVersion: 1,\n            bookingOccupancySchemaVersion: 1,\n            privateLinkConfigured:",
     'worker booking schema version',
+)
+
+# Keep Worker tests aligned with the new API and schema statements.
+replace_once(
+    'scripts/test-transport-worker.mjs',
+    "  if (/^CREATE (?:TABLE|INDEX|OR REPLACE FUNCTION)/.test(sql)) return [];",
+    "  if (/^(?:CREATE (?:TABLE|INDEX|OR REPLACE FUNCTION)|ALTER TABLE|UPDATE public\\.hotelx_bookings)/.test(sql)) return [];",
+    'worker test schema SQL',
+)
+replace_once(
+    'scripts/test-transport-worker.mjs',
+    "assert.equal((await call('/health')).data.apiVersion, 4);",
+    "assert.equal((await call('/health')).data.apiVersion, 5);",
+    'worker test API version',
+)
+replace_once(
+    'scripts/test-transport-worker.mjs',
+    "assert.equal((await call('/health')).data.hotelMasterSchemaVersion, 1);\nassert.equal((await call('/health')).data.privateLinkConfigured, true);",
+    "assert.equal((await call('/health')).data.hotelMasterSchemaVersion, 1);\nassert.equal((await call('/health')).data.bookingOccupancySchemaVersion, 1);\nassert.equal((await call('/health')).data.privateLinkConfigured, true);",
+    'worker test booking schema version',
+)
+replace_once(
+    'scripts/test-transport-worker.mjs',
+    "  assert.equal(health.data.diagnosticsVersion, 4);",
+    "  assert.equal(health.data.diagnosticsVersion, 5);",
+    'worker test diagnostics version',
 )
 
 print('Booking Adult / Child / Infant upgrade applied.')
