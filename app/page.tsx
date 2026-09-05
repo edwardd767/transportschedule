@@ -45,6 +45,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Choice } from '@/components/hotel-choice';
 import { TransportSetup } from '@/components/transport-setup';
+import { HotelSettingsMenu } from '@/components/hotel-settings-menu';
 import { Bookings } from '@/components/bookings';
 import { sampleBookings, type Booking } from '@/lib/bookings';
 import { MonthTimetable } from '@/components/month-timetable';
@@ -158,7 +159,7 @@ function HomeContent({ store }: { store: TransportData }) {
   const [route, setRoute] = useState('all');
   const [query, setQuery] = useState('');
   const [view, setView] = useState<
-    'schedule' | 'setup' | 'booking' | 'frontdesk' | 'reporting'
+    'schedule' | 'setup' | 'hotelsettings' | 'booking' | 'frontdesk' | 'reporting'
   >('booking');
   const [bookingReference, setBookingReference] = useState<string | null>(null);
   const activeBooking =
@@ -524,16 +525,18 @@ function HomeContent({ store }: { store: TransportData }) {
               Digital Reporting
             </button>
             <button
-              className={view === 'setup' ? 'active' : ''}
-              aria-current={view === 'setup' ? 'page' : undefined}
-              onClick={() => setView('setup')}
+              className={view === 'setup' || view === 'hotelsettings' ? 'active' : ''}
+              aria-current={view === 'setup' || view === 'hotelsettings' ? 'page' : undefined}
+              onClick={() => setView('hotelsettings')}
             >
               <Settings />
               Hotel Settings
             </button>
             {view === 'setup' && (
               <div className="subnav">
-                <span>Transport Setup</span>
+                <button className="active" onClick={() => setView('setup')}>
+                  Transport Setup
+                </button>
               </div>
             )}
             <button disabled title="Not connected to a hotel session">
@@ -580,6 +583,8 @@ function HomeContent({ store }: { store: TransportData }) {
               <>
                 Digital Reporting <ChevronRight size={14} /> Transport Listing
               </>
+            ) : view === 'hotelsettings' ? (
+              <span>Hotel Settings</span>
             ) : (
               <>
                 {view === 'setup' ? 'Hotel Settings' : 'Transport'}{' '}
@@ -628,6 +633,10 @@ function HomeContent({ store }: { store: TransportData }) {
             }
             onOpenTransport={setTransferBooking}
           />
+        ) : view === 'hotelsettings' ? (
+          <div className="settings-scroll hotel-settings-scroll" key="hotelsettings">
+            <HotelSettingsMenu onOpenTransportSetup={() => setView('setup')} />
+          </div>
         ) : view === 'setup' ? (
           <div className="settings-scroll" key="setup">
             <TransportSetup
