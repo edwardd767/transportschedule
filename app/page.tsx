@@ -441,8 +441,8 @@ function HomeContent({ store }: { store: TransportData }) {
         .toLowerCase()
         .includes(query.toLowerCase()),
   );
-  const pax = daily.reduce((n, t) => n + countPassengers(t), 0);
-  const seats = daily
+  const pax = shown.reduce((n, t) => n + countPassengers(t), 0);
+  const seats = shown
     .filter((t) => !['Cancelled', 'Completed'].includes(t.status))
     .reduce((n, t) => n + t.capacity - countPassengers(t), 0);
   return (
@@ -722,7 +722,7 @@ function HomeContent({ store }: { store: TransportData }) {
                     {scheduleView === 'month'
                       ? trips.filter((trip) => trip.date.startsWith(month))
                           .length
-                      : daily.length}
+                      : shown.length}
                     )
                   </span>
                 </h1>
@@ -773,8 +773,9 @@ function HomeContent({ store }: { store: TransportData }) {
                 route={route}
                 onBoat={setBoatFilter}
                 onRoute={setRoute}
-                onDay={(date) => {
+                onDay={(date, routeId) => {
                   setDate(date);
+                  if (routeId) setRoute(routeId);
                   setStatusFilter('all');
                   setQuery('');
                   setScheduleView('day');
@@ -797,7 +798,7 @@ function HomeContent({ store }: { store: TransportData }) {
                     </span>
                     <div>
                       <small>Total trips</small>
-                      <strong>{daily.length}</strong>
+                      <strong>{shown.length}</strong>
                     </div>
                   </div>
                   <div>

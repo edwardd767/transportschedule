@@ -31,7 +31,7 @@ export function MonthTimetable({
   route: string;
   onBoat: (value: string) => void;
   onRoute: (value: string) => void;
-  onDay: (date: string) => void;
+  onDay: (date: string, routeId?: string) => void;
   onTrip: (trip: Trip) => void;
   onAdd: (date: string) => void;
 }) {
@@ -177,7 +177,15 @@ export function MonthTimetable({
                         <button
                           key={String(direction)}
                           className={`compact-direction ${direction ? 'direction-in' : 'direction-out'}`}
-                          onClick={() => onDay(date)}
+                          onClick={() =>
+                            onDay(
+                              date,
+                              departures[0]?.direction ??
+                                setup.routes.find(
+                                  (item) => item.toHotel === direction,
+                                )?.id,
+                            )
+                          }
                           title={`${formatDate(date)} · ${label}: ${departures.length} trips${first ? ` · First departure ${first.time}, ${first.boat}` : ''}`}
                           aria-label={`${formatDate(date)}, ${departures.length} ${label.toLowerCase()} trips. Open day listing.`}
                         >
