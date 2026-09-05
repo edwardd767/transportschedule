@@ -1,0 +1,90 @@
+name: Calendar direction filter
+
+on:
+  push:
+    paths:
+      - '.github/workflows/calendar-direction-filter.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: main
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Apply calendar direction filter
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def once(s, old, new, label):
+              if s.count(old) != 1:
+                  raise SystemExit(f'{label}: expected 1 match, got {s.count(old)}')
+              return s.replace(old, new, 1)
+
+          p = Path('components/month-timetable.tsx')
+          s = p.read_text()
+          s = once(
+              s,
+              "  onDay: (date: string) => void;\n",
+              "  onDay: (date: string, routeId?: string) => void;\n",
+              'onDay signature',
+          )
+          s = once(
+              s,
+              "                          onClick={() => onDay(date)}\n                          title={`${formatDate(date)} · ${label}: ${departures.length} trips${first ? ` · First departure ${first.time}, ${first.boat}` : ''}`}\n",
+              "                          onClick={() =>\n                            onDay(\n                              date,\n                              departures[0]?.direction ??\n                                setup.routes.find(\n                                  (item) => item.toHotel === direction,\n                                )?.id,\n                            )\n                          }\n                          title={`${formatDate(date)} · ${label}: ${departures.length} trips${first ? ` · First departure ${first.time}, ${first.boat}` : ''}`}\n",
+              'compact direction click',
+          )
+          p.write_text(s)
+
+          p = Path('app/page.tsx')
+          s = p.read_text()
+          s = once(
+              s,
+              "                      : daily.length}\n",
+              "                      : shown.length}\n",
+              'listing count',
+          )
+          s = once(
+              s,
+              "  const pax = daily.reduce((n, t) => n + countPassengers(t), 0);\n  const seats = daily\n    .filter((t) => !['Cancelled', 'Completed'].includes(t.status))\n",
+              "  const pax = shown.reduce((n, t) => n + countPassengers(t), 0);\n  const seats = shown\n    .filter((t) => !['Cancelled', 'Completed'].includes(t.status))\n",
+              'filtered summary totals',
+          )
+          s = once(
+              s,
+              "                onDay={(date) => {\n                  setDate(date);\n                  setStatusFilter('all');\n",
+              "                onDay={(date, routeId) => {\n                  setDate(date);\n                  if (routeId) setRoute(routeId);\n                  setStatusFilter('all');\n",
+              'carry route into day list',
+          )
+          s = once(
+              s,
+              "                      <strong>{daily.length}</strong>\n",
+              "                      <strong>{shown.length}</strong>\n",
+              'day summary trip count',
+          )
+          p.write_text(s)
+          PY
+      - run: npm ci
+      - name: Verify transport tests
+        run: npm run test:transport
+      - name: Verify Pages build
+        run: npm run build:pages
+      - name: Verify Worker build
+        run: npm run build:worker
+      - name: Commit calendar direction filter
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/page.tsx components/month-timetable.tsx
+          git diff --cached --quiet && exit 0
+          git commit -m "Filter day list from calendar direction count"
+          git push origin main
