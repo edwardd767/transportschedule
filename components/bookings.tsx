@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ArrowDownUp,
   CalendarDays,
@@ -16,13 +16,6 @@ import {
 import { Choice } from '@/components/hotel-choice';
 import { HotelDatePicker } from '@/components/hotel-date-picker';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
   bookingAmount,
   bookingStatusClass,
   bookingStatuses,
@@ -30,7 +23,8 @@ import {
   stayDates,
   type Booking,
 } from '@/lib/bookings';
-import { nextBookingReference, type HotelRoomType } from '@/lib/hotel-masters';
+import type { HotelRoomType } from '@/lib/hotel-masters';
+import { BookingCreate } from '@/components/booking-create';
 
 function BookingOccupancy({ booking }: { booking: Booking }) {
   return (
@@ -76,11 +70,6 @@ export function Bookings({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
-  const [createError, setCreateError] = useState('');
-  const [creating, setCreating] = useState(false);
-  const [createRoomType, setCreateRoomType] = useState(
-    roomTypes.find((item) => item.active)?.code ?? '',
-  );
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('all');
   const [arrivalDate, setArrivalDate] = useState('');
@@ -111,11 +100,6 @@ export function Bookings({
     }
   }, [booking]);
 
-  useEffect(() => {
-    if (!roomTypes.some((item) => item.code === createRoomType && item.active)) {
-      setCreateRoomType(roomTypes.find((item) => item.active)?.code ?? '');
-    }
-  }, [roomTypes, createRoomType]);
 
   function openBooking(item: Booking) {
     previousScroll.current = listRef.current?.scrollTop ?? 0;
@@ -127,44 +111,20 @@ export function Bookings({
     setStatus('all');
     setArrivalDate('');
   }
-  async function createBooking(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const roomCountValue = Number(form.get('roomCount'));
-    const adults = Number(form.get('adults'));
-    const children = Number(form.get('children'));
-    const infants = Number(form.get('infants'));
-    const guests = adults + children + infants;
-    const amount = Number(form.get('amount'));
-    try {
-      setCreating(true);
-      setCreateError('');
-      if (!Number.isSafeInteger(adults) || adults < 1)
-        throw new Error('Enter at least 1 adult.');
-      if (!Number.isSafeInteger(children) || children < 0)
-        throw new Error('Enter a valid number of children.');
-      if (!Number.isSafeInteger(infants) || infants < 0)
-        throw new Error('Enter a valid number of infants.');
-      const value: Booking = {
-        reference: nextBookingReference(bookings),
-        guest: String(form.get('guest') ?? ''),
-        arrival: String(form.get('arrival') ?? ''),
-        departure: String(form.get('departure') ?? ''),
-        status: 'Booked',
-        rooms: [{ code: createRoomType, count: roomCountValue }],
-        assignedRooms: 0,
-        checkedInGuests: 0,
-        guests,
-        amount,
-      };
-      await onCreate(value);
-      setCreateOpen(false);
-      onNotice(`Booking ${value.reference} created using Room Type ${createRoomType}.`);
-    } catch (error) {
-      setCreateError((error as Error).message);
-    } finally {
-      setCreating(false);
-    }
+
+  if (createOpen) {
+    return (
+      <BookingCreate
+        bookings={bookings}
+        roomTypes={roomTypes}
+        onCancel={() => setCreateOpen(false)}
+        onNotice={onNotice}
+        onCreate={async (value) => {
+          await onCreate(value);
+          setCreateOpen(false);
+        }}
+      />
+    );
   }
 
   if (booking) {
@@ -277,43 +237,10 @@ export function Bookings({
         aria-label="Add booking"
         title={roomTypes.some((item) => item.active) ? 'Add booking' : 'Set up an active Room Type first'}
         disabled={!roomTypes.some((item) => item.active)}
-        onClick={() => {
-          setCreateError('');
-          setCreateRoomType(roomTypes.find((item) => item.active)?.code ?? '');
-          setCreateOpen(true);
-        }}
+        onClick={() => setCreateOpen(true)}
       >
         <Plus size={28} />
       </button>
-
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="booking-create-dialog">
-          <DialogHeader>
-            <DialogTitle>Create booking</DialogTitle>
-            <DialogDescription>Room Type is selected from Hotel Settings → Room Type master.</DialogDescription>
-          </DialogHeader>
-          <form className="dialog-form" onSubmit={createBooking}>
-            <label>Guest name<input name="guest" required maxLength={120} /></label>
-            <div className="two-col">
-              <label>Arrival date<HotelDatePicker name="arrival" required defaultValue="2026-09-05" ariaLabel="Arrival date" /></label>
-              <label>Departure date<HotelDatePicker name="departure" required defaultValue="2026-09-06" ariaLabel="Departure date" /></label>
-            </div>
-            <label>Room type<Choice label="Room type" value={createRoomType} onChange={setCreateRoomType} items={roomTypes.filter((item) => item.active).map((item) => ({ value: item.code, label: `${item.code} - ${item.description}` }))} /></label>
-            <div className="booking-guest-columns">
-              <label>No. of Rooms<input type="number" name="roomCount" min="1" defaultValue="1" required /></label>
-              <label>No. of Adult<input type="number" name="adults" min="1" defaultValue="1" required /></label>
-              <label>No. of Child<input type="number" name="children" min="0" defaultValue="0" required /></label>
-              <label>No. of Infant<input type="number" name="infants" min="0" defaultValue="0" required /></label>
-            </div>
-            <label>Booking amount (RM)<input type="number" name="amount" min="0" step="0.01" defaultValue="0" required /></label>
-            {createError && <p className="form-error">{createError}</p>}
-            <div className="dialog-actions">
-              <button type="button" className="secondary-button" onClick={() => setCreateOpen(false)}>Cancel</button>
-              <button type="submit" className="primary-button" disabled={creating || !createRoomType}>{creating ? 'Saving…' : 'Save booking'}</button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
     </section>
   );
 }

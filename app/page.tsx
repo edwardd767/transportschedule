@@ -580,7 +580,7 @@ function HomeContent({ store }: { store: TransportData }) {
               </button>
             )}
             <div>
-              <small>HMS</small>
+              <small>PMS</small>
               <strong>HOTEL PARADISE</strong>
             </div>
           </div>
