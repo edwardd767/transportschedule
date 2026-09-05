@@ -190,13 +190,14 @@ export function createWorker(
         const path = new URL(request.url).pathname;
         if (request.method === 'GET' && (path === '/health' || path === '/')) {
           return reply({
-            apiVersion: 3,
-            diagnosticsVersion: 3,
+            apiVersion: 4,
+            diagnosticsVersion: 4,
             service: 'HotelX Transport API',
             status: 'ready',
             storageConfigured: Boolean(env.DATABASE_URL),
             storageModel: 'normalized-tables',
             storageSchemaVersion: 2,
+            hotelMasterSchemaVersion: 1,
             privateLinkConfigured: /^[a-f0-9]{64}$/.test(verifier),
             signInConfigured:
               passwordStatus(env.TRANSPORT_PASSWORD) === 'ready',

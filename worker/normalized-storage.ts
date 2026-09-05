@@ -136,6 +136,75 @@ const schemaStatements = [
     trip_id text NOT NULL DEFAULT '',
     PRIMARY KEY (property_id, id)
   )`,
+  `CREATE TABLE IF NOT EXISTS public.hotelx_location_master (
+    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    code text NOT NULL,
+    sort_order integer NOT NULL,
+    description text NOT NULL,
+    floor_plan_attachment text NOT NULL DEFAULT '',
+    active boolean NOT NULL DEFAULT true,
+    PRIMARY KEY (property_id, code)
+  )`,
+  `CREATE TABLE IF NOT EXISTS public.hotelx_room_type_master (
+    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    code text NOT NULL,
+    sort_order integer NOT NULL,
+    description text NOT NULL,
+    property_type text NOT NULL,
+    measure_type text NOT NULL,
+    room_size integer NOT NULL DEFAULT 0,
+    max_guest integer NOT NULL CHECK (max_guest >= 1),
+    house_limit integer NOT NULL DEFAULT 0,
+    housekeeping_points integer NOT NULL DEFAULT 0,
+    total_room integer NOT NULL DEFAULT 0,
+    active boolean NOT NULL DEFAULT true,
+    PRIMARY KEY (property_id, code)
+  )`,
+  `CREATE TABLE IF NOT EXISTS public.hotelx_room_master (
+    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    room_no text NOT NULL,
+    sort_order integer NOT NULL,
+    room_type_code text NOT NULL,
+    description text NOT NULL,
+    location_code text NOT NULL,
+    max_guest integer NOT NULL CHECK (max_guest >= 1),
+    room_size integer NOT NULL DEFAULT 0,
+    display_sequence integer NOT NULL,
+    keycard_room_mapping text NOT NULL DEFAULT '',
+    active boolean NOT NULL DEFAULT true,
+    PRIMARY KEY (property_id, room_no),
+    FOREIGN KEY (property_id, room_type_code) REFERENCES public.hotelx_room_type_master(property_id, code),
+    FOREIGN KEY (property_id, location_code) REFERENCES public.hotelx_location_master(property_id, code)
+  )`,
+  `CREATE TABLE IF NOT EXISTS public.hotelx_bookings (
+    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    reference text NOT NULL,
+    sort_order integer NOT NULL,
+    guest text NOT NULL,
+    arrival_date text NOT NULL,
+    departure_date text NOT NULL,
+    status text NOT NULL,
+    assigned_rooms integer NOT NULL DEFAULT 0,
+    checked_in_guests integer NOT NULL DEFAULT 0,
+    guests integer NOT NULL,
+    amount numeric(14,2) NOT NULL DEFAULT 0,
+    highlight_dates boolean NOT NULL DEFAULT false,
+    PRIMARY KEY (property_id, reference)
+  )`,
+  `CREATE TABLE IF NOT EXISTS public.hotelx_booking_rooms (
+    property_id text NOT NULL,
+    booking_reference text NOT NULL,
+    room_type_code text NOT NULL,
+    sort_order integer NOT NULL,
+    room_count integer NOT NULL CHECK (room_count >= 1),
+    PRIMARY KEY (property_id, booking_reference, room_type_code),
+    FOREIGN KEY (property_id, booking_reference) REFERENCES public.hotelx_bookings(property_id, reference) ON DELETE CASCADE,
+    FOREIGN KEY (property_id, room_type_code) REFERENCES public.hotelx_room_type_master(property_id, code)
+  )`,
+  `CREATE INDEX IF NOT EXISTS hotelx_room_master_type_idx
+    ON public.hotelx_room_master(property_id, room_type_code, location_code)`,
+  `CREATE INDEX IF NOT EXISTS hotelx_bookings_dates_idx
+    ON public.hotelx_bookings(property_id, arrival_date, departure_date)`,
   `CREATE INDEX IF NOT EXISTS hotelx_transport_trips_date_idx
     ON public.hotelx_transport_trips(property_id, trip_date, trip_time)`,
   `CREATE INDEX IF NOT EXISTS hotelx_transport_groups_booking_idx
@@ -149,6 +218,11 @@ const schemaStatements = [
   LANGUAGE plpgsql
   AS $$
   BEGIN
+    DELETE FROM public.hotelx_booking_rooms WHERE property_id = p_property_id;
+    DELETE FROM public.hotelx_bookings WHERE property_id = p_property_id;
+    DELETE FROM public.hotelx_room_master WHERE property_id = p_property_id;
+    DELETE FROM public.hotelx_room_type_master WHERE property_id = p_property_id;
+    DELETE FROM public.hotelx_location_master WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_transport_trip_groups WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_transport_booking_legs WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_transport_trips WHERE property_id = p_property_id;
@@ -158,6 +232,68 @@ const schemaStatements = [
     DELETE FROM public.hotelx_transport_routes WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_transport_operators WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_transport_rules WHERE property_id = p_property_id;
+
+    INSERT INTO public.hotelx_location_master (
+      property_id, code, sort_order, description, floor_plan_attachment, active
+    )
+    SELECT p_property_id, item.value->>'code', item.ordinality::integer,
+      COALESCE(item.value->>'description', ''), COALESCE(item.value->>'floorPlanAttachment', ''),
+      COALESCE((item.value->>'active')::boolean, true)
+    FROM jsonb_array_elements(COALESCE(p_state #> '{hotelMasters,locations}', '[]'::jsonb))
+      WITH ORDINALITY AS item(value, ordinality);
+
+    INSERT INTO public.hotelx_room_type_master (
+      property_id, code, sort_order, description, property_type, measure_type,
+      room_size, max_guest, house_limit, housekeeping_points, total_room, active
+    )
+    SELECT p_property_id, item.value->>'code', item.ordinality::integer,
+      COALESCE(item.value->>'description', ''), COALESCE(item.value->>'propertyType', 'Room'),
+      COALESCE(item.value->>'measureType', 'Square Metre'),
+      COALESCE(NULLIF(item.value->>'roomSize', ''), '0')::integer,
+      COALESCE(NULLIF(item.value->>'maxGuest', ''), '1')::integer,
+      COALESCE(NULLIF(item.value->>'houseLimit', ''), '0')::integer,
+      COALESCE(NULLIF(item.value->>'housekeepingPoints', ''), '0')::integer,
+      COALESCE(NULLIF(item.value->>'totalRoom', ''), '0')::integer,
+      COALESCE((item.value->>'active')::boolean, true)
+    FROM jsonb_array_elements(COALESCE(p_state #> '{hotelMasters,roomTypes}', '[]'::jsonb))
+      WITH ORDINALITY AS item(value, ordinality);
+
+    INSERT INTO public.hotelx_room_master (
+      property_id, room_no, sort_order, room_type_code, description, location_code,
+      max_guest, room_size, display_sequence, keycard_room_mapping, active
+    )
+    SELECT p_property_id, item.value->>'roomNo', item.ordinality::integer,
+      item.value->>'roomTypeCode', COALESCE(item.value->>'description', ''),
+      item.value->>'locationCode', COALESCE(NULLIF(item.value->>'maxGuest', ''), '1')::integer,
+      COALESCE(NULLIF(item.value->>'roomSize', ''), '0')::integer,
+      COALESCE(NULLIF(item.value->>'displaySequence', ''), item.ordinality::text)::integer,
+      COALESCE(item.value->>'keycardRoomMapping', ''), COALESCE((item.value->>'active')::boolean, true)
+    FROM jsonb_array_elements(COALESCE(p_state #> '{hotelMasters,rooms}', '[]'::jsonb))
+      WITH ORDINALITY AS item(value, ordinality);
+
+    INSERT INTO public.hotelx_bookings (
+      property_id, reference, sort_order, guest, arrival_date, departure_date, status,
+      assigned_rooms, checked_in_guests, guests, amount, highlight_dates
+    )
+    SELECT p_property_id, item.value->>'reference', item.ordinality::integer,
+      item.value->>'guest', item.value->>'arrival', item.value->>'departure',
+      COALESCE(item.value->>'status', 'Booked'),
+      COALESCE(NULLIF(item.value->>'assignedRooms', ''), '0')::integer,
+      COALESCE(NULLIF(item.value->>'checkedInGuests', ''), '0')::integer,
+      COALESCE(NULLIF(item.value->>'guests', ''), '1')::integer,
+      COALESCE(NULLIF(item.value->>'amount', ''), '0')::numeric,
+      COALESCE((item.value->>'highlightDates')::boolean, false)
+    FROM jsonb_array_elements(COALESCE(p_state->'bookings', '[]'::jsonb))
+      WITH ORDINALITY AS item(value, ordinality);
+
+    INSERT INTO public.hotelx_booking_rooms (
+      property_id, booking_reference, room_type_code, sort_order, room_count
+    )
+    SELECT p_property_id, booking.value->>'reference', room.value->>'code',
+      room.ordinality::integer, COALESCE(NULLIF(room.value->>'count', ''), '1')::integer
+    FROM jsonb_array_elements(COALESCE(p_state->'bookings', '[]'::jsonb)) AS booking(value)
+    CROSS JOIN LATERAL jsonb_array_elements(COALESCE(booking.value->'rooms', '[]'::jsonb))
+      WITH ORDINALITY AS room(value, ordinality);
 
     INSERT INTO public.hotelx_transport_rules (
       property_id, start_time, end_time, turnaround_minutes,
@@ -405,6 +541,70 @@ const schemaStatements = [
   SELECT
     meta.revision,
     jsonb_build_object(
+      'hotelMasters', jsonb_build_object(
+        'locations', COALESCE((
+          SELECT jsonb_agg(jsonb_build_object(
+            'code', location.code,
+            'description', location.description,
+            'floorPlanAttachment', location.floor_plan_attachment,
+            'active', location.active
+          ) ORDER BY location.sort_order)
+          FROM public.hotelx_location_master AS location
+          WHERE location.property_id = meta.id
+        ), '[]'::jsonb),
+        'roomTypes', COALESCE((
+          SELECT jsonb_agg(jsonb_build_object(
+            'code', room_type.code,
+            'description', room_type.description,
+            'propertyType', room_type.property_type,
+            'measureType', room_type.measure_type,
+            'roomSize', room_type.room_size,
+            'maxGuest', room_type.max_guest,
+            'houseLimit', room_type.house_limit,
+            'housekeepingPoints', room_type.housekeeping_points,
+            'totalRoom', room_type.total_room,
+            'active', room_type.active
+          ) ORDER BY room_type.sort_order)
+          FROM public.hotelx_room_type_master AS room_type
+          WHERE room_type.property_id = meta.id
+        ), '[]'::jsonb),
+        'rooms', COALESCE((
+          SELECT jsonb_agg(jsonb_build_object(
+            'roomNo', room.room_no,
+            'roomTypeCode', room.room_type_code,
+            'description', room.description,
+            'locationCode', room.location_code,
+            'maxGuest', room.max_guest,
+            'roomSize', room.room_size,
+            'displaySequence', room.display_sequence,
+            'keycardRoomMapping', room.keycard_room_mapping,
+            'active', room.active
+          ) ORDER BY room.sort_order)
+          FROM public.hotelx_room_master AS room
+          WHERE room.property_id = meta.id
+        ), '[]'::jsonb)
+      ),
+      'bookings', COALESCE((
+        SELECT jsonb_agg(jsonb_build_object(
+          'reference', booking.reference,
+          'guest', booking.guest,
+          'arrival', booking.arrival_date,
+          'departure', booking.departure_date,
+          'status', booking.status,
+          'rooms', COALESCE((
+            SELECT jsonb_agg(jsonb_build_object('code', br.room_type_code, 'count', br.room_count) ORDER BY br.sort_order)
+            FROM public.hotelx_booking_rooms AS br
+            WHERE br.property_id = booking.property_id AND br.booking_reference = booking.reference
+          ), '[]'::jsonb),
+          'assignedRooms', booking.assigned_rooms,
+          'checkedInGuests', booking.checked_in_guests,
+          'guests', booking.guests,
+          'amount', booking.amount::double precision,
+          'highlightDates', booking.highlight_dates
+        ) ORDER BY booking.sort_order)
+        FROM public.hotelx_bookings AS booking
+        WHERE booking.property_id = meta.id
+      ), '[]'::jsonb),
       'setup', jsonb_build_object(
         'operators', COALESCE((
           SELECT jsonb_agg(
@@ -627,7 +827,31 @@ export function createNormalizedTransportStorage(
     read,
     async readOrInitialize(connection, id, seed) {
       const current = await read(connection, id);
-      if (current) return current;
+      if (current) {
+        const raw = JSON.parse(current[1]) as Partial<TransportState>;
+        const hasMasters = Boolean(
+          raw.hotelMasters &&
+          Array.isArray(raw.hotelMasters.locations) &&
+          Array.isArray(raw.hotelMasters.roomTypes) &&
+          raw.hotelMasters.roomTypes.length &&
+          Array.isArray(raw.hotelMasters.rooms) &&
+          raw.hotelMasters.rooms.length,
+        );
+        const hasBookings = Array.isArray(raw.bookings) && raw.bookings.length > 0;
+        if (!hasMasters || !hasBookings) {
+          const merged: TransportState = {
+            ...seed,
+            ...raw,
+            hotelMasters: hasMasters ? raw.hotelMasters! : seed.hotelMasters,
+            bookings: hasBookings ? raw.bookings! : seed.bookings,
+          } as TransportState;
+          const upgraded = await query(connection, saveSql, [id, current[0], JSON.stringify(merged)]);
+          const revision = Number(upgraded[0]?.[0]);
+          if (Number.isSafeInteger(revision) && revision >= 1)
+            return [String(revision), JSON.stringify(merged)];
+        }
+        return current;
+      }
 
       const legacy = await readLegacy(connection, id);
       const revision = legacy?.[0] ?? '1';

@@ -22,7 +22,15 @@ import {
   type DayNote,
   type BookingTransferSelection,
 } from './transport-planning';
-import { sampleBookings } from './bookings';
+import type { Booking } from './bookings';
+import {
+  initialBookings,
+  initialHotelMasters,
+  type HotelLocation,
+  type HotelMasters,
+  type HotelRoom,
+  type HotelRoomType,
+} from './hotel-masters';
 import {
   addBookingTransportLeg,
   removeBookingTransportLeg,
@@ -36,6 +44,8 @@ export type TransportState = {
   templates: ScheduleTemplate[];
   dayNotes: Record<string, DayNote>;
   bookingLegs: BookingTransportLeg[];
+  hotelMasters: HotelMasters;
+  bookings: Booking[];
 };
 export type DepartureInput = {
   id: string;
@@ -64,6 +74,10 @@ export type TransportAction =
       bookingReference: string;
       legId: string;
     }
+  | { type: 'hotelLocationSave'; value: HotelLocation }
+  | { type: 'hotelRoomTypeSave'; value: HotelRoomType }
+  | { type: 'hotelRoomSave'; value: HotelRoom }
+  | { type: 'bookingCreate'; value: Booking }
   | {
       type: 'transfers';
       bookingReference: string;
@@ -77,10 +91,24 @@ export function newTransportState(): TransportState {
     templates: [],
     dayNotes: initialDayNotes,
     bookingLegs: [],
+    hotelMasters: initialHotelMasters,
+    bookings: initialBookings,
   });
 }
 
 export function normalizeTransportState(state: TransportState): TransportState {
+  const hotelMasters =
+    state.hotelMasters &&
+    Array.isArray(state.hotelMasters.locations) &&
+    Array.isArray(state.hotelMasters.roomTypes) &&
+    Array.isArray(state.hotelMasters.rooms) &&
+    state.hotelMasters.roomTypes.length
+      ? state.hotelMasters
+      : structuredClone(initialHotelMasters);
+  const bookings =
+    Array.isArray(state.bookings) && state.bookings.length
+      ? state.bookings
+      : structuredClone(initialBookings);
   return {
     ...state,
     setup: {
@@ -101,6 +129,8 @@ export function normalizeTransportState(state: TransportState): TransportState {
         : trip,
     ),
     bookingLegs: Array.isArray(state.bookingLegs) ? state.bookingLegs : [],
+    hotelMasters,
+    bookings,
   };
 }
 
@@ -375,8 +405,132 @@ export function applyTransportAction(
         ),
       });
     }
+    case 'hotelLocationSave': {
+      const normalized = normalizeTransportState(state);
+      const v = object(action.value);
+      const value: HotelLocation = {
+        code: text(v.code, 'location code', true, 20).trim().toUpperCase(),
+        description: text(v.description, 'location description', true, 120).trim(),
+        floorPlanAttachment: text(v.floorPlanAttachment, 'floor plan attachment', false, 255).trim(),
+        active: boolean(v.active),
+      };
+      const exists = normalized.hotelMasters.locations.some((item) => item.code === value.code);
+      return {
+        ...normalized,
+        hotelMasters: {
+          ...normalized.hotelMasters,
+          locations: exists
+            ? normalized.hotelMasters.locations.map((item) => item.code === value.code ? value : item)
+            : [...normalized.hotelMasters.locations, value],
+        },
+      };
+    }
+    case 'hotelRoomTypeSave': {
+      const normalized = normalizeTransportState(state);
+      const v = object(action.value);
+      const code = text(v.code, 'room type code', true, 20).trim().toUpperCase();
+      const value: HotelRoomType = {
+        code,
+        description: text(v.description, 'room type description', true, 120).trim(),
+        propertyType: text(v.propertyType, 'property type', true, 60).trim(),
+        measureType: text(v.measureType, 'measure type', true, 60).trim(),
+        roomSize: number(v.roomSize, 'room size', 0, 100000),
+        maxGuest: number(v.maxGuest, 'max guest', 1, 50),
+        houseLimit: number(v.houseLimit, 'house limit', 0, 50),
+        housekeepingPoints: number(v.housekeepingPoints, 'housekeeping points', 0, 10000),
+        totalRoom: normalized.hotelMasters.rooms.filter((room) => room.roomTypeCode === code).length,
+        active: boolean(v.active),
+      };
+      const exists = normalized.hotelMasters.roomTypes.some((item) => item.code === code);
+      return {
+        ...normalized,
+        hotelMasters: {
+          ...normalized.hotelMasters,
+          roomTypes: exists
+            ? normalized.hotelMasters.roomTypes.map((item) => item.code === code ? value : item)
+            : [...normalized.hotelMasters.roomTypes, value],
+          rooms: normalized.hotelMasters.rooms.map((room) =>
+            room.roomTypeCode === code
+              ? { ...room, maxGuest: value.maxGuest, roomSize: value.roomSize }
+              : room,
+          ),
+        },
+      };
+    }
+    case 'hotelRoomSave': {
+      const normalized = normalizeTransportState(state);
+      const v = object(action.value);
+      const roomNo = text(v.roomNo, 'room number', true, 30).trim().toUpperCase();
+      const roomTypeCode = text(v.roomTypeCode, 'room type', true, 20).trim().toUpperCase();
+      const locationCode = text(v.locationCode, 'location', true, 20).trim().toUpperCase();
+      const roomType = normalized.hotelMasters.roomTypes.find((item) => item.code === roomTypeCode && item.active);
+      if (!roomType) throw new Error('Choose an active Room Type from Hotel Settings.');
+      if (!normalized.hotelMasters.locations.some((item) => item.code === locationCode && item.active))
+        throw new Error('Choose an active Location from Hotel Settings.');
+      const value: HotelRoom = {
+        roomNo,
+        roomTypeCode,
+        description: text(v.description, 'room description', true, 120).trim(),
+        locationCode,
+        maxGuest: roomType.maxGuest,
+        roomSize: roomType.roomSize,
+        displaySequence: number(v.displaySequence, 'display sequence', 1, 100000),
+        keycardRoomMapping: text(v.keycardRoomMapping, 'keycard room mapping', false, 100).trim(),
+        active: boolean(v.active),
+      };
+      const exists = normalized.hotelMasters.rooms.some((item) => item.roomNo === roomNo);
+      const rooms = exists
+        ? normalized.hotelMasters.rooms.map((item) => item.roomNo === roomNo ? value : item)
+        : [...normalized.hotelMasters.rooms, value];
+      const roomTypes = normalized.hotelMasters.roomTypes.map((type) => ({
+        ...type,
+        totalRoom: rooms.filter((room) => room.roomTypeCode === type.code).length,
+      }));
+      return { ...normalized, hotelMasters: { ...normalized.hotelMasters, rooms, roomTypes } };
+    }
+    case 'bookingCreate': {
+      const normalized = normalizeTransportState(state);
+      const v = object(action.value);
+      const reference = text(v.reference, 'booking reference', true, 30).trim().toUpperCase();
+      if (normalized.bookings.some((item) => item.reference === reference))
+        throw new Error('This booking reference already exists.');
+      const arrival = text(v.arrival, 'arrival date', true, 10);
+      const departureDate = text(v.departure, 'departure date', true, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(arrival) || !/^\d{4}-\d{2}-\d{2}$/.test(departureDate) || departureDate <= arrival)
+        throw new Error('Departure date must be after the arrival date.');
+      const bookingRooms = list(v.rooms, 10).map((entry) => {
+        const room = object(entry);
+        const code = text(room.code, 'room type', true, 20).trim().toUpperCase();
+        const master = normalized.hotelMasters.roomTypes.find((item) => item.code === code && item.active);
+        if (!master) throw new Error(`Room Type ${code} is not active in Hotel Settings.`);
+        const count = number(room.count, 'number of rooms', 1, master.totalRoom || 1);
+        return { code, count };
+      });
+      const guests = number(v.guests, 'number of guests', 1, 1000);
+      const guestCapacity = bookingRooms.reduce((total, item) => {
+        const master = normalized.hotelMasters.roomTypes.find((type) => type.code === item.code)!;
+        return total + master.maxGuest * item.count;
+      }, 0);
+      if (guests > guestCapacity)
+        throw new Error(`Maximum guest capacity for the selected room(s) is ${guestCapacity}.`);
+      if (typeof v.amount !== 'number' || !Number.isFinite(v.amount) || v.amount < 0 || v.amount > 100000000)
+        throw new Error('Enter a valid booking amount.');
+      const value: Booking = {
+        reference,
+        guest: text(v.guest, 'guest name', true, 160).trim(),
+        arrival,
+        departure: departureDate,
+        status: 'Booked',
+        rooms: bookingRooms,
+        assignedRooms: 0,
+        checkedInGuests: 0,
+        guests,
+        amount: v.amount,
+      };
+      return { ...normalized, bookings: [value, ...normalized.bookings] };
+    }
     case 'bookingTransportAdd': {
-      const booking = sampleBookings.find(
+      const booking = normalizeTransportState(state).bookings.find(
         (b) =>
           b.reference === text(action.bookingReference, 'booking reference'),
       );
@@ -433,7 +587,7 @@ export function applyTransportAction(
       };
     }
     case 'transfers': {
-      const booking = sampleBookings.find(
+      const booking = normalizeTransportState(state).bookings.find(
         (b) =>
           b.reference === text(action.bookingReference, 'booking reference'),
       );

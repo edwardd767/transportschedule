@@ -47,8 +47,9 @@ import {
 import { Choice } from '@/components/hotel-choice';
 import { TransportSetup } from '@/components/transport-setup';
 import { HotelSettingsMenu } from '@/components/hotel-settings-menu';
+import { HotelMasterFiles } from '@/components/hotel-master-files';
 import { Bookings } from '@/components/bookings';
-import { sampleBookings, type Booking } from '@/lib/bookings';
+import type { Booking } from '@/lib/bookings';
 import { MonthTimetable } from '@/components/month-timetable';
 import { ScheduleTemplates } from '@/components/schedule-templates';
 import { BookingTransfers } from '@/components/booking-transfers';
@@ -160,13 +161,20 @@ function HomeContent({ store }: { store: TransportData }) {
   const [route, setRoute] = useState('all');
   const [query, setQuery] = useState('');
   const [view, setView] = useState<
-    'schedule' | 'setup' | 'hotelsettings' | 'booking' | 'frontdesk' | 'reporting'
+    | 'schedule'
+    | 'setup'
+    | 'hotelsettings'
+    | 'location'
+    | 'roomtype'
+    | 'room'
+    | 'booking'
+    | 'frontdesk'
+    | 'reporting'
   >('booking');
   const [bookingReference, setBookingReference] = useState<string | null>(null);
+  const { setup, trips, templates, bookingLegs, hotelMasters, bookings } = store.state;
   const activeBooking =
-    sampleBookings.find((booking) => booking.reference === bookingReference) ??
-    null;
-  const { setup, trips, templates, bookingLegs } = store.state;
+    bookings.find((booking) => booking.reference === bookingReference) ?? null;
   const [scheduleView, setScheduleView] = useState<'day' | 'month'>('day');
   const [boatFilter, setBoatFilter] = useState('all');
   const [transferBooking, setTransferBooking] = useState<Booking | null>(null);
@@ -526,8 +534,8 @@ function HomeContent({ store }: { store: TransportData }) {
               Digital Reporting
             </button>
             <button
-              className={view === 'setup' || view === 'hotelsettings' ? 'active' : ''}
-              aria-current={view === 'setup' || view === 'hotelsettings' ? 'page' : undefined}
+              className={['setup', 'hotelsettings', 'location', 'roomtype', 'room'].includes(view) ? 'active' : ''}
+              aria-current={['setup', 'hotelsettings', 'location', 'roomtype', 'room'].includes(view) ? 'page' : undefined}
               onClick={() => setView('hotelsettings')}
             >
               <Settings />
@@ -586,6 +594,11 @@ function HomeContent({ store }: { store: TransportData }) {
               </>
             ) : view === 'hotelsettings' ? (
               <span>Hotel Settings</span>
+            ) : ['location', 'roomtype', 'room'].includes(view) ? (
+              <>
+                Hotel Settings <ChevronRight size={14} />{' '}
+                {view === 'location' ? 'Location' : view === 'roomtype' ? 'Room Type' : 'Room'}
+              </>
             ) : (
               <>
                 {view === 'setup' ? 'Hotel Settings' : 'Transport'}{' '}
@@ -597,7 +610,13 @@ function HomeContent({ store }: { store: TransportData }) {
         </div>
         {view === 'booking' ? (
           <Bookings
+            bookings={bookings}
+            roomTypes={hotelMasters.roomTypes}
             booking={activeBooking}
+            onCreate={async (booking) => {
+              await store.run({ type: 'bookingCreate', value: booking });
+              setBookingReference(booking.reference);
+            }}
             onSelect={(booking) => setBookingReference(booking.reference)}
             onNotice={setNotice}
             transportSummary={
@@ -636,7 +655,30 @@ function HomeContent({ store }: { store: TransportData }) {
           />
         ) : view === 'hotelsettings' ? (
           <div className="settings-scroll hotel-settings-scroll" key="hotelsettings">
-            <HotelSettingsMenu onOpenTransportSetup={() => setView('setup')} />
+            <HotelSettingsMenu
+              onOpenLocation={() => setView('location')}
+              onOpenRoomType={() => setView('roomtype')}
+              onOpenRoom={() => setView('room')}
+              onOpenTransportSetup={() => setView('setup')}
+            />
+          </div>
+        ) : ['location', 'roomtype', 'room'].includes(view) ? (
+          <div className="settings-scroll hotel-master-scroll" key={view}>
+            <HotelMasterFiles
+              kind={view === 'location' ? 'location' : view === 'roomtype' ? 'roomType' : 'room'}
+              masters={hotelMasters}
+              onSaveLocation={async (value) => {
+                await store.run({ type: 'hotelLocationSave', value });
+              }}
+              onSaveRoomType={async (value) => {
+                await store.run({ type: 'hotelRoomTypeSave', value });
+              }}
+              onSaveRoom={async (value) => {
+                await store.run({ type: 'hotelRoomSave', value });
+              }}
+              onBack={() => setView('hotelsettings')}
+              onNotice={setNotice}
+            />
           </div>
         ) : view === 'setup' ? (
           <div className="settings-scroll" key="setup">
