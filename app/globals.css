@@ -1106,7 +1106,7 @@ p {
     gap: 8px;
   }
 }
-@media (max-width: 767px) {
+@media (max-width: 639px) {
   .hotel-shell {
     --topbar-height: 56px;
   }
@@ -1679,7 +1679,7 @@ p {
     font-size: 12px;
   }
 }
-@media (max-width: 767px) {
+@media (max-width: 639px) {
   .setup-intro {
     gap: 12px;
     margin: 16px 0;
@@ -2288,7 +2288,7 @@ p {
     padding-bottom: 12px;
   }
 }
-@media (max-width: 767px) {
+@media (max-width: 639px) {
   .hotel-dialog[data-slot='dialog-content'] {
     padding: 22px;
     width: calc(100vw - 24px);
@@ -2709,7 +2709,7 @@ p {
   font-size: 14px;
   white-space: pre-wrap;
 }
-@media (max-width: 767px) {
+@media (max-width: 639px) {
   .booking-listing-title {
     padding: 7px 10px;
     gap: 6px;
@@ -3607,7 +3607,7 @@ p {
     display: none;
   }
 }
-@media (max-width: 767px) {
+@media (max-width: 639px) {
   .timetable-fit .timetable-day {
     padding: 3px 2px;
   }
@@ -4456,7 +4456,7 @@ p {
 
 
 /* HotelX compact desktop density */
-@media (min-width: 768px) {
+@media (min-width: 640px) {
   body {
     font-size: 14px;
   }
@@ -4695,7 +4695,7 @@ p {
 
 
 /* HotelX standardized desktop density v2 */
-@media (min-width: 768px) {
+@media (min-width: 640px) {
   body { font-size: 13px; }
 
   .hotel-shell { --topbar-height: 50px; }
