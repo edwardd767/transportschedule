@@ -47,6 +47,7 @@ import {
 import { Choice } from '@/components/hotel-choice';
 import { TransportSetup } from '@/components/transport-setup';
 import { HotelSettingsMenu } from '@/components/hotel-settings-menu';
+import { HotelSettingsDetail } from '@/components/hotel-settings-detail';
 import { HotelMasterFiles } from '@/components/hotel-master-files';
 import { Bookings } from '@/components/bookings';
 import type { Booking } from '@/lib/bookings';
@@ -164,9 +165,14 @@ function HomeContent({ store }: { store: TransportData }) {
     | 'schedule'
     | 'setup'
     | 'hotelsettings'
+    | 'hotelsetup'
+    | 'department'
     | 'location'
+    | 'floorplan'
     | 'roomtype'
     | 'room'
+    | 'roomstatus'
+    | 'ratepolicy'
     | 'booking'
     | 'frontdesk'
     | 'reporting'
@@ -534,8 +540,8 @@ function HomeContent({ store }: { store: TransportData }) {
               Digital Reporting
             </button>
             <button
-              className={['setup', 'hotelsettings', 'location', 'roomtype', 'room'].includes(view) ? 'active' : ''}
-              aria-current={['setup', 'hotelsettings', 'location', 'roomtype', 'room'].includes(view) ? 'page' : undefined}
+              className={['setup', 'hotelsettings', 'hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy'].includes(view) ? 'active' : ''}
+              aria-current={['setup', 'hotelsettings', 'hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy'].includes(view) ? 'page' : undefined}
               onClick={() => setView('hotelsettings')}
             >
               <Settings />
@@ -594,10 +600,24 @@ function HomeContent({ store }: { store: TransportData }) {
               </>
             ) : view === 'hotelsettings' ? (
               <span>Hotel Settings</span>
-            ) : ['location', 'roomtype', 'room'].includes(view) ? (
+            ) : ['hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy'].includes(view) ? (
               <>
                 Hotel Settings <ChevronRight size={14} />{' '}
-                {view === 'location' ? 'Location' : view === 'roomtype' ? 'Room Type' : 'Room'}
+                {view === 'hotelsetup'
+                  ? 'Hotel Setup'
+                  : view === 'department'
+                    ? 'Department'
+                    : view === 'location'
+                      ? 'Location'
+                      : view === 'floorplan'
+                        ? 'Floor Plan'
+                        : view === 'roomtype'
+                          ? 'Room Type'
+                          : view === 'room'
+                            ? 'Room'
+                            : view === 'roomstatus'
+                              ? 'Room Status'
+                              : 'Rate Policy'}
               </>
             ) : (
               <>
@@ -656,10 +676,32 @@ function HomeContent({ store }: { store: TransportData }) {
         ) : view === 'hotelsettings' ? (
           <div className="settings-scroll hotel-settings-scroll" key="hotelsettings">
             <HotelSettingsMenu
+              onOpenHotelSetup={() => setView('hotelsetup')}
+              onOpenDepartment={() => setView('department')}
               onOpenLocation={() => setView('location')}
+              onOpenFloorPlan={() => setView('floorplan')}
               onOpenRoomType={() => setView('roomtype')}
               onOpenRoom={() => setView('room')}
+              onOpenRoomStatus={() => setView('roomstatus')}
+              onOpenRatePolicy={() => setView('ratepolicy')}
               onOpenTransportSetup={() => setView('setup')}
+            />
+          </div>
+        ) : ['hotelsetup', 'department', 'floorplan', 'roomstatus', 'ratepolicy'].includes(view) ? (
+          <div className="settings-scroll hotel-master-scroll" key={view}>
+            <HotelSettingsDetail
+              kind={
+                view === 'hotelsetup'
+                  ? 'hotelSetup'
+                  : view === 'department'
+                    ? 'department'
+                    : view === 'floorplan'
+                      ? 'floorPlan'
+                      : view === 'roomstatus'
+                        ? 'roomStatus'
+                        : 'ratePolicy'
+              }
+              onBack={() => setView('hotelsettings')}
             />
           </div>
         ) : ['location', 'roomtype', 'room'].includes(view) ? (
@@ -688,7 +730,7 @@ function HomeContent({ store }: { store: TransportData }) {
               onChange={async (value) => {
                 await store.run({ type: 'setup', value });
               }}
-              onBack={() => setView('schedule')}
+              onBack={() => setView('hotelsettings')}
               onNotice={setNotice}
               scheduleTemplates={
                 <ScheduleTemplates
