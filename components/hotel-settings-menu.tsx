@@ -25,20 +25,35 @@ const items = [
 ] as const;
 
 export function HotelSettingsMenu({
+  onOpenHotelSetup,
+  onOpenDepartment,
   onOpenLocation,
+  onOpenFloorPlan,
   onOpenRoomType,
   onOpenRoom,
+  onOpenRoomStatus,
+  onOpenRatePolicy,
   onOpenTransportSetup,
 }: {
+  onOpenHotelSetup: () => void;
+  onOpenDepartment: () => void;
   onOpenLocation: () => void;
+  onOpenFloorPlan: () => void;
   onOpenRoomType: () => void;
   onOpenRoom: () => void;
+  onOpenRoomStatus: () => void;
+  onOpenRatePolicy: () => void;
   onOpenTransportSetup: () => void;
 }) {
-  const actions: Record<string, (() => void) | undefined> = {
+  const actions: Record<string, () => void> = {
+    hotel: onOpenHotelSetup,
+    department: onOpenDepartment,
     location: onOpenLocation,
+    'floor-plan': onOpenFloorPlan,
     'room-type': onOpenRoomType,
     room: onOpenRoom,
+    'room-status': onOpenRoomStatus,
+    'rate-policy': onOpenRatePolicy,
     transport: onOpenTransportSetup,
   };
 
@@ -51,9 +66,9 @@ export function HotelSettingsMenu({
           <button
             key={item.key}
             type="button"
-            className={`hotel-settings-card${action ? ' transport-settings-card' : ''}`}
+            className="hotel-settings-card transport-settings-card"
             onClick={action}
-            aria-label={action ? `Open ${item.label}` : item.label}
+            aria-label={`Open ${item.label}`}
           >
             <span className="hotel-settings-card-icon" aria-hidden="true"><Icon size={28} /></span>
             <span className="hotel-settings-card-copy"><strong>{item.label}</strong><span>{item.detail}</span></span>
