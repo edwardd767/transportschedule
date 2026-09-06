@@ -2,7 +2,7 @@
 import { HotelDatePicker } from '@/components/hotel-date-picker';
 
 import { useContext, useMemo, useState, type FormEvent } from 'react';
-import { CalendarDays, Car, MapPin, Plus, Ship, Users } from 'lucide-react';
+import { CalendarDays, Car, MapPin, Pencil, Plus, Ship, Users } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -54,6 +54,7 @@ export function BookingTransfers({
   onClose,
   onAdd,
   onRemove,
+  onUpdate,
   onCalendar,
 }: {
   booking: Booking;
@@ -63,6 +64,7 @@ export function BookingTransfers({
   onClose: () => void;
   onAdd: (values: BookingTransportLegInput) => Promise<void>;
   onRemove: (legId: string) => Promise<void>;
+  onUpdate: (legId: string, values: { adults: number; children: number; infants: number; adultRate: number; childRate: number; infantRate: number }) => Promise<void>;
   onCalendar: (date: string) => void;
 }) {
   const pending = Boolean(useContext(TransportDataContext)?.pending);
@@ -75,6 +77,7 @@ export function BookingTransfers({
   const [children, setChildren] = useState(0);
   const [infants, setInfants] = useState(0);
   const [error, setError] = useState('');
+  const [editingLeg, setEditingLeg] = useState<BookingTransportLeg | null>(null);
   const blocked =
     booking.status === 'Cancelled' || booking.status === 'No Show';
   const services = setup.boats.filter(
@@ -194,6 +197,7 @@ export function BookingTransfers({
                     {leg.incidentalCharge.chargeTitle} · Adult {Number(leg.incidentalCharge.adultRate || 0).toFixed(2)} · Child {Number(leg.incidentalCharge.childRate || 0).toFixed(2)} · Infant {Number(leg.incidentalCharge.infantRate || 0).toFixed(2)}
                   </small>
                 )}
+                {leg.incidentalCharge?.chargeId && <button type="button" className="edit-button" aria-label={`Edit charges for ${leg.serviceName}`} onClick={() => setEditingLeg(leg)}><Pencil size={16}/><span>Edit charges</span></button>}
                 {leg.remarks && <small>{leg.remarks}</small>}
               </span>
               <button
@@ -476,6 +480,7 @@ export function BookingTransfers({
           </form>
         )}
       </DialogContent>
+      {editingLeg?.incidentalCharge && <Dialog open onOpenChange={(open) => !open && setEditingLeg(null)}><DialogContent className="hotel-dialog"><DialogHeader><DialogTitle>Edit posted transport charges</DialogTitle><DialogDescription>{editingLeg.serviceName}</DialogDescription></DialogHeader><form className="hotel-form" onSubmit={async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); try { await onUpdate(editingLeg.id, { adults: Number(form.get('adults')), children: Number(form.get('children')), infants: Number(form.get('infants')), adultRate: Number(form.get('adultRate')), childRate: Number(form.get('childRate')), infantRate: Number(form.get('infantRate')) }); setEditingLeg(null); } catch (e) { setError((e as Error).message); } }}><div className="form-grid">{[['adults','Adults',editingLeg.adults ?? editingLeg.passengers],['children','Children',editingLeg.children ?? 0],['infants','Infants',editingLeg.infants ?? 0],['adultRate','Adult rate',editingLeg.incidentalCharge.adultRate],['childRate','Child rate',editingLeg.incidentalCharge.childRate],['infantRate','Infant rate',editingLeg.incidentalCharge.infantRate]].map(([name,label,value]) => <label key={String(name)}>{label}<input name={String(name)} type="number" min="0" step="0.01" defaultValue={Number(value)} required={name === 'adults'} /></label>)}</div><div className="form-actions"><button type="button" className="secondary-button" onClick={() => setEditingLeg(null)}>Cancel</button><button className="primary-button" type="submit">Save charges</button></div></form></DialogContent></Dialog>}
     </Dialog>
   );
 }

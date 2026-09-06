@@ -1653,6 +1653,20 @@ function applyTransportAction(state, input) {
         bookingLegs: result.legs
       };
     }
+    case "bookingTransportUpdate": {
+      const bookingReference = text(action.bookingReference, "booking reference");
+      const legId = text(action.legId, "transport leg ID");
+      const adults = number(action.adults, "adults", 1, 1e3);
+      const children = number(action.children, "children", 0, 1e3);
+      const infants = number(action.infants, "infants", 0, 1e3);
+      const adultRate = decimal(action.adultRate, "adult rate");
+      const childRate = decimal(action.childRate, "child rate");
+      const infantRate = decimal(action.infantRate, "infant rate");
+      const leg = state.bookingLegs.find((item) => item.id === legId && item.bookingReference === bookingReference);
+      if (!leg) throw new Error("This transport charge no longer exists.");
+      const updatedLeg = { ...leg, passengers: adults + children, adults, children, infants, incidentalCharge: leg.incidentalCharge ? { ...leg.incidentalCharge, adultRate, childRate, infantRate } : void 0 };
+      return { ...state, bookingLegs: state.bookingLegs.map((item) => item.id === legId ? updatedLeg : item) };
+    }
     case "transfers": {
       const booking = normalizeTransportState(state).bookings.find(
         (b) => b.reference === text(action.bookingReference, "booking reference")

@@ -81,6 +81,7 @@ export type TransportAction =
       bookingReference: string;
       legId: string;
     }
+  | { type: 'bookingTransportUpdate'; bookingReference: string; legId: string; adults: number; children: number; infants: number; adultRate: number; childRate: number; infantRate: number }
   | { type: 'hotelLocationSave'; value: HotelLocation }
   | { type: 'hotelRoomTypeSave'; value: HotelRoomType }
   | { type: 'hotelRoomSave'; value: HotelRoom }
@@ -808,6 +809,20 @@ export function applyTransportAction(
         trips: result.trips,
         bookingLegs: result.legs,
       };
+    }
+    case 'bookingTransportUpdate': {
+      const bookingReference = text(action.bookingReference, 'booking reference');
+      const legId = text(action.legId, 'transport leg ID');
+      const adults = number(action.adults, 'adults', 1, 1000);
+      const children = number(action.children, 'children', 0, 1000);
+      const infants = number(action.infants, 'infants', 0, 1000);
+      const adultRate = decimal(action.adultRate, 'adult rate');
+      const childRate = decimal(action.childRate, 'child rate');
+      const infantRate = decimal(action.infantRate, 'infant rate');
+      const leg = state.bookingLegs.find((item) => item.id === legId && item.bookingReference === bookingReference);
+      if (!leg) throw new Error('This transport charge no longer exists.');
+      const updatedLeg = { ...leg, passengers: adults + children, adults, children, infants, incidentalCharge: leg.incidentalCharge ? { ...leg.incidentalCharge, adultRate, childRate, infantRate } : undefined };
+      return { ...state, bookingLegs: state.bookingLegs.map((item) => item.id === legId ? updatedLeg : item) };
     }
     case 'transfers': {
       const booking = normalizeTransportState(state).bookings.find(

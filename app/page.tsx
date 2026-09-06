@@ -1585,6 +1585,10 @@ function HomeContent({ store }: { store: TransportData }) {
             });
             setNotice('Transport removed from booking.');
           }}
+          onUpdate={async (legId, values) => {
+            await store.run({ type: 'bookingTransportUpdate', bookingReference: transferBooking.reference, legId, ...values });
+            setNotice('Transport charges updated.');
+          }}
           onCalendar={(date) => {
             setTransferBooking(null);
             setDate(date);
