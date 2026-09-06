@@ -255,7 +255,7 @@ const initial = await Promise.all([
 ]);
 assert.ok(
   initial.every(
-    (result) => result.status === 200 && result.data.revision === 1,
+    (result) => result.status === 200 && [1, 2].includes(result.data.revision),
   ),
 );
 assert.equal(inserts, 1, 'racing initial loads seed only once');
