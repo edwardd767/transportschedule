@@ -26,6 +26,8 @@ import {
 import type { HotelRoomType } from '@/lib/hotel-masters';
 import { BookingCreate } from '@/components/booking-create';
 import { BookingEdit } from '@/components/booking-edit';
+import { BillingSchedule } from '@/components/billing-schedule';
+import type { BookingTransportLeg } from '@/lib/booking-transport';
 
 function BookingOccupancy({ booking }: { booking: Booking }) {
   return (
@@ -60,6 +62,7 @@ export function Bookings({
   editing,
   onEditingChange,
   transportSummary,
+  bookingLegs,
 }: {
   bookings: Booking[];
   roomTypes: HotelRoomType[];
@@ -72,11 +75,13 @@ export function Bookings({
   editing: boolean;
   onEditingChange: (editing: boolean) => void;
   transportSummary?: string;
+  bookingLegs: BookingTransportLeg[];
 }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [billingOpen, setBillingOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('all');
   const [arrivalDate, setArrivalDate] = useState('');
@@ -135,6 +140,7 @@ export function Bookings({
   }
 
   if (booking) {
+    if (billingOpen) return <BillingSchedule booking={booking} bookingLegs={bookingLegs} onBack={() => setBillingOpen(false)} />;
     const rooms = booking.rooms.map((room) => `${room.code} : ${room.count}`).join('   ');
     const assignments =
       booking.rooms.length === 1
@@ -203,6 +209,8 @@ export function Bookings({
                   ? onOpenTransport(booking)
                   : section.title === 'Booking Info'
                     ? onEditingChange(true)
+                    : section.title === 'Billing Schedule'
+                      ? setBillingOpen(true)
                     : onNotice(`${section.title} is shown for reference. Editing this booking section is not included yet.`)
               }
             >

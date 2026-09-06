@@ -131,6 +131,9 @@ const schemaStatements = [
     pickup text NOT NULL,
     dropoff text NOT NULL,
     passengers integer NOT NULL CHECK (passengers >= 1),
+    adults integer NOT NULL DEFAULT 0,
+    children integer NOT NULL DEFAULT 0,
+    infants integer NOT NULL DEFAULT 0,
     flight_no text NOT NULL DEFAULT '',
     vehicle text NOT NULL DEFAULT '',
     driver text NOT NULL DEFAULT '',
@@ -181,6 +184,9 @@ const schemaStatements = [
   )`,
   `ALTER TABLE public.hotelx_transport_services ADD COLUMN IF NOT EXISTS incidental_charge jsonb NOT NULL DEFAULT '{}'::jsonb`,
   `ALTER TABLE public.hotelx_transport_booking_legs ADD COLUMN IF NOT EXISTS incidental_charge jsonb NOT NULL DEFAULT '{}'::jsonb`,
+  `ALTER TABLE public.hotelx_transport_booking_legs ADD COLUMN IF NOT EXISTS adults integer NOT NULL DEFAULT 0`,
+  `ALTER TABLE public.hotelx_transport_booking_legs ADD COLUMN IF NOT EXISTS children integer NOT NULL DEFAULT 0`,
+  `ALTER TABLE public.hotelx_transport_booking_legs ADD COLUMN IF NOT EXISTS infants integer NOT NULL DEFAULT 0`,
   `ALTER TABLE public.hotelx_transport_trip_groups ADD COLUMN IF NOT EXISTS infants integer NOT NULL DEFAULT 0`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_roomstatus (
     property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
@@ -675,7 +681,7 @@ const schemaStatements = [
       property_id, id, sort_order, booking_reference, direction,
       service_id, service_name, service_type, booking_mode,
       operator_id, operator_name, travel_date, travel_time, pickup,
-      dropoff, passengers, flight_no, vehicle, driver, remarks, trip_id, incidental_charge
+      dropoff, passengers, adults, children, infants, flight_no, vehicle, driver, remarks, trip_id, incidental_charge
     )
     SELECT
       p_property_id,
@@ -694,6 +700,9 @@ const schemaStatements = [
       COALESCE(leg.value->>'pickup', ''),
       COALESCE(leg.value->>'dropoff', ''),
       COALESCE(NULLIF(leg.value->>'passengers', ''), '1')::integer,
+      COALESCE(NULLIF(leg.value->>'adults', ''), NULLIF(leg.value->>'passengers', ''), '0')::integer,
+      COALESCE(NULLIF(leg.value->>'children', ''), '0')::integer,
+      COALESCE(NULLIF(leg.value->>'infants', ''), '0')::integer,
       COALESCE(leg.value->>'flightNo', ''),
       COALESCE(leg.value->>'vehicle', ''),
       COALESCE(leg.value->>'driver', ''),
@@ -1030,6 +1039,9 @@ const schemaStatements = [
             'pickup', leg.pickup,
             'dropoff', leg.dropoff,
             'passengers', leg.passengers,
+            'adults', leg.adults,
+            'children', leg.children,
+            'infants', leg.infants,
             'flightNo', leg.flight_no,
             'vehicle', leg.vehicle,
             'driver', leg.driver,

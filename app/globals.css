@@ -3362,6 +3362,17 @@ p {
   font-size: 13px;
   color: #7c8594;
 }
+
+.billing-schedule { display: grid; gap: 12px; align-content: start; }
+.billing-schedule > .secondary-button { justify-self: start; }
+.billing-card { background: #fff; border: 1px solid #e7e2da; border-radius: 10px; padding: 16px 20px; box-shadow: 0 2px 8px #3d2a1510; }
+.billing-card h2 { margin: 0 0 10px; color: #f58b26; font-size: 16px; }
+.billing-line { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: start; padding: 12px 0; border-top: 1px solid #eee8df; }
+.billing-line svg { color: #f58b26; margin-top: 2px; }
+.billing-line span { display: grid; gap: 3px; }
+.billing-line small { color: #727985; }
+.billing-total { display: flex; justify-content: space-between; align-items: center; background: #fff6eb; border-radius: 8px; padding: 14px 18px; font-size: 16px; }
+.billing-total strong { color: #f06f1f; font-size: 20px; }
 .transfer-party {
   max-width: 360px;
 }

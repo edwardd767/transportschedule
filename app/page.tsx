@@ -738,6 +738,7 @@ function HomeContent({ store }: { store: TransportData }) {
                   ].join(' | ')
                 : undefined
             }
+            bookingLegs={bookingLegs}
             onOpenTransport={setTransferBooking}
           />
         ) : view === 'hotelsettings' ? (
