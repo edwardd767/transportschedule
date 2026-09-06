@@ -53,6 +53,7 @@ let synchronizeReads = false,
   waiting = [];
 async function query(_connection, sql, params) {
   if (/^(?:CREATE (?:TABLE|INDEX|OR REPLACE FUNCTION)|ALTER TABLE)/.test(sql)) return [];
+  if (sql.includes('/* normalized-booking-extras-read */')) return [];
   if (sql.includes('/* normalized-read */')) {
     reads++;
     const result = stored
