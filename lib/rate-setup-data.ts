@@ -98,7 +98,7 @@ const rateTypeNames = [
 ];
 
 export const initialRateTypes: RateTypeItem[] = rateTypeNames.map((name, index) => ({
-  id: `type-${index + 1}`,
+  id: `a1000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
   name,
   active: true,
 }));
