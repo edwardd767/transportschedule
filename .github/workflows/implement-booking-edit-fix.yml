@@ -1,0 +1,43 @@
+name: Implement Booking Edit Fix
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/implement-booking-edit-fix.yml'
+      - 'scripts/booking-edit-test-fix.py'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7.0.1
+      - name: Set up Node.js
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Apply Booking Edit implementation
+        run: python scripts/implement-booking-edit.py
+      - name: Update worker test matcher
+        run: python scripts/booking-edit-test-fix.py
+      - name: Install dependencies
+        run: npm ci
+      - name: Verify transport rules and API
+        run: npm run test:transport
+      - name: Build GitHub Pages site
+        run: npm run build:pages
+      - name: Build standalone Cloudflare Worker
+        run: npm run build:worker
+      - name: Commit implementation
+        run: |
+          git config user.name "Edward Jacob"
+          git config user.email "56201541+edwardd767@users.noreply.github.com"
+          git add app/page.tsx app/globals.css components/bookings.tsx components/booking-create.tsx components/booking-edit.tsx lib/bookings.ts lib/transport-state.ts worker/normalized-storage.ts worker/hotelx-transport-api.deploy.js scripts/test-transport-worker.mjs
+          git commit -m "Implement HotelX Booking Edit screen"
+          git push
