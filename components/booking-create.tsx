@@ -168,6 +168,11 @@ export function BookingCreate({
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const bookBy = String(form.get('bookBy') ?? '').trim();
+    const groupName = groupEnabled ? String(form.get('groupName') ?? '').trim() : '';
+    const phone = String(form.get('phone') ?? '').trim();
+    const accountName = String(form.get('accountName') ?? '').trim();
+    const email = String(form.get('email') ?? '').trim();
+    const referenceNo = String(form.get('referenceNo') ?? '').trim();
     const guests = roomLines.reduce(
       (total, line) => total + line.adults + line.children + line.infants,
       0,
@@ -185,11 +190,23 @@ export function BookingCreate({
         arrival,
         departure,
         status: 'Booked',
-        rooms: roomLines.map((line) => ({ code: line.code, count: line.count })),
+        rooms: roomLines.map(({ id: _id, ...line }) => line),
         assignedRooms: 0,
         checkedInGuests: 0,
         guests,
         amount: bookingTotal,
+        groupName,
+        phone,
+        accountName,
+        creditLimit: 0,
+        printRate,
+        stateTax,
+        tourismTax,
+        email,
+        salesChannel,
+        source,
+        segment,
+        referenceNo,
       };
       await onCreate(booking);
       onNotice(`Booking ${booking.reference} created successfully.`);

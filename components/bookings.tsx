@@ -25,6 +25,7 @@ import {
 } from '@/lib/bookings';
 import type { HotelRoomType } from '@/lib/hotel-masters';
 import { BookingCreate } from '@/components/booking-create';
+import { BookingEdit } from '@/components/booking-edit';
 
 function BookingOccupancy({ booking }: { booking: Booking }) {
   return (
@@ -55,6 +56,9 @@ export function Bookings({
   onOpenTransport,
   onNotice,
   onCreate,
+  onUpdate,
+  editing,
+  onEditingChange,
   transportSummary,
 }: {
   bookings: Booking[];
@@ -64,6 +68,9 @@ export function Bookings({
   onOpenTransport: (booking: Booking) => void;
   onNotice: (message: string) => void;
   onCreate: (booking: Booking) => Promise<void>;
+  onUpdate: (booking: Booking) => Promise<void>;
+  editing: boolean;
+  onEditingChange: (editing: boolean) => void;
   transportSummary?: string;
 }) {
   const [searchOpen, setSearchOpen] = useState(false);
@@ -133,6 +140,21 @@ export function Bookings({
       booking.rooms.length === 1
         ? `${booking.rooms[0].code} : ${booking.assignedRooms}/${roomCount(booking)}`
         : `${booking.assignedRooms}/${roomCount(booking)} rooms assigned`;
+    if (editing) {
+      return (
+        <section className="booking-workspace booking-edit-workspace" aria-label="Edit booking">
+          <h1 className="sr-only" tabIndex={-1} ref={headingRef}>Edit booking {booking.reference} — {booking.guest}</h1>
+          <div className="booking-detail-summary booking-edit-summary">
+            <div className="booking-detail-top">
+              <div className="booking-stay"><strong>{stayDates(booking)}</strong><BookingOccupancy booking={booking} /></div>
+              <strong className="booking-amount">{bookingAmount(booking)}</strong>
+            </div>
+            <div className="booking-detail-bottom"><span>{booking.reference} <span className="booking-divider">|</span> {booking.guest}</span></div>
+          </div>
+          <BookingEdit booking={booking} roomTypes={roomTypes} onCancel={() => onEditingChange(false)} onNotice={onNotice} onUpdate={async (value) => { await onUpdate(value); onEditingChange(false); }} />
+        </section>
+      );
+    }
     const sections = [
       { title: 'Clone Booking' },
       { title: 'Booking Info', description: 'Group: No   Source: Booking' },
@@ -169,7 +191,9 @@ export function Bookings({
               onClick={() =>
                 section.title === 'Transport'
                   ? onOpenTransport(booking)
-                  : onNotice(`${section.title} is shown for reference. Editing this booking section is not included yet.`)
+                  : section.title === 'Booking Info'
+                    ? onEditingChange(true)
+                    : onNotice(`${section.title} is shown for reference. Editing this booking section is not included yet.`)
               }
             >
               <span>

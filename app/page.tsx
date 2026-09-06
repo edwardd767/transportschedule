@@ -180,6 +180,7 @@ function HomeContent({ store }: { store: TransportData }) {
   >('booking');
   const [rateSetupSection, setRateSetupSection] = useState<RateSetupSection | null>(null);
   const [bookingReference, setBookingReference] = useState<string | null>(null);
+  const [bookingEditing, setBookingEditing] = useState(false);
   const { setup, trips, templates, bookingLegs, hotelMasters, bookings, rateSetup } = store.state;
   const activeBooking =
     bookings.find((booking) => booking.reference === bookingReference) ?? null;
@@ -576,7 +577,7 @@ function HomeContent({ store }: { store: TransportData }) {
               <button
                 className="booking-back"
                 aria-label="Back to booking listing"
-                onClick={() => setBookingReference(null)}
+                onClick={() => bookingEditing ? setBookingEditing(false) : setBookingReference(null)}
               >
                 <ChevronLeft size={24} />
               </button>
@@ -602,7 +603,7 @@ function HomeContent({ store }: { store: TransportData }) {
           )}
           <div className="breadcrumb">
             {view === 'booking' ? (
-              <span>{activeBooking ? '... / Booking' : 'Booking'}</span>
+              <span>{activeBooking ? (bookingEditing ? '... / Edit' : '... / Booking') : 'Booking'}</span>
             ) : view === 'frontdesk' ? (
               <span>Front Desk</span>
             ) : view === 'reporting' ? (
@@ -648,9 +649,13 @@ function HomeContent({ store }: { store: TransportData }) {
             booking={activeBooking}
             onCreate={async (booking) => {
               await store.run({ type: 'bookingCreate', value: booking });
+              setBookingEditing(false);
               setBookingReference(booking.reference);
             }}
-            onSelect={(booking) => setBookingReference(booking.reference)}
+            onUpdate={async (booking) => { await store.run({ type: 'bookingUpdate', value: booking }); }}
+            editing={bookingEditing}
+            onEditingChange={setBookingEditing}
+            onSelect={(booking) => { setBookingEditing(false); setBookingReference(booking.reference); }}
             onNotice={setNotice}
             transportSummary={
               activeBooking

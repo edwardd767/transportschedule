@@ -201,6 +201,29 @@ const schemaStatements = [
     FOREIGN KEY (property_id, booking_reference) REFERENCES public.hotelx_bookings(property_id, reference) ON DELETE CASCADE,
     FOREIGN KEY (property_id, room_type_code) REFERENCES public.hotelx_room_type_master(property_id, code)
   )`,
+  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS group_name text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS phone text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS account_name text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS credit_limit numeric(14,2) NOT NULL DEFAULT 0`,
+  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS print_rate boolean NOT NULL DEFAULT true`,
+  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS state_tax boolean NOT NULL DEFAULT true`,
+  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS tourism_tax boolean NOT NULL DEFAULT true`,
+  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS email text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS sales_channel text NOT NULL DEFAULT 'Direct'`,
+  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS source text NOT NULL DEFAULT 'Booking'`,
+  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS segment text NOT NULL DEFAULT 'Leisure'`,
+  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS reference_no text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS adults integer NOT NULL DEFAULT 1`,
+  `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS children integer NOT NULL DEFAULT 0`,
+  `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS infants integer NOT NULL DEFAULT 0`,
+  `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS rate_code text NOT NULL DEFAULT 'BAR'`,
+  `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS room_rate numeric(14,2) NOT NULL DEFAULT 0`,
+  `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS promo_code text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS discount_per_night numeric(14,2) NOT NULL DEFAULT 0`,
+  `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS subtotal numeric(14,2) NOT NULL DEFAULT 0`,
+  `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS discount numeric(14,2) NOT NULL DEFAULT 0`,
+  `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS tax numeric(14,2) NOT NULL DEFAULT 0`,
+  `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS total numeric(14,2) NOT NULL DEFAULT 0`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_season_master (
     property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
     id text NOT NULL,
@@ -357,7 +380,9 @@ const schemaStatements = [
 
     INSERT INTO public.hotelx_bookings (
       property_id, reference, sort_order, guest, arrival_date, departure_date, status,
-      assigned_rooms, checked_in_guests, guests, amount, highlight_dates
+      assigned_rooms, checked_in_guests, guests, amount, highlight_dates,
+      group_name, phone, account_name, credit_limit, print_rate, state_tax, tourism_tax,
+      email, sales_channel, source, segment, reference_no
     )
     SELECT p_property_id, item.value->>'reference', item.ordinality::integer,
       item.value->>'guest', item.value->>'arrival', item.value->>'departure',
@@ -366,15 +391,29 @@ const schemaStatements = [
       COALESCE(NULLIF(item.value->>'checkedInGuests', ''), '0')::integer,
       COALESCE(NULLIF(item.value->>'guests', ''), '1')::integer,
       COALESCE(NULLIF(item.value->>'amount', ''), '0')::numeric,
-      COALESCE((item.value->>'highlightDates')::boolean, false)
+      COALESCE((item.value->>'highlightDates')::boolean, false),
+      COALESCE(item.value->>'groupName', ''), COALESCE(item.value->>'phone', ''),
+      COALESCE(item.value->>'accountName', ''), COALESCE(NULLIF(item.value->>'creditLimit', ''), '0')::numeric,
+      COALESCE((item.value->>'printRate')::boolean, true), COALESCE((item.value->>'stateTax')::boolean, true),
+      COALESCE((item.value->>'tourismTax')::boolean, true), COALESCE(item.value->>'email', ''),
+      COALESCE(item.value->>'salesChannel', 'Direct'), COALESCE(item.value->>'source', 'Booking'),
+      COALESCE(item.value->>'segment', 'Leisure'), COALESCE(item.value->>'referenceNo', '')
     FROM jsonb_array_elements(COALESCE(p_state->'bookings', '[]'::jsonb))
       WITH ORDINALITY AS item(value, ordinality);
 
     INSERT INTO public.hotelx_booking_rooms (
-      property_id, booking_reference, room_type_code, sort_order, room_count
+      property_id, booking_reference, room_type_code, sort_order, room_count,
+      adults, children, infants, rate_code, room_rate, promo_code, discount_per_night,
+      subtotal, discount, tax, total
     )
     SELECT p_property_id, booking.value->>'reference', room.value->>'code',
-      room.ordinality::integer, COALESCE(NULLIF(room.value->>'count', ''), '1')::integer
+      room.ordinality::integer, COALESCE(NULLIF(room.value->>'count', ''), '1')::integer,
+      COALESCE(NULLIF(room.value->>'adults', ''), '1')::integer, COALESCE(NULLIF(room.value->>'children', ''), '0')::integer,
+      COALESCE(NULLIF(room.value->>'infants', ''), '0')::integer, COALESCE(room.value->>'rateCode', 'BAR'),
+      COALESCE(NULLIF(room.value->>'roomRate', ''), '0')::numeric, COALESCE(room.value->>'promoCode', ''),
+      COALESCE(NULLIF(room.value->>'discountPerNight', ''), '0')::numeric, COALESCE(NULLIF(room.value->>'subtotal', ''), '0')::numeric,
+      COALESCE(NULLIF(room.value->>'discount', ''), '0')::numeric, COALESCE(NULLIF(room.value->>'tax', ''), '0')::numeric,
+      COALESCE(NULLIF(room.value->>'total', ''), '0')::numeric
     FROM jsonb_array_elements(COALESCE(p_state->'bookings', '[]'::jsonb)) AS booking(value)
     CROSS JOIN LATERAL jsonb_array_elements(COALESCE(booking.value->'rooms', '[]'::jsonb))
       WITH ORDINALITY AS room(value, ordinality);
@@ -701,7 +740,12 @@ const schemaStatements = [
           'departure', booking.departure_date,
           'status', booking.status,
           'rooms', COALESCE((
-            SELECT jsonb_agg(jsonb_build_object('code', br.room_type_code, 'count', br.room_count) ORDER BY br.sort_order)
+            SELECT jsonb_agg(jsonb_build_object(
+              'code', br.room_type_code, 'count', br.room_count, 'adults', br.adults, 'children', br.children, 'infants', br.infants,
+              'rateCode', br.rate_code, 'roomRate', br.room_rate::double precision, 'promoCode', br.promo_code,
+              'discountPerNight', br.discount_per_night::double precision, 'subtotal', br.subtotal::double precision,
+              'discount', br.discount::double precision, 'tax', br.tax::double precision, 'total', br.total::double precision
+            ) ORDER BY br.sort_order)
             FROM public.hotelx_booking_rooms AS br
             WHERE br.property_id = booking.property_id AND br.booking_reference = booking.reference
           ), '[]'::jsonb),
@@ -709,7 +753,11 @@ const schemaStatements = [
           'checkedInGuests', booking.checked_in_guests,
           'guests', booking.guests,
           'amount', booking.amount::double precision,
-          'highlightDates', booking.highlight_dates
+          'highlightDates', booking.highlight_dates,
+          'groupName', booking.group_name, 'phone', booking.phone, 'accountName', booking.account_name,
+          'creditLimit', booking.credit_limit::double precision, 'printRate', booking.print_rate, 'stateTax', booking.state_tax,
+          'tourismTax', booking.tourism_tax, 'email', booking.email, 'salesChannel', booking.sales_channel,
+          'source', booking.source, 'segment', booking.segment, 'referenceNo', booking.reference_no
         ) ORDER BY booking.sort_order)
         FROM public.hotelx_bookings AS booking
         WHERE booking.property_id = meta.id

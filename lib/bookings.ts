@@ -8,18 +8,45 @@ export const bookingStatuses = [
 ] as const;
 
 export type BookingStatus = (typeof bookingStatuses)[number];
+export type BookingRoom = {
+  code: string;
+  count: number;
+  adults?: number;
+  children?: number;
+  infants?: number;
+  rateCode?: string;
+  roomRate?: number;
+  promoCode?: string;
+  discountPerNight?: number;
+  subtotal?: number;
+  discount?: number;
+  tax?: number;
+  total?: number;
+};
 export type Booking = {
   reference: string;
   guest: string;
   arrival: string;
   departure: string;
   status: BookingStatus;
-  rooms: { code: string; count: number }[];
+  rooms: BookingRoom[];
   assignedRooms: number;
   checkedInGuests: number;
   guests: number;
   amount: number;
   highlightDates?: boolean;
+  groupName?: string;
+  phone?: string;
+  accountName?: string;
+  creditLimit?: number;
+  printRate?: boolean;
+  stateTax?: boolean;
+  tourismTax?: boolean;
+  email?: string;
+  salesChannel?: string;
+  source?: string;
+  segment?: string;
+  referenceNo?: string;
 };
 
 // The guest names follow the supplied screen. Statuses and amounts are sample data.

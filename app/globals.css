@@ -5350,3 +5350,36 @@ p {
     font-size: 11px !important;
   }
 }
+
+
+/* HotelX Booking Edit screen */
+.booking-edit-workspace { min-height:0; }
+.booking-edit-summary { flex:0 0 auto; }
+.booking-edit-page { flex:1; min-height:0; overflow:hidden; }
+.booking-edit-scroll { height:100%; overflow-y:auto; overscroll-behavior:contain; padding:10px 6px 78px; }
+.booking-edit-room-section { margin-bottom:8px; }
+.booking-edit-room-table { background:#fff; padding:0 12px 8px; }
+.booking-edit-room-head,.booking-edit-room-row { display:grid; grid-template-columns:120px 1fr 1fr 1fr 52px 52px; align-items:center; gap:10px; }
+.booking-edit-room-head { min-height:34px; border-bottom:1px solid #222; font-size:12px; font-weight:650; color:#5f6268; }
+.booking-edit-room-row { min-height:70px; border-bottom:1px solid #ececec; font-size:12px; }
+.booking-edit-room-row > span { min-width:0; display:flex; flex-direction:column; gap:4px; }
+.booking-edit-room-row small { display:block; color:#6f737a; font-size:10px; }
+.booking-edit-room-row > span:first-child small { color:#f28b00; white-space:nowrap; }
+.booking-edit-room-row b { color:#171717; }
+.booking-edit-room-row button { width:34px; height:34px; display:grid; place-items:center; border:0; background:transparent; color:#333; }
+.booking-edit-room-row button:last-child { color:#777; }
+.booking-edit-room-total { display:flex; justify-content:space-between; align-items:center; min-height:36px; border-top:1px solid #222; font-size:12px; }
+.booking-edit-error { margin:8px 12px; }
+.booking-edit-actions { position:sticky; bottom:-78px; z-index:8; margin:12px -6px -78px; padding:9px 18px; display:flex; justify-content:flex-end; gap:14px; border-top:1px solid #ddd; background:#fff; box-shadow:0 -2px 9px #00000012; }
+.booking-edit-cancel,.booking-edit-confirm { min-width:128px; min-height:38px; border:0; border-radius:5px; font-size:13px; font-weight:650; }
+.booking-edit-cancel { background:#ff9228; color:#fff; }
+.booking-edit-confirm { background:#ff9228; color:#fff; }
+.booking-edit-confirm:disabled { background:#dedede; color:#aaa; }
+@media (max-width:760px) {
+  .booking-edit-scroll { padding:7px 3px 74px; }
+  .booking-edit-room-table { overflow-x:auto; padding-inline:8px; }
+  .booking-edit-room-head,.booking-edit-room-row { min-width:620px; grid-template-columns:112px 110px 135px 105px 42px 42px; }
+  .booking-edit-room-row { min-height:64px; }
+  .booking-edit-actions { position:fixed; left:6px; right:6px; bottom:calc(6px + env(safe-area-inset-bottom)); margin:0; padding:7px 8px; gap:8px; }
+  .booking-edit-cancel,.booking-edit-confirm { flex:1; min-width:0; min-height:40px; }
+}

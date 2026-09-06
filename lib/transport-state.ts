@@ -80,6 +80,7 @@ export type TransportAction =
   | { type: 'hotelRoomTypeSave'; value: HotelRoomType }
   | { type: 'hotelRoomSave'; value: HotelRoom }
   | { type: 'bookingCreate'; value: Booking }
+  | { type: 'bookingUpdate'; value: Booking }
   | { type: 'rateSetup'; value: RateSetupData }
   | {
       type: 'transfers';
@@ -569,7 +570,23 @@ export function applyTransportAction(
         const master = normalized.hotelMasters.roomTypes.find((item) => item.code === code && item.active);
         if (!master) throw new Error(`Room Type ${code} is not active in Hotel Settings.`);
         const count = number(room.count, 'number of rooms', 1, master.totalRoom || 1);
-        return { code, count };
+        const finite = (value: unknown, fallback = 0) =>
+          typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : fallback;
+        return {
+          code,
+          count,
+          adults: typeof room.adults === 'number' ? number(room.adults, 'number of adults', 1, 1000) : undefined,
+          children: typeof room.children === 'number' ? number(room.children, 'number of children', 0, 1000) : undefined,
+          infants: typeof room.infants === 'number' ? number(room.infants, 'number of infants', 0, 1000) : undefined,
+          rateCode: typeof room.rateCode === 'string' ? room.rateCode.slice(0, 40) : undefined,
+          roomRate: finite(room.roomRate),
+          promoCode: typeof room.promoCode === 'string' ? room.promoCode.slice(0, 40) : undefined,
+          discountPerNight: finite(room.discountPerNight),
+          subtotal: finite(room.subtotal),
+          discount: finite(room.discount),
+          tax: finite(room.tax),
+          total: finite(room.total),
+        };
       });
       const guests = number(v.guests, 'number of guests', 1, 1000);
       const guestCapacity = bookingRooms.reduce((total, item) => {
@@ -591,8 +608,84 @@ export function applyTransportAction(
         checkedInGuests: 0,
         guests,
         amount: v.amount,
+        groupName: typeof v.groupName === 'string' ? v.groupName.slice(0, 160) : '',
+        phone: typeof v.phone === 'string' ? v.phone.slice(0, 80) : '',
+        accountName: typeof v.accountName === 'string' ? v.accountName.slice(0, 160) : '',
+        creditLimit: typeof v.creditLimit === 'number' && Number.isFinite(v.creditLimit) && v.creditLimit >= 0 ? v.creditLimit : 0,
+        printRate: typeof v.printRate === 'boolean' ? v.printRate : true,
+        stateTax: typeof v.stateTax === 'boolean' ? v.stateTax : true,
+        tourismTax: typeof v.tourismTax === 'boolean' ? v.tourismTax : true,
+        email: typeof v.email === 'string' ? v.email.slice(0, 200) : '',
+        salesChannel: typeof v.salesChannel === 'string' ? v.salesChannel.slice(0, 80) : 'Direct',
+        source: typeof v.source === 'string' ? v.source.slice(0, 80) : 'Booking',
+        segment: typeof v.segment === 'string' ? v.segment.slice(0, 80) : 'Leisure',
+        referenceNo: typeof v.referenceNo === 'string' ? v.referenceNo.slice(0, 100) : '',
       };
       return { ...normalized, bookings: [value, ...normalized.bookings] };
+    }
+    case 'bookingUpdate': {
+      const normalized = normalizeTransportState(state);
+      const v = object(action.value);
+      const reference = text(v.reference, 'booking reference', true, 30).trim().toUpperCase();
+      const existing = normalized.bookings.find((item) => item.reference === reference);
+      if (!existing) throw new Error('This booking no longer exists.');
+      const arrival = text(v.arrival, 'arrival date', true, 10);
+      const departureDate = text(v.departure, 'departure date', true, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(arrival) || !/^\d{4}-\d{2}-\d{2}$/.test(departureDate) || departureDate <= arrival)
+        throw new Error('Departure date must be after the arrival date.');
+      const bookingRooms = list(v.rooms, 10).map((entry) => {
+        const room = object(entry);
+        const code = text(room.code, 'room type', true, 20).trim().toUpperCase();
+        const master = normalized.hotelMasters.roomTypes.find((item) => item.code === code && item.active);
+        if (!master) throw new Error(`Room Type ${code} is not active in Hotel Settings.`);
+        const count = number(room.count, 'number of rooms', 1, master.totalRoom || 1);
+        const finite = (value: unknown, fallback = 0) =>
+          typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : fallback;
+        const adults = typeof room.adults === 'number' ? number(room.adults, 'number of adults', 1, 1000) : undefined;
+        const children = typeof room.children === 'number' ? number(room.children, 'number of children', 0, 1000) : undefined;
+        const infants = typeof room.infants === 'number' ? number(room.infants, 'number of infants', 0, 1000) : undefined;
+        if ((adults ?? 1) + (children ?? 0) + (infants ?? 0) > master.maxGuest * count)
+          throw new Error(`Maximum guest capacity for ${count} ${code} room(s) is ${master.maxGuest * count}.`);
+        return {
+          code, count, adults, children, infants,
+          rateCode: typeof room.rateCode === 'string' ? room.rateCode.slice(0, 40) : undefined,
+          roomRate: finite(room.roomRate),
+          promoCode: typeof room.promoCode === 'string' ? room.promoCode.slice(0, 40) : undefined,
+          discountPerNight: finite(room.discountPerNight),
+          subtotal: finite(room.subtotal), discount: finite(room.discount), tax: finite(room.tax), total: finite(room.total),
+        };
+      });
+      const guests = number(v.guests, 'number of guests', 1, 1000);
+      const guestCapacity = bookingRooms.reduce((total, item) => {
+        const master = normalized.hotelMasters.roomTypes.find((type) => type.code === item.code)!;
+        return total + master.maxGuest * item.count;
+      }, 0);
+      if (guests > guestCapacity) throw new Error(`Maximum guest capacity for the selected room(s) is ${guestCapacity}.`);
+      if (typeof v.amount !== 'number' || !Number.isFinite(v.amount) || v.amount < 0 || v.amount > 100000000)
+        throw new Error('Enter a valid booking amount.');
+      const value: Booking = {
+        ...existing,
+        reference,
+        guest: text(v.guest, 'guest name', true, 160).trim(),
+        arrival,
+        departure: departureDate,
+        rooms: bookingRooms,
+        guests,
+        amount: v.amount,
+        groupName: typeof v.groupName === 'string' ? v.groupName.slice(0, 160) : '',
+        phone: typeof v.phone === 'string' ? v.phone.slice(0, 80) : '',
+        accountName: typeof v.accountName === 'string' ? v.accountName.slice(0, 160) : '',
+        creditLimit: typeof v.creditLimit === 'number' && Number.isFinite(v.creditLimit) && v.creditLimit >= 0 ? v.creditLimit : 0,
+        printRate: typeof v.printRate === 'boolean' ? v.printRate : true,
+        stateTax: typeof v.stateTax === 'boolean' ? v.stateTax : true,
+        tourismTax: typeof v.tourismTax === 'boolean' ? v.tourismTax : true,
+        email: typeof v.email === 'string' ? v.email.slice(0, 200) : '',
+        salesChannel: typeof v.salesChannel === 'string' ? v.salesChannel.slice(0, 80) : 'Direct',
+        source: typeof v.source === 'string' ? v.source.slice(0, 80) : 'Booking',
+        segment: typeof v.segment === 'string' ? v.segment.slice(0, 80) : 'Leisure',
+        referenceNo: typeof v.referenceNo === 'string' ? v.referenceNo.slice(0, 100) : '',
+      };
+      return { ...normalized, bookings: normalized.bookings.map((item) => item.reference === reference ? value : item) };
     }
     case 'rateSetup': {
       return { ...normalizeTransportState(state), rateSetup: rateSetup(action.value) };
