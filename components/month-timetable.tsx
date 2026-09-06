@@ -6,6 +6,7 @@ import { Choice } from '@/components/hotel-choice';
 import {
   countPassengers,
   formatDate,
+  tripStatusLabel,
   type Trip,
   type TransportSetup,
 } from '@/lib/transport';
@@ -245,7 +246,7 @@ export function MonthTimetable({
                                     <span className="calendar-seats">
                                       {booked}/{trip.capacity}
                                       {status !== 'Scheduled' && (
-                                        <b>{status}</b>
+                                        <b>{tripStatusLabel(status)}</b>
                                       )}
                                     </span>
                                   </button>

@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/table';
 import type { Booking } from '@/lib/bookings';
 import type { BookingTransportLeg } from '@/lib/booking-transport';
-import type { TransportSetup, Trip } from '@/lib/transport';
+import { tripStatusLabel, type TransportSetup, type Trip } from '@/lib/transport';
 
 export type TransportListingReportProps = {
   trips: Trip[];
@@ -305,7 +305,7 @@ export function TransportListingReport({
         </div>
         <div>
           <span className="summary-icon blue"><Ship size={18} /></span>
-          <span><small>Scheduled</small><strong>{scheduled}</strong></span>
+          <span><small>Booked</small><strong>{scheduled}</strong></span>
         </div>
         <div>
           <span className="summary-icon green"><Car size={18} /></span>
@@ -364,7 +364,7 @@ export function TransportListingReport({
           onChange={setMode}
           items={[
             { value: 'all', label: 'All booking methods' },
-            { value: 'Scheduled', label: 'Scheduled' },
+            { value: 'Scheduled', label: 'Booked' },
             { value: 'On-demand', label: 'On-demand' },
           ]}
         />
@@ -374,7 +374,7 @@ export function TransportListingReport({
           onChange={setStatus}
           items={[
             { value: 'all', label: 'All statuses' },
-            ...statuses.map((value) => ({ value, label: value })),
+            ...statuses.map((value) => ({ value, label: tripStatusLabel(value) })),
           ]}
         />
         {hasFilters && (
@@ -436,7 +436,7 @@ export function TransportListingReport({
                 <TableCell>{row.flightReference}</TableCell>
                 <TableCell>{row.vehicleDriver}</TableCell>
                 <TableCell>
-                  <span className={`status-pill ${statusClass(row.status)}`}>{row.status}</span>
+                  <span className={`status-pill ${statusClass(row.status)}`}>{tripStatusLabel(row.status)}</span>
                 </TableCell>
               </TableRow>
             ))}

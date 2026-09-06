@@ -177,7 +177,7 @@ export function BookingTransfers({
                   <ServiceIcon type={leg.serviceType} /> {leg.serviceName}
                 </strong>
                 <small>
-                  {leg.serviceType} · {leg.bookingMode === 'Scheduled' ? 'Scheduled' : 'On-demand'}
+                  {leg.serviceType} · {leg.bookingMode === 'Scheduled' ? 'Booked' : 'On-demand'}
                 </small>
                 <small>
                   {leg.date} · {leg.time} · {leg.passengers} pax
@@ -225,7 +225,7 @@ export function BookingTransfers({
                 <strong>
                   <Ship size={17} /> {trip.boat}
                 </strong>
-                <small>Existing scheduled transfer</small>
+                <small>Existing booked transfer</small>
                 <small>{trip.date} · {trip.time} · {trip.origin} → {trip.destination}</small>
                 <small>
                   {trip.groups.find((group) => group.bookingId === booking.reference)?.adults ?? booking.guests} pax
@@ -262,7 +262,7 @@ export function BookingTransfers({
         {!adding ? (
           <>
             <p className="helper-text">
-              Add as many transport legs as needed. Scheduled services reserve an existing departure; on-demand services capture pickup details directly.
+              Add as many transport legs as needed. Booked services reserve an existing departure; on-demand services capture pickup details directly.
             </p>
             <div className="transfer-legs">
               {legSection('arrival')}
@@ -380,7 +380,7 @@ export function BookingTransfers({
                   })}
                   {!candidates.length && (
                     <p className="transfer-empty">
-                      No matching scheduled departures on this date.
+                      No matching booked departures on this date.
                     </p>
                   )}
                 </div>

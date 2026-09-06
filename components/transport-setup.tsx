@@ -400,7 +400,7 @@ export function TransportSetup({
                         {b.serviceType ?? 'Speedboat'}
                         <small>
                           {(b.bookingMode ?? 'Scheduled') === 'Scheduled'
-                            ? 'Scheduled timetable'
+                            ? 'Booked timetable'
                             : 'On-demand booking'}
                         </small>
                       </div>
@@ -607,7 +607,7 @@ export function TransportSetup({
                           updateDraft({ bookingMode: v as ServiceBookingMode })
                         }
                         items={[
-                          { value: 'Scheduled', label: 'Scheduled timetable' },
+                          { value: 'Scheduled', label: 'Booked timetable' },
                           { value: 'OnDemand', label: 'On-demand booking' },
                         ]}
                       />
@@ -669,7 +669,7 @@ export function TransportSetup({
                     </label>
                   </div>
                   <p className="helper-text">
-                    Scheduled services appear in the timetable and reserve seats.
+                    Booked services appear in the timetable and reserve seats.
                     On-demand services such as taxis are entered directly in the
                     guest booking. Capacity is the maximum passengers for one service.
                   </p>

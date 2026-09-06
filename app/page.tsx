@@ -84,6 +84,7 @@ import {
   countPassengers,
   formatDate,
   moveDate,
+  tripStatusLabel,
   type Trip,
 } from '@/lib/transport';
 
@@ -993,7 +994,7 @@ function HomeContent({ store }: { store: TransportData }) {
                       <small>
                         {date.startsWith('2026-08')
                           ? 'Customer timetable + added trips'
-                          : 'Scheduled departures'}
+                          : 'Booked departures'}
                       </small>
                     </span>
                   </div>
@@ -1057,7 +1058,7 @@ function HomeContent({ store }: { store: TransportData }) {
                         'Cancelled',
                       ].map((s) => ({
                         value: s,
-                        label: s === 'all' ? 'All statuses' : s,
+                        label: s === 'all' ? 'All statuses' : tripStatusLabel(s),
                       }))}
                     />
                     <label className="search-field">
@@ -1152,7 +1153,7 @@ function HomeContent({ store }: { store: TransportData }) {
                                     className={`status-pill ${status.toLowerCase()}`}
                                   >
                                     <i />
-                                    {status}
+                                    {tripStatusLabel(status)}
                                   </span>
                                   <small>
                                     {t.toHotel ? 'To hotel' : 'From hotel'}
@@ -1273,7 +1274,7 @@ function HomeContent({ store }: { store: TransportData }) {
                     onChange={changeStatus}
                     items={['Scheduled', 'Cancelled'].map((s) => ({
                       value: s,
-                      label: s,
+                      label: tripStatusLabel(s),
                     }))}
                   />
                 </div>
@@ -1548,7 +1549,7 @@ function HomeContent({ store }: { store: TransportData }) {
               </p>
               <p>
                 Booking includes a sample listing and guest details, with a
-                Transport card for adding scheduled or on-demand arrival and departure services.
+                Transport card for adding booked or on-demand arrival and departure services.
                 Transport Setup is available under Hotel Settings. Other HotelX
                 sections are included as visual context.
               </p>

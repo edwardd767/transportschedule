@@ -24,6 +24,11 @@ export type ServiceType =
   | 'Shuttle'
   | 'Other';
 export type ServiceBookingMode = 'Scheduled' | 'OnDemand';
+
+/** The stored value remains Scheduled for existing data compatibility. */
+export function tripStatusLabel(status: string) {
+  return status === 'Scheduled' ? 'Booked' : status;
+}
 export type ServiceChargeRate = { chargeId: string; chargeTitle: string; adultRate: number; childRate: number; infantRate: number };
 export type Boat = {
   id: string;
