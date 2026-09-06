@@ -292,21 +292,34 @@ function HomeContent({ store }: { store: TransportData }) {
     event.preventDefault();
     if (!selected) return;
     const form = new FormData(event.currentTarget);
+    const bookingReference = String(form.get('bookingReference') ?? '').trim().toUpperCase();
+    const booking = bookings.find((item) => item.reference.toUpperCase() === bookingReference);
+    if (!booking) {
+      setError('Enter an existing booking number.');
+      return;
+    }
     try {
       await store.run({
-        type: 'passengers',
-        tripId: selected.id,
-        group: {
+        type: 'bookingTransportAdd',
+        bookingReference: booking.reference,
+        values: {
           id: crypto.randomUUID(),
-          name: String(form.get('name')),
-          reference: String(form.get('reference')),
-          adults: Number(form.get('adults')),
-          children: Number(form.get('children')),
-          boarded: false,
+          direction: selected.toHotel ? 'arrival' : 'departure',
+          serviceId: selected.boatId,
+          tripId: selected.id,
+          date: selected.date,
+          time: selected.time,
+          pickup: selected.origin,
+          dropoff: selected.destination,
+          passengers: booking.guests,
+          flightNo: '',
+          vehicle: '',
+          driver: '',
+          remarks: '',
         },
       });
       setDialog(null);
-      setNotice('Passengers added. Seat availability has been updated.');
+      setNotice(`${booking.reference} was added to Booking → Transport.`);
     } catch (e) {
       setError((e as Error).message);
     }
@@ -1432,53 +1445,24 @@ function HomeContent({ store }: { store: TransportData }) {
           {dialog === 'passengers' && (
             <form onSubmit={savePassengers} className="hotel-form">
               <label>
-                Reservation reference
+                Booking number
                 <input
-                  name="reference"
+                  name="bookingReference"
                   required
-                  placeholder="e.g. DEMO-250"
+                  placeholder="e.g. P003499"
                   maxLength={40}
+                  list="booking-number-list"
+                  autoComplete="off"
                 />
+                <datalist id="booking-number-list">
+                  {bookings.map((booking) => (
+                    <option key={booking.reference} value={booking.reference}>{booking.guest}</option>
+                  ))}
+                </datalist>
               </label>
-              <label>
-                Lead guest
-                <input
-                  name="name"
-                  required
-                  placeholder="Full name"
-                  maxLength={100}
-                />
-              </label>
-              <div className="form-grid">
-                <label>
-                  Adults
-                  <input
-                    type="number"
-                    name="adults"
-                    required
-                    min="1"
-                    max={selected?.capacity}
-                    step="1"
-                    defaultValue="2"
-                  />
-                </label>
-                <label>
-                  Children
-                  <input
-                    type="number"
-                    name="children"
-                    required
-                    min="0"
-                    max={selected?.capacity}
-                    step="1"
-                    defaultValue="0"
-                  />
-                </label>
-              </div>
               <p className="helper-text">
-                Each passenger uses one seat in this prototype. Reservation
-                references are sample records, not linked to the live hotel
-                system.
+                Enter an existing booking number. Its guest and passenger total
+                will be used, and this departure will appear in Booking → Transport.
               </p>
               {error && (
                 <p role="alert" className="form-error">
@@ -1501,7 +1485,7 @@ function HomeContent({ store }: { store: TransportData }) {
                   type="submit"
                   disabled={Boolean(store.pending)}
                 >
-                  Confirm passengers
+                  Add booking to trip
                 </button>
               </div>
             </form>
