@@ -2835,7 +2835,10 @@ var schemaStatements = [
             'driver', leg.driver,
             'remarks', leg.remarks,
             'tripId', leg.trip_id,
-            'incidentalCharge', leg.incidental_charge
+            'incidentalCharge', CASE
+              WHEN leg.incidental_charge = '{}'::jsonb THEN NULL
+              ELSE leg.incidental_charge
+            END
           ) ORDER BY leg.sort_order
         )
         FROM public.hotelx_transport_booking_legs AS leg
