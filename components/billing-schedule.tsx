@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Car, CheckSquare, Ship } from 'lucide-react';
+import { ArrowLeft, CheckSquare } from 'lucide-react';
 import type { Booking } from '@/lib/bookings';
 import type { BookingTransportLeg } from '@/lib/booking-transport';
 
@@ -23,7 +23,6 @@ export function BillingSchedule({ booking, bookingLegs, onBack }: { booking: Boo
       <div className="booking-detail-bottom"><span>{booking.reference} <span className="booking-divider">|</span> {booking.guest}</span></div>
     </div>
     <article className="billing-card"><h2>Room charges</h2>{booking.rooms.map((room) => <div className="billing-line" key={room.code}><CheckSquare size={18}/><span><strong>{room.code} · {room.rateCode || 'BAR'}</strong><small>{room.count} room{room.count === 1 ? '' : 's'} · Room charge</small></span><strong>{money((room.total ?? room.roomRate ?? 0) * room.count)}</strong></div>)}</article>
-    <article className="billing-card"><h2>Transport charges</h2>{transport.length ? transport.map(({ leg, charge, adults, children, infants, total }) => <div className="billing-line" key={leg.id}>{leg.serviceType === 'Speedboat' ? <Ship size={18}/> : <Car size={18}/>}<span><strong>{charge.chargeTitle} · {leg.serviceName}</strong><small>{leg.date} · Adult {adults} × {money(charge.adultRate)} · Child {children} × {money(charge.childRate)} · Infant {infants} × {money(charge.infantRate)}</small></span><strong>{money(total)}</strong></div>) : <p className="transfer-empty">No transport charge has been assigned.</p>}</article>
     <div className="billing-total"><span>Total billing amount</span><strong>{money(roomTotal + transportTotal)}</strong></div>
   </section>;
 }
