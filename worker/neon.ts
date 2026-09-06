@@ -163,7 +163,7 @@ export const queryNeon: Query = async (connection, sql, params) => {
       lastError = error;
       if (
         error instanceof ApiError &&
-        !['DATABASE_CONNECTION', 'DATABASE_TIMEOUT', 'DATABASE_REDIRECT'].includes(error.code)
+        !['DATABASE_CONNECTION', 'DATABASE_TIMEOUT'].includes(error.code)
       )
         throw error;
     }

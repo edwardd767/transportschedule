@@ -1586,36 +1586,29 @@ var ApiError = class extends Error {
     this.status = status;
   }
 };
-function allowed(url, host) {
+function nonPoolerHost(host) {
   const parts = host.split(".");
   parts[0] = parts[0].replace(/-pooler$/, "");
-  const api = /^api(?:\.c-\d+)?\.[a-z0-9-]+\.(?:aws|azure)\.neon\.tech$/i;
-  return (url.hostname === host || url.hostname === parts.join(".") || api.test(url.hostname)) && url.protocol === "https:" && !url.port && !url.username && !url.password && !url.search && !url.hash && ["/sql", "/sql/"].includes(url.pathname);
+  return parts.join(".");
 }
-var queryNeon = async (connection, sql, params) => {
-  let database;
-  try {
-    database = new URL(connection);
-    if (!["postgres:", "postgresql:"].includes(database.protocol) || !/^ep-[a-z0-9-]+(?:\.[a-z0-9-]+)+\.neon\.tech$/i.test(
-      database.hostname
-    ) || !database.username || !database.password || /[^\x21-\x7e]/.test(connection))
-      throw new Error();
-  } catch {
-    throw new ApiError(
-      "DATABASE_CONFIGURATION",
-      "The database connection secret needs attention.",
-      503
-    );
-  }
-  const labels = database.hostname.split(".");
-  labels[0] = "api";
-  let url = new URL("https://" + labels.join(".") + "/sql");
+function apiHost(host) {
+  const parts = host.split(".");
+  parts[0] = "api";
+  return parts.join(".");
+}
+function allowed(url, host) {
+  const direct = nonPoolerHost(host);
+  const api = /^api(?:\.c-\d+)?\.[a-z0-9-]+\.(?:aws|azure)\.neon\.tech$/i;
+  return (url.hostname === host || url.hostname === direct || api.test(url.hostname)) && url.protocol === "https:" && !url.port && !url.username && !url.password && !url.search && !url.hash && ["/sql", "/sql/"].includes(url.pathname);
+}
+async function executeHttpQuery(endpoint, databaseHost, connection, sql, params) {
+  let url = endpoint;
   const seen = /* @__PURE__ */ new Set();
   const abort = new AbortController();
   const timeout = setTimeout(() => abort.abort(), 15e3);
   try {
     for (let hop = 0; hop <= 3; hop++) {
-      if (!allowed(url, database.hostname) || seen.has(url.href))
+      if (!allowed(url, databaseHost) || seen.has(url.href))
         throw new ApiError(
           "DATABASE_REDIRECT",
           "The database returned an unsupported redirect."
@@ -1678,6 +1671,47 @@ var queryNeon = async (connection, sql, params) => {
   } finally {
     clearTimeout(timeout);
   }
+}
+var queryNeon = async (connection, sql, params) => {
+  let database;
+  try {
+    database = new URL(connection);
+    if (!["postgres:", "postgresql:"].includes(database.protocol) || !/^ep-[a-z0-9-]+(?:\.[a-z0-9-]+)+\.neon\.tech$/i.test(
+      database.hostname
+    ) || !database.username || !database.password || /[^\x21-\x7e]/.test(connection))
+      throw new Error();
+  } catch {
+    throw new ApiError(
+      "DATABASE_CONFIGURATION",
+      "The database connection secret needs attention.",
+      503
+    );
+  }
+  const endpoints = [
+    new URL(`https://${nonPoolerHost(database.hostname)}/sql`),
+    new URL(`https://${apiHost(database.hostname)}/sql`)
+  ];
+  let lastError;
+  for (const endpoint of endpoints) {
+    try {
+      return await executeHttpQuery(
+        endpoint,
+        database.hostname,
+        connection,
+        sql,
+        params
+      );
+    } catch (error) {
+      lastError = error;
+      if (error instanceof ApiError && !["DATABASE_CONNECTION", "DATABASE_TIMEOUT"].includes(error.code))
+        throw error;
+    }
+  }
+  if (lastError instanceof ApiError) throw lastError;
+  throw new ApiError(
+    "DATABASE_CONNECTION",
+    "The database connection was interrupted. Reload saved data before retrying a change."
+  );
 };
 
 // worker/normalized-storage.ts
