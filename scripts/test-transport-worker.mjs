@@ -55,8 +55,8 @@ async function query(_connection, sql, params) {
   if (sql.startsWith('DO $hotelx_schema$')) {
     assert.ok(sql.includes('ALTER TABLE public.hotelx_bookings'));
     assert.ok(sql.includes('CREATE OR REPLACE FUNCTION public.hotelx_transport_save'));
-    assert.ok(!sql.includes('CREATE OR REPLACE FUNCTION public.hotelx_transport_replace_rows'));
-    assert.ok(!sql.includes('CREATE OR REPLACE FUNCTION public.hotelx_transport_read'));
+    assert.ok(sql.includes('CREATE OR REPLACE FUNCTION public.hotelx_transport_replace_rows'));
+    assert.ok(sql.includes('CREATE OR REPLACE FUNCTION public.hotelx_transport_read'));
     return [];
   }
   if (/^(?:CREATE (?:TABLE|INDEX|OR REPLACE FUNCTION)|ALTER TABLE)/.test(sql)) return [];
@@ -89,6 +89,11 @@ async function query(_connection, sql, params) {
     return [[String(stored.revision)]];
   }
   if (sql.includes('/* normalized-save */')) {
+    assert.match(
+      sql,
+      /^\/\* normalized-save \*\/ SELECT/,
+      'save must use one database routine without updating rewritten rows again',
+    );
     if (!stored || stored.revision !== Number(params[1])) return [[null]];
     writes++;
     stored = {

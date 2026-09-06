@@ -156,6 +156,11 @@ within the limit and preserves the database-managed read/replace functions.
 The Worker regression suite loads existing saved data through the HTTP adapter
 with a simulated 50-subrequest limit and a Neon redirect on every query.
 
+Booking fields such as Segment are written inside
+`hotelx_transport_replace_rows`. The Worker calls the atomic save function once;
+it must not update the newly replaced booking rows again in the same PostgreSQL
+statement, because PostgreSQL rejects modifying those rows twice in one command.
+
 `npm run test:transport` covers planning rules, private-link access, validation,
 concurrent revision writes, transfer atomicity, persistence and legacy JSON to
 normalized-table migration using a mock database.

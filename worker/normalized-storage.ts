@@ -973,60 +973,8 @@ LEFT JOIN public.hotelx_booking_rooms AS room
  AND room.booking_reference = booking.reference
 WHERE booking.property_id = $1
 ORDER BY booking.sort_order, room.sort_order`;
-const saveSql = `/* normalized-save */
-WITH saved AS (
-  SELECT public.hotelx_transport_save($1, $2::integer, $3::jsonb) AS revision
-),
-booking_items AS (
-  SELECT item.value
-  FROM jsonb_array_elements(COALESCE($3::jsonb->'bookings', '[]'::jsonb)) AS item(value)
-),
-updated_bookings AS (
-  UPDATE public.hotelx_bookings AS booking
-  SET group_name = COALESCE(item.value->>'groupName', ''),
-      phone = COALESCE(item.value->>'phone', ''),
-      account_name = COALESCE(item.value->>'accountName', ''),
-      credit_limit = COALESCE(NULLIF(item.value->>'creditLimit', ''), '0')::numeric,
-      print_rate = COALESCE((item.value->>'printRate')::boolean, true),
-      state_tax = COALESCE((item.value->>'stateTax')::boolean, true),
-      tourism_tax = COALESCE((item.value->>'tourismTax')::boolean, true),
-      email = COALESCE(item.value->>'email', ''),
-      sales_channel = COALESCE(item.value->>'salesChannel', 'Direct'),
-      source = COALESCE(item.value->>'source', 'Booking'),
-      segment = COALESCE(item.value->>'segment', 'Leisure'),
-      reference_no = COALESCE(item.value->>'referenceNo', '')
-  FROM booking_items AS item, saved
-  WHERE saved.revision IS NOT NULL
-    AND booking.property_id = $1
-    AND booking.reference = item.value->>'reference'
-  RETURNING booking.reference
-),
-room_items AS (
-  SELECT booking.value->>'reference' AS booking_reference, room.value
-  FROM jsonb_array_elements(COALESCE($3::jsonb->'bookings', '[]'::jsonb)) AS booking(value)
-  CROSS JOIN LATERAL jsonb_array_elements(COALESCE(booking.value->'rooms', '[]'::jsonb)) AS room(value)
-),
-updated_rooms AS (
-  UPDATE public.hotelx_booking_rooms AS booking_room
-  SET adults = COALESCE(NULLIF(item.value->>'adults', ''), '1')::integer,
-      children = COALESCE(NULLIF(item.value->>'children', ''), '0')::integer,
-      infants = COALESCE(NULLIF(item.value->>'infants', ''), '0')::integer,
-      rate_code = COALESCE(item.value->>'rateCode', 'BAR'),
-      room_rate = COALESCE(NULLIF(item.value->>'roomRate', ''), '0')::numeric,
-      promo_code = COALESCE(item.value->>'promoCode', ''),
-      discount_per_night = COALESCE(NULLIF(item.value->>'discountPerNight', ''), '0')::numeric,
-      subtotal = COALESCE(NULLIF(item.value->>'subtotal', ''), '0')::numeric,
-      discount = COALESCE(NULLIF(item.value->>'discount', ''), '0')::numeric,
-      tax = COALESCE(NULLIF(item.value->>'tax', ''), '0')::numeric,
-      total = COALESCE(NULLIF(item.value->>'total', ''), '0')::numeric
-  FROM room_items AS item, saved
-  WHERE saved.revision IS NOT NULL
-    AND booking_room.property_id = $1
-    AND booking_room.booking_reference = item.booking_reference
-    AND booking_room.room_type_code = item.value->>'code'
-  RETURNING booking_room.room_type_code
-)
-SELECT revision::text FROM saved`;
+const saveSql =
+  '/* normalized-save */ SELECT public.hotelx_transport_save($1, $2::integer, $3::jsonb)::text';
 
 export type NormalizedTransportStorage = {
   read: (connection: string, id: string) => Promise<string[] | null>;
@@ -1053,12 +1001,7 @@ export function createNormalizedTransportStorage(
       // Workers Free permits 50 subrequests, including redirects. Sending these
       // 56 statements separately exhausts that budget before the first read.
       // One PostgreSQL block keeps setup atomic and uses one HTTP query.
-      const statements = schemaStatements.filter(
-        (sql) =>
-          // Preserve the two functions maintained by the existing Neon schema.
-          !sql.startsWith('CREATE OR REPLACE FUNCTION public.hotelx_transport_replace_rows') &&
-          !sql.startsWith('CREATE OR REPLACE FUNCTION public.hotelx_transport_read'),
-      );
+      const statements = schemaStatements;
       ready = query(
         connection,
         `DO $hotelx_schema$ BEGIN
