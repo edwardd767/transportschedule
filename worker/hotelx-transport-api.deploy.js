@@ -2608,7 +2608,23 @@ var schemaStatements = [
           SELECT jsonb_agg(jsonb_build_object(
             'id', department.department_id,
             'name', department.department_name,
-            'incidentalCharges', department.incidental_charges,
+            'incidentalCharges', COALESCE((
+              SELECT jsonb_agg(
+                jsonb_build_object(
+                  'id', charge.charge_id,
+                  'title', charge.title,
+                  'amount', charge.amount::double precision,
+                  'taxScheme', charge.tax_scheme,
+                  'outletCode', charge.outlet_code,
+                  'msicCode', charge.msic_code,
+                  'classification', charge.classification
+                ) || charge.options
+                ORDER BY charge.charge_id
+              )
+              FROM public.hotelx_incidentalcharges AS charge
+              WHERE charge.property_id = department.property_id
+                AND charge.department_id = department.department_id
+            ), '[]'::jsonb),
             'reasons', department.reasons,
             'salesChannels', department.sales_channels
           ) ORDER BY department.sort_order)
