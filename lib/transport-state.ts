@@ -115,7 +115,7 @@ export function normalizeTransportState(state: TransportState): TransportState {
     Array.isArray(state.hotelMasters.roomTypes) &&
     Array.isArray(state.hotelMasters.rooms) &&
     state.hotelMasters.roomTypes.length
-      ? { ...state.hotelMasters, roomStatuses: Array.isArray(state.hotelMasters.roomStatuses) ? state.hotelMasters.roomStatuses : structuredClone(initialHotelMasters.roomStatuses), departments: Array.isArray(state.hotelMasters.departments) ? state.hotelMasters.departments : structuredClone(initialHotelMasters.departments) }
+      ? { ...state.hotelMasters, roomStatuses: Array.isArray(state.hotelMasters.roomStatuses) ? state.hotelMasters.roomStatuses : structuredClone(initialHotelMasters.roomStatuses), departments: Array.isArray(state.hotelMasters.departments) ? state.hotelMasters.departments.map((department, departmentIndex) => ({ ...department, incidentalCharges: Array.isArray(department.incidentalCharges) ? department.incidentalCharges.map((charge, chargeIndex) => typeof charge === 'string' ? { id: `${department.id || departmentIndex}-charge-${chargeIndex + 1}`, title: charge, amount: 0, taxScheme: 'SST-3', outletCode: '', rateElement: false, guestAppFb: false, guestAppOnlineShop: false, posInterface: false, eventInterface: false, allowNegative: false, packageRedemption: false, kiosk: false, thirdPartyPos: false, eInvoice: false, msicCode: '55101', classification: '022' } : charge) : [] })) : structuredClone(initialHotelMasters.departments) }
       : structuredClone(initialHotelMasters);
   const bookings =
     Array.isArray(state.bookings) && state.bookings.length
