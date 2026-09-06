@@ -107,6 +107,7 @@ const schemaStatements = [
     name text NOT NULL,
     adults integer NOT NULL,
     children integer NOT NULL,
+    infants integer NOT NULL DEFAULT 0,
     boarded boolean NOT NULL DEFAULT false,
     PRIMARY KEY (property_id, trip_id, id),
     FOREIGN KEY (property_id, trip_id)
@@ -176,6 +177,7 @@ const schemaStatements = [
     FOREIGN KEY (property_id, room_type_code) REFERENCES public.hotelx_room_type_master(property_id, code),
     FOREIGN KEY (property_id, location_code) REFERENCES public.hotelx_location_master(property_id, code)
   )`,
+  `ALTER TABLE public.hotelx_transport_trip_groups ADD COLUMN IF NOT EXISTS infants integer NOT NULL DEFAULT 0`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_roomstatus (
     property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
     status_code text NOT NULL,
@@ -622,7 +624,7 @@ const schemaStatements = [
 
     INSERT INTO public.hotelx_transport_trip_groups (
       property_id, trip_id, id, sort_order, booking_id, reference,
-      name, adults, children, boarded
+      name, adults, children, infants, boarded
     )
     SELECT
       p_property_id,
@@ -634,6 +636,7 @@ const schemaStatements = [
       COALESCE(group_row.value->>'name', ''),
       COALESCE(NULLIF(group_row.value->>'adults', ''), '0')::integer,
       COALESCE(NULLIF(group_row.value->>'children', ''), '0')::integer,
+      COALESCE(NULLIF(group_row.value->>'infants', ''), '0')::integer,
       COALESCE((group_row.value->>'boarded')::boolean, false)
     FROM jsonb_array_elements(COALESCE(p_state->'trips', '[]'::jsonb)) AS trip(value)
     CROSS JOIN LATERAL jsonb_array_elements(COALESCE(trip.value->'groups', '[]'::jsonb))
@@ -915,8 +918,9 @@ const schemaStatements = [
                   'bookingId', group_row.booking_id,
                   'reference', group_row.reference,
                   'name', group_row.name,
-                  'adults', group_row.adults,
-                  'children', group_row.children,
+                'adults', group_row.adults,
+                'children', group_row.children,
+                'infants', group_row.infants,
                   'boarded', group_row.boarded
                 )) ORDER BY group_row.sort_order
               )

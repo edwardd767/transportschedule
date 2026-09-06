@@ -3,6 +3,7 @@ import {
   initialSetup,
   addTrip,
   addGroupToTrip,
+  countPassengers,
   tripFromSetup,
   validateSetup,
   type TransportSetup,
@@ -66,6 +67,8 @@ export type TransportAction =
   | { type: 'addTrip'; values: DepartureInput }
   | { type: 'editTrip'; values: DepartureInput }
   | { type: 'passengers'; tripId: string; group: Group }
+  | { type: 'passengerUpdate'; tripId: string; groupId: string; adults: number; children: number; infants: number }
+  | { type: 'passengerRemove'; tripId: string; groupId: string }
   | { type: 'status'; tripId: string; status: Trip['status'] }
   | { type: 'board'; tripId: string; groupId: string; boarded: boolean }
   | {
@@ -463,6 +466,34 @@ export function applyTransportAction(
       if (current.groups.some((item) => item.id === group.id))
         throw new Error('This party has already been added.');
       return replace(addGroupToTrip(current, group));
+    }
+    case 'passengerUpdate': {
+      const current = trip();
+      const groupId = text(action.groupId, 'party ID');
+      const adults = number(action.adults, 'adults', 0, current.capacity);
+      const children = number(action.children, 'children', 0, current.capacity);
+      const infants = number(action.infants, 'infants', 0, current.capacity);
+      const group = current.groups.find((item) => item.id === groupId);
+      if (!group) throw new Error('This reservation no longer exists.');
+      if (adults + children < 1 || countPassengers(current) - group.adults - group.children + adults + children > current.capacity)
+        throw new Error('Passenger count exceeds available seats.');
+      return {
+        ...state,
+        bookingLegs: group.bookingId ? state.bookingLegs.map((leg) => leg.bookingReference === group.bookingId && leg.tripId === current.id ? { ...leg, passengers: adults + children } : leg) : state.bookingLegs,
+        trips: state.trips.map((item) => item.id === current.id ? { ...current, groups: current.groups.map((item) => item.id === groupId ? { ...item, adults, children, infants } : item) } : item),
+      };
+    }
+    case 'passengerRemove': {
+      const current = trip();
+      const groupId = text(action.groupId, 'party ID');
+      const group = current.groups.find((item) => item.id === groupId);
+      if (!group) throw new Error('This reservation no longer exists.');
+      if (current.status === 'Completed' || group.boarded) throw new Error('Boarded or completed transport cannot be removed.');
+      return {
+        ...state,
+        bookingLegs: group.bookingId ? state.bookingLegs.filter((leg) => !(leg.bookingReference === group.bookingId && leg.tripId === current.id)) : state.bookingLegs,
+        trips: state.trips.map((item) => item.id === current.id ? { ...current, groups: current.groups.filter((item) => item.id !== groupId) } : item),
+      };
     }
     case 'status': {
       const current = trip();

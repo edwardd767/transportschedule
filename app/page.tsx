@@ -22,10 +22,12 @@ import {
   List,
   LogOut,
   Plus,
+  Pencil,
   Search,
   Settings,
   Ship,
   Users,
+  Trash2,
   Waves,
 } from 'lucide-react';
 import hamburgerIcon from './Hamburger.png';
@@ -199,7 +201,7 @@ function HomeContent({ store }: { store: TransportData }) {
   const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = trips.find((t) => t.id === selectedId) ?? null;
-  const [dialog, setDialog] = useState<'trip' | 'passengers' | 'help' | null>(
+  const [dialog, setDialog] = useState<'trip' | 'passengers' | 'passengerEdit' | 'help' | null>(
     null,
   );
   const [formRoute, setFormRoute] = useState('inbound');
@@ -207,6 +209,9 @@ function HomeContent({ store }: { store: TransportData }) {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [passengerBookingReference, setPassengerBookingReference] = useState('');
+  const [passengerCounts, setPassengerCounts] = useState({ adults: 1, children: 0, infants: 0 });
+  const [editingPassengerId, setEditingPassengerId] = useState<string | null>(null);
   const [month, setMonth] = useState('2026-08');
   const tripState = useRef(trips);
   useEffect(() => {
@@ -291,14 +296,19 @@ function HomeContent({ store }: { store: TransportData }) {
   async function savePassengers(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!selected) return;
-    const form = new FormData(event.currentTarget);
-    const bookingReference = String(form.get('bookingReference') ?? '').trim().toUpperCase();
+    const bookingReference = passengerBookingReference.trim().toUpperCase();
     const booking = bookings.find((item) => item.reference.toUpperCase() === bookingReference);
     if (!booking) {
       setError('Enter an existing booking number.');
       return;
     }
     try {
+      if (dialog === 'passengerEdit' && editingPassengerId) {
+        await store.run({ type: 'passengerUpdate', tripId: selected.id, groupId: editingPassengerId, ...passengerCounts });
+        setDialog(null);
+        setNotice(`${booking.reference} passenger counts updated.`);
+        return;
+      }
       await store.run({
         type: 'bookingTransportAdd',
         bookingReference: booking.reference,
@@ -311,7 +321,10 @@ function HomeContent({ store }: { store: TransportData }) {
           time: selected.time,
           pickup: selected.origin,
           dropoff: selected.destination,
-          passengers: booking.guests,
+          passengers: passengerCounts.adults + passengerCounts.children,
+          adults: passengerCounts.adults,
+          children: passengerCounts.children,
+          infants: passengerCounts.infants,
           flightNo: '',
           vehicle: '',
           driver: '',
@@ -323,6 +336,20 @@ function HomeContent({ store }: { store: TransportData }) {
     } catch (e) {
       setError((e as Error).message);
     }
+  }
+  function editPassenger(group: Trip['groups'][number]) {
+    setPassengerBookingReference(group.reference);
+    setPassengerCounts({ adults: group.adults, children: group.children, infants: group.infants ?? 0 });
+    setEditingPassengerId(group.id);
+    setError('');
+    setDialog('passengerEdit');
+  }
+  async function removePassenger(group: Trip['groups'][number]) {
+    if (!selected) return;
+    try {
+      await store.run({ type: 'passengerRemove', tripId: selected.id, groupId: group.id });
+      setNotice(`${group.reference} removed from the trip.`);
+    } catch (e) { setError((e as Error).message); }
   }
   async function changeStatus(value: string) {
     if (!selected) return;
@@ -1309,7 +1336,12 @@ function HomeContent({ store }: { store: TransportData }) {
                                 {g.children
                                   ? ` · ${g.children} child${g.children !== 1 ? 'ren' : ''}`
                                   : ''}
+                                {g.infants ? ` · ${g.infants} infant${g.infants !== 1 ? 's' : ''}` : ''}
                               </small>
+                            </div>
+                            <div className="passenger-row-actions">
+                              <button type="button" aria-label={`Edit ${g.reference}`} title="Edit passengers" onClick={() => editPassenger(g)}><Pencil size={16} /></button>
+                              <button type="button" aria-label={`Remove ${g.reference}`} title="Remove reservation" onClick={() => removePassenger(g)}><Trash2 size={16} /></button>
                             </div>
                           </div>
                         ))
@@ -1442,7 +1474,7 @@ function HomeContent({ store }: { store: TransportData }) {
               </div>
             </form>
           )}
-          {dialog === 'passengers' && (
+          {(dialog === 'passengers' || dialog === 'passengerEdit') && (
             <form onSubmit={savePassengers} className="hotel-form">
               <label>
                 Booking number
@@ -1453,6 +1485,13 @@ function HomeContent({ store }: { store: TransportData }) {
                   maxLength={40}
                   list="booking-number-list"
                   autoComplete="off"
+                  value={passengerBookingReference}
+                  readOnly={dialog === 'passengerEdit'}
+                  onChange={(event) => {
+                    const value = event.target.value.toUpperCase(); setPassengerBookingReference(value);
+                    const booking = bookings.find((item) => item.reference === value);
+                    if (booking) setPassengerCounts({ adults: booking.guests, children: 0, infants: 0 });
+                  }}
                 />
                 <datalist id="booking-number-list">
                   {bookings.map((booking) => (
@@ -1460,9 +1499,11 @@ function HomeContent({ store }: { store: TransportData }) {
                   ))}
                 </datalist>
               </label>
+              <div className="form-grid">
+                {(['adults', 'children', 'infants'] as const).map((field) => <label key={field}>{field[0].toUpperCase() + field.slice(1)}<input type="number" min="0" max={selected?.capacity ?? 0} required value={passengerCounts[field]} onChange={(event) => setPassengerCounts({ ...passengerCounts, [field]: Math.max(0, Number(event.target.value)) })} /></label>)}
+              </div>
               <p className="helper-text">
-                Enter an existing booking number. Its guest and passenger total
-                will be used, and this departure will appear in Booking → Transport.
+                Choose the booking, then set adults, children and infants. Adults and children reserve seats; infants are recorded on the reservation.
               </p>
               {error && (
                 <p role="alert" className="form-error">
@@ -1485,7 +1526,7 @@ function HomeContent({ store }: { store: TransportData }) {
                   type="submit"
                   disabled={Boolean(store.pending)}
                 >
-                  Add booking to trip
+                  {dialog === 'passengerEdit' ? 'Save passenger counts' : 'Add booking to trip'}
                 </button>
               </div>
             </form>

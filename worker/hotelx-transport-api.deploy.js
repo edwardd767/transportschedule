@@ -780,8 +780,9 @@ function addBookingTransportLeg(trips, setup2, legs, booking, input) {
       bookingId: booking.reference,
       reference: booking.reference,
       name: booking.guest,
-      adults: input.passengers,
-      children: 0,
+      adults: input.adults ?? input.passengers,
+      children: input.children ?? 0,
+      infants: input.infants ?? 0,
       boarded: false
     });
     return {
@@ -1305,6 +1306,34 @@ function applyTransportAction(state, input) {
       if (current.groups.some((item) => item.id === group.id))
         throw new Error("This party has already been added.");
       return replace(addGroupToTrip(current, group));
+    }
+    case "passengerUpdate": {
+      const current = trip();
+      const groupId = text(action.groupId, "party ID");
+      const adults = number(action.adults, "adults", 0, current.capacity);
+      const children = number(action.children, "children", 0, current.capacity);
+      const infants = number(action.infants, "infants", 0, current.capacity);
+      const group = current.groups.find((item) => item.id === groupId);
+      if (!group) throw new Error("This reservation no longer exists.");
+      if (adults + children < 1 || countPassengers(current) - group.adults - group.children + adults + children > current.capacity)
+        throw new Error("Passenger count exceeds available seats.");
+      return {
+        ...state,
+        bookingLegs: group.bookingId ? state.bookingLegs.map((leg) => leg.bookingReference === group.bookingId && leg.tripId === current.id ? { ...leg, passengers: adults + children } : leg) : state.bookingLegs,
+        trips: state.trips.map((item) => item.id === current.id ? { ...current, groups: current.groups.map((item2) => item2.id === groupId ? { ...item2, adults, children, infants } : item2) } : item)
+      };
+    }
+    case "passengerRemove": {
+      const current = trip();
+      const groupId = text(action.groupId, "party ID");
+      const group = current.groups.find((item) => item.id === groupId);
+      if (!group) throw new Error("This reservation no longer exists.");
+      if (current.status === "Completed" || group.boarded) throw new Error("Boarded or completed transport cannot be removed.");
+      return {
+        ...state,
+        bookingLegs: group.bookingId ? state.bookingLegs.filter((leg) => !(leg.bookingReference === group.bookingId && leg.tripId === current.id)) : state.bookingLegs,
+        trips: state.trips.map((item) => item.id === current.id ? { ...current, groups: current.groups.filter((item2) => item2.id !== groupId) } : item)
+      };
     }
     case "status": {
       const current = trip();
@@ -1863,6 +1892,7 @@ var schemaStatements = [
     name text NOT NULL,
     adults integer NOT NULL,
     children integer NOT NULL,
+    infants integer NOT NULL DEFAULT 0,
     boarded boolean NOT NULL DEFAULT false,
     PRIMARY KEY (property_id, trip_id, id),
     FOREIGN KEY (property_id, trip_id)
@@ -1932,6 +1962,7 @@ var schemaStatements = [
     FOREIGN KEY (property_id, room_type_code) REFERENCES public.hotelx_room_type_master(property_id, code),
     FOREIGN KEY (property_id, location_code) REFERENCES public.hotelx_location_master(property_id, code)
   )`,
+  `ALTER TABLE public.hotelx_transport_trip_groups ADD COLUMN IF NOT EXISTS infants integer NOT NULL DEFAULT 0`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_roomstatus (
     property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
     status_code text NOT NULL,
@@ -2378,7 +2409,7 @@ var schemaStatements = [
 
     INSERT INTO public.hotelx_transport_trip_groups (
       property_id, trip_id, id, sort_order, booking_id, reference,
-      name, adults, children, boarded
+      name, adults, children, infants, boarded
     )
     SELECT
       p_property_id,
@@ -2390,6 +2421,7 @@ var schemaStatements = [
       COALESCE(group_row.value->>'name', ''),
       COALESCE(NULLIF(group_row.value->>'adults', ''), '0')::integer,
       COALESCE(NULLIF(group_row.value->>'children', ''), '0')::integer,
+      COALESCE(NULLIF(group_row.value->>'infants', ''), '0')::integer,
       COALESCE((group_row.value->>'boarded')::boolean, false)
     FROM jsonb_array_elements(COALESCE(p_state->'trips', '[]'::jsonb)) AS trip(value)
     CROSS JOIN LATERAL jsonb_array_elements(COALESCE(trip.value->'groups', '[]'::jsonb))
@@ -2671,8 +2703,9 @@ var schemaStatements = [
                   'bookingId', group_row.booking_id,
                   'reference', group_row.reference,
                   'name', group_row.name,
-                  'adults', group_row.adults,
-                  'children', group_row.children,
+                'adults', group_row.adults,
+                'children', group_row.children,
+                'infants', group_row.infants,
                   'boarded', group_row.boarded
                 )) ORDER BY group_row.sort_order
               )

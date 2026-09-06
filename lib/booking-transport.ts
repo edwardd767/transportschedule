@@ -26,6 +26,9 @@ export type BookingTransportLeg = {
   pickup: string;
   dropoff: string;
   passengers: number;
+  adults?: number;
+  children?: number;
+  infants?: number;
   flightNo: string;
   vehicle: string;
   driver: string;
@@ -135,8 +138,9 @@ export function addBookingTransportLeg(
       bookingId: booking.reference,
       reference: booking.reference,
       name: booking.guest,
-      adults: input.passengers,
-      children: 0,
+      adults: input.adults ?? input.passengers,
+      children: input.children ?? 0,
+      infants: input.infants ?? 0,
       boarded: false,
     });
     return {

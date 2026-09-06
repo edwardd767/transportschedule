@@ -5,6 +5,7 @@ export type Group = {
   name: string;
   adults: number;
   children: number;
+  infants?: number;
   boarded: boolean;
 };
 export type Operator = {
