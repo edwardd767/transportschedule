@@ -159,6 +159,15 @@ export default function Home() {
 }
 
 function HomeContent({ store }: { store: TransportData }) {
+  useEffect(() => {
+    const selectZero = (event: FocusEvent) => {
+      const input = event.target;
+      if (input instanceof HTMLInputElement && input.type === 'number' && input.value === '0')
+        input.select();
+    };
+    document.addEventListener('focusin', selectZero);
+    return () => document.removeEventListener('focusin', selectZero);
+  }, []);
   const [date, setDate] = useState('2026-08-03');
   const [route, setRoute] = useState('all');
   const [query, setQuery] = useState('');
