@@ -490,7 +490,7 @@ function RateTypePage({ items, onChange }: { items: RateTypeItem[]; onChange: (v
           </div>
         ))}
       </div>
-      <FloatingAdd label="Add rate type" onClick={() => setDraft({ id: `type-${Date.now()}`, name: '', active: true })} />
+      <FloatingAdd label="Add rate type" onClick={() => setDraft({ id: crypto.randomUUID(), name: '', active: true })} />
       {draft && (
         <EditorModal title={items.some((item) => item.id === draft.id) ? 'Edit Rate Type' : 'New Rate Type'} onCancel={() => setDraft(null)} onSave={save}>
           <label className="rate-editor-field">Rate Type<input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /></label>

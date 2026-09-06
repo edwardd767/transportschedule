@@ -932,7 +932,7 @@ var rateTypeNames = [
   "Wholesale"
 ];
 var initialRateTypes = rateTypeNames.map((name, index) => ({
-  id: `type-${index + 1}`,
+  id: `a1000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
   name,
   active: true
 }));
@@ -2924,6 +2924,12 @@ function createNormalizedTransportStorage(query) {
       const current = await read(connection, id);
       if (current) {
         const raw = JSON.parse(current[1]);
+        const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        const rateTypes = raw.rateSetup?.rateTypes;
+        const rateTypesNeedMigration = Array.isArray(rateTypes) && rateTypes.some((item) => !uuidPattern.test(String(item.id)));
+        if (rateTypesNeedMigration && raw.rateSetup) {
+          raw.rateSetup = { ...raw.rateSetup, rateTypes: rateTypes.map((item) => ({ ...item, id: uuidPattern.test(String(item.id)) ? item.id : crypto.randomUUID() })) };
+        }
         const hasMasters = Boolean(
           raw.hotelMasters && Array.isArray(raw.hotelMasters.locations) && Array.isArray(raw.hotelMasters.roomTypes) && raw.hotelMasters.roomTypes.length && Array.isArray(raw.hotelMasters.rooms) && raw.hotelMasters.rooms.length
         );
@@ -2931,7 +2937,7 @@ function createNormalizedTransportStorage(query) {
         const hasRateSetup = Boolean(raw.rateSetup && Array.isArray(raw.rateSetup.seasons) && raw.rateSetup.seasons.length && Array.isArray(raw.rateSetup.elements) && raw.rateSetup.elements.length && Array.isArray(raw.rateSetup.rateTypes) && raw.rateSetup.rateTypes.length && Array.isArray(raw.rateSetup.ratePlans) && raw.rateSetup.ratePlans.length && Array.isArray(raw.rateSetup.validity));
         const hasRoomStatuses = Boolean(raw.hotelMasters && Array.isArray(raw.hotelMasters.roomStatuses) && raw.hotelMasters.roomStatuses.length);
         const hasDepartments = Boolean(raw.hotelMasters && Array.isArray(raw.hotelMasters.departments) && raw.hotelMasters.departments.length);
-        if (!hasMasters || !hasBookings || !hasRateSetup || !hasRoomStatuses || !hasDepartments) {
+        if (!hasMasters || !hasBookings || !hasRateSetup || !hasRoomStatuses || !hasDepartments || rateTypesNeedMigration) {
           const merged = {
             ...seed,
             ...raw,
