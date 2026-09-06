@@ -71,6 +71,9 @@ export function BookingTransfers({
   const [travelDate, setTravelDate] = useState(booking.arrival);
   const [tripId, setTripId] = useState('');
   const [passengers, setPassengers] = useState(booking.guests);
+  const [adults, setAdults] = useState(booking.guests);
+  const [children, setChildren] = useState(0);
+  const [infants, setInfants] = useState(0);
   const [error, setError] = useState('');
   const blocked =
     booking.status === 'Cancelled' || booking.status === 'No Show';
@@ -118,6 +121,9 @@ export function BookingTransfers({
     setTravelDate(direction === 'arrival' ? booking.arrival : booking.departure);
     setTripId('');
     setPassengers(booking.guests);
+    setAdults(booking.guests);
+    setChildren(0);
+    setInfants(0);
     setError('');
   }
 
@@ -136,6 +142,9 @@ export function BookingTransfers({
         pickup: selectedMode === 'Scheduled' ? '' : String(form.get('pickup')),
         dropoff: selectedMode === 'Scheduled' ? '' : String(form.get('dropoff')),
         passengers,
+        adults,
+        children,
+        infants,
         flightNo: String(form.get('flightNo') ?? ''),
         vehicle: String(form.get('vehicle') ?? ''),
         driver: String(form.get('driver') ?? ''),
@@ -305,20 +314,17 @@ export function BookingTransfers({
                   : 'Enter pickup time and locations for this booking.'}
               </p>
             )}
-            <label>
-              Passengers
+            <div>
+              <strong>Passengers</strong>
               <span className="seat-cell">
                 <Users size={14} /> Maximum {booking.guests} from this booking
               </span>
-              <input
-                required
-                type="number"
-                min={1}
-                max={Math.min(booking.guests, selectedService?.capacity ?? booking.guests)}
-                value={passengers}
-                onChange={(event) => setPassengers(Number(event.target.value))}
-              />
-            </label>
+              <div className="form-grid">
+                <label>Adults<input required type="number" min={1} max={booking.guests} value={adults} onChange={(event) => { const value = Number(event.target.value); setAdults(value); setPassengers(value + children); }} /></label>
+                <label>Children<input type="number" min={0} max={booking.guests} value={children} onChange={(event) => { const value = Number(event.target.value); setChildren(value); setPassengers(adults + value); }} /></label>
+                <label>Infants<input type="number" min={0} max={booking.guests} value={infants} onChange={(event) => setInfants(Number(event.target.value))} /></label>
+              </div>
+            </div>
 
             {selectedMode === 'Scheduled' ? (
               <>

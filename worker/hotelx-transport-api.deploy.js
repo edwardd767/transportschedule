@@ -745,6 +745,8 @@ function addBookingTransportLeg(trips, setup2, legs, booking, input) {
     throw new Error(`Choose between 1 and ${booking.guests} passengers.`);
   if (legs.some((leg) => leg.id === input.id))
     throw new Error("This transport leg has already been added.");
+  if (!Number.isInteger(input.adults) || !Number.isInteger(input.children) || !Number.isInteger(input.infants) || input.adults < 1 || input.children < 0 || input.infants < 0 || input.adults + input.children !== input.passengers)
+    throw new Error("Enter valid adult, child and infant passenger counts.");
   const service = setup2.boats.find(
     (item) => item.id === input.serviceId && item.status === "Active"
   );
@@ -1611,6 +1613,9 @@ function applyTransportAction(state, input) {
         pickup: text(v.pickup, "pickup location", false, 150),
         dropoff: text(v.dropoff, "drop-off location", false, 150),
         passengers: number(v.passengers, "passengers", 1, booking.guests),
+        adults: number(v.adults, "adults", 1, booking.guests),
+        children: number(v.children, "children", 0, booking.guests),
+        infants: number(v.infants, "infants", 0, booking.guests),
         flightNo: text(v.flightNo, "flight/reference", false, 80),
         vehicle: text(v.vehicle, "vehicle", false, 100),
         driver: text(v.driver, "driver", false, 100),

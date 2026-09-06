@@ -47,6 +47,9 @@ export type BookingTransportLegInput = {
   pickup: string;
   dropoff: string;
   passengers: number;
+  adults: number;
+  children: number;
+  infants: number;
   flightNo: string;
   vehicle: string;
   driver: string;
@@ -93,6 +96,8 @@ export function addBookingTransportLeg(
     throw new Error(`Choose between 1 and ${booking.guests} passengers.`);
   if (legs.some((leg) => leg.id === input.id))
     throw new Error('This transport leg has already been added.');
+  if (!Number.isInteger(input.adults) || !Number.isInteger(input.children) || !Number.isInteger(input.infants) || input.adults < 1 || input.children < 0 || input.infants < 0 || input.adults + input.children !== input.passengers)
+    throw new Error('Enter valid adult, child and infant passenger counts.');
 
   const service = setup.boats.find(
     (item) => item.id === input.serviceId && item.status === 'Active',
