@@ -527,7 +527,7 @@ function HomeContent({ store }: { store: TransportData }) {
               className="hamburger-icon"
             />
           </SidebarTrigger>
-          <span>HotelX</span>
+          <span>HotelX (For Development Use)</span>
         </div>
         <div className="top-tools">
           <TransportConnection store={store} />

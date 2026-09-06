@@ -9,7 +9,7 @@ const hotelFont = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: 'HotelX | Transport Schedule',
+  title: 'HotelX | Development Use',
   description: 'HotelX speedboat schedule and passenger management prototype.',
 };
 
