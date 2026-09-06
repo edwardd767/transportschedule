@@ -56,6 +56,8 @@ CREATE TABLE IF NOT EXISTS public.hotelx_rate_setup (
   sort_order integer NOT NULL,
   code text NOT NULL,
   description text NOT NULL,
+  rate_type_id text NOT NULL DEFAULT '',
+  rate_frequency text NOT NULL DEFAULT 'Daily' CHECK (rate_frequency IN ('Daily', 'Monthly')),
   active boolean NOT NULL DEFAULT true,
   web boolean NOT NULL DEFAULT false,
   last_updated_on date,
@@ -63,6 +65,12 @@ CREATE TABLE IF NOT EXISTS public.hotelx_rate_setup (
   PRIMARY KEY (property_id, id),
   UNIQUE (property_id, code)
 );
+
+ALTER TABLE public.hotelx_rate_setup
+  ADD COLUMN IF NOT EXISTS rate_type_id text NOT NULL DEFAULT '';
+ALTER TABLE public.hotelx_rate_setup
+  ADD COLUMN IF NOT EXISTS rate_frequency text NOT NULL DEFAULT 'Daily'
+  CHECK (rate_frequency IN ('Daily', 'Monthly'));
 
 CREATE TABLE IF NOT EXISTS public.hotelx_rate_setup_validity (
   property_id text NOT NULL,

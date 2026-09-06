@@ -920,23 +920,23 @@ var initialRateElements = [
   ["Breakfast Package", "Per Person", 1, 4, 20],
   ["Breakfast Package Child", "Per Person", 1, 4, 15],
   ["Breakfast Package Infant", "Per Person", 0, 2, 0],
-  ["Extra Bed", "Per Room", 1, 1, 80],
+  ["Extra Bed", "Flat Rate", 1, 1, 80],
   ["Extra Breakfast", "Per Person", 1, 4, 25],
-  ["Airport Transfer", "Per Trip", 1, 6, 120],
+  ["Airport Transfer", "Flat Rate", 1, 6, 120],
   ["Welcome Drink", "Per Person", 1, 4, 8],
-  ["Late Checkout", "Per Room", 1, 1, 100],
-  ["Early Check-in", "Per Room", 1, 1, 100],
+  ["Late Checkout", "Flat Rate", 1, 1, 100],
+  ["Early Check-in", "Flat Rate", 1, 1, 100],
   ["Dinner Adult", "Per Person", 1, 4, 55],
   ["Dinner Child", "Per Person", 1, 4, 30],
   ["Lunch Adult", "Per Person", 1, 4, 45],
   ["Lunch Child", "Per Person", 1, 4, 25],
   ["Spa Voucher", "Per Person", 1, 2, 50],
-  ["Laundry Credit", "Per Room", 1, 1, 30],
-  ["Minibar Credit", "Per Room", 1, 1, 25],
-  ["Parking", "Per Vehicle", 1, 2, 10],
+  ["Laundry Credit", "Flat Rate", 1, 1, 30],
+  ["Minibar Credit", "Flat Rate", 1, 1, 25],
+  ["Parking", "Flat Rate", 1, 2, 10],
   ["Tourism Package", "Per Person", 1, 4, 35],
-  ["Romantic Setup", "Per Room", 1, 1, 150],
-  ["Anniversary Cake", "Per Room", 1, 1, 80]
+  ["Romantic Setup", "Flat Rate", 1, 1, 150],
+  ["Anniversary Cake", "Flat Rate", 1, 1, 80]
 ].map((item, index) => ({
   id: initialRateElementIds[index],
   name: String(item[0]),
@@ -991,6 +991,8 @@ var initialRatePlans = [
     id: `rate-${index + 1}`,
     code: item[0],
     description: item[1],
+    rateTypeId: initialRateTypes.find((type) => type.name === item[0])?.id ?? initialRateTypes[0].id,
+    rateFrequency: "Daily",
     updated: item[2],
     active: item[3] ?? true,
     web: item[4] ?? false
@@ -999,6 +1001,8 @@ var initialRatePlans = [
     id: `rate-${index + 11}`,
     code: `RATE${String(index + 11).padStart(2, "0")}`,
     description: `Hotel Rate Plan ${index + 11}`,
+    rateTypeId: initialRateTypes[0].id,
+    rateFrequency: "Daily",
     updated: index % 3 === 0 ? "27 Aug 2026" : index % 3 === 1 ? "19 Aug 2026" : "23 Jul 2026",
     active: index % 9 !== 0,
     web: index % 7 === 0
@@ -1039,6 +1043,11 @@ function normalizeTransportState(state) {
     elements: savedRateSetup.elements.map((element) => ({
       ...element,
       postingRhythm: element.postingRhythm ?? "Daily"
+    })),
+    ratePlans: savedRateSetup.ratePlans.map((plan) => ({
+      ...plan,
+      rateTypeId: plan.rateTypeId ?? "",
+      rateFrequency: plan.rateFrequency === "Monthly" ? "Monthly" : "Daily"
     }))
   };
   return {
@@ -1115,7 +1124,11 @@ function rateSetup(value) {
     const row = object(entry);
     const min = number(row.min, "minimum quantity", 0, 1e4);
     const max = number(row.max, "maximum quantity", min, 1e4);
-    return { id: text(row.id, "rate element ID", true, 100), name: text(row.name, "rate element", true, 160).trim(), basis: text(row.basis, "charge basis", true, 80), min, max, amount: decimal(row.amount, "rate element amount"), active: boolean(row.active) };
+    const basis = text(row.basis, "charge basis", true, 80);
+    if (!["Flat Rate", "Per Person", "Per Adult", "Per Child", "Per Infant"].includes(basis)) throw new Error("Choose a valid charge basis.");
+    const postingRhythm = typeof row.postingRhythm === "string" ? row.postingRhythm : "Daily";
+    if (!["Daily", "First Night", "Last Night"].includes(postingRhythm)) throw new Error("Choose a valid posting rhythm.");
+    return { id: text(row.id, "rate element ID", true, 100), name: text(row.name, "rate element", true, 160).trim(), basis, postingRhythm, min, max, amount: decimal(row.amount, "rate element amount"), active: boolean(row.active) };
   });
   unique(elements);
   const rateTypes = list(v.rateTypes, 1e3).map((entry) => {
@@ -1123,9 +1136,13 @@ function rateSetup(value) {
     return { id: text(row.id, "rate type ID", true, 100), name: text(row.name, "rate type", true, 160).trim(), active: boolean(row.active) };
   });
   unique(rateTypes);
+  const rateTypeIds = new Set(rateTypes.map((item) => item.id));
   const ratePlans = list(v.ratePlans, 2e3).map((entry) => {
     const row = object(entry);
-    return { id: text(row.id, "rate setup ID", true, 100), code: text(row.code, "rate code", true, 100).trim(), description: text(row.description, "rate description", true, 240).trim(), updated: text(row.updated, "last updated date", false, 40), active: boolean(row.active), web: typeof row.web === "boolean" ? row.web : false };
+    const rateTypeId = text(row.rateTypeId, "rate type", true, 100);
+    if (!rateTypeIds.has(rateTypeId)) throw new Error("Choose an existing Rate Type.");
+    const rateFrequency = row.rateFrequency === "Monthly" ? "Monthly" : "Daily";
+    return { id: text(row.id, "rate setup ID", true, 100), code: text(row.code, "rate code", true, 100).trim(), description: text(row.description, "rate description", true, 240).trim(), rateTypeId, rateFrequency, updated: text(row.updated, "last updated date", false, 40), active: boolean(row.active), web: typeof row.web === "boolean" ? row.web : false };
   });
   unique(ratePlans);
   const ratePlanIds = new Set(ratePlans.map((item) => item.id));
@@ -2179,6 +2196,8 @@ var schemaStatements = [
     sort_order integer NOT NULL,
     code text NOT NULL,
     description text NOT NULL,
+    rate_type_id text NOT NULL DEFAULT '',
+    rate_frequency text NOT NULL DEFAULT 'Daily' CHECK (rate_frequency IN ('Daily', 'Monthly')),
     active boolean NOT NULL DEFAULT true,
     web boolean NOT NULL DEFAULT false,
     last_updated_on date,
@@ -2186,6 +2205,11 @@ var schemaStatements = [
     PRIMARY KEY (property_id, id),
     UNIQUE (property_id, code)
   )`,
+  `ALTER TABLE public.hotelx_rate_setup
+    ADD COLUMN IF NOT EXISTS rate_type_id text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_rate_setup
+    ADD COLUMN IF NOT EXISTS rate_frequency text NOT NULL DEFAULT 'Daily'
+    CHECK (rate_frequency IN ('Daily', 'Monthly'))`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_rate_setup_validity (
     property_id text NOT NULL,
     rate_setup_id text NOT NULL,
@@ -2374,8 +2398,8 @@ var schemaStatements = [
     SELECT p_property_id, item.value->>'id', item.ordinality::integer, item.value->>'name', COALESCE((item.value->>'active')::boolean, true)
     FROM jsonb_array_elements(COALESCE(p_state #> '{rateSetup,rateTypes}', '[]'::jsonb)) WITH ORDINALITY AS item(value, ordinality);
 
-    INSERT INTO public.hotelx_rate_setup (property_id, id, sort_order, code, description, active, web, last_updated_on)
-    SELECT p_property_id, item.value->>'id', item.ordinality::integer, item.value->>'code', item.value->>'description', COALESCE((item.value->>'active')::boolean, true), COALESCE((item.value->>'web')::boolean, false), CASE WHEN COALESCE(item.value->>'updated', '') ~ '^d{2} [A-Za-z]{3} d{4}$' THEN to_date(item.value->>'updated', 'DD Mon YYYY') ELSE NULL END
+    INSERT INTO public.hotelx_rate_setup (property_id, id, sort_order, code, description, rate_type_id, rate_frequency, active, web, last_updated_on)
+    SELECT p_property_id, item.value->>'id', item.ordinality::integer, item.value->>'code', item.value->>'description', COALESCE(item.value->>'rateTypeId', ''), COALESCE(NULLIF(item.value->>'rateFrequency', ''), 'Daily'), COALESCE((item.value->>'active')::boolean, true), COALESCE((item.value->>'web')::boolean, false), CASE WHEN COALESCE(item.value->>'updated', '') ~ '^d{2} [A-Za-z]{3} d{4}$' THEN to_date(item.value->>'updated', 'DD Mon YYYY') ELSE NULL END
     FROM jsonb_array_elements(COALESCE(p_state #> '{rateSetup,ratePlans}', '[]'::jsonb)) WITH ORDINALITY AS item(value, ordinality);
 
     INSERT INTO public.hotelx_rate_setup_validity (property_id, rate_setup_id, id, sort_order, valid_from, valid_to, active)
@@ -2749,7 +2773,7 @@ var schemaStatements = [
         'calendar', COALESCE((SELECT jsonb_object_agg(to_char(c.calendar_date, 'YYYY-MM-DD'), c.season_id) FROM public.hotelx_season_calendar c WHERE c.property_id = meta.id), '{}'::jsonb),
         'elements', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', e.id, 'name', e.name, 'basis', e.basis, 'postingRhythm', e.posting_rhythm, 'min', e.min_qty, 'max', e.max_qty, 'amount', e.amount::double precision, 'active', e.active) ORDER BY e.sort_order) FROM public.hotelx_rate_element e WHERE e.property_id = meta.id), '[]'::jsonb),
         'rateTypes', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', t.id, 'name', t.name, 'active', t.active) ORDER BY t.sort_order) FROM public.hotelx_rate_type t WHERE t.property_id = meta.id), '[]'::jsonb),
-        'ratePlans', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', r.id, 'code', r.code, 'description', r.description, 'updated', COALESCE(to_char(r.last_updated_on, 'DD Mon YYYY'), ''), 'active', r.active, 'web', r.web) ORDER BY r.sort_order) FROM public.hotelx_rate_setup r WHERE r.property_id = meta.id), '[]'::jsonb),
+        'ratePlans', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', r.id, 'code', r.code, 'description', r.description, 'rateTypeId', r.rate_type_id, 'rateFrequency', r.rate_frequency, 'updated', COALESCE(to_char(r.last_updated_on, 'DD Mon YYYY'), ''), 'active', r.active, 'web', r.web) ORDER BY r.sort_order) FROM public.hotelx_rate_setup r WHERE r.property_id = meta.id), '[]'::jsonb),
         'validity', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', v.id, 'rateSetupId', v.rate_setup_id, 'from', to_char(v.valid_from, 'YYYY-MM-DD'), 'to', to_char(v.valid_to, 'YYYY-MM-DD'), 'active', v.active) ORDER BY v.sort_order) FROM public.hotelx_rate_setup_validity v WHERE v.property_id = meta.id), '[]'::jsonb)
       ),
       'setup', jsonb_build_object(

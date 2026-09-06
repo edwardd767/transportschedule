@@ -50,6 +50,8 @@ type RatePlanItem = {
   id: string;
   code: string;
   description: string;
+  rateTypeId: string;
+  rateFrequency: 'Daily' | 'Monthly';
   updated: string;
   active: boolean;
   web?: boolean;
@@ -503,7 +505,7 @@ function RateTypePage({ items, onChange }: { items: RateTypeItem[]; onChange: (v
   );
 }
 
-function RateSetupPage({ items, validityItems, onChange, onValidityChange }: { items: RatePlanItem[]; validityItems: RateValidityItem[]; onChange: (value: RatePlanItem[]) => void | Promise<void>; onValidityChange: (value: RateValidityItem[]) => void | Promise<void> }) {
+function RateSetupPage({ items, rateTypes, validityItems, onChange, onValidityChange }: { items: RatePlanItem[]; rateTypes: RateTypeItem[]; validityItems: RateValidityItem[]; onChange: (value: RatePlanItem[]) => void | Promise<void>; onValidityChange: (value: RateValidityItem[]) => void | Promise<void> }) {
   const [menuId, setMenuId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [draft, setDraft] = useState<RatePlanItem | null>(null);
@@ -524,7 +526,7 @@ function RateSetupPage({ items, validityItems, onChange, onValidityChange }: { i
       <div className="rate-row-list">
         {filtered.map((item) => (
           <div className={`rate-list-row detailed rate-plan-row${item.active ? '' : ' inactive'}`} key={item.id}>
-            <div className="rate-row-copy"><strong>{item.code} &nbsp;|&nbsp; {item.description}</strong><span>Last Updated on {item.updated}</span></div>
+            <div className="rate-row-copy"><strong>{item.code} &nbsp;|&nbsp; {item.description}</strong><span>{rateTypes.find((type) => type.id === item.rateTypeId)?.name ?? '—'} &nbsp;|&nbsp; {item.rateFrequency} &nbsp;|&nbsp; Last Updated on {item.updated}</span></div>
             {item.web && <Globe2 className="rate-web-icon" size={18} />}
             <div className="rate-row-actions">
               <button type="button" aria-label={`Options for ${item.code}`} onClick={() => setMenuId(menuId === item.id ? null : item.id)}><MoreVertical size={24} /></button>
@@ -538,11 +540,13 @@ function RateSetupPage({ items, validityItems, onChange, onValidityChange }: { i
           </div>
         ))}
       </div>
-      <FloatingAdd label="Add rate setup" onClick={() => setDraft({ id: `rate-${Date.now()}`, code: '', description: '', updated: '05 Sep 2026', active: true })} />
+      <FloatingAdd label="Add rate setup" onClick={() => setDraft({ id: crypto.randomUUID(), code: '', description: '', rateTypeId: rateTypes.find((type) => type.active)?.id ?? '', rateFrequency: 'Daily', updated: '05 Sep 2026', active: true })} />
       {draft && (
         <EditorModal title={items.some((item) => item.id === draft.id) ? 'Edit Rate Setup' : 'New Rate Setup'} onCancel={() => setDraft(null)} onSave={save}>
           <label className="rate-editor-field">Rate Code<input value={draft.code} onChange={(event) => setDraft({ ...draft, code: event.target.value })} /></label>
           <label className="rate-editor-field">Description<input value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} /></label>
+          <label className="rate-editor-field">Rate Type<select value={draft.rateTypeId} onChange={(event) => setDraft({ ...draft, rateTypeId: event.target.value })}>{rateTypes.filter((type) => type.active).map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}</select></label>
+          <label className="rate-editor-field">Rate Frequency<select value={draft.rateFrequency} onChange={(event) => setDraft({ ...draft, rateFrequency: event.target.value as RatePlanItem['rateFrequency'] })}><option>Daily</option><option>Monthly</option></select></label>
           <label className="rate-editor-check"><input type="checkbox" checked={draft.web ?? false} onChange={(event) => setDraft({ ...draft, web: event.target.checked })} /> Online / Web Rate</label>
         </EditorModal>
       )}
@@ -599,7 +603,7 @@ export function RateSetupModule({
       {section === 'season-calendar' ? <SeasonCalendarPage seasons={data.seasons} assignments={data.calendar} onSave={(value) => savePart('calendar', value)} /> : null}
       {section === 'rate-element' ? <RateElementPage items={data.elements} onChange={(value) => savePart('elements', value)} /> : null}
       {section === 'rate-type' ? <RateTypePage items={data.rateTypes} onChange={(value) => savePart('rateTypes', value)} /> : null}
-      {section === 'rate-setup' ? <RateSetupPage items={data.ratePlans} validityItems={data.validity} onChange={(value) => savePart('ratePlans', value)} onValidityChange={(value) => savePart('validity', value)} /> : null}
+      {section === 'rate-setup' ? <RateSetupPage items={data.ratePlans} rateTypes={data.rateTypes} validityItems={data.validity} onChange={(value) => savePart('ratePlans', value)} onValidityChange={(value) => savePart('validity', value)} /> : null}
     </div>
   );
 }

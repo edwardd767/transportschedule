@@ -26,6 +26,8 @@ export type RatePlanItem = {
   id: string;
   code: string;
   description: string;
+  rateTypeId: string;
+  rateFrequency: 'Daily' | 'Monthly';
   updated: string;
   active: boolean;
   web?: boolean;
@@ -72,23 +74,23 @@ export const initialRateElements: RateElementItem[] = [
   ['Breakfast Package', 'Per Person', 1, 4, 20],
   ['Breakfast Package Child', 'Per Person', 1, 4, 15],
   ['Breakfast Package Infant', 'Per Person', 0, 2, 0],
-  ['Extra Bed', 'Per Room', 1, 1, 80],
+  ['Extra Bed', 'Flat Rate', 1, 1, 80],
   ['Extra Breakfast', 'Per Person', 1, 4, 25],
-  ['Airport Transfer', 'Per Trip', 1, 6, 120],
+  ['Airport Transfer', 'Flat Rate', 1, 6, 120],
   ['Welcome Drink', 'Per Person', 1, 4, 8],
-  ['Late Checkout', 'Per Room', 1, 1, 100],
-  ['Early Check-in', 'Per Room', 1, 1, 100],
+  ['Late Checkout', 'Flat Rate', 1, 1, 100],
+  ['Early Check-in', 'Flat Rate', 1, 1, 100],
   ['Dinner Adult', 'Per Person', 1, 4, 55],
   ['Dinner Child', 'Per Person', 1, 4, 30],
   ['Lunch Adult', 'Per Person', 1, 4, 45],
   ['Lunch Child', 'Per Person', 1, 4, 25],
   ['Spa Voucher', 'Per Person', 1, 2, 50],
-  ['Laundry Credit', 'Per Room', 1, 1, 30],
-  ['Minibar Credit', 'Per Room', 1, 1, 25],
-  ['Parking', 'Per Vehicle', 1, 2, 10],
+  ['Laundry Credit', 'Flat Rate', 1, 1, 30],
+  ['Minibar Credit', 'Flat Rate', 1, 1, 25],
+  ['Parking', 'Flat Rate', 1, 2, 10],
   ['Tourism Package', 'Per Person', 1, 4, 35],
-  ['Romantic Setup', 'Per Room', 1, 1, 150],
-  ['Anniversary Cake', 'Per Room', 1, 1, 80],
+  ['Romantic Setup', 'Flat Rate', 1, 1, 150],
+  ['Anniversary Cake', 'Flat Rate', 1, 1, 80],
 ].map((item, index) => ({
   id: initialRateElementIds[index],
   name: String(item[0]),
@@ -131,6 +133,8 @@ export const initialRatePlans: RatePlanItem[] = [
     id: `rate-${index + 1}`,
     code: item[0],
     description: item[1],
+    rateTypeId: initialRateTypes.find((type) => type.name === item[0])?.id ?? initialRateTypes[0].id,
+    rateFrequency: 'Daily',
     updated: item[2],
     active: item[3] ?? true,
     web: item[4] ?? false,
@@ -139,6 +143,8 @@ export const initialRatePlans: RatePlanItem[] = [
     id: `rate-${index + 11}`,
     code: `RATE${String(index + 11).padStart(2, '0')}`,
     description: `Hotel Rate Plan ${index + 11}`,
+    rateTypeId: initialRateTypes[0].id,
+    rateFrequency: 'Daily',
     updated: index % 3 === 0 ? '27 Aug 2026' : index % 3 === 1 ? '19 Aug 2026' : '23 Jul 2026',
     active: index % 9 !== 0,
     web: index % 7 === 0,

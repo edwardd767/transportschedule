@@ -138,6 +138,11 @@ export function normalizeTransportState(state: TransportState): TransportState {
       ...element,
       postingRhythm: element.postingRhythm ?? 'Daily',
     })),
+    ratePlans: savedRateSetup.ratePlans.map((plan) => ({
+      ...plan,
+      rateTypeId: plan.rateTypeId ?? '',
+      rateFrequency: plan.rateFrequency === 'Monthly' ? 'Monthly' : 'Daily',
+    })),
   };
   return {
     ...state,
@@ -226,7 +231,11 @@ function rateSetup(value: unknown): RateSetupData {
     const row = object(entry);
     const min = number(row.min, 'minimum quantity', 0, 10000);
     const max = number(row.max, 'maximum quantity', min, 10000);
-    return { id: text(row.id, 'rate element ID', true, 100), name: text(row.name, 'rate element', true, 160).trim(), basis: text(row.basis, 'charge basis', true, 80), min, max, amount: decimal(row.amount, 'rate element amount'), active: boolean(row.active) };
+    const basis = text(row.basis, 'charge basis', true, 80);
+    if (!['Flat Rate', 'Per Person', 'Per Adult', 'Per Child', 'Per Infant'].includes(basis)) throw new Error('Choose a valid charge basis.');
+    const postingRhythm = typeof row.postingRhythm === 'string' ? row.postingRhythm : 'Daily';
+    if (!['Daily', 'First Night', 'Last Night'].includes(postingRhythm)) throw new Error('Choose a valid posting rhythm.');
+    return { id: text(row.id, 'rate element ID', true, 100), name: text(row.name, 'rate element', true, 160).trim(), basis, postingRhythm: postingRhythm as 'Daily' | 'First Night' | 'Last Night', min, max, amount: decimal(row.amount, 'rate element amount'), active: boolean(row.active) };
   });
   unique(elements);
   const rateTypes = list(v.rateTypes, 1000).map((entry) => {
@@ -234,9 +243,13 @@ function rateSetup(value: unknown): RateSetupData {
     return { id: text(row.id, 'rate type ID', true, 100), name: text(row.name, 'rate type', true, 160).trim(), active: boolean(row.active) };
   });
   unique(rateTypes);
+  const rateTypeIds = new Set(rateTypes.map((item) => item.id));
   const ratePlans = list(v.ratePlans, 2000).map((entry) => {
     const row = object(entry);
-    return { id: text(row.id, 'rate setup ID', true, 100), code: text(row.code, 'rate code', true, 100).trim(), description: text(row.description, 'rate description', true, 240).trim(), updated: text(row.updated, 'last updated date', false, 40), active: boolean(row.active), web: typeof row.web === 'boolean' ? row.web : false };
+    const rateTypeId = text(row.rateTypeId, 'rate type', true, 100);
+    if (!rateTypeIds.has(rateTypeId)) throw new Error('Choose an existing Rate Type.');
+    const rateFrequency = row.rateFrequency === 'Monthly' ? 'Monthly' : 'Daily';
+    return { id: text(row.id, 'rate setup ID', true, 100), code: text(row.code, 'rate code', true, 100).trim(), description: text(row.description, 'rate description', true, 240).trim(), rateTypeId, rateFrequency, updated: text(row.updated, 'last updated date', false, 40), active: boolean(row.active), web: typeof row.web === 'boolean' ? row.web : false };
   });
   unique(ratePlans);
   const ratePlanIds = new Set(ratePlans.map((item) => item.id));
