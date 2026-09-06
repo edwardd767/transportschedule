@@ -21,6 +21,18 @@ jobs:
         with:
           node-version: '22'
           cache: npm
+      - name: Keep redirect failures strict
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('worker/neon.ts')
+          text = p.read_text()
+          old = "!['DATABASE_CONNECTION', 'DATABASE_TIMEOUT', 'DATABASE_REDIRECT'].includes(error.code)"
+          new = "!['DATABASE_CONNECTION', 'DATABASE_TIMEOUT'].includes(error.code)"
+          if old not in text:
+              raise SystemExit('Expected Neon fallback matcher not found')
+          p.write_text(text.replace(old, new, 1))
+          PY
       - name: Install dependencies
         run: npm ci
       - name: Verify tests
@@ -33,14 +45,14 @@ jobs:
         run: |
           grep -q 'bookingUpdate' worker/hotelx-transport-api.deploy.js
           grep -q 'nonPoolerHost' worker/hotelx-transport-api.deploy.js
-      - name: Commit refreshed Worker bundle
+      - name: Commit Neon fix and refreshed Worker bundle
         run: |
           git config user.name "Edward Jacob"
           git config user.email "56201541+edwardd767@users.noreply.github.com"
-          git add worker/hotelx-transport-api.deploy.js
+          git add worker/neon.ts worker/hotelx-transport-api.deploy.js
           if git diff --cached --quiet; then
             echo "Worker bundle already current"
           else
-            git commit -m "Refresh Worker after Neon connection fix"
+            git commit -m "Fix Neon HTTP routing and refresh Worker"
             git push
           fi
