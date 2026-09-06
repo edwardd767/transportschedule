@@ -369,6 +369,11 @@ export function BookingTransfers({
                           <small>
                             <Ship size={13} /> {trip.boat} · {remaining} seats available
                           </small>
+                          {selectedService.incidentalCharge?.chargeId && (
+                            <small className="transfer-default-rates">
+                              Default rates · Adult MYR {Number(selectedService.incidentalCharge.adultRate || 0).toFixed(2)} · Child MYR {Number(selectedService.incidentalCharge.childRate || 0).toFixed(2)} · Infant MYR {Number(selectedService.incidentalCharge.infantRate || 0).toFixed(2)}
+                            </small>
+                          )}
                         </span>
                       </label>
                     );

@@ -3350,6 +3350,10 @@ p {
   font-size: 12px;
   margin-top: 4px;
 }
+.transfer-option .transfer-default-rates {
+  color: #8b571d;
+  font-weight: 600;
+}
 .transfer-option.unavailable {
   background: #f7f7f8;
   color: #939ba8;
