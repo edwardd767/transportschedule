@@ -632,11 +632,11 @@ function HomeContent({ store }: { store: TransportData }) {
                 <ChevronLeft size={24} />
               </button>
             )}
-            {view === 'ratepolicy' && rateSetupSection && (
+            {view === 'ratepolicy' && (
               <button
                 className="booking-back"
-                aria-label="Back to Rate Setup"
-                onClick={() => setRateSetupSection(null)}
+                aria-label={rateSetupSection ? 'Back to Rate Setup' : 'Back to Hotel Settings'}
+                onClick={() => rateSetupSection ? setRateSetupSection(null) : setView('hotelsettings')}
               >
                 <ChevronLeft size={24} />
               </button>
