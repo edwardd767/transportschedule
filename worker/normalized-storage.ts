@@ -1172,9 +1172,9 @@ export function createNormalizedTransportStorage(
         const raw = JSON.parse(current[1]) as Partial<TransportState>;
         const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
         const rateTypes = raw.rateSetup?.rateTypes;
-        const rateTypesNeedMigration = Array.isArray(rateTypes) && rateTypes.some((item) => !uuidPattern.test(String(item.id)));
+        const rateTypesNeedMigration = Array.isArray(rateTypes) && rateTypes.some((item) => !uuidPattern.test(String(item.id)) || String(item.id).toLowerCase().startsWith('a1000000-0000-4000-8000-'));
         if (rateTypesNeedMigration && raw.rateSetup) {
-          raw.rateSetup = { ...raw.rateSetup, rateTypes: rateTypes.map((item) => ({ ...item, id: uuidPattern.test(String(item.id)) ? item.id : crypto.randomUUID() })) };
+          raw.rateSetup = { ...raw.rateSetup, rateTypes: rateTypes.map((item) => ({ ...item, id: uuidPattern.test(String(item.id)) && !String(item.id).toLowerCase().startsWith('a1000000-0000-4000-8000-') ? item.id : crypto.randomUUID() })) };
         }
         const hasMasters = Boolean(
           raw.hotelMasters &&
