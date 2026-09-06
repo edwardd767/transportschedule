@@ -176,6 +176,15 @@ const schemaStatements = [
     FOREIGN KEY (property_id, room_type_code) REFERENCES public.hotelx_room_type_master(property_id, code),
     FOREIGN KEY (property_id, location_code) REFERENCES public.hotelx_location_master(property_id, code)
   )`,
+  `CREATE TABLE IF NOT EXISTS public.hotelx_roomstatus (
+    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    status_code text NOT NULL,
+    sort_order integer NOT NULL,
+    status_name text NOT NULL,
+    status_color text NOT NULL,
+    active boolean NOT NULL DEFAULT true,
+    PRIMARY KEY (property_id, status_code)
+  )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_bookings (
     property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
     reference text NOT NULL,
@@ -328,6 +337,7 @@ const schemaStatements = [
     DELETE FROM public.hotelx_booking_rooms WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_bookings WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_room_master WHERE property_id = p_property_id;
+    DELETE FROM public.hotelx_roomstatus WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_room_type_master WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_location_master WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_transport_trip_groups WHERE property_id = p_property_id;
@@ -376,6 +386,15 @@ const schemaStatements = [
       COALESCE(NULLIF(item.value->>'displaySequence', ''), item.ordinality::text)::integer,
       COALESCE(item.value->>'keycardRoomMapping', ''), COALESCE((item.value->>'active')::boolean, true)
     FROM jsonb_array_elements(COALESCE(p_state #> '{hotelMasters,rooms}', '[]'::jsonb))
+      WITH ORDINALITY AS item(value, ordinality);
+
+    INSERT INTO public.hotelx_roomstatus (
+      property_id, status_code, sort_order, status_name, status_color, active
+    )
+    SELECT p_property_id, item.value->>'code', item.ordinality::integer,
+      item.value->>'description', COALESCE(item.value->>'color', '#808080'),
+      COALESCE((item.value->>'active')::boolean, true)
+    FROM jsonb_array_elements(COALESCE(p_state #> '{hotelMasters,roomStatuses}', '[]'::jsonb))
       WITH ORDINALITY AS item(value, ordinality);
 
     INSERT INTO public.hotelx_bookings (
@@ -730,6 +749,16 @@ const schemaStatements = [
           ) ORDER BY room.sort_order)
           FROM public.hotelx_room_master AS room
           WHERE room.property_id = meta.id
+        ), '[]'::jsonb),
+        'roomStatuses', COALESCE((
+          SELECT jsonb_agg(jsonb_build_object(
+            'code', status.status_code,
+            'description', status.status_name,
+            'color', status.status_color,
+            'active', status.active
+          ) ORDER BY status.sort_order)
+          FROM public.hotelx_roomstatus AS status
+          WHERE status.property_id = meta.id
         ), '[]'::jsonb)
       ),
       'bookings', COALESCE((
@@ -1092,11 +1121,12 @@ export function createNormalizedTransportStorage(
         );
         const hasBookings = Array.isArray(raw.bookings) && raw.bookings.length > 0;
         const hasRateSetup = Boolean(raw.rateSetup && Array.isArray(raw.rateSetup.seasons) && raw.rateSetup.seasons.length && Array.isArray(raw.rateSetup.elements) && raw.rateSetup.elements.length && Array.isArray(raw.rateSetup.rateTypes) && raw.rateSetup.rateTypes.length && Array.isArray(raw.rateSetup.ratePlans) && raw.rateSetup.ratePlans.length && Array.isArray(raw.rateSetup.validity));
-        if (!hasMasters || !hasBookings || !hasRateSetup) {
+        const hasRoomStatuses = Boolean(raw.hotelMasters && Array.isArray(raw.hotelMasters.roomStatuses) && raw.hotelMasters.roomStatuses.length);
+        if (!hasMasters || !hasBookings || !hasRateSetup || !hasRoomStatuses) {
           const merged: TransportState = {
             ...seed,
             ...raw,
-            hotelMasters: hasMasters ? raw.hotelMasters! : seed.hotelMasters,
+            hotelMasters: hasMasters ? { ...raw.hotelMasters!, roomStatuses: hasRoomStatuses ? raw.hotelMasters!.roomStatuses : seed.hotelMasters.roomStatuses } : seed.hotelMasters,
             bookings: hasBookings ? raw.bookings! : seed.bookings,
             rateSetup: hasRateSetup ? raw.rateSetup! : seed.rateSetup,
           } as TransportState;
