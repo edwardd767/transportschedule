@@ -45,6 +45,10 @@ type ReportRow = {
   pickup: string;
   dropoff: string;
   passengers: number;
+  adults: number;
+  children: number;
+  infants: number;
+  charge: number;
   operator: string;
   flightReference: string;
   vehicleDriver: string;
@@ -117,6 +121,10 @@ export function TransportListingReport({
         pickup: leg.pickup,
         dropoff: leg.dropoff,
         passengers: leg.passengers,
+        adults: leg.adults ?? leg.passengers,
+        children: leg.children ?? 0,
+        infants: leg.infants ?? 0,
+        charge: (leg.adults ?? leg.passengers) * (leg.incidentalCharge?.adultRate ?? 0) + (leg.children ?? 0) * (leg.incidentalCharge?.childRate ?? 0) + (leg.infants ?? 0) * (leg.incidentalCharge?.infantRate ?? 0),
         operator: leg.operatorName,
         flightReference: leg.flightNo || '—',
         vehicleDriver: [leg.vehicle, leg.driver].filter(Boolean).join(' · ') || '—',
@@ -148,6 +156,10 @@ export function TransportListingReport({
           pickup: trip.origin,
           dropoff: trip.destination,
           passengers: group.adults + group.children,
+          adults: group.adults,
+          children: group.children,
+          infants: group.infants ?? 0,
+          charge: 0,
           operator: trip.operator,
           flightReference: '—',
           vehicleDriver: '—',
@@ -192,6 +204,7 @@ export function TransportListingReport({
   const scheduled = shown.filter((row) => row.mode === 'Scheduled').length;
   const onDemand = shown.length - scheduled;
   const passengers = shown.reduce((total, row) => total + row.passengers, 0);
+  const charges = shown.reduce((total, row) => total + row.charge, 0);
   const hasFilters = Boolean(
     fromDate ||
       toDate ||
@@ -225,6 +238,7 @@ export function TransportListingReport({
       'Pickup',
       'Drop-off',
       'Pax',
+      'Adult', 'Child', 'Infant', 'Posted Charge',
       'Operator',
       'Flight / Reference',
       'Vehicle / Driver',
@@ -243,6 +257,7 @@ export function TransportListingReport({
       row.pickup,
       row.dropoff,
       row.passengers,
+      row.adults, row.children, row.infants, row.charge.toFixed(2),
       row.operator,
       row.flightReference === '—' ? '' : row.flightReference,
       row.vehicleDriver === '—' ? '' : row.vehicleDriver,
@@ -297,6 +312,10 @@ export function TransportListingReport({
         <div>
           <span className="summary-icon"><Users size={18} /></span>
           <span><small>Total passengers</small><strong>{passengers}</strong></span>
+        </div>
+        <div>
+          <span className="summary-icon green">MYR</span>
+          <span><small>Posted charges</small><strong>{charges.toFixed(2)}</strong></span>
         </div>
       </div>
 
@@ -377,6 +396,8 @@ export function TransportListingReport({
               <TableHead>Service</TableHead>
               <TableHead>Pickup → Drop-off</TableHead>
               <TableHead>Pax</TableHead>
+              <TableHead>Adult / Child / Infant</TableHead>
+              <TableHead>Posted Charge</TableHead>
               <TableHead>Operator</TableHead>
               <TableHead>Flight / Ref</TableHead>
               <TableHead>Vehicle / Driver</TableHead>
@@ -407,6 +428,8 @@ export function TransportListingReport({
                   </span>
                 </TableCell>
                 <TableCell>{row.passengers}</TableCell>
+                <TableCell>{row.adults} / {row.children} / {row.infants}</TableCell>
+                <TableCell>{row.charge ? row.charge.toFixed(2) : '—'}</TableCell>
                 <TableCell>{row.operator}</TableCell>
                 <TableCell>{row.flightReference}</TableCell>
                 <TableCell>{row.vehicleDriver}</TableCell>
