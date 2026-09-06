@@ -541,24 +541,6 @@ export function TransportSetup({
                     </label>
                   </div>
                   <label>
-                    Incidental charge
-                    <Choice
-                      label="Incidental charge"
-                      value={editor.record.incidentalCharge?.chargeId ?? 'none'}
-                      onChange={(v) => {
-                        if (v === 'none') return updateDraft({ incidentalCharge: undefined });
-                        const charge = departments.flatMap((d) => d.incidentalCharges).find((c) => c.id === v);
-                        if (charge) updateDraft({ incidentalCharge: { chargeId: charge.id, chargeTitle: charge.title, adultRate: charge.amount, childRate: charge.amount, infantRate: charge.amount } as ServiceChargeRate });
-                      }}
-                      items={[{ value: 'none', label: 'No incidental charge' }, ...departments.flatMap((d) => d.incidentalCharges.map((c) => ({ value: c.id, label: `${d.name} · ${c.title}` })))]}
-                    />
-                  </label>
-                  {editor.record.incidentalCharge && <div className="form-grid">
-                    {(['adultRate', 'childRate', 'infantRate'] as const).map((field) => <label key={field}>{field === 'adultRate' ? 'Adult rate' : field === 'childRate' ? 'Child rate' : 'Infant rate'}
-                      <input type="number" min="0" step="0.01" value={editor.record.incidentalCharge?.[field] ?? 0} onChange={(e) => updateDraft({ incidentalCharge: { ...editor.record.incidentalCharge!, [field]: Number(e.target.value) } })} />
-                    </label>)}
-                  </div>}
-                  <label>
                     Operator
                     <Choice
                       label="Route operator"
@@ -631,6 +613,24 @@ export function TransportSetup({
                       />
                     </label>
                   </div>
+                  <label>
+                    Incidental charge
+                    <Choice
+                      label="Incidental charge"
+                      value={editor.record.incidentalCharge?.chargeId ?? 'none'}
+                      onChange={(v) => {
+                        if (v === 'none') return updateDraft({ incidentalCharge: undefined });
+                        const charge = departments.flatMap((d) => d.incidentalCharges).find((c) => c.id === v);
+                        if (charge) updateDraft({ incidentalCharge: { chargeId: charge.id, chargeTitle: charge.title, adultRate: charge.amount, childRate: charge.amount, infantRate: charge.amount } as ServiceChargeRate });
+                      }}
+                      items={[{ value: 'none', label: 'No incidental charge' }, ...departments.flatMap((d) => d.incidentalCharges.map((c) => ({ value: c.id, label: `${d.name} · ${c.title}` })))]}
+                    />
+                  </label>
+                  {editor.record.incidentalCharge && <div className="form-grid">
+                    {(['adultRate', 'childRate', 'infantRate'] as const).map((field) => <label key={field}>{field === 'adultRate' ? 'Adult rate' : field === 'childRate' ? 'Child rate' : 'Infant rate'}
+                      <input type="number" min="0" step="0.01" value={editor.record.incidentalCharge?.[field] ?? 0} onChange={(e) => updateDraft({ incidentalCharge: { ...editor.record.incidentalCharge!, [field]: Number(e.target.value) } })} />
+                    </label>)}
+                  </div>}
                   <label>
                     Operator
                     <Choice
