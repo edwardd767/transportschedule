@@ -35,13 +35,16 @@ function prettyDate(value: string) {
 function initialRooms(booking: Booking): BookingRoom[] {
   const nights = Math.max(1, nightsBetween(booking.arrival, booking.departure));
   const totalRoomCount = Math.max(1, booking.rooms.reduce((sum, room) => sum + room.count, 0));
+  const hasItemizedTotal = booking.rooms.some((room) => (room.total ?? 0) > 0);
   let remainingGuests = Math.max(1, booking.guests);
   return booking.rooms.map((room, index) => {
     const configuredAdults = room.adults;
     const fallbackAdults = Math.max(1, index === 0 ? remainingGuests - (booking.rooms.length - 1) : 1);
     const adults = configuredAdults ?? fallbackAdults;
     remainingGuests = Math.max(0, remainingGuests - adults);
-    const allocatedTotal = room.total ?? (booking.amount * room.count) / totalRoomCount;
+    const allocatedTotal = hasItemizedTotal
+      ? (room.total ?? 0)
+      : (booking.amount * room.count) / totalRoomCount;
     const roomRate = room.roomRate ?? allocatedTotal / (nights * Math.max(1, room.count));
     return {
       code: room.code,
