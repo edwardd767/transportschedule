@@ -1064,7 +1064,7 @@ function rateSetup(value) {
   unique(rateTypes);
   const ratePlans = list(v.ratePlans, 2e3).map((entry) => {
     const row = object(entry);
-    return { id: text(row.id, "rate setup ID", true, 100), code: text(row.code, "rate code", true, 100).trim(), description: text(row.description, "rate description", true, 240).trim(), updated: text(row.updated, "last updated date", true, 40), active: boolean(row.active), web: typeof row.web === "boolean" ? row.web : false };
+    return { id: text(row.id, "rate setup ID", true, 100), code: text(row.code, "rate code", true, 100).trim(), description: text(row.description, "rate description", true, 240).trim(), updated: text(row.updated, "last updated date", false, 40), active: boolean(row.active), web: typeof row.web === "boolean" ? row.web : false };
   });
   unique(ratePlans);
   const ratePlanIds = new Set(ratePlans.map((item) => item.id));
