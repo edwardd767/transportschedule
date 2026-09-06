@@ -1308,7 +1308,7 @@ function HomeContent({ store }: { store: TransportData }) {
                       </div>
                     </div>
                     <div className="passenger-heading">
-                      <h3>Reservations ({selected.groups.length})</h3>
+                      <h3>Bookings ({selected.groups.length})</h3>
                       <button
                         className="text-button"
                         disabled={
