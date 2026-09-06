@@ -2740,13 +2740,21 @@ function createNormalizedTransportStorage(query) {
   let ready = null;
   const ensure = async (connection) => {
     if (!ready) {
-      ready = (async () => {
-        for (const sql of schemaStatements) {
-          if (sql.startsWith("CREATE OR REPLACE FUNCTION public.hotelx_transport_replace_rows") || sql.startsWith("CREATE OR REPLACE FUNCTION public.hotelx_transport_read"))
-            continue;
-          await query(connection, sql, []);
-        }
-      })().catch((error) => {
+      const statements = schemaStatements.filter(
+        (sql) => (
+          // Preserve the two functions maintained by the existing Neon schema.
+          !sql.startsWith("CREATE OR REPLACE FUNCTION public.hotelx_transport_replace_rows") && !sql.startsWith("CREATE OR REPLACE FUNCTION public.hotelx_transport_read")
+        )
+      );
+      ready = query(
+        connection,
+        `DO $hotelx_schema$ BEGIN
+          PERFORM pg_advisory_xact_lock(hashtext('hotelx-transport-schema'));
+          ${statements.join(";\n")};
+        END; $hotelx_schema$`,
+        []
+      ).then(() => {
+      }).catch((error) => {
         ready = null;
         throw error;
       });

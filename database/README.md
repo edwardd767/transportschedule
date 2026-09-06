@@ -144,6 +144,18 @@ app versions. Private links do not require `TRANSPORT_PASSWORD`.
 
 ## Verification suite
 
+### Cold-start request budget
+
+Schema setup runs as one transactional PostgreSQL `DO` block. Sending its 56
+statements as separate HTTP requests exceeded Cloudflare Workers Free's limit
+of 50 subrequests per invocation (redirects also count). That failure appeared
+as `DATABASE_CONNECTION` and the app displayed **Link unavailable**, even with
+a valid private link and a healthy database. The batched setup keeps startup
+within the limit and preserves the database-managed read/replace functions.
+
+The Worker regression suite loads existing saved data through the HTTP adapter
+with a simulated 50-subrequest limit and a Neon redirect on every query.
+
 `npm run test:transport` covers planning rules, private-link access, validation,
 concurrent revision writes, transfer atomicity, persistence and legacy JSON to
 normalized-table migration using a mock database.

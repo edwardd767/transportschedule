@@ -1050,22 +1050,28 @@ export function createNormalizedTransportStorage(
 
   const ensure = async (connection: string) => {
     if (!ready) {
-      ready = (async () => {
-        for (const sql of schemaStatements) {
-          // These two large functions are maintained by the existing Neon schema.
-          // Re-sending them on every Worker cold start can fail after incremental
-          // booking schema upgrades and make the private link appear unavailable.
-          if (
-            sql.startsWith('CREATE OR REPLACE FUNCTION public.hotelx_transport_replace_rows') ||
-            sql.startsWith('CREATE OR REPLACE FUNCTION public.hotelx_transport_read')
-          )
-            continue;
-          await query(connection, sql, []);
-        }
-      })().catch((error) => {
-        ready = null;
-        throw error;
-      });
+      // Workers Free permits 50 subrequests, including redirects. Sending these
+      // 56 statements separately exhausts that budget before the first read.
+      // One PostgreSQL block keeps setup atomic and uses one HTTP query.
+      const statements = schemaStatements.filter(
+        (sql) =>
+          // Preserve the two functions maintained by the existing Neon schema.
+          !sql.startsWith('CREATE OR REPLACE FUNCTION public.hotelx_transport_replace_rows') &&
+          !sql.startsWith('CREATE OR REPLACE FUNCTION public.hotelx_transport_read'),
+      );
+      ready = query(
+        connection,
+        `DO $hotelx_schema$ BEGIN
+          PERFORM pg_advisory_xact_lock(hashtext('hotelx-transport-schema'));
+          ${statements.join(';\n')};
+        END; $hotelx_schema$`,
+        [],
+      )
+        .then(() => {})
+        .catch((error) => {
+          ready = null;
+          throw error;
+        });
     }
     await ready;
   };

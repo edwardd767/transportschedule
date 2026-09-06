@@ -52,6 +52,13 @@ let stored,
 let synchronizeReads = false,
   waiting = [];
 async function query(_connection, sql, params) {
+  if (sql.startsWith('DO $hotelx_schema$')) {
+    assert.ok(sql.includes('ALTER TABLE public.hotelx_bookings'));
+    assert.ok(sql.includes('CREATE OR REPLACE FUNCTION public.hotelx_transport_save'));
+    assert.ok(!sql.includes('CREATE OR REPLACE FUNCTION public.hotelx_transport_replace_rows'));
+    assert.ok(!sql.includes('CREATE OR REPLACE FUNCTION public.hotelx_transport_read'));
+    return [];
+  }
   if (/^(?:CREATE (?:TABLE|INDEX|OR REPLACE FUNCTION)|ALTER TABLE)/.test(sql)) return [];
   if (sql.includes('/* normalized-booking-extras-read */')) return [];
   if (sql.includes('/* normalized-read */')) {
@@ -427,6 +434,25 @@ assert.ok(!JSON.stringify(failed.data).includes('postgresql'));
 // Retain the working Neon redirect fix without forwarding credentials elsewhere.
 const originalFetch = globalThis.fetch;
 try {
+  // A cold /state request must fit Workers Free's 50-subrequest budget,
+  // including the extra HTTP hop when Neon redirects to a regional endpoint.
+  let subrequests = 0;
+  globalThis.fetch = async (url, options) => {
+    if (++subrequests > 50) throw new Error('Too many subrequests.');
+    if (new URL(url).hostname.startsWith('ep-'))
+      return new Response(null, {
+        status: 307,
+        headers: { Location: 'https://api.c-1.ap-southeast-1.aws.neon.tech/sql' },
+      });
+    const body = JSON.parse(options.body);
+    return Response.json({ rows: await query(env.DATABASE_URL, body.query, body.params) });
+  };
+  const coldWorker = createWorker(undefined, verifier);
+  const coldLoad = await call('/state', { token: privateToken, service: coldWorker });
+  assert.equal(coldLoad.status, 200, JSON.stringify(coldLoad.data));
+  assert.deepEqual(coldLoad.data, stored, 'cold load preserves saved data');
+  assert.ok(subrequests < 50, 'leave room for normal reads and redirects');
+
   const requests = [];
   globalThis.fetch = async (url, options) => {
     requests.push({ url, options });
