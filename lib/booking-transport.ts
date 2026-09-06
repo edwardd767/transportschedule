@@ -34,6 +34,7 @@ export type BookingTransportLeg = {
   driver: string;
   remarks: string;
   tripId: string;
+  incidentalCharge?: { chargeId: string; chargeTitle: string; adultRate: number; childRate: number; infantRate: number };
 };
 
 export type BookingTransportLegInput = {
@@ -50,6 +51,7 @@ export type BookingTransportLegInput = {
   vehicle: string;
   driver: string;
   remarks: string;
+  incidentalCharge?: BookingTransportLeg['incidentalCharge'];
 };
 
 export function serviceType(service: Boat): ServiceType {
@@ -165,6 +167,7 @@ export function addBookingTransportLeg(
         driver: input.driver.trim(),
         remarks: input.remarks.trim(),
         tripId: trip.id,
+        incidentalCharge: service.incidentalCharge,
       } satisfies BookingTransportLeg,
     };
   }
@@ -195,6 +198,7 @@ export function addBookingTransportLeg(
       driver: input.driver.trim(),
       remarks: input.remarks.trim(),
       tripId: '',
+      incidentalCharge: service.incidentalCharge,
     } satisfies BookingTransportLeg,
   };
 }

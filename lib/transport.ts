@@ -24,6 +24,7 @@ export type ServiceType =
   | 'Shuttle'
   | 'Other';
 export type ServiceBookingMode = 'Scheduled' | 'OnDemand';
+export type ServiceChargeRate = { chargeId: string; chargeTitle: string; adultRate: number; childRate: number; infantRate: number };
 export type Boat = {
   id: string;
   name: string;
@@ -32,6 +33,7 @@ export type Boat = {
   status: 'Active' | 'Maintenance' | 'Inactive';
   serviceType: ServiceType;
   bookingMode: ServiceBookingMode;
+  incidentalCharge?: ServiceChargeRate;
 };
 export type TransportRoute = {
   id: string;

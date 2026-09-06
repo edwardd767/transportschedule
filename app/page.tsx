@@ -807,6 +807,7 @@ function HomeContent({ store }: { store: TransportData }) {
               }}
               onBack={() => setView('hotelsettings')}
               onNotice={setNotice}
+              departments={hotelMasters.departments}
               scheduleTemplates={
                 <ScheduleTemplates
                   setup={setup}
