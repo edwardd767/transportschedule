@@ -164,6 +164,16 @@ export function Bookings({
       { title: 'Transport', description: transportSummary || 'Arrival and return transfers' },
       { title: 'Special Request' },
       { title: 'Remarks' },
+      { title: 'Incidental Charges', description: '0.00' },
+      { title: 'Advance Payment', description: 'Total Amt: 0.00' },
+      { title: 'Billing Instruction', description: booking.accountName ? `Account: ${booking.accountName}` : 'No billing instruction' },
+      { title: 'Confirmation Letter', description: 'Not sent' },
+      { title: 'Proforma Invoice', description: 'Not sent' },
+      { title: 'Attachments', description: 'No record' },
+      { title: 'Billing Schedule', description: `${booking.rooms.length} Rate Code${booking.rooms.length === 1 ? '' : 's'}: ${booking.rooms.map((room) => room.rateCode || 'BAR').join(', ')}` },
+      { title: 'House Limit', description: '0.00' },
+      { title: 'Booking Cancellation | Reinstatement', description: booking.status === 'Cancelled' ? 'Booking cancelled' : 'Active booking' },
+      { title: 'Room Cancellation | Reinstatement', description: 'All rooms active' },
     ];
     return (
       <section className="booking-workspace" aria-label="Booking details">
