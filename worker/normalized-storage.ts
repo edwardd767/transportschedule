@@ -1105,8 +1105,7 @@ export function createNormalizedTransportStorage(
           ${statements.join(';\n')};
         END; $hotelx_schema$`,
         [],
-      ),
-      COALESCE(item.value->'incidentalCharge', '{}'::jsonb)
+        )
         .then(() => {})
         .catch((error) => {
           ready = null;

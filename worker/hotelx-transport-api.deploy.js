@@ -807,7 +807,8 @@ function addBookingTransportLeg(trips, setup2, legs, booking, input) {
         vehicle: input.vehicle.trim(),
         driver: input.driver.trim(),
         remarks: input.remarks.trim(),
-        tripId: trip.id
+        tripId: trip.id,
+        incidentalCharge: service.incidentalCharge
       }
     };
   }
@@ -836,7 +837,8 @@ function addBookingTransportLeg(trips, setup2, legs, booking, input) {
       vehicle: input.vehicle.trim(),
       driver: input.driver.trim(),
       remarks: input.remarks.trim(),
-      tripId: ""
+      tripId: "",
+      incidentalCharge: service.incidentalCharge
     }
   };
 }
@@ -1826,6 +1828,7 @@ var schemaStatements = [
     status text NOT NULL CHECK (status IN ('Active', 'Maintenance', 'Inactive')),
     service_type text NOT NULL,
     booking_mode text NOT NULL CHECK (booking_mode IN ('Scheduled', 'OnDemand')),
+    incidental_charge jsonb NOT NULL DEFAULT '{}'::jsonb,
     PRIMARY KEY (property_id, id)
   )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_transport_routes (
@@ -1924,6 +1927,7 @@ var schemaStatements = [
     driver text NOT NULL DEFAULT '',
     remarks text NOT NULL DEFAULT '',
     trip_id text NOT NULL DEFAULT '',
+    incidental_charge jsonb NOT NULL DEFAULT '{}'::jsonb,
     PRIMARY KEY (property_id, id)
   )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_location_master (
@@ -1966,6 +1970,8 @@ var schemaStatements = [
     FOREIGN KEY (property_id, room_type_code) REFERENCES public.hotelx_room_type_master(property_id, code),
     FOREIGN KEY (property_id, location_code) REFERENCES public.hotelx_location_master(property_id, code)
   )`,
+  `ALTER TABLE public.hotelx_transport_services ADD COLUMN IF NOT EXISTS incidental_charge jsonb NOT NULL DEFAULT '{}'::jsonb`,
+  `ALTER TABLE public.hotelx_transport_booking_legs ADD COLUMN IF NOT EXISTS incidental_charge jsonb NOT NULL DEFAULT '{}'::jsonb`,
   `ALTER TABLE public.hotelx_transport_trip_groups ADD COLUMN IF NOT EXISTS infants integer NOT NULL DEFAULT 0`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_roomstatus (
     property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
@@ -2326,7 +2332,7 @@ var schemaStatements = [
 
     INSERT INTO public.hotelx_transport_services (
       property_id, id, sort_order, name, operator_id, capacity, status,
-      service_type, booking_mode
+      service_type, booking_mode, incidental_charge
     )
     SELECT
       p_property_id,
@@ -2344,7 +2350,8 @@ var schemaStatements = [
             THEN 'Scheduled'
           ELSE 'OnDemand'
         END
-      )
+      ),
+      COALESCE(item.value->'incidentalCharge', '{}'::jsonb)
     FROM jsonb_array_elements(COALESCE(p_state #> '{setup,boats}', '[]'::jsonb))
       WITH ORDINALITY AS item(value, ordinality);
 
@@ -2459,7 +2466,7 @@ var schemaStatements = [
       property_id, id, sort_order, booking_reference, direction,
       service_id, service_name, service_type, booking_mode,
       operator_id, operator_name, travel_date, travel_time, pickup,
-      dropoff, passengers, flight_no, vehicle, driver, remarks, trip_id
+      dropoff, passengers, flight_no, vehicle, driver, remarks, trip_id, incidental_charge
     )
     SELECT
       p_property_id,
@@ -2482,7 +2489,8 @@ var schemaStatements = [
       COALESCE(leg.value->>'vehicle', ''),
       COALESCE(leg.value->>'driver', ''),
       COALESCE(leg.value->>'remarks', ''),
-      COALESCE(leg.value->>'tripId', '')
+      COALESCE(leg.value->>'tripId', ''),
+      COALESCE(leg.value->'incidentalCharge', '{}'::jsonb)
     FROM jsonb_array_elements(COALESCE(p_state->'bookingLegs', '[]'::jsonb))
       WITH ORDINALITY AS leg(value, ordinality);
   END;
@@ -2670,7 +2678,8 @@ var schemaStatements = [
               'capacity', service.capacity,
               'status', service.status,
               'serviceType', service.service_type,
-              'bookingMode', service.booking_mode
+              'bookingMode', service.booking_mode,
+              'incidentalCharge', service.incidental_charge
             ) ORDER BY service.sort_order
           )
           FROM public.hotelx_transport_services AS service
@@ -2797,7 +2806,8 @@ var schemaStatements = [
             'vehicle', leg.vehicle,
             'driver', leg.driver,
             'remarks', leg.remarks,
-            'tripId', leg.trip_id
+            'tripId', leg.trip_id,
+            'incidentalCharge', leg.incidental_charge
           ) ORDER BY leg.sort_order
         )
         FROM public.hotelx_transport_booking_legs AS leg
