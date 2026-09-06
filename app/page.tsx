@@ -202,7 +202,7 @@ function HomeContent({ store }: { store: TransportData }) {
   const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = trips.find((t) => t.id === selectedId) ?? null;
-  const [dialog, setDialog] = useState<'trip' | 'passengers' | 'passengerEdit' | 'help' | null>(
+  const [dialog, setDialog] = useState<'trip' | 'passengers' | 'passengerEdit' | 'passengerRemove' | 'help' | null>(
     null,
   );
   const [formRoute, setFormRoute] = useState('inbound');
@@ -213,6 +213,7 @@ function HomeContent({ store }: { store: TransportData }) {
   const [passengerBookingReference, setPassengerBookingReference] = useState('');
   const [passengerCounts, setPassengerCounts] = useState({ adults: 1, children: 0, infants: 0 });
   const [editingPassengerId, setEditingPassengerId] = useState<string | null>(null);
+  const [removingPassenger, setRemovingPassenger] = useState<Trip['groups'][number] | null>(null);
   const [month, setMonth] = useState('2026-08');
   const tripState = useRef(trips);
   useEffect(() => {
@@ -347,9 +348,17 @@ function HomeContent({ store }: { store: TransportData }) {
   }
   async function removePassenger(group: Trip['groups'][number]) {
     if (!selected) return;
+    setRemovingPassenger(group);
+    setError('');
+    setDialog('passengerRemove');
+  }
+  async function confirmRemovePassenger() {
+    if (!selected || !removingPassenger) return;
     try {
-      await store.run({ type: 'passengerRemove', tripId: selected.id, groupId: group.id });
-      setNotice(`${group.reference} removed from the trip.`);
+      await store.run({ type: 'passengerRemove', tripId: selected.id, groupId: removingPassenger.id });
+      setNotice(`${removingPassenger.reference} was removed from the trip and Booking Transport.`);
+      setRemovingPassenger(null);
+      setDialog(null);
     } catch (e) { setError((e as Error).message); }
   }
   async function changeStatus(value: string) {
@@ -1394,6 +1403,8 @@ function HomeContent({ store }: { store: TransportData }) {
                 ? 'Add a speedboat trip'
                 : dialog === 'passengers'
                   ? 'Add passengers'
+                  : dialog === 'passengerRemove'
+                    ? 'Confirm cancellation?'
                   : 'HotelX Transport prototype'}
             </DialogTitle>
             <DialogDescription>
@@ -1401,6 +1412,8 @@ function HomeContent({ store }: { store: TransportData }) {
                 ? 'Enter a departure confirmed by your transport operator.'
                 : dialog === 'passengers'
                   ? `${selected?.time} · ${selected ? selected.capacity - countPassengers(selected) : 0} seats available`
+                  : dialog === 'passengerRemove'
+                    ? `Remove ${removingPassenger?.reference ?? 'this booking'} from this trip?`
                   : 'An initial transport workflow within the HotelX layout.'}
             </DialogDescription>
           </DialogHeader>
@@ -1533,6 +1546,23 @@ function HomeContent({ store }: { store: TransportData }) {
                 </button>
               </div>
             </form>
+          )}
+          {dialog === 'passengerRemove' && (
+            <div className="hotel-form">
+              <p>
+                The booking transport assignment will be removed and any related
+                transport charges will no longer apply. Do you want to proceed?
+              </p>
+              {error && <p role="alert" className="form-error">{error}</p>}
+              <div className="form-actions">
+                <button type="button" className="secondary-button" disabled={Boolean(store.pending)} onClick={() => { setRemovingPassenger(null); setDialog(null); setError(''); }}>
+                  Cancel
+                </button>
+                <button type="button" className="primary-button" disabled={Boolean(store.pending)} onClick={() => void confirmRemovePassenger()}>
+                  Confirm
+                </button>
+              </div>
+            </div>
           )}
           {dialog === 'help' && (
             <div className="help-content">
