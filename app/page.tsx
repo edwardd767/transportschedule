@@ -632,11 +632,11 @@ function HomeContent({ store }: { store: TransportData }) {
                 <ChevronLeft size={24} />
               </button>
             )}
-            {view === 'ratepolicy' && (
+            {['hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy', 'setup'].includes(view) && (
               <button
                 className="booking-back"
-                aria-label={rateSetupSection ? 'Back to Rate Setup' : 'Back to Hotel Settings'}
-                onClick={() => rateSetupSection ? setRateSetupSection(null) : setView('hotelsettings')}
+                aria-label={view === 'ratepolicy' && rateSetupSection ? 'Back to Rate Setup' : 'Back to Hotel Settings'}
+                onClick={() => view === 'ratepolicy' && rateSetupSection ? setRateSetupSection(null) : setView('hotelsettings')}
               >
                 <ChevronLeft size={24} />
               </button>
