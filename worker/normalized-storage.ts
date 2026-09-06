@@ -197,6 +197,19 @@ const schemaStatements = [
     sales_channels jsonb NOT NULL DEFAULT '[]'::jsonb,
     PRIMARY KEY (property_id, department_id)
   )`,
+  `CREATE TABLE IF NOT EXISTS public.hotelx_incidentalcharges (
+    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    charge_id text NOT NULL,
+    department_id text NOT NULL,
+    title text NOT NULL,
+    amount numeric(14,2) NOT NULL DEFAULT 0,
+    tax_scheme text NOT NULL,
+    outlet_code text NOT NULL DEFAULT '',
+    options jsonb NOT NULL DEFAULT '{}'::jsonb,
+    msic_code text NOT NULL DEFAULT '',
+    classification text NOT NULL DEFAULT '',
+    PRIMARY KEY (property_id, charge_id)
+  )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_bookings (
     property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
     reference text NOT NULL,
@@ -351,6 +364,7 @@ const schemaStatements = [
     DELETE FROM public.hotelx_room_master WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_roomstatus WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_department WHERE property_id = p_property_id;
+    DELETE FROM public.hotelx_incidentalcharges WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_room_type_master WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_location_master WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_transport_trip_groups WHERE property_id = p_property_id;
@@ -418,6 +432,16 @@ const schemaStatements = [
       COALESCE(item.value->'reasons', '[]'::jsonb), COALESCE(item.value->'salesChannels', '[]'::jsonb)
     FROM jsonb_array_elements(COALESCE(p_state #> '{hotelMasters,departments}', '[]'::jsonb))
       WITH ORDINALITY AS item(value, ordinality);
+
+    INSERT INTO public.hotelx_incidentalcharges (
+      property_id, charge_id, department_id, title, amount, tax_scheme, outlet_code, options, msic_code, classification
+    )
+    SELECT p_property_id, charge.value->>'id', department.value->>'id', charge.value->>'title',
+      COALESCE(NULLIF(charge.value->>'amount',''),'0')::numeric, COALESCE(charge.value->>'taxScheme','SST-3'),
+      COALESCE(charge.value->>'outletCode',''), charge.value - 'id' - 'title' - 'amount' - 'taxScheme' - 'outletCode' - 'msicCode' - 'classification',
+      COALESCE(charge.value->>'msicCode',''), COALESCE(charge.value->>'classification','')
+    FROM jsonb_array_elements(COALESCE(p_state #> '{hotelMasters,departments}', '[]'::jsonb)) AS department(value)
+    CROSS JOIN LATERAL jsonb_array_elements(COALESCE(department.value->'incidentalCharges', '[]'::jsonb)) AS charge(value);
 
     INSERT INTO public.hotelx_bookings (
       property_id, reference, sort_order, guest, arrival_date, departure_date, status,

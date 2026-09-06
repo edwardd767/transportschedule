@@ -636,6 +636,7 @@ var initialRoomStatuses = [
   { code: "VR", description: "Vacant Ready", color: "#2ca9df", active: true }
 ];
 var entries = (prefix, total) => Array.from({ length: total }, (_, index) => `${prefix} ${index + 1}`);
+var charges = (total) => Array.from({ length: total }, (_, index) => ({ id: crypto.randomUUID(), title: index === 0 ? "Boat Service" : `Charge ${index + 1}`, amount: 0, taxScheme: "SST-3", outletCode: "", rateElement: false, guestAppFb: false, guestAppOnlineShop: false, posInterface: false, eventInterface: false, allowNegative: false, packageRedemption: false, kiosk: false, thirdPartyPos: false, eInvoice: false, msicCode: "55101", classification: "022" }));
 var initialDepartments = [
   ["banquet", "Banquet", 15, 1, 0],
   ["breakfast-ta", "Breakfast (TA)", 1, 1, 0],
@@ -647,7 +648,7 @@ var initialDepartments = [
   ["room-revenue", "Room Revenue", 6, 5, 0],
   ["room-service", "Room service", 1, 0, 0],
   ["sales-marketing", "Sales & Marketing", 0, 0, 13]
-].map(([id, name, charges, reasons, channels]) => ({ id: String(id), name: String(name), incidentalCharges: entries("Charge", Number(charges)), reasons: entries("Reason", Number(reasons)), salesChannels: entries("Sales Channel", Number(channels)) }));
+].map(([id, name, chargeCount, reasons, channels]) => ({ id: String(id), name: String(name), incidentalCharges: charges(Number(chargeCount)), reasons: entries("Reason", Number(reasons)), salesChannels: entries("Sales Channel", Number(channels)) }));
 var locations = Array.from({ length: 7 }, (_, index) => ({
   code: `L${index + 1}`,
   description: `Level ${index + 1}`,
@@ -1224,7 +1225,10 @@ function applyTransportAction(state, input) {
     case "departmentSave": {
       const value = list(action.value).map((item) => {
         const row = object(item);
-        return { id: text(row.id, "department ID", true, 60), name: text(row.name, "department name", true, 100), incidentalCharges: list(row.incidentalCharges).map((v) => text(v, "incidental charge", true, 100)), reasons: list(row.reasons).map((v) => text(v, "reason", true, 100)), salesChannels: list(row.salesChannels).map((v) => text(v, "sales channel", true, 100)) };
+        return { id: text(row.id, "department ID", true, 60), name: text(row.name, "department name", true, 100), incidentalCharges: list(row.incidentalCharges).map((v) => {
+          const charge = object(v);
+          return { id: text(charge.id, "charge ID", true, 100), title: text(charge.title, "charge title", true, 100), amount: number(charge.amount, "amount", 0, 999999), taxScheme: text(charge.taxScheme, "tax scheme", true, 40), outletCode: text(charge.outletCode, "outlet code", false, 40), rateElement: boolean(charge.rateElement), guestAppFb: boolean(charge.guestAppFb), guestAppOnlineShop: boolean(charge.guestAppOnlineShop), posInterface: boolean(charge.posInterface), eventInterface: boolean(charge.eventInterface), allowNegative: boolean(charge.allowNegative), packageRedemption: boolean(charge.packageRedemption), kiosk: boolean(charge.kiosk), thirdPartyPos: boolean(charge.thirdPartyPos), eInvoice: boolean(charge.eInvoice), msicCode: text(charge.msicCode, "MSIC code", false, 40), classification: text(charge.classification, "classification", false, 40) };
+        }), reasons: list(row.reasons).map((v) => text(v, "reason", true, 100)), salesChannels: list(row.salesChannels).map((v) => text(v, "sales channel", true, 100)) };
       });
       if (new Set(value.map((item) => item.id)).size !== value.length) throw new Error("Duplicate department IDs.");
       return { ...state, hotelMasters: { ...state.hotelMasters, departments: value } };
@@ -1982,6 +1986,19 @@ var schemaStatements = [
     sales_channels jsonb NOT NULL DEFAULT '[]'::jsonb,
     PRIMARY KEY (property_id, department_id)
   )`,
+  `CREATE TABLE IF NOT EXISTS public.hotelx_incidentalcharges (
+    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    charge_id text NOT NULL,
+    department_id text NOT NULL,
+    title text NOT NULL,
+    amount numeric(14,2) NOT NULL DEFAULT 0,
+    tax_scheme text NOT NULL,
+    outlet_code text NOT NULL DEFAULT '',
+    options jsonb NOT NULL DEFAULT '{}'::jsonb,
+    msic_code text NOT NULL DEFAULT '',
+    classification text NOT NULL DEFAULT '',
+    PRIMARY KEY (property_id, charge_id)
+  )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_bookings (
     property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
     reference text NOT NULL,
@@ -2136,6 +2153,7 @@ var schemaStatements = [
     DELETE FROM public.hotelx_room_master WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_roomstatus WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_department WHERE property_id = p_property_id;
+    DELETE FROM public.hotelx_incidentalcharges WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_room_type_master WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_location_master WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_transport_trip_groups WHERE property_id = p_property_id;
@@ -2203,6 +2221,16 @@ var schemaStatements = [
       COALESCE(item.value->'reasons', '[]'::jsonb), COALESCE(item.value->'salesChannels', '[]'::jsonb)
     FROM jsonb_array_elements(COALESCE(p_state #> '{hotelMasters,departments}', '[]'::jsonb))
       WITH ORDINALITY AS item(value, ordinality);
+
+    INSERT INTO public.hotelx_incidentalcharges (
+      property_id, charge_id, department_id, title, amount, tax_scheme, outlet_code, options, msic_code, classification
+    )
+    SELECT p_property_id, charge.value->>'id', department.value->>'id', charge.value->>'title',
+      COALESCE(NULLIF(charge.value->>'amount',''),'0')::numeric, COALESCE(charge.value->>'taxScheme','SST-3'),
+      COALESCE(charge.value->>'outletCode',''), charge.value - 'id' - 'title' - 'amount' - 'taxScheme' - 'outletCode' - 'msicCode' - 'classification',
+      COALESCE(charge.value->>'msicCode',''), COALESCE(charge.value->>'classification','')
+    FROM jsonb_array_elements(COALESCE(p_state #> '{hotelMasters,departments}', '[]'::jsonb)) AS department(value)
+    CROSS JOIN LATERAL jsonb_array_elements(COALESCE(department.value->'incidentalCharges', '[]'::jsonb)) AS charge(value);
 
     INSERT INTO public.hotelx_bookings (
       property_id, reference, sort_order, guest, arrival_date, departure_date, status,
