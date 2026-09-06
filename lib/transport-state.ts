@@ -30,6 +30,7 @@ import {
   type HotelMasters,
   type HotelRoom,
   type HotelRoomType,
+  type HotelDepartment,
   type RoomStatus,
 } from './hotel-masters';
 import {
@@ -81,6 +82,7 @@ export type TransportAction =
   | { type: 'hotelRoomTypeSave'; value: HotelRoomType }
   | { type: 'hotelRoomSave'; value: HotelRoom }
   | { type: 'roomStatusSave'; value: RoomStatus[] }
+  | { type: 'departmentSave'; value: HotelDepartment[] }
   | { type: 'bookingCreate'; value: Booking }
   | { type: 'bookingUpdate'; value: Booking }
   | { type: 'rateSetup'; value: RateSetupData }
@@ -110,7 +112,7 @@ export function normalizeTransportState(state: TransportState): TransportState {
     Array.isArray(state.hotelMasters.roomTypes) &&
     Array.isArray(state.hotelMasters.rooms) &&
     state.hotelMasters.roomTypes.length
-      ? { ...state.hotelMasters, roomStatuses: Array.isArray(state.hotelMasters.roomStatuses) ? state.hotelMasters.roomStatuses : structuredClone(initialHotelMasters.roomStatuses) }
+      ? { ...state.hotelMasters, roomStatuses: Array.isArray(state.hotelMasters.roomStatuses) ? state.hotelMasters.roomStatuses : structuredClone(initialHotelMasters.roomStatuses), departments: Array.isArray(state.hotelMasters.departments) ? state.hotelMasters.departments : structuredClone(initialHotelMasters.departments) }
       : structuredClone(initialHotelMasters);
   const bookings =
     Array.isArray(state.bookings) && state.bookings.length
@@ -372,6 +374,11 @@ export function applyTransportAction(
       if (new Set(value.map((item) => item.code)).size !== value.length)
         throw new Error('Duplicate room status codes.');
       return { ...state, hotelMasters: { ...state.hotelMasters, roomStatuses: value } };
+    }
+    case 'departmentSave': {
+      const value = list(action.value).map((item) => { const row = object(item); return { id: text(row.id, 'department ID', true, 60), name: text(row.name, 'department name', true, 100), incidentalCharges: list(row.incidentalCharges).map((v) => text(v, 'incidental charge', true, 100)), reasons: list(row.reasons).map((v) => text(v, 'reason', true, 100)), salesChannels: list(row.salesChannels).map((v) => text(v, 'sales channel', true, 100)) }; });
+      if (new Set(value.map((item) => item.id)).size !== value.length) throw new Error('Duplicate department IDs.');
+      return { ...state, hotelMasters: { ...state.hotelMasters, departments: value } };
     }
     case 'templates': {
       const templates = list(action.value).map(template);

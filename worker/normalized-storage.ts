@@ -185,6 +185,16 @@ const schemaStatements = [
     active boolean NOT NULL DEFAULT true,
     PRIMARY KEY (property_id, status_code)
   )`,
+  `CREATE TABLE IF NOT EXISTS public.hotelx_department (
+    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    department_id text NOT NULL,
+    sort_order integer NOT NULL,
+    department_name text NOT NULL,
+    incidental_charges jsonb NOT NULL DEFAULT '[]'::jsonb,
+    reasons jsonb NOT NULL DEFAULT '[]'::jsonb,
+    sales_channels jsonb NOT NULL DEFAULT '[]'::jsonb,
+    PRIMARY KEY (property_id, department_id)
+  )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_bookings (
     property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
     reference text NOT NULL,
@@ -338,6 +348,7 @@ const schemaStatements = [
     DELETE FROM public.hotelx_bookings WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_room_master WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_roomstatus WHERE property_id = p_property_id;
+    DELETE FROM public.hotelx_department WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_room_type_master WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_location_master WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_transport_trip_groups WHERE property_id = p_property_id;
@@ -395,6 +406,15 @@ const schemaStatements = [
       item.value->>'description', COALESCE(item.value->>'color', '#808080'),
       COALESCE((item.value->>'active')::boolean, true)
     FROM jsonb_array_elements(COALESCE(p_state #> '{hotelMasters,roomStatuses}', '[]'::jsonb))
+      WITH ORDINALITY AS item(value, ordinality);
+
+    INSERT INTO public.hotelx_department (
+      property_id, department_id, sort_order, department_name, incidental_charges, reasons, sales_channels
+    )
+    SELECT p_property_id, item.value->>'id', item.ordinality::integer,
+      item.value->>'name', COALESCE(item.value->'incidentalCharges', '[]'::jsonb),
+      COALESCE(item.value->'reasons', '[]'::jsonb), COALESCE(item.value->'salesChannels', '[]'::jsonb)
+    FROM jsonb_array_elements(COALESCE(p_state #> '{hotelMasters,departments}', '[]'::jsonb))
       WITH ORDINALITY AS item(value, ordinality);
 
     INSERT INTO public.hotelx_bookings (
@@ -759,6 +779,17 @@ const schemaStatements = [
           ) ORDER BY status.sort_order)
           FROM public.hotelx_roomstatus AS status
           WHERE status.property_id = meta.id
+        ), '[]'::jsonb),
+        'departments', COALESCE((
+          SELECT jsonb_agg(jsonb_build_object(
+            'id', department.department_id,
+            'name', department.department_name,
+            'incidentalCharges', department.incidental_charges,
+            'reasons', department.reasons,
+            'salesChannels', department.sales_channels
+          ) ORDER BY department.sort_order)
+          FROM public.hotelx_department AS department
+          WHERE department.property_id = meta.id
         ), '[]'::jsonb)
       ),
       'bookings', COALESCE((
@@ -1122,11 +1153,12 @@ export function createNormalizedTransportStorage(
         const hasBookings = Array.isArray(raw.bookings) && raw.bookings.length > 0;
         const hasRateSetup = Boolean(raw.rateSetup && Array.isArray(raw.rateSetup.seasons) && raw.rateSetup.seasons.length && Array.isArray(raw.rateSetup.elements) && raw.rateSetup.elements.length && Array.isArray(raw.rateSetup.rateTypes) && raw.rateSetup.rateTypes.length && Array.isArray(raw.rateSetup.ratePlans) && raw.rateSetup.ratePlans.length && Array.isArray(raw.rateSetup.validity));
         const hasRoomStatuses = Boolean(raw.hotelMasters && Array.isArray(raw.hotelMasters.roomStatuses) && raw.hotelMasters.roomStatuses.length);
-        if (!hasMasters || !hasBookings || !hasRateSetup || !hasRoomStatuses) {
+        const hasDepartments = Boolean(raw.hotelMasters && Array.isArray(raw.hotelMasters.departments) && raw.hotelMasters.departments.length);
+        if (!hasMasters || !hasBookings || !hasRateSetup || !hasRoomStatuses || !hasDepartments) {
           const merged: TransportState = {
             ...seed,
             ...raw,
-            hotelMasters: hasMasters ? { ...raw.hotelMasters!, roomStatuses: hasRoomStatuses ? raw.hotelMasters!.roomStatuses : seed.hotelMasters.roomStatuses } : seed.hotelMasters,
+            hotelMasters: hasMasters ? { ...raw.hotelMasters!, roomStatuses: hasRoomStatuses ? raw.hotelMasters!.roomStatuses : seed.hotelMasters.roomStatuses, departments: hasDepartments ? raw.hotelMasters!.departments : seed.hotelMasters.departments } : seed.hotelMasters,
             bookings: hasBookings ? raw.bookings! : seed.bookings,
             rateSetup: hasRateSetup ? raw.rateSetup! : seed.rateSetup,
           } as TransportState;

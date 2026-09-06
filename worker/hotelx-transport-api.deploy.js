@@ -635,6 +635,19 @@ var initialRoomStatuses = [
   { code: "VI", description: "Vacant Inspection", color: "#2f4bc4", active: false },
   { code: "VR", description: "Vacant Ready", color: "#2ca9df", active: true }
 ];
+var entries = (prefix, total) => Array.from({ length: total }, (_, index) => `${prefix} ${index + 1}`);
+var initialDepartments = [
+  ["banquet", "Banquet", 15, 1, 0],
+  ["breakfast-ta", "Breakfast (TA)", 1, 1, 0],
+  ["city-ledger", "City Ledger", 17, 0, 0],
+  ["food-beverages", "Food and Beverages", 47, 4, 0],
+  ["front-office", "Front Office", 19, 5, 0],
+  ["hotel-adjustment", "Hotel Adjustment", 1, 0, 0],
+  ["housekeeping", "Housekeeping", 8, 7, 0],
+  ["room-revenue", "Room Revenue", 6, 5, 0],
+  ["room-service", "Room service", 1, 0, 0],
+  ["sales-marketing", "Sales & Marketing", 0, 0, 13]
+].map(([id, name, charges, reasons, channels]) => ({ id: String(id), name: String(name), incidentalCharges: entries("Charge", Number(charges)), reasons: entries("Reason", Number(reasons)), salesChannels: entries("Sales Channel", Number(channels)) }));
 var locations = Array.from({ length: 7 }, (_, index) => ({
   code: `L${index + 1}`,
   description: `Level ${index + 1}`,
@@ -703,7 +716,8 @@ var initialHotelMasters = {
     ...roomsFor(roomTypes[1], 5, 501),
     ...roomsFor(roomTypes[2], 3, 301)
   ],
-  roomStatuses: initialRoomStatuses
+  roomStatuses: initialRoomStatuses,
+  departments: initialDepartments
 };
 var initialBookings = sampleBookings;
 
@@ -977,7 +991,7 @@ function newTransportState() {
   });
 }
 function normalizeTransportState(state) {
-  const hotelMasters = state.hotelMasters && Array.isArray(state.hotelMasters.locations) && Array.isArray(state.hotelMasters.roomTypes) && Array.isArray(state.hotelMasters.rooms) && state.hotelMasters.roomTypes.length ? { ...state.hotelMasters, roomStatuses: Array.isArray(state.hotelMasters.roomStatuses) ? state.hotelMasters.roomStatuses : structuredClone(initialHotelMasters.roomStatuses) } : structuredClone(initialHotelMasters);
+  const hotelMasters = state.hotelMasters && Array.isArray(state.hotelMasters.locations) && Array.isArray(state.hotelMasters.roomTypes) && Array.isArray(state.hotelMasters.rooms) && state.hotelMasters.roomTypes.length ? { ...state.hotelMasters, roomStatuses: Array.isArray(state.hotelMasters.roomStatuses) ? state.hotelMasters.roomStatuses : structuredClone(initialHotelMasters.roomStatuses), departments: Array.isArray(state.hotelMasters.departments) ? state.hotelMasters.departments : structuredClone(initialHotelMasters.departments) } : structuredClone(initialHotelMasters);
   const bookings = Array.isArray(state.bookings) && state.bookings.length ? state.bookings : structuredClone(initialBookings);
   const rateSetup2 = state.rateSetup && Array.isArray(state.rateSetup.seasons) && state.rateSetup.seasons.length && state.rateSetup.calendar && typeof state.rateSetup.calendar === "object" && Array.isArray(state.rateSetup.elements) && state.rateSetup.elements.length && Array.isArray(state.rateSetup.rateTypes) && state.rateSetup.rateTypes.length && Array.isArray(state.rateSetup.ratePlans) && state.rateSetup.ratePlans.length && Array.isArray(state.rateSetup.validity) ? state.rateSetup : structuredClone(initialRateSetupData);
   return {
@@ -1205,6 +1219,14 @@ function applyTransportAction(state, input) {
       if (new Set(value.map((item) => item.code)).size !== value.length)
         throw new Error("Duplicate room status codes.");
       return { ...state, hotelMasters: { ...state.hotelMasters, roomStatuses: value } };
+    }
+    case "departmentSave": {
+      const value = list(action.value).map((item) => {
+        const row = object(item);
+        return { id: text(row.id, "department ID", true, 60), name: text(row.name, "department name", true, 100), incidentalCharges: list(row.incidentalCharges).map((v) => text(v, "incidental charge", true, 100)), reasons: list(row.reasons).map((v) => text(v, "reason", true, 100)), salesChannels: list(row.salesChannels).map((v) => text(v, "sales channel", true, 100)) };
+      });
+      if (new Set(value.map((item) => item.id)).size !== value.length) throw new Error("Duplicate department IDs.");
+      return { ...state, hotelMasters: { ...state.hotelMasters, departments: value } };
     }
     case "templates": {
       const templates = list(action.value).map(template);
@@ -1919,6 +1941,16 @@ var schemaStatements = [
     active boolean NOT NULL DEFAULT true,
     PRIMARY KEY (property_id, status_code)
   )`,
+  `CREATE TABLE IF NOT EXISTS public.hotelx_department (
+    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    department_id text NOT NULL,
+    sort_order integer NOT NULL,
+    department_name text NOT NULL,
+    incidental_charges jsonb NOT NULL DEFAULT '[]'::jsonb,
+    reasons jsonb NOT NULL DEFAULT '[]'::jsonb,
+    sales_channels jsonb NOT NULL DEFAULT '[]'::jsonb,
+    PRIMARY KEY (property_id, department_id)
+  )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_bookings (
     property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
     reference text NOT NULL,
@@ -2072,6 +2104,7 @@ var schemaStatements = [
     DELETE FROM public.hotelx_bookings WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_room_master WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_roomstatus WHERE property_id = p_property_id;
+    DELETE FROM public.hotelx_department WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_room_type_master WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_location_master WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_transport_trip_groups WHERE property_id = p_property_id;
@@ -2129,6 +2162,15 @@ var schemaStatements = [
       item.value->>'description', COALESCE(item.value->>'color', '#808080'),
       COALESCE((item.value->>'active')::boolean, true)
     FROM jsonb_array_elements(COALESCE(p_state #> '{hotelMasters,roomStatuses}', '[]'::jsonb))
+      WITH ORDINALITY AS item(value, ordinality);
+
+    INSERT INTO public.hotelx_department (
+      property_id, department_id, sort_order, department_name, incidental_charges, reasons, sales_channels
+    )
+    SELECT p_property_id, item.value->>'id', item.ordinality::integer,
+      item.value->>'name', COALESCE(item.value->'incidentalCharges', '[]'::jsonb),
+      COALESCE(item.value->'reasons', '[]'::jsonb), COALESCE(item.value->'salesChannels', '[]'::jsonb)
+    FROM jsonb_array_elements(COALESCE(p_state #> '{hotelMasters,departments}', '[]'::jsonb))
       WITH ORDINALITY AS item(value, ordinality);
 
     INSERT INTO public.hotelx_bookings (
@@ -2493,6 +2535,17 @@ var schemaStatements = [
           ) ORDER BY status.sort_order)
           FROM public.hotelx_roomstatus AS status
           WHERE status.property_id = meta.id
+        ), '[]'::jsonb),
+        'departments', COALESCE((
+          SELECT jsonb_agg(jsonb_build_object(
+            'id', department.department_id,
+            'name', department.department_name,
+            'incidentalCharges', department.incidental_charges,
+            'reasons', department.reasons,
+            'salesChannels', department.sales_channels
+          ) ORDER BY department.sort_order)
+          FROM public.hotelx_department AS department
+          WHERE department.property_id = meta.id
         ), '[]'::jsonb)
       ),
       'bookings', COALESCE((
@@ -2816,11 +2869,12 @@ function createNormalizedTransportStorage(query) {
         const hasBookings = Array.isArray(raw.bookings) && raw.bookings.length > 0;
         const hasRateSetup = Boolean(raw.rateSetup && Array.isArray(raw.rateSetup.seasons) && raw.rateSetup.seasons.length && Array.isArray(raw.rateSetup.elements) && raw.rateSetup.elements.length && Array.isArray(raw.rateSetup.rateTypes) && raw.rateSetup.rateTypes.length && Array.isArray(raw.rateSetup.ratePlans) && raw.rateSetup.ratePlans.length && Array.isArray(raw.rateSetup.validity));
         const hasRoomStatuses = Boolean(raw.hotelMasters && Array.isArray(raw.hotelMasters.roomStatuses) && raw.hotelMasters.roomStatuses.length);
-        if (!hasMasters || !hasBookings || !hasRateSetup || !hasRoomStatuses) {
+        const hasDepartments = Boolean(raw.hotelMasters && Array.isArray(raw.hotelMasters.departments) && raw.hotelMasters.departments.length);
+        if (!hasMasters || !hasBookings || !hasRateSetup || !hasRoomStatuses || !hasDepartments) {
           const merged = {
             ...seed,
             ...raw,
-            hotelMasters: hasMasters ? { ...raw.hotelMasters, roomStatuses: hasRoomStatuses ? raw.hotelMasters.roomStatuses : seed.hotelMasters.roomStatuses } : seed.hotelMasters,
+            hotelMasters: hasMasters ? { ...raw.hotelMasters, roomStatuses: hasRoomStatuses ? raw.hotelMasters.roomStatuses : seed.hotelMasters.roomStatuses, departments: hasDepartments ? raw.hotelMasters.departments : seed.hotelMasters.departments } : seed.hotelMasters,
             bookings: hasBookings ? raw.bookings : seed.bookings,
             rateSetup: hasRateSetup ? raw.rateSetup : seed.rateSetup
           };
