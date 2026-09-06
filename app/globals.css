@@ -4294,7 +4294,7 @@ p {
 .booking-check-line input,.booking-tax-row input { width:19px; height:19px; accent-color:#ff9200; }
 .booking-phone-line { display:flex; align-items:center; gap:10px; }
 .booking-phone-line input { flex:1; min-width:0; border:0; outline:0; background:transparent; }
-.booking-choice-field .hotel-select { min-height:38px; height:38px; border:0 !important; border-bottom:1px solid #aaa !important; border-radius:0 !important; padding:0 !important; background:transparent !important; box-shadow:none !important; color:#181818; font-size:18px; }
+.booking-choice-field .hotel-select { width:100% !important; min-height:38px; height:38px; border:0 !important; border-bottom:1px solid #aaa !important; border-radius:0 !important; padding:0 !important; background:transparent !important; box-shadow:none !important; color:#181818; font-size:18px; }
 .booking-tax-row { display:flex; flex-wrap:wrap; gap:52px; padding:14px 18px 10px; }
 .booking-tax-row label { display:flex; align-items:center; gap:12px; font-size:18px; color:#111; }
 .booking-occupancy-entry { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; padding:0 18px 24px; }
