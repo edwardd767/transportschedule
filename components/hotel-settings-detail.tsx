@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import { RateSetupModule, type RateSetupSection } from '@/components/rate-setup';
 import { initialRateSetupData, type RateSetupData } from '@/lib/rate-setup-data';
+import { RoomStatusModule } from '@/components/room-status-module';
+import type { RoomStatus } from '@/lib/hotel-masters';
 
 export type HotelSettingsDetailKind =
   | 'hotelSetup'
@@ -64,6 +66,8 @@ export function HotelSettingsDetail({
   onRateSectionChange = () => {},
   rateData = initialRateSetupData,
   onRateDataChange = () => {},
+  roomStatuses = [],
+  onRoomStatusesChange = () => {},
 }: {
   kind: HotelSettingsDetailKind;
   onBack: () => void;
@@ -71,6 +75,8 @@ export function HotelSettingsDetail({
   onRateSectionChange?: (section: RateSetupSection | null) => void;
   rateData?: RateSetupData;
   onRateDataChange?: (value: RateSetupData) => void | Promise<void>;
+  roomStatuses?: RoomStatus[];
+  onRoomStatusesChange?: (value: RoomStatus[]) => void | Promise<void>;
 }) {
   const page = pages[kind];
   const Icon = page.icon;
@@ -87,6 +93,7 @@ export function HotelSettingsDetail({
       </section>
     );
   }
+  if (kind === 'roomStatus') return <RoomStatusModule statuses={roomStatuses} onChange={onRoomStatusesChange} onBack={onBack} />;
 
   return (
     <section className="master-page" aria-label={page.title}>

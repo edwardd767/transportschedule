@@ -31,12 +31,24 @@ export type HotelRoom = {
   keycardRoomMapping: string;
   active: boolean;
 };
+export type RoomStatus = { code: string; description: string; color: string; active: boolean };
 
 export type HotelMasters = {
   locations: HotelLocation[];
   roomTypes: HotelRoomType[];
   rooms: HotelRoom[];
+  roomStatuses: RoomStatus[];
 };
+export const initialRoomStatuses: RoomStatus[] = [
+  { code: 'OC', description: 'Occupied Clean', color: '#26743a', active: true },
+  { code: 'OD', description: 'Occupied Dirty', color: '#a5001b', active: true },
+  { code: 'OOI', description: 'Out of Inventory', color: '#cfcfcf', active: true },
+  { code: 'OOO', description: 'Out of Order', color: '#555555', active: true },
+  { code: 'VC', description: 'Vacant Clean', color: '#80c83b', active: true },
+  { code: 'VD', description: 'Vacant Dirty', color: '#e4002b', active: true },
+  { code: 'VI', description: 'Vacant Inspection', color: '#2f4bc4', active: false },
+  { code: 'VR', description: 'Vacant Ready', color: '#2ca9df', active: true },
+];
 
 const locations: HotelLocation[] = Array.from({ length: 7 }, (_, index) => ({
   code: `L${index + 1}`,
@@ -113,6 +125,7 @@ export const initialHotelMasters: HotelMasters = {
     ...roomsFor(roomTypes[1], 5, 501),
     ...roomsFor(roomTypes[2], 3, 301),
   ],
+  roomStatuses: initialRoomStatuses,
 };
 
 export const initialBookings: Booking[] = sampleBookings;

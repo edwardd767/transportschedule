@@ -30,6 +30,7 @@ import {
   type HotelMasters,
   type HotelRoom,
   type HotelRoomType,
+  type RoomStatus,
 } from './hotel-masters';
 import {
   addBookingTransportLeg,
@@ -79,6 +80,7 @@ export type TransportAction =
   | { type: 'hotelLocationSave'; value: HotelLocation }
   | { type: 'hotelRoomTypeSave'; value: HotelRoomType }
   | { type: 'hotelRoomSave'; value: HotelRoom }
+  | { type: 'roomStatusSave'; value: RoomStatus[] }
   | { type: 'bookingCreate'; value: Booking }
   | { type: 'bookingUpdate'; value: Booking }
   | { type: 'rateSetup'; value: RateSetupData }
@@ -108,7 +110,7 @@ export function normalizeTransportState(state: TransportState): TransportState {
     Array.isArray(state.hotelMasters.roomTypes) &&
     Array.isArray(state.hotelMasters.rooms) &&
     state.hotelMasters.roomTypes.length
-      ? state.hotelMasters
+      ? { ...state.hotelMasters, roomStatuses: Array.isArray(state.hotelMasters.roomStatuses) ? state.hotelMasters.roomStatuses : structuredClone(initialHotelMasters.roomStatuses) }
       : structuredClone(initialHotelMasters);
   const bookings =
     Array.isArray(state.bookings) && state.bookings.length
@@ -365,6 +367,12 @@ export function applyTransportAction(
   switch (action.type) {
     case 'setup':
       return { ...state, setup: setup(action.value) };
+    case 'roomStatusSave': {
+      const value = list(action.value).map((item) => { const row = object(item); return { code: text(row.code, 'status code', true, 20).toUpperCase(), description: text(row.description, 'room status', true, 100), color: text(row.color, 'status color', true, 20), active: boolean(row.active) }; });
+      if (new Set(value.map((item) => item.code)).size !== value.length)
+        throw new Error('Duplicate room status codes.');
+      return { ...state, hotelMasters: { ...state.hotelMasters, roomStatuses: value } };
+    }
     case 'templates': {
       const templates = list(action.value).map(template);
       unique(templates);
