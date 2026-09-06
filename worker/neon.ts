@@ -13,14 +13,23 @@ export type Query = (
   params: string[],
 ) => Promise<string[][]>;
 
-function allowed(url: URL, host: string) {
+function nonPoolerHost(host: string) {
   const parts = host.split('.');
   parts[0] = parts[0].replace(/-pooler$/, '');
+  return parts.join('.');
+}
+
+function apiHost(host: string) {
+  const parts = host.split('.');
+  parts[0] = 'api';
+  return parts.join('.');
+}
+
+function allowed(url: URL, host: string) {
+  const direct = nonPoolerHost(host);
   const api = /^api(?:\.c-\d+)?\.[a-z0-9-]+\.(?:aws|azure)\.neon\.tech$/i;
   return (
-    (url.hostname === host ||
-      url.hostname === parts.join('.') ||
-      api.test(url.hostname)) &&
+    (url.hostname === host || url.hostname === direct || api.test(url.hostname)) &&
     url.protocol === 'https:' &&
     !url.port &&
     !url.username &&
@@ -31,37 +40,20 @@ function allowed(url: URL, host: string) {
   );
 }
 
-// Only server-owned, parameterized statements call this function.
-export const queryNeon: Query = async (connection, sql, params) => {
-  let database: URL;
-  try {
-    database = new URL(connection);
-    if (
-      !['postgres:', 'postgresql:'].includes(database.protocol) ||
-      !/^ep-[a-z0-9-]+(?:\.[a-z0-9-]+)+\.neon\.tech$/i.test(
-        database.hostname,
-      ) ||
-      !database.username ||
-      !database.password ||
-      /[^\x21-\x7e]/.test(connection)
-    )
-      throw new Error();
-  } catch {
-    throw new ApiError(
-      'DATABASE_CONFIGURATION',
-      'The database connection secret needs attention.',
-      503,
-    );
-  }
-  const labels = database.hostname.split('.');
-  labels[0] = 'api';
-  let url = new URL('https://' + labels.join('.') + '/sql');
+async function executeHttpQuery(
+  endpoint: URL,
+  databaseHost: string,
+  connection: string,
+  sql: string,
+  params: string[],
+) {
+  let url = endpoint;
   const seen = new Set<string>();
   const abort = new AbortController();
   const timeout = setTimeout(() => abort.abort(), 15000);
   try {
     for (let hop = 0; hop <= 3; hop++) {
-      if (!allowed(url, database.hostname) || seen.has(url.href))
+      if (!allowed(url, databaseHost) || seen.has(url.href))
         throw new ApiError(
           'DATABASE_REDIRECT',
           'The database returned an unsupported redirect.',
@@ -126,4 +118,59 @@ export const queryNeon: Query = async (connection, sql, params) => {
   } finally {
     clearTimeout(timeout);
   }
+}
+
+// Only server-owned, parameterized statements call this function.
+export const queryNeon: Query = async (connection, sql, params) => {
+  let database: URL;
+  try {
+    database = new URL(connection);
+    if (
+      !['postgres:', 'postgresql:'].includes(database.protocol) ||
+      !/^ep-[a-z0-9-]+(?:\.[a-z0-9-]+)+\.neon\.tech$/i.test(
+        database.hostname,
+      ) ||
+      !database.username ||
+      !database.password ||
+      /[^\x21-\x7e]/.test(connection)
+    )
+      throw new Error();
+  } catch {
+    throw new ApiError(
+      'DATABASE_CONFIGURATION',
+      'The database connection secret needs attention.',
+      503,
+    );
+  }
+
+  // Neon HTTP queries now use the database endpoint hostname directly.
+  // Keep the regional api.* endpoint as a compatibility fallback for older routing.
+  const endpoints = [
+    new URL(`https://${nonPoolerHost(database.hostname)}/sql`),
+    new URL(`https://${apiHost(database.hostname)}/sql`),
+  ];
+  let lastError: unknown;
+  for (const endpoint of endpoints) {
+    try {
+      return await executeHttpQuery(
+        endpoint,
+        database.hostname,
+        connection,
+        sql,
+        params,
+      );
+    } catch (error) {
+      lastError = error;
+      if (
+        error instanceof ApiError &&
+        !['DATABASE_CONNECTION', 'DATABASE_TIMEOUT', 'DATABASE_REDIRECT'].includes(error.code)
+      )
+        throw error;
+    }
+  }
+  if (lastError instanceof ApiError) throw lastError;
+  throw new ApiError(
+    'DATABASE_CONNECTION',
+    'The database connection was interrupted. Reload saved data before retrying a change.',
+  );
 };
