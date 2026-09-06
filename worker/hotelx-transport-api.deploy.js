@@ -1375,7 +1375,22 @@ function applyTransportAction(state, input) {
         const master = normalized.hotelMasters.roomTypes.find((item) => item.code === code && item.active);
         if (!master) throw new Error(`Room Type ${code} is not active in Hotel Settings.`);
         const count = number(room.count, "number of rooms", 1, master.totalRoom || 1);
-        return { code, count };
+        const finite = (value2, fallback = 0) => typeof value2 === "number" && Number.isFinite(value2) && value2 >= 0 ? value2 : fallback;
+        return {
+          code,
+          count,
+          adults: typeof room.adults === "number" ? number(room.adults, "number of adults", 1, 1e3) : void 0,
+          children: typeof room.children === "number" ? number(room.children, "number of children", 0, 1e3) : void 0,
+          infants: typeof room.infants === "number" ? number(room.infants, "number of infants", 0, 1e3) : void 0,
+          rateCode: typeof room.rateCode === "string" ? room.rateCode.slice(0, 40) : void 0,
+          roomRate: finite(room.roomRate),
+          promoCode: typeof room.promoCode === "string" ? room.promoCode.slice(0, 40) : void 0,
+          discountPerNight: finite(room.discountPerNight),
+          subtotal: finite(room.subtotal),
+          discount: finite(room.discount),
+          tax: finite(room.tax),
+          total: finite(room.total)
+        };
       });
       const guests = number(v.guests, "number of guests", 1, 1e3);
       const guestCapacity = bookingRooms.reduce((total, item) => {
@@ -1396,9 +1411,91 @@ function applyTransportAction(state, input) {
         assignedRooms: 0,
         checkedInGuests: 0,
         guests,
-        amount: v.amount
+        amount: v.amount,
+        groupName: typeof v.groupName === "string" ? v.groupName.slice(0, 160) : "",
+        phone: typeof v.phone === "string" ? v.phone.slice(0, 80) : "",
+        accountName: typeof v.accountName === "string" ? v.accountName.slice(0, 160) : "",
+        creditLimit: typeof v.creditLimit === "number" && Number.isFinite(v.creditLimit) && v.creditLimit >= 0 ? v.creditLimit : 0,
+        printRate: typeof v.printRate === "boolean" ? v.printRate : true,
+        stateTax: typeof v.stateTax === "boolean" ? v.stateTax : true,
+        tourismTax: typeof v.tourismTax === "boolean" ? v.tourismTax : true,
+        email: typeof v.email === "string" ? v.email.slice(0, 200) : "",
+        salesChannel: typeof v.salesChannel === "string" ? v.salesChannel.slice(0, 80) : "Direct",
+        source: typeof v.source === "string" ? v.source.slice(0, 80) : "Booking",
+        segment: typeof v.segment === "string" ? v.segment.slice(0, 80) : "Leisure",
+        referenceNo: typeof v.referenceNo === "string" ? v.referenceNo.slice(0, 100) : ""
       };
       return { ...normalized, bookings: [value, ...normalized.bookings] };
+    }
+    case "bookingUpdate": {
+      const normalized = normalizeTransportState(state);
+      const v = object(action.value);
+      const reference = text(v.reference, "booking reference", true, 30).trim().toUpperCase();
+      const existing = normalized.bookings.find((item) => item.reference === reference);
+      if (!existing) throw new Error("This booking no longer exists.");
+      const arrival = text(v.arrival, "arrival date", true, 10);
+      const departureDate = text(v.departure, "departure date", true, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(arrival) || !/^\d{4}-\d{2}-\d{2}$/.test(departureDate) || departureDate <= arrival)
+        throw new Error("Departure date must be after the arrival date.");
+      const bookingRooms = list(v.rooms, 10).map((entry) => {
+        const room = object(entry);
+        const code = text(room.code, "room type", true, 20).trim().toUpperCase();
+        const master = normalized.hotelMasters.roomTypes.find((item) => item.code === code && item.active);
+        if (!master) throw new Error(`Room Type ${code} is not active in Hotel Settings.`);
+        const count = number(room.count, "number of rooms", 1, master.totalRoom || 1);
+        const finite = (value2, fallback = 0) => typeof value2 === "number" && Number.isFinite(value2) && value2 >= 0 ? value2 : fallback;
+        const adults = typeof room.adults === "number" ? number(room.adults, "number of adults", 1, 1e3) : void 0;
+        const children = typeof room.children === "number" ? number(room.children, "number of children", 0, 1e3) : void 0;
+        const infants = typeof room.infants === "number" ? number(room.infants, "number of infants", 0, 1e3) : void 0;
+        if ((adults ?? 1) + (children ?? 0) + (infants ?? 0) > master.maxGuest * count)
+          throw new Error(`Maximum guest capacity for ${count} ${code} room(s) is ${master.maxGuest * count}.`);
+        return {
+          code,
+          count,
+          adults,
+          children,
+          infants,
+          rateCode: typeof room.rateCode === "string" ? room.rateCode.slice(0, 40) : void 0,
+          roomRate: finite(room.roomRate),
+          promoCode: typeof room.promoCode === "string" ? room.promoCode.slice(0, 40) : void 0,
+          discountPerNight: finite(room.discountPerNight),
+          subtotal: finite(room.subtotal),
+          discount: finite(room.discount),
+          tax: finite(room.tax),
+          total: finite(room.total)
+        };
+      });
+      const guests = number(v.guests, "number of guests", 1, 1e3);
+      const guestCapacity = bookingRooms.reduce((total, item) => {
+        const master = normalized.hotelMasters.roomTypes.find((type) => type.code === item.code);
+        return total + master.maxGuest * item.count;
+      }, 0);
+      if (guests > guestCapacity) throw new Error(`Maximum guest capacity for the selected room(s) is ${guestCapacity}.`);
+      if (typeof v.amount !== "number" || !Number.isFinite(v.amount) || v.amount < 0 || v.amount > 1e8)
+        throw new Error("Enter a valid booking amount.");
+      const value = {
+        ...existing,
+        reference,
+        guest: text(v.guest, "guest name", true, 160).trim(),
+        arrival,
+        departure: departureDate,
+        rooms: bookingRooms,
+        guests,
+        amount: v.amount,
+        groupName: typeof v.groupName === "string" ? v.groupName.slice(0, 160) : "",
+        phone: typeof v.phone === "string" ? v.phone.slice(0, 80) : "",
+        accountName: typeof v.accountName === "string" ? v.accountName.slice(0, 160) : "",
+        creditLimit: typeof v.creditLimit === "number" && Number.isFinite(v.creditLimit) && v.creditLimit >= 0 ? v.creditLimit : 0,
+        printRate: typeof v.printRate === "boolean" ? v.printRate : true,
+        stateTax: typeof v.stateTax === "boolean" ? v.stateTax : true,
+        tourismTax: typeof v.tourismTax === "boolean" ? v.tourismTax : true,
+        email: typeof v.email === "string" ? v.email.slice(0, 200) : "",
+        salesChannel: typeof v.salesChannel === "string" ? v.salesChannel.slice(0, 80) : "Direct",
+        source: typeof v.source === "string" ? v.source.slice(0, 80) : "Booking",
+        segment: typeof v.segment === "string" ? v.segment.slice(0, 80) : "Leisure",
+        referenceNo: typeof v.referenceNo === "string" ? v.referenceNo.slice(0, 100) : ""
+      };
+      return { ...normalized, bookings: normalized.bookings.map((item) => item.reference === reference ? value : item) };
     }
     case "rateSetup": {
       return { ...normalizeTransportState(state), rateSetup: rateSetup(action.value) };
@@ -1784,6 +1881,29 @@ var schemaStatements = [
     FOREIGN KEY (property_id, booking_reference) REFERENCES public.hotelx_bookings(property_id, reference) ON DELETE CASCADE,
     FOREIGN KEY (property_id, room_type_code) REFERENCES public.hotelx_room_type_master(property_id, code)
   )`,
+  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS group_name text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS phone text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS account_name text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS credit_limit numeric(14,2) NOT NULL DEFAULT 0`,
+  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS print_rate boolean NOT NULL DEFAULT true`,
+  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS state_tax boolean NOT NULL DEFAULT true`,
+  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS tourism_tax boolean NOT NULL DEFAULT true`,
+  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS email text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS sales_channel text NOT NULL DEFAULT 'Direct'`,
+  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS source text NOT NULL DEFAULT 'Booking'`,
+  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS segment text NOT NULL DEFAULT 'Leisure'`,
+  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS reference_no text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS adults integer NOT NULL DEFAULT 1`,
+  `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS children integer NOT NULL DEFAULT 0`,
+  `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS infants integer NOT NULL DEFAULT 0`,
+  `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS rate_code text NOT NULL DEFAULT 'BAR'`,
+  `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS room_rate numeric(14,2) NOT NULL DEFAULT 0`,
+  `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS promo_code text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS discount_per_night numeric(14,2) NOT NULL DEFAULT 0`,
+  `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS subtotal numeric(14,2) NOT NULL DEFAULT 0`,
+  `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS discount numeric(14,2) NOT NULL DEFAULT 0`,
+  `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS tax numeric(14,2) NOT NULL DEFAULT 0`,
+  `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS total numeric(14,2) NOT NULL DEFAULT 0`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_season_master (
     property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
     id text NOT NULL,
@@ -1940,7 +2060,9 @@ var schemaStatements = [
 
     INSERT INTO public.hotelx_bookings (
       property_id, reference, sort_order, guest, arrival_date, departure_date, status,
-      assigned_rooms, checked_in_guests, guests, amount, highlight_dates
+      assigned_rooms, checked_in_guests, guests, amount, highlight_dates,
+      group_name, phone, account_name, credit_limit, print_rate, state_tax, tourism_tax,
+      email, sales_channel, source, segment, reference_no
     )
     SELECT p_property_id, item.value->>'reference', item.ordinality::integer,
       item.value->>'guest', item.value->>'arrival', item.value->>'departure',
@@ -1949,15 +2071,29 @@ var schemaStatements = [
       COALESCE(NULLIF(item.value->>'checkedInGuests', ''), '0')::integer,
       COALESCE(NULLIF(item.value->>'guests', ''), '1')::integer,
       COALESCE(NULLIF(item.value->>'amount', ''), '0')::numeric,
-      COALESCE((item.value->>'highlightDates')::boolean, false)
+      COALESCE((item.value->>'highlightDates')::boolean, false),
+      COALESCE(item.value->>'groupName', ''), COALESCE(item.value->>'phone', ''),
+      COALESCE(item.value->>'accountName', ''), COALESCE(NULLIF(item.value->>'creditLimit', ''), '0')::numeric,
+      COALESCE((item.value->>'printRate')::boolean, true), COALESCE((item.value->>'stateTax')::boolean, true),
+      COALESCE((item.value->>'tourismTax')::boolean, true), COALESCE(item.value->>'email', ''),
+      COALESCE(item.value->>'salesChannel', 'Direct'), COALESCE(item.value->>'source', 'Booking'),
+      COALESCE(item.value->>'segment', 'Leisure'), COALESCE(item.value->>'referenceNo', '')
     FROM jsonb_array_elements(COALESCE(p_state->'bookings', '[]'::jsonb))
       WITH ORDINALITY AS item(value, ordinality);
 
     INSERT INTO public.hotelx_booking_rooms (
-      property_id, booking_reference, room_type_code, sort_order, room_count
+      property_id, booking_reference, room_type_code, sort_order, room_count,
+      adults, children, infants, rate_code, room_rate, promo_code, discount_per_night,
+      subtotal, discount, tax, total
     )
     SELECT p_property_id, booking.value->>'reference', room.value->>'code',
-      room.ordinality::integer, COALESCE(NULLIF(room.value->>'count', ''), '1')::integer
+      room.ordinality::integer, COALESCE(NULLIF(room.value->>'count', ''), '1')::integer,
+      COALESCE(NULLIF(room.value->>'adults', ''), '1')::integer, COALESCE(NULLIF(room.value->>'children', ''), '0')::integer,
+      COALESCE(NULLIF(room.value->>'infants', ''), '0')::integer, COALESCE(room.value->>'rateCode', 'BAR'),
+      COALESCE(NULLIF(room.value->>'roomRate', ''), '0')::numeric, COALESCE(room.value->>'promoCode', ''),
+      COALESCE(NULLIF(room.value->>'discountPerNight', ''), '0')::numeric, COALESCE(NULLIF(room.value->>'subtotal', ''), '0')::numeric,
+      COALESCE(NULLIF(room.value->>'discount', ''), '0')::numeric, COALESCE(NULLIF(room.value->>'tax', ''), '0')::numeric,
+      COALESCE(NULLIF(room.value->>'total', ''), '0')::numeric
     FROM jsonb_array_elements(COALESCE(p_state->'bookings', '[]'::jsonb)) AS booking(value)
     CROSS JOIN LATERAL jsonb_array_elements(COALESCE(booking.value->'rooms', '[]'::jsonb))
       WITH ORDINALITY AS room(value, ordinality);
@@ -2284,7 +2420,12 @@ var schemaStatements = [
           'departure', booking.departure_date,
           'status', booking.status,
           'rooms', COALESCE((
-            SELECT jsonb_agg(jsonb_build_object('code', br.room_type_code, 'count', br.room_count) ORDER BY br.sort_order)
+            SELECT jsonb_agg(jsonb_build_object(
+              'code', br.room_type_code, 'count', br.room_count, 'adults', br.adults, 'children', br.children, 'infants', br.infants,
+              'rateCode', br.rate_code, 'roomRate', br.room_rate::double precision, 'promoCode', br.promo_code,
+              'discountPerNight', br.discount_per_night::double precision, 'subtotal', br.subtotal::double precision,
+              'discount', br.discount::double precision, 'tax', br.tax::double precision, 'total', br.total::double precision
+            ) ORDER BY br.sort_order)
             FROM public.hotelx_booking_rooms AS br
             WHERE br.property_id = booking.property_id AND br.booking_reference = booking.reference
           ), '[]'::jsonb),
@@ -2292,7 +2433,11 @@ var schemaStatements = [
           'checkedInGuests', booking.checked_in_guests,
           'guests', booking.guests,
           'amount', booking.amount::double precision,
-          'highlightDates', booking.highlight_dates
+          'highlightDates', booking.highlight_dates,
+          'groupName', booking.group_name, 'phone', booking.phone, 'accountName', booking.account_name,
+          'creditLimit', booking.credit_limit::double precision, 'printRate', booking.print_rate, 'stateTax', booking.state_tax,
+          'tourismTax', booking.tourism_tax, 'email', booking.email, 'salesChannel', booking.sales_channel,
+          'source', booking.source, 'segment', booking.segment, 'referenceNo', booking.reference_no
         ) ORDER BY booking.sort_order)
         FROM public.hotelx_bookings AS booking
         WHERE booking.property_id = meta.id
