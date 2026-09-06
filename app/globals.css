@@ -3362,6 +3362,20 @@ p {
   font-size: 13px;
   color: #7c8594;
 }
+.transport-edit-button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #4e5257;
+  flex-shrink: 0;
+}
+.transport-edit-button:hover { background: #f4f4f5; color: #222; }
 
 .billing-schedule { display: grid; gap: 12px; align-content: start; }
 .billing-schedule > .secondary-button { justify-self: start; }

@@ -197,9 +197,9 @@ export function BookingTransfers({
                     {leg.incidentalCharge.chargeTitle} · Adult {Number(leg.incidentalCharge.adultRate || 0).toFixed(2)} · Child {Number(leg.incidentalCharge.childRate || 0).toFixed(2)} · Infant {Number(leg.incidentalCharge.infantRate || 0).toFixed(2)}
                   </small>
                 )}
-                {leg.incidentalCharge?.chargeId && <button type="button" className="edit-button" aria-label={`Edit charges for ${leg.serviceName}`} onClick={() => setEditingLeg(leg)}><Pencil size={16}/><span>Edit charges</span></button>}
                 {leg.remarks && <small>{leg.remarks}</small>}
               </span>
+              {leg.incidentalCharge?.chargeId && <button type="button" className="transport-edit-button" aria-label={`Edit charges for ${leg.serviceName}`} title="Edit posted charges" onClick={() => setEditingLeg(leg)}><Pencil size={16}/></button>}
               <button
                 type="button"
                 className="transport-remove-button"
