@@ -54,6 +54,14 @@ export const initialRateSeasons: RateSeason[] = [
   { id: 'public-holidays', name: 'Public Holidays', color: '#2bb3a6', active: true },
 ];
 
+const initialRateElementIds = [
+  'fab777fa-7181-4b7c-9829-ed115152a0e1', '8f9358c9-58dc-4fba-be17-81c8c960bec4', '2927a65d-9737-47d4-a2d4-8f39dd33a232', '0756f229-3f94-4f6e-bc98-d1615e10038a', 'c8eeabfd-de23-4dee-ba34-65f4a2238e28',
+  'edb73a4c-cd96-4e7b-8f50-a375be52e806', '515a379b-24dc-4732-bb4a-4c5a677bbcf4', '52011b11-db65-4b78-a83b-8517a7397932', 'b14d8974-f269-40dd-8a20-274dc9652898', '032d4a59-84e7-4777-bbcb-d656dba7ebba',
+  'd3c5e31d-8eab-44c2-a677-3c6e2ddb115e', 'a0fbfbb2-c66c-4bd9-88b1-23d569f32341', 'fd6fa3f5-9490-42a0-81fc-28884ccc182b', 'f03b8f65-219b-4983-95f3-6f9afdd375e1', '3be482fd-481d-48db-8f96-a41c90887cda',
+  '906d01cc-04cd-47e2-b16c-be98fde9044d', '9db17fc3-d9c0-4625-b289-de9940ff57a1', 'd0fb958d-de84-42e4-9f38-0b7495471589', 'bf42a61e-6b69-4045-b6bb-30d093bd7f52', '1bdc30dc-c1fb-4733-bb11-92c58a5891ee',
+  '3a54db56-ae07-462c-84b5-31137683681b', 'bd7d02d2-8c89-4523-a64f-beae3d0f4d6a', 'e35707c6-1666-4d8a-840e-a937561f7bc4', '3edbbadb-1251-4d84-bded-e16460abd4bc', 'e699c744-5c6c-4b4f-a761-364f0161bb36',
+];
+
 export const initialRateElements: RateElementItem[] = [
   ['Banquet Drink', 'Per Person', 1, 4, 2],
   ['Banquet Food', 'Per Person', 1, 2, 10],
@@ -81,7 +89,7 @@ export const initialRateElements: RateElementItem[] = [
   ['Romantic Setup', 'Per Room', 1, 1, 150],
   ['Anniversary Cake', 'Per Room', 1, 1, 80],
 ].map((item, index) => ({
-  id: `element-${index + 1}`,
+  id: initialRateElementIds[index],
   name: String(item[0]),
   basis: String(item[1]),
   min: Number(item[2]),

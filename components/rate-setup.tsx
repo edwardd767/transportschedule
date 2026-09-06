@@ -444,7 +444,7 @@ function RateElementPage({ items, onChange }: { items: RateElementItem[]; onChan
           </div>
         ))}
       </div>
-      <FloatingAdd label="Add rate element" onClick={() => setDraft({ id: `element-${Date.now()}`, name: '', basis: 'Per Person', min: 1, max: 1, amount: 0, active: true })} />
+      <FloatingAdd label="Add rate element" onClick={() => setDraft({ id: crypto.randomUUID(), name: '', basis: 'Per Person', min: 1, max: 1, amount: 0, active: true })} />
       {draft && (
         <EditorModal title={items.some((item) => item.id === draft.id) ? 'Edit Rate Element' : 'New Rate Element'} onCancel={() => setDraft(null)} onSave={save}>
           <label className="rate-editor-field">Rate Element<input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /></label>
