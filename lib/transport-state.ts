@@ -285,6 +285,18 @@ function setup(value: unknown): TransportSetup {
   });
   const boats = list(v.boats).map((item) => {
     const b = object(item);
+    const charge = b.incidentalCharge && typeof b.incidentalCharge === 'object'
+      ? object(b.incidentalCharge)
+      : null;
+    const incidentalCharge = charge?.chargeId
+      ? {
+          chargeId: text(charge.chargeId, 'incidental charge'),
+          chargeTitle: text(charge.chargeTitle, 'incidental charge title'),
+          adultRate: decimal(charge.adultRate, 'adult rate'),
+          childRate: decimal(charge.childRate, 'child rate'),
+          infantRate: decimal(charge.infantRate, 'infant rate'),
+        }
+      : undefined;
     if (!['Active', 'Maintenance', 'Inactive'].includes(String(b.status)))
       throw new Error('Choose a valid service status.');
     const allowedTypes: ServiceType[] = [
@@ -314,6 +326,7 @@ function setup(value: unknown): TransportSetup {
       status: b.status as TransportSetup['boats'][number]['status'],
       serviceType,
       bookingMode,
+      incidentalCharge,
     };
   });
   const routes = list(v.routes).map((item) => {

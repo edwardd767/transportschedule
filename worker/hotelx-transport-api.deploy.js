@@ -1139,6 +1139,14 @@ function setup(value) {
   });
   const boats = list(v.boats).map((item) => {
     const b = object(item);
+    const charge = b.incidentalCharge && typeof b.incidentalCharge === "object" ? object(b.incidentalCharge) : null;
+    const incidentalCharge = charge?.chargeId ? {
+      chargeId: text(charge.chargeId, "incidental charge"),
+      chargeTitle: text(charge.chargeTitle, "incidental charge title"),
+      adultRate: decimal(charge.adultRate, "adult rate"),
+      childRate: decimal(charge.childRate, "child rate"),
+      infantRate: decimal(charge.infantRate, "infant rate")
+    } : void 0;
     if (!["Active", "Maintenance", "Inactive"].includes(String(b.status)))
       throw new Error("Choose a valid service status.");
     const allowedTypes = [
@@ -1161,7 +1169,8 @@ function setup(value) {
       capacity: number(b.capacity, "capacity", 1),
       status: b.status,
       serviceType: serviceType2,
-      bookingMode
+      bookingMode,
+      incidentalCharge
     };
   });
   const routes = list(v.routes).map((item) => {
@@ -2695,7 +2704,10 @@ var schemaStatements = [
               'status', service.status,
               'serviceType', service.service_type,
               'bookingMode', service.booking_mode,
-              'incidentalCharge', service.incidental_charge
+              'incidentalCharge', CASE
+                WHEN service.incidental_charge = '{}'::jsonb THEN NULL
+                ELSE service.incidental_charge
+              END
             ) ORDER BY service.sort_order
           )
           FROM public.hotelx_transport_services AS service

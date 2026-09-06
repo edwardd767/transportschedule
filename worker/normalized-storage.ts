@@ -904,7 +904,10 @@ const schemaStatements = [
               'status', service.status,
               'serviceType', service.service_type,
               'bookingMode', service.booking_mode,
-              'incidentalCharge', service.incidental_charge
+              'incidentalCharge', CASE
+                WHEN service.incidental_charge = '{}'::jsonb THEN NULL
+                ELSE service.incidental_charge
+              END
             ) ORDER BY service.sort_order
           )
           FROM public.hotelx_transport_services AS service
