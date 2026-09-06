@@ -180,6 +180,11 @@ export function BookingTransfers({
                     Vehicle/driver: {[leg.vehicle, leg.driver].filter(Boolean).join(' · ')}
                   </small>
                 )}
+                {leg.incidentalCharge && (
+                  <small>
+                    {leg.incidentalCharge.chargeTitle} · Adult {leg.incidentalCharge.adultRate.toFixed(2)} · Child {leg.incidentalCharge.childRate.toFixed(2)} · Infant {leg.incidentalCharge.infantRate.toFixed(2)}
+                  </small>
+                )}
                 {leg.remarks && <small>{leg.remarks}</small>}
               </span>
               <button
