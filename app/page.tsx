@@ -1116,7 +1116,6 @@ function HomeContent({ store }: { store: TransportData }) {
                                     {t.destination}
                                   </strong>
                                   <span>
-                                    {t.id}
                                     <b>·</b>
                                     <Ship size={14} />
                                     {t.boat}
@@ -1239,7 +1238,7 @@ function HomeContent({ store }: { store: TransportData }) {
           {selected && (
             <>
               <SheetHeader className="trip-sheet-header">
-                <span className="eyebrow">TRIP DETAILS · {selected.id}</span>
+                <span className="eyebrow">TRIP DETAILS</span>
                 <SheetTitle>
                   {selected.origin} → {selected.destination}
                 </SheetTitle>

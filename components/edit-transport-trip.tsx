@@ -58,7 +58,7 @@ export function EditTransportTrip({
         <DialogHeader>
           <DialogTitle>Edit departure</DialogTitle>
           <DialogDescription>
-            {trip.id} · This change applies only to this trip. Passenger
+            This change applies only to this trip. Passenger
             assignments will be kept.
           </DialogDescription>
         </DialogHeader>
