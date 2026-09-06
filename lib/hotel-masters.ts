@@ -59,14 +59,14 @@ export const initialRoomStatuses: RoomStatus[] = [
   { code: 'VR', description: 'Vacant Ready', color: '#2ca9df', active: true },
 ];
 const entries = (prefix: string, total: number) => Array.from({ length: total }, (_, index) => `${prefix} ${index + 1}`);
-const charges = (total: number) => Array.from({ length: total }, (_, index) => ({ id: crypto.randomUUID(), title: index === 0 ? 'Boat Service' : `Charge ${index + 1}`, amount: 0, taxScheme: 'SST-3', outletCode: '', rateElement: false, guestAppFb: false, guestAppOnlineShop: false, posInterface: false, eventInterface: false, allowNegative: false, packageRedemption: false, kiosk: false, thirdPartyPos: false, eInvoice: false, msicCode: '55101', classification: '022' }));
+const charges = (prefix: string, total: number) => Array.from({ length: total }, (_, index) => ({ id: `${prefix}-charge-${index + 1}`, title: index === 0 ? 'Boat Service' : `Charge ${index + 1}`, amount: 0, taxScheme: 'SST-3', outletCode: '', rateElement: false, guestAppFb: false, guestAppOnlineShop: false, posInterface: false, eventInterface: false, allowNegative: false, packageRedemption: false, kiosk: false, thirdPartyPos: false, eInvoice: false, msicCode: '55101', classification: '022' }));
 export const initialDepartments: HotelDepartment[] = [
   ['banquet', 'Banquet', 15, 1, 0], ['breakfast-ta', 'Breakfast (TA)', 1, 1, 0],
   ['city-ledger', 'City Ledger', 17, 0, 0], ['food-beverages', 'Food and Beverages', 47, 4, 0],
   ['front-office', 'Front Office', 19, 5, 0], ['hotel-adjustment', 'Hotel Adjustment', 1, 0, 0],
   ['housekeeping', 'Housekeeping', 8, 7, 0], ['room-revenue', 'Room Revenue', 6, 5, 0],
   ['room-service', 'Room service', 1, 0, 0], ['sales-marketing', 'Sales & Marketing', 0, 0, 13],
-].map(([id, name, chargeCount, reasons, channels]) => ({ id: String(id), name: String(name), incidentalCharges: charges(Number(chargeCount)), reasons: entries('Reason', Number(reasons)), salesChannels: entries('Sales Channel', Number(channels)) }));
+].map(([id, name, chargeCount, reasons, channels]) => ({ id: String(id), name: String(name), incidentalCharges: charges(String(id), Number(chargeCount)), reasons: entries('Reason', Number(reasons)), salesChannels: entries('Sales Channel', Number(channels)) }));
 
 const locations: HotelLocation[] = Array.from({ length: 7 }, (_, index) => ({
   code: `L${index + 1}`,
