@@ -122,7 +122,7 @@ export function normalizeTransportState(state: TransportState): TransportState {
     Array.isArray(state.bookings) && state.bookings.length
       ? state.bookings
       : structuredClone(initialBookings);
-  const rateSetup =
+  const savedRateSetup =
     state.rateSetup &&
     Array.isArray(state.rateSetup.seasons) && state.rateSetup.seasons.length &&
     state.rateSetup.calendar && typeof state.rateSetup.calendar === 'object' &&
@@ -132,6 +132,13 @@ export function normalizeTransportState(state: TransportState): TransportState {
     Array.isArray(state.rateSetup.validity)
       ? state.rateSetup
       : structuredClone(initialRateSetupData);
+  const rateSetup = {
+    ...savedRateSetup,
+    elements: savedRateSetup.elements.map((element) => ({
+      ...element,
+      postingRhythm: element.postingRhythm ?? 'Daily',
+    })),
+  };
   return {
     ...state,
     setup: {

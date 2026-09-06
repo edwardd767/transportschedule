@@ -33,6 +33,7 @@ type RateElementItem = {
   id: string;
   name: string;
   basis: string;
+  postingRhythm: 'Daily' | 'First Night' | 'Last Night';
   min: number;
   max: number;
   amount: number;
@@ -91,6 +92,7 @@ const rateElementSeed: RateElementItem[] = [
   id: `element-${index + 1}`,
   name: String(item[0]),
   basis: String(item[1]),
+  postingRhythm: 'Daily',
   min: Number(item[2]),
   max: Number(item[3]),
   amount: Number(item[4]),
@@ -430,7 +432,7 @@ function RateElementPage({ items, onChange }: { items: RateElementItem[]; onChan
       <div className="rate-row-list">
         {filtered.map((item) => (
           <div className={`rate-list-row detailed${item.active ? '' : ' inactive'}`} key={item.id}>
-            <div className="rate-row-copy"><strong>{item.name}</strong><span>{item.basis} &nbsp;|&nbsp; Min: {item.min} &nbsp;|&nbsp; Max: {item.max}</span></div>
+            <div className="rate-row-copy"><strong>{item.name}</strong><span>{item.basis} &nbsp;|&nbsp; {item.postingRhythm} &nbsp;|&nbsp; Min: {item.min} &nbsp;|&nbsp; Max: {item.max}</span></div>
             <strong className="rate-row-amount">MYR {item.amount.toFixed(2)}</strong>
             <div className="rate-row-actions">
               <button type="button" aria-label={`Options for ${item.name}`} onClick={() => setMenuId(menuId === item.id ? null : item.id)}><MoreVertical size={24} /></button>
@@ -444,11 +446,12 @@ function RateElementPage({ items, onChange }: { items: RateElementItem[]; onChan
           </div>
         ))}
       </div>
-      <FloatingAdd label="Add rate element" onClick={() => setDraft({ id: crypto.randomUUID(), name: '', basis: 'Per Person', min: 1, max: 1, amount: 0, active: true })} />
+      <FloatingAdd label="Add rate element" onClick={() => setDraft({ id: crypto.randomUUID(), name: '', basis: 'Per Person', postingRhythm: 'Daily', min: 1, max: 1, amount: 0, active: true })} />
       {draft && (
         <EditorModal title={items.some((item) => item.id === draft.id) ? 'Edit Rate Element' : 'New Rate Element'} onCancel={() => setDraft(null)} onSave={save}>
           <label className="rate-editor-field">Rate Element<input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /></label>
-          <label className="rate-editor-field">Charge Basis<select value={draft.basis} onChange={(event) => setDraft({ ...draft, basis: event.target.value })}><option>Per Person</option><option>Per Room</option><option>Per Trip</option><option>Per Vehicle</option></select></label>
+          <label className="rate-editor-field">Charge Basis<select value={draft.basis} onChange={(event) => setDraft({ ...draft, basis: event.target.value })}><option>Flat Rate</option><option>Per Person</option><option>Per Adult</option><option>Per Child</option><option>Per Infant</option></select></label>
+          <label className="rate-editor-field">Posting Rhythm<select value={draft.postingRhythm} onChange={(event) => setDraft({ ...draft, postingRhythm: event.target.value as RateElementItem['postingRhythm'] })}><option>Daily</option><option>First Night</option><option>Last Night</option></select></label>
           <div className="rate-editor-grid"><label className="rate-editor-field">Minimum<input type="number" min="0" value={draft.min} onChange={(event) => setDraft({ ...draft, min: Number(event.target.value) })} /></label><label className="rate-editor-field">Maximum<input type="number" min="0" value={draft.max} onChange={(event) => setDraft({ ...draft, max: Number(event.target.value) })} /></label></div>
           <label className="rate-editor-field">Amount (MYR)<input type="number" min="0" step="0.01" value={draft.amount} onChange={(event) => setDraft({ ...draft, amount: Number(event.target.value) })} /></label>
         </EditorModal>

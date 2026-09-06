@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS public.hotelx_rate_element (
   sort_order integer NOT NULL,
   name text NOT NULL,
   basis text NOT NULL,
+  posting_rhythm text NOT NULL DEFAULT 'Daily' CHECK (posting_rhythm IN ('Daily', 'First Night', 'Last Night')),
   min_qty integer NOT NULL DEFAULT 0 CHECK (min_qty >= 0),
   max_qty integer NOT NULL DEFAULT 0 CHECK (max_qty >= min_qty),
   amount numeric(14,2) NOT NULL DEFAULT 0 CHECK (amount >= 0),
@@ -34,6 +35,10 @@ CREATE TABLE IF NOT EXISTS public.hotelx_rate_element (
   updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (property_id, id)
 );
+
+ALTER TABLE public.hotelx_rate_element
+  ADD COLUMN IF NOT EXISTS posting_rhythm text NOT NULL DEFAULT 'Daily'
+  CHECK (posting_rhythm IN ('Daily', 'First Night', 'Last Night'));
 
 CREATE TABLE IF NOT EXISTS public.hotelx_rate_type (
   property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,

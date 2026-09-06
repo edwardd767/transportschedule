@@ -9,6 +9,7 @@ export type RateElementItem = {
   id: string;
   name: string;
   basis: string;
+  postingRhythm: 'Daily' | 'First Night' | 'Last Night';
   min: number;
   max: number;
   amount: number;
@@ -92,6 +93,7 @@ export const initialRateElements: RateElementItem[] = [
   id: initialRateElementIds[index],
   name: String(item[0]),
   basis: String(item[1]),
+  postingRhythm: 'Daily',
   min: Number(item[2]),
   max: Number(item[3]),
   amount: Number(item[4]),
