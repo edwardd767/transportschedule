@@ -77,6 +77,12 @@ export function Bookings({
   transportSummary?: string;
   bookingLegs: BookingTransportLeg[];
 }) {
+  const totalWithTransport = (item: Booking) => {
+    const transport = bookingLegs
+      .filter((leg) => leg.bookingReference === item.reference && leg.incidentalCharge?.chargeId)
+      .reduce((total, leg) => total + (leg.adults ?? leg.passengers) * (leg.incidentalCharge?.adultRate ?? 0) + (leg.children ?? 0) * (leg.incidentalCharge?.childRate ?? 0) + (leg.infants ?? 0) * (leg.incidentalCharge?.infantRate ?? 0), 0);
+    return bookingAmount({ ...item, amount: item.amount + transport });
+  };
   const [searchOpen, setSearchOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -153,7 +159,7 @@ export function Bookings({
           <div className="booking-detail-summary booking-edit-summary">
             <div className="booking-detail-top">
               <div className="booking-stay"><strong>{stayDates(booking)}</strong><BookingOccupancy booking={booking} /></div>
-              <strong className="booking-amount">{bookingAmount(booking)}</strong>
+              <strong className="booking-amount">{totalWithTransport(booking)}</strong>
             </div>
             <div className="booking-detail-bottom"><span>{booking.reference} <span className="booking-divider">|</span> {booking.guest}</span></div>
           </div>
@@ -192,7 +198,7 @@ export function Bookings({
               <strong>{stayDates(booking)}</strong>
               <BookingOccupancy booking={booking} />
             </div>
-            <strong className="booking-amount">{bookingAmount(booking)}</strong>
+            <strong className="booking-amount">{totalWithTransport(booking)}</strong>
           </div>
           <div className="booking-detail-bottom">
             <span>{booking.reference} <span className="booking-divider">|</span> {booking.guest}</span>
@@ -263,7 +269,7 @@ export function Bookings({
                 <span className="booking-guest">{item.reference} <span className="booking-divider">|</span> {item.guest}</span>
               </div>
               <div className="booking-price-room">
-                <strong className="booking-amount">{bookingAmount(item)}</strong>
+                <strong className="booking-amount">{totalWithTransport(item)}</strong>
                 <span>{item.rooms.map((room) => <span key={room.code}>{room.code}/<b>{room.count}</b></span>)}</span>
               </div>
               <ChevronRight size={22} aria-hidden="true" />
