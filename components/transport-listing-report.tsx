@@ -22,7 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { sampleBookings } from '@/lib/bookings';
+import type { Booking } from '@/lib/bookings';
 import type { BookingTransportLeg } from '@/lib/booking-transport';
 import type { TransportSetup, Trip } from '@/lib/transport';
 
@@ -30,6 +30,7 @@ export type TransportListingReportProps = {
   trips: Trip[];
   setup: TransportSetup;
   bookingLegs: BookingTransportLeg[];
+  bookings: Booking[];
 };
 
 type ReportRow = {
@@ -84,6 +85,7 @@ export function TransportListingReport({
   trips,
   setup,
   bookingLegs,
+  bookings,
 }: TransportListingReportProps) {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
@@ -102,7 +104,7 @@ export function TransportListingReport({
     );
 
     for (const leg of bookingLegs) {
-      const booking = sampleBookings.find(
+      const booking = bookings.find(
         (item) => item.reference === leg.bookingReference,
       );
       const trip = leg.tripId
@@ -140,7 +142,7 @@ export function TransportListingReport({
         if (group.bookingId && represented.has(`${group.bookingId}|${trip.id}`)) {
           continue;
         }
-        const booking = sampleBookings.find(
+        const booking = bookings.find(
           (item) => item.reference === group.bookingId,
         );
         result.push({
@@ -169,12 +171,12 @@ export function TransportListingReport({
       }
     }
 
-    return result.sort((a, b) =>
+    return result.filter((row) => !row.bookingReference.startsWith('DEMO-')).sort((a, b) =>
       `${a.date}-${a.time}-${a.bookingReference}`.localeCompare(
         `${b.date}-${b.time}-${b.bookingReference}`,
       ),
     );
-  }, [bookingLegs, setup.boats, trips]);
+  }, [bookingLegs, bookings, setup.boats, trips]);
 
   const serviceTypes = useMemo(
     () => Array.from(new Set(rows.map((row) => row.serviceType))).sort(),

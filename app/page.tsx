@@ -826,6 +826,7 @@ function HomeContent({ store }: { store: TransportData }) {
             trips={trips}
             setup={setup}
             bookingLegs={bookingLegs}
+            bookings={bookings}
           />
         ) : view === 'frontdesk' ? (
           <div className="frontdesk-scroll" key="frontdesk">
