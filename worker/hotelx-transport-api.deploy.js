@@ -1153,7 +1153,17 @@ function rateSetup(value) {
     if (!validDate(from) || !validDate(to) || to < from) throw new Error("Validity end date must be on or after the start date.");
     const rateSetupId = text(row.rateSetupId, "rate setup", true, 100);
     if (!ratePlanIds.has(rateSetupId)) throw new Error("Choose an existing Rate Setup for the validity period.");
-    return { id: text(row.id, "validity ID", true, 100), rateSetupId, from, to, active: boolean(row.active) };
+    const seasonalRates = {};
+    for (const [roomType, seasonValues] of Object.entries(object(row.seasonalRates))) {
+      if (!roomType || roomType.length > 100) continue;
+      seasonalRates[roomType] = {};
+      for (const [seasonId, values] of Object.entries(object(seasonValues))) {
+        if (!seasonId || seasonId.length > 100) continue;
+        const rate2 = object(values);
+        seasonalRates[roomType][seasonId] = { amount: decimal(rate2.amount, "seasonal rate amount"), t1: decimal(rate2.t1, "seasonal rate T1"), t2: decimal(rate2.t2, "seasonal rate T2"), t3: decimal(rate2.t3, "seasonal rate T3") };
+      }
+    }
+    return { id: text(row.id, "validity ID", true, 100), rateSetupId, from, to, active: boolean(row.active), seasonalRates };
   });
   unique(validity);
   return { seasons, calendar, elements, rateTypes, ratePlans, validity };
@@ -2218,12 +2228,15 @@ var schemaStatements = [
     valid_from date NOT NULL,
     valid_to date NOT NULL,
     active boolean NOT NULL DEFAULT true,
+    seasonal_rates jsonb NOT NULL DEFAULT '{}'::jsonb,
     updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (property_id, rate_setup_id, id),
     FOREIGN KEY (property_id, rate_setup_id)
       REFERENCES public.hotelx_rate_setup(property_id, id) ON DELETE CASCADE,
     CHECK (valid_to >= valid_from)
   )`,
+  `ALTER TABLE public.hotelx_rate_setup_validity
+    ADD COLUMN IF NOT EXISTS seasonal_rates jsonb NOT NULL DEFAULT '{}'::jsonb`,
   `CREATE INDEX IF NOT EXISTS hotelx_season_calendar_season_idx
     ON public.hotelx_season_calendar(property_id, season_id, calendar_date)`,
   `CREATE INDEX IF NOT EXISTS hotelx_rate_element_name_idx
@@ -2402,8 +2415,8 @@ var schemaStatements = [
     SELECT p_property_id, item.value->>'id', item.ordinality::integer, item.value->>'code', item.value->>'description', COALESCE(item.value->>'rateTypeId', ''), COALESCE(NULLIF(item.value->>'rateFrequency', ''), 'Daily'), COALESCE((item.value->>'active')::boolean, true), COALESCE((item.value->>'web')::boolean, false), CASE WHEN COALESCE(item.value->>'updated', '') ~ '^d{2} [A-Za-z]{3} d{4}$' THEN to_date(item.value->>'updated', 'DD Mon YYYY') ELSE NULL END
     FROM jsonb_array_elements(COALESCE(p_state #> '{rateSetup,ratePlans}', '[]'::jsonb)) WITH ORDINALITY AS item(value, ordinality);
 
-    INSERT INTO public.hotelx_rate_setup_validity (property_id, rate_setup_id, id, sort_order, valid_from, valid_to, active)
-    SELECT p_property_id, item.value->>'rateSetupId', item.value->>'id', item.ordinality::integer, (item.value->>'from')::date, (item.value->>'to')::date, COALESCE((item.value->>'active')::boolean, true)
+    INSERT INTO public.hotelx_rate_setup_validity (property_id, rate_setup_id, id, sort_order, valid_from, valid_to, active, seasonal_rates)
+    SELECT p_property_id, item.value->>'rateSetupId', item.value->>'id', item.ordinality::integer, (item.value->>'from')::date, (item.value->>'to')::date, COALESCE((item.value->>'active')::boolean, true), COALESCE(item.value->'seasonalRates', '{}'::jsonb)
     FROM jsonb_array_elements(COALESCE(p_state #> '{rateSetup,validity}', '[]'::jsonb)) WITH ORDINALITY AS item(value, ordinality);
 
     INSERT INTO public.hotelx_transport_rules (
@@ -2774,7 +2787,7 @@ var schemaStatements = [
         'elements', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', e.id, 'name', e.name, 'basis', e.basis, 'postingRhythm', e.posting_rhythm, 'min', e.min_qty, 'max', e.max_qty, 'amount', e.amount::double precision, 'active', e.active) ORDER BY e.sort_order) FROM public.hotelx_rate_element e WHERE e.property_id = meta.id), '[]'::jsonb),
         'rateTypes', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', t.id, 'name', t.name, 'active', t.active) ORDER BY t.sort_order) FROM public.hotelx_rate_type t WHERE t.property_id = meta.id), '[]'::jsonb),
         'ratePlans', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', r.id, 'code', r.code, 'description', r.description, 'rateTypeId', r.rate_type_id, 'rateFrequency', r.rate_frequency, 'updated', COALESCE(to_char(r.last_updated_on, 'DD Mon YYYY'), ''), 'active', r.active, 'web', r.web) ORDER BY r.sort_order) FROM public.hotelx_rate_setup r WHERE r.property_id = meta.id), '[]'::jsonb),
-        'validity', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', v.id, 'rateSetupId', v.rate_setup_id, 'from', to_char(v.valid_from, 'YYYY-MM-DD'), 'to', to_char(v.valid_to, 'YYYY-MM-DD'), 'active', v.active) ORDER BY v.sort_order) FROM public.hotelx_rate_setup_validity v WHERE v.property_id = meta.id), '[]'::jsonb)
+        'validity', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', v.id, 'rateSetupId', v.rate_setup_id, 'from', to_char(v.valid_from, 'YYYY-MM-DD'), 'to', to_char(v.valid_to, 'YYYY-MM-DD'), 'active', v.active, 'seasonalRates', v.seasonal_rates) ORDER BY v.sort_order) FROM public.hotelx_rate_setup_validity v WHERE v.property_id = meta.id), '[]'::jsonb)
       ),
       'setup', jsonb_build_object(
         'operators', COALESCE((

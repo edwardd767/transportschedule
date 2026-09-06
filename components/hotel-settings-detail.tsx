@@ -13,7 +13,7 @@ import { RateSetupModule, type RateSetupSection } from '@/components/rate-setup'
 import { initialRateSetupData, type RateSetupData } from '@/lib/rate-setup-data';
 import { RoomStatusModule } from '@/components/room-status-module';
 import { DepartmentModule } from '@/components/department-module';
-import type { HotelDepartment, RoomStatus } from '@/lib/hotel-masters';
+import type { HotelDepartment, HotelRoomType, RoomStatus } from '@/lib/hotel-masters';
 
 export type HotelSettingsDetailKind =
   | 'hotelSetup'
@@ -71,6 +71,7 @@ export function HotelSettingsDetail({
   onRoomStatusesChange = () => {},
   departments = [],
   onDepartmentsChange = () => {},
+  roomTypes = [],
 }: {
   kind: HotelSettingsDetailKind;
   onBack: () => void;
@@ -82,6 +83,7 @@ export function HotelSettingsDetail({
   onRoomStatusesChange?: (value: RoomStatus[]) => void | Promise<void>;
   departments?: HotelDepartment[];
   onDepartmentsChange?: (value: HotelDepartment[]) => void | Promise<void>;
+  roomTypes?: HotelRoomType[];
 }) {
   const page = pages[kind];
   const Icon = page.icon;
@@ -89,7 +91,7 @@ export function HotelSettingsDetail({
   if (kind === 'ratePolicy') {
     return (
       <section className="master-page rate-setup-master-page" aria-label="Rate Setup">
-        <RateSetupModule section={rateSection} onSectionChange={onRateSectionChange} data={rateData} onChange={onRateDataChange} />
+        <RateSetupModule section={rateSection} onSectionChange={onRateSectionChange} data={rateData} onChange={onRateDataChange} roomTypes={roomTypes} />
         {!rateSection && (
           <button className="secondary-button master-page-back" type="button" onClick={onBack}>
             <ArrowLeft size={16} /> Back to Hotel Settings

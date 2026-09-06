@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Globe2,
   Info,
   MoreVertical,
@@ -505,11 +506,23 @@ function RateTypePage({ items, onChange }: { items: RateTypeItem[]; onChange: (v
   );
 }
 
-function RateSetupPage({ items, rateTypes, validityItems, onChange, onValidityChange }: { items: RatePlanItem[]; rateTypes: RateTypeItem[]; validityItems: RateValidityItem[]; onChange: (value: RatePlanItem[]) => void | Promise<void>; onValidityChange: (value: RateValidityItem[]) => void | Promise<void> }) {
+function ValidityEditor({ item, validity, seasons, roomTypes, onCancel, onSave }: { item: RatePlanItem; validity: RateValidityItem; seasons: Season[]; roomTypes: { code: string; description: string }[]; onCancel: () => void; onSave: (value: RateValidityItem) => void }) {
+  const [draft, setDraft] = useState(validity);
+  const updateRate = (roomType: string, seasonId: string, field: 'amount' | 't1' | 't2' | 't3', value: number) => setDraft((current) => ({ ...current, seasonalRates: { ...current.seasonalRates, [roomType]: { ...current.seasonalRates?.[roomType], [seasonId]: { amount: 0, t1: 0, t2: 0, t3: 0, ...current.seasonalRates?.[roomType]?.[seasonId], [field]: value } } } }));
+  return <div className="rate-section-page validity-editor-page"><div className="rate-subpage-backline"><button type="button" onClick={onCancel}><ChevronLeft size={17} /> {item.code}</button></div><div className="master-detail-card"><div className="master-section-label">{item.code}</div><div className="rate-editor-grid"><label className="rate-editor-field">Start Date<HotelDatePicker value={draft.from} onChange={(from) => setDraft({ ...draft, from })} /></label><label className="rate-editor-field">End Date<HotelDatePicker value={draft.to} onChange={(to) => setDraft({ ...draft, to })} /></label></div></div><div className="rate-validity-tabs"><strong>Seasonal Rate</strong><span>Inclusive Item</span><span>Add On Item</span></div><div className="rate-seasonal-list">{roomTypes.map((room) => <details key={room.code} className="rate-seasonal-room"><summary>{room.description || room.code}<ChevronDown size={18} /></summary><div>{seasons.map((season) => { const value = draft.seasonalRates?.[room.code]?.[season.id] ?? { amount: 0, t1: 0, t2: 0, t3: 0 }; return <div className="rate-season-row" key={season.id}><strong>{season.name}</strong><label>MYR<input aria-label={`${room.description || room.code} ${season.name} amount`} type="number" min="0" step="0.01" value={value.amount} onChange={(event) => updateRate(room.code, season.id, 'amount', Number(event.target.value))} /></label><label>T1<input type="number" min="0" step="0.01" value={value.t1} onChange={(event) => updateRate(room.code, season.id, 't1', Number(event.target.value))} /></label><label>T2<input type="number" min="0" step="0.01" value={value.t2} onChange={(event) => updateRate(room.code, season.id, 't2', Number(event.target.value))} /></label><label>T3<input type="number" min="0" step="0.01" value={value.t3} onChange={(event) => updateRate(room.code, season.id, 't3', Number(event.target.value))} /></label></div>; })}</div></details>)}</div><div className="master-page-actions"><button className="secondary-button" type="button" onClick={onCancel}>Cancel</button><button className="primary-button" type="button" onClick={() => onSave(draft)}>Save</button></div></div>;
+}
+
+function ValidityRow({ row, onEdit }: { row: RateValidityItem; onEdit: () => void }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  return <div className="rate-list-row detailed rate-validity-row"><div className="rate-row-copy"><strong>{row.from} – {row.to}</strong><span>Last updated today</span></div><div className="rate-row-actions"><button type="button" aria-label="Validity period options" onClick={() => setMenuOpen(!menuOpen)}><MoreVertical size={24} /></button>{menuOpen && <PopupMenu onClose={() => setMenuOpen(false)} items={[{ label: 'Edit', onClick: onEdit }]} />}</div></div>;
+}
+
+function RateSetupPage({ items, rateTypes, validityItems, seasons, roomTypes, onChange, onValidityChange }: { items: RatePlanItem[]; rateTypes: RateTypeItem[]; validityItems: RateValidityItem[]; seasons: Season[]; roomTypes: { code: string; description: string }[]; onChange: (value: RatePlanItem[]) => void | Promise<void>; onValidityChange: (value: RateValidityItem[]) => void | Promise<void> }) {
   const [menuId, setMenuId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [draft, setDraft] = useState<RatePlanItem | null>(null);
-  const [validity, setValidity] = useState<{ item: RatePlanItem; id: string; from: string; to: string } | null>(null);
+  const [validityPage, setValidityPage] = useState<RatePlanItem | null>(null);
+  const [validity, setValidity] = useState<RateValidityItem | null>(null);
   const filtered = useMemo(() => items.filter((item) => `${item.code} ${item.description}`.toLowerCase().includes(query.toLowerCase())), [items, query]);
 
   const save = () => {
@@ -519,6 +532,9 @@ function RateSetupPage({ items, rateTypes, validityItems, onChange, onValidityCh
       : [...items, { ...draft, code: draft.code.trim(), description: draft.description.trim(), updated: '05 Sep 2026' }]);
     setDraft(null);
   };
+
+  if (validity && validityPage) return <ValidityEditor item={validityPage} validity={validity} seasons={seasons} roomTypes={roomTypes} onCancel={() => setValidity(null)} onSave={(value) => { void onValidityChange([...validityItems.filter((row) => row.id !== value.id), value]); setValidity(null); }} />;
+  if (validityPage) return <div className="rate-section-page"><div className="rate-subpage-backline"><button type="button" onClick={() => setValidityPage(null)}><ChevronLeft size={17} /> Rate Setup</button></div><SearchHeader title={validityPage.code} count={validityItems.filter((row) => row.rateSetupId === validityPage.id).length} query="" onQuery={() => {}} /><div className="rate-row-list">{validityItems.filter((row) => row.rateSetupId === validityPage.id).map((row) => <ValidityRow key={row.id} row={row} onEdit={() => setValidity(row)} />)}</div><FloatingAdd label="Add validity period" onClick={() => setValidity({ id: crypto.randomUUID(), rateSetupId: validityPage.id, from: '2026-09-01', to: '2026-12-31', active: true, seasonalRates: {} })} /></div>;
 
   return (
     <div className="rate-section-page">
@@ -532,7 +548,7 @@ function RateSetupPage({ items, rateTypes, validityItems, onChange, onValidityCh
               <button type="button" aria-label={`Options for ${item.code}`} onClick={() => setMenuId(menuId === item.id ? null : item.id)}><MoreVertical size={24} /></button>
               {menuId === item.id && (
                 <PopupMenu onClose={() => setMenuId(null)} items={[
-                  { label: 'Validity Period', onClick: () => { const existing = validityItems.find((row) => row.rateSetupId === item.id && row.active); setValidity({ item, id: existing?.id ?? `validity-${Date.now()}`, from: existing?.from ?? '2026-09-05', to: existing?.to ?? '2026-12-31' }); } },
+                  { label: 'Validity Period', onClick: () => setValidityPage(item) },
                   { label: 'Edit', onClick: () => setDraft({ ...item }) },
                 ]} />
               )}
@@ -550,14 +566,6 @@ function RateSetupPage({ items, rateTypes, validityItems, onChange, onValidityCh
           <label className="rate-editor-check"><input type="checkbox" checked={draft.web ?? false} onChange={(event) => setDraft({ ...draft, web: event.target.checked })} /> Online / Web Rate</label>
         </EditorModal>
       )}
-      {validity && (
-        <EditorModal title={`Validity Period - ${validity.item.code}`} onCancel={() => setValidity(null)} onSave={() => { void onValidityChange([...validityItems.filter((row) => row.rateSetupId !== validity.item.id), { id: validity.id, rateSetupId: validity.item.id, from: validity.from, to: validity.to, active: true }]); setValidity(null); }}>
-          <div className="rate-editor-grid">
-            <label className="rate-editor-field">Valid From<HotelDatePicker value={validity.from} onChange={(value) => setValidity({ ...validity, from: value })} /></label>
-            <label className="rate-editor-field">Valid To<HotelDatePicker value={validity.to} onChange={(value) => setValidity({ ...validity, to: value })} /></label>
-          </div>
-        </EditorModal>
-      )}
     </div>
   );
 }
@@ -567,11 +575,13 @@ export function RateSetupModule({
   onSectionChange,
   data,
   onChange,
+  roomTypes = [],
 }: {
   section: RateSetupSection | null;
   onSectionChange: (section: RateSetupSection | null) => void;
   data: RateSetupData;
   onChange: (value: RateSetupData) => void | Promise<void>;
+  roomTypes?: { code: string; description: string }[];
 }) {
   const savePart = <K extends keyof RateSetupData>(key: K, value: RateSetupData[K]) => onChange({ ...data, [key]: value });
   if (!section) {
@@ -603,7 +613,7 @@ export function RateSetupModule({
       {section === 'season-calendar' ? <SeasonCalendarPage seasons={data.seasons} assignments={data.calendar} onSave={(value) => savePart('calendar', value)} /> : null}
       {section === 'rate-element' ? <RateElementPage items={data.elements} onChange={(value) => savePart('elements', value)} /> : null}
       {section === 'rate-type' ? <RateTypePage items={data.rateTypes} onChange={(value) => savePart('rateTypes', value)} /> : null}
-      {section === 'rate-setup' ? <RateSetupPage items={data.ratePlans} rateTypes={data.rateTypes} validityItems={data.validity} onChange={(value) => savePart('ratePlans', value)} onValidityChange={(value) => savePart('validity', value)} /> : null}
+      {section === 'rate-setup' ? <RateSetupPage items={data.ratePlans} rateTypes={data.rateTypes} validityItems={data.validity} seasons={data.seasons} roomTypes={roomTypes} onChange={(value) => savePart('ratePlans', value)} onValidityChange={(value) => savePart('validity', value)} /> : null}
     </div>
   );
 }

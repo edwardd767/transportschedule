@@ -80,11 +80,15 @@ CREATE TABLE IF NOT EXISTS public.hotelx_rate_setup_validity (
   valid_from date NOT NULL,
   valid_to date NOT NULL,
   active boolean NOT NULL DEFAULT true,
+  seasonal_rates jsonb NOT NULL DEFAULT '{}'::jsonb,
   updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (property_id, rate_setup_id, id),
   FOREIGN KEY (property_id, rate_setup_id) REFERENCES public.hotelx_rate_setup(property_id, id) ON DELETE CASCADE,
   CHECK (valid_to >= valid_from)
 );
+
+ALTER TABLE public.hotelx_rate_setup_validity
+  ADD COLUMN IF NOT EXISTS seasonal_rates jsonb NOT NULL DEFAULT '{}'::jsonb;
 
 CREATE INDEX IF NOT EXISTS hotelx_season_calendar_season_idx
   ON public.hotelx_season_calendar(property_id, season_id, calendar_date);

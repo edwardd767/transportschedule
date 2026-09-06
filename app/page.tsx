@@ -786,6 +786,7 @@ function HomeContent({ store }: { store: TransportData }) {
               onRoomStatusesChange={async (value) => { await store.run({ type: 'roomStatusSave', value }); setNotice('Room Status saved.'); }}
               departments={hotelMasters.departments}
               onDepartmentsChange={async (value) => { await store.run({ type: 'departmentSave', value }); setNotice('Department saved.'); }}
+              roomTypes={hotelMasters.roomTypes}
               onRateDataChange={async (value) => { await store.run({ type: 'rateSetup', value }); setNotice('Rate Setup saved.'); }}
               onBack={() => { setRateSetupSection(null); setView('hotelsettings'); }}
             />

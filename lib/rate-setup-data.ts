@@ -39,6 +39,7 @@ export type RateValidityItem = {
   from: string;
   to: string;
   active: boolean;
+  seasonalRates?: Record<string, Record<string, { amount: number; t1: number; t2: number; t3: number }>>;
 };
 
 export type RateSetupData = {
