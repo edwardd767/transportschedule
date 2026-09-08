@@ -5438,7 +5438,7 @@ p {
 .rate-validity-tabs{display:flex;align-items:stretch;gap:0;margin-top:14px;padding:0 20px;border:1px solid #ddd;background:#fff;box-shadow:0 2px 5px #00000012}
 .rate-validity-tabs>*{padding:15px 28px 13px;color:#7254e9;font-size:14px;white-space:nowrap}
 .rate-validity-tabs strong{border-bottom:2px solid #ff8d22;color:#222}
-.rate-validity-tabs button{border:0;background:none;cursor:pointer}
+.rate-validity-tabs button{border:0;background:none;cursor:pointer}.rate-validity-tabs button.active{border-bottom:2px solid #ff8d22;color:#222;font-weight:700}
 .rate-inclusive-list{display:grid;gap:8px;margin-top:12px}
 .rate-element-overlay{position:fixed;inset:0;z-index:30;display:grid;place-items:center;background:#0008}
 .rate-element-modal{width:min(600px,calc(100vw - 32px));max-height:72vh;background:#fff;border-radius:5px;box-shadow:0 12px 35px #0005;overflow:hidden}
