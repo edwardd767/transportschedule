@@ -63,7 +63,12 @@ export const initialRoomStatuses: RoomStatus[] = [
   { code: 'VI', description: 'Vacant Inspection', color: '#2f4bc4', active: false },
   { code: 'VR', description: 'Vacant Ready', color: '#2ca9df', active: true },
 ];
-export const initialSegments: HotelSegment[] = ['Leisure','Corporate','Group','OTA'].map((description, index) => ({ id: `segment-${index + 1}`, description, displaySequence: index + 1, icon: '', active: true, updatedAt: '2026-09-08' }));
+export const initialSegments: HotelSegment[] = [
+  ['04391124-0844-42c3-a2a3-d48bed9c080d', 'Leisure'],
+  ['c927a6c9-2708-4414-ad15-47563757329c', 'Corporate'],
+  ['7a1de9a2-8311-4e9b-8c6f-199071c97b5e', 'Group'],
+  ['32112510-ed0f-4bfe-853d-e8892eda5423', 'OTA'],
+].map(([id, description], index) => ({ id, description, displaySequence: index + 1, icon: '', active: true, updatedAt: '2026-09-08' }));
 const entries = (prefix: string, total: number) => Array.from({ length: total }, (_, index) => `${prefix} ${index + 1}`);
 const charges = (prefix: string, total: number) => Array.from({ length: total }, (_, index) => ({ id: `${prefix}-charge-${index + 1}`, title: index === 0 ? 'Boat Service' : `Charge ${index + 1}`, amount: 0, taxScheme: 'SST-3', outletCode: '', rateElement: false, guestAppFb: false, guestAppOnlineShop: false, posInterface: false, eventInterface: false, allowNegative: false, packageRedemption: false, kiosk: false, thirdPartyPos: false, eInvoice: false, msicCode: '55101', classification: '022' }));
 export const initialDepartments: HotelDepartment[] = [
