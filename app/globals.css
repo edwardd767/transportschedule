@@ -5444,6 +5444,7 @@ p {
 .rate-seasonal-room summary::-webkit-details-marker{display:none}
 .rate-seasonal-room>div{padding:0 10px 9px;background:#fafafa}
 .rate-season-row{display:grid;grid-template-columns:minmax(145px,1fr) repeat(4, minmax(82px,1fr));align-items:end;gap:10px;padding:9px 6px;border-top:1px solid #e5e5e5;font-size:12px}
+.validity-editor-page .master-detail-card{margin-top:8px}.validity-editor-page .rate-seasonal-list{margin-top:10px}.validity-editor-page .rate-seasonal-room{background:#fff;border:1px solid #ddd;border-radius:5px;margin-bottom:5px}.validity-editor-page .rate-seasonal-room>summary{padding:13px 18px;font-size:13px}.validity-editor-page .master-page-actions{position:sticky;bottom:0;background:#fff;padding:10px 20px;z-index:4;justify-content:center}.validity-editor-page .master-page-actions .primary-button{min-width:126px}
 .rate-season-row strong{align-self:center;color:#333}
 .rate-season-row label{display:flex;flex-direction:column;gap:4px;color:#777;font-size:11px}
 .rate-season-row input{width:100%;min-height:32px;padding:6px 8px;border:1px solid #d5d5d5;border-radius:4px;background:#fff;color:#222}
