@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import type { Booking } from '@/lib/bookings';
-import { nextBookingReference, type HotelRoomType } from '@/lib/hotel-masters';
+import { nextBookingReference, type HotelRoomType, type HotelSegment } from '@/lib/hotel-masters';
 
 type RoomLine = {
   id: string;
@@ -52,12 +52,14 @@ function prettyDate(value: string) {
 export function BookingCreate({
   bookings,
   roomTypes,
+  segments = [],
   onCreate,
   onCancel,
   onNotice,
 }: {
   bookings: Booking[];
   roomTypes: HotelRoomType[];
+  segments?: HotelSegment[];
   onCreate: (booking: Booking) => Promise<void>;
   onCancel: () => void;
   onNotice: (message: string) => void;
@@ -313,12 +315,7 @@ export function BookingCreate({
             </label>
             <label className="booking-line-field booking-choice-field">
               <span>Segment *</span>
-              <Choice label="Segment" value={segment} onChange={setSegment} items={[
-                { value: 'Leisure', label: 'Leisure' },
-                { value: 'Corporate', label: 'Corporate' },
-                { value: 'Group', label: 'Group' },
-                { value: 'OTA', label: 'OTA' },
-              ]} />
+              <Choice label="Segment" value={segment} onChange={setSegment} items={segments.filter((item) => item.active).sort((a, b) => a.displaySequence - b.displaySequence).map((item) => ({ value: item.description, label: item.description }))} />
             </label>
             <label className="booking-line-field">
               <span>Reference No</span>

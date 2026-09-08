@@ -23,7 +23,7 @@ import {
   stayDates,
   type Booking,
 } from '@/lib/bookings';
-import type { HotelRoomType } from '@/lib/hotel-masters';
+import type { HotelRoomType, HotelSegment } from '@/lib/hotel-masters';
 import { BookingCreate } from '@/components/booking-create';
 import { BookingEdit } from '@/components/booking-edit';
 import { BillingSchedule } from '@/components/billing-schedule';
@@ -56,6 +56,7 @@ function BookingOccupancy({ booking }: { booking: Booking }) {
 export function Bookings({
   bookings,
   roomTypes,
+  segments,
   booking,
   onSelect,
   onOpenTransport,
@@ -69,6 +70,7 @@ export function Bookings({
 }: {
   bookings: Booking[];
   roomTypes: HotelRoomType[];
+  segments: HotelSegment[];
   booking: Booking | null;
   onSelect: (booking: Booking) => void;
   onOpenTransport: (booking: Booking) => void;
@@ -141,6 +143,7 @@ export function Bookings({
       <BookingCreate
         bookings={bookings}
         roomTypes={roomTypes}
+        segments={segments}
         onCancel={() => setCreateOpen(false)}
         onNotice={onNotice}
         onCreate={async (value) => {
