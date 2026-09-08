@@ -10,6 +10,7 @@ import {
   Info,
   MoreVertical,
   Plus,
+  Pencil,
   Search,
   X,
 } from 'lucide-react';
