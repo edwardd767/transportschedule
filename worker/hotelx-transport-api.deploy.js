@@ -1163,7 +1163,9 @@ function rateSetup(value) {
     const rateSetupId = text(row.rateSetupId, "rate setup", true, 100);
     if (!ratePlanIds.has(rateSetupId)) throw new Error("Choose an existing Rate Setup for the validity period.");
     const seasonalRates = {};
+    const embeddedInclusive = list(object(row.seasonalRates).__inclusiveElements).map((value2) => text(value2, "inclusive element ID", true, 100));
     for (const [roomType, seasonValues] of Object.entries(object(row.seasonalRates))) {
+      if (roomType === "__inclusiveElements") continue;
       if (!roomType || roomType.length > 100) continue;
       seasonalRates[roomType] = {};
       for (const [seasonId, values] of Object.entries(object(seasonValues))) {
@@ -1173,7 +1175,7 @@ function rateSetup(value) {
       }
     }
     const inclusiveElements = list(row.inclusiveElements).map((value2) => text(value2, "inclusive element ID", true, 100));
-    return { id: text(row.id, "validity ID", true, 100), rateSetupId, from, to, active: boolean(row.active), seasonalRates, inclusiveElements };
+    return { id: text(row.id, "validity ID", true, 100), rateSetupId, from, to, active: boolean(row.active), seasonalRates, inclusiveElements: inclusiveElements.length ? inclusiveElements : embeddedInclusive };
   });
   unique(validity);
   return { seasons, calendar, elements, rateTypes, ratePlans, validity };
