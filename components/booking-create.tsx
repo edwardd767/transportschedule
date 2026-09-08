@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { CalendarDays, Plus, X } from 'lucide-react';
+import { User, Baby, CalendarDays, Plus, X } from 'lucide-react';
 import { BookingAvailability } from '@/components/booking-availability';
+import { bookingRate } from '@/lib/booking-rate';
 import { Choice } from '@/components/hotel-choice';
 import { HotelDatePicker } from '@/components/hotel-date-picker';
 import {
@@ -108,7 +109,13 @@ export function BookingCreate({
   const nights = nightsBetween(arrival, departure);
   const bookingTotal = roomLines.reduce((total, line) => total + line.total, 0);
   const selectedRoom = activeRoomTypes.find((item) => item.code === roomType);
-  const roomSubtotal = nights * Math.max(1, roomQty) * Math.max(0, roomRate);
+  const configuredPaxRate = bookingRate(rateSetup, rateCode, roomType, arrival);
+  const extraAdultRate = configuredPaxRate?.extraAdult ?? 0;
+  const extraChildRate = childRatesApplied ? configuredPaxRate?.extraChild ?? 0 : 0;
+  const basePax = configuredPaxRate?.basePax ?? 2;
+  const extraAdultCount = Math.max(0, adults - basePax);
+  const childCharge = children * extraChildRate * nights * Math.max(1, roomQty);
+  const roomSubtotal = nights * Math.max(1, roomQty) * Math.max(0, roomRate + extraAdultCount * extraAdultRate + children * extraChildRate);
   const roomDiscount = nights * Math.max(1, roomQty) * Math.max(0, discountPerNight);
   const roomTax = 0;
   const roomTotal = Math.max(0, roomSubtotal - roomDiscount + roomTax);
@@ -356,7 +363,7 @@ export function BookingCreate({
             {roomLines.map((line, index) => (
               <div className="booking-room-table-row" key={line.id}>
                 <span>{index + 1}</span>
-                <span>{line.code}</span>
+                <span>{line.code}<small className="booking-pax-count"><User size={13} aria-label="Adults" /><b>{line.adults}</b><Baby size={13} aria-label="Children" /><b>{line.children}</b></small></span>
                 <span>{line.rateCode}</span>
                 <span>{line.count}</span>
                 <span>{money.format(line.total)}</span>
@@ -392,6 +399,8 @@ export function BookingCreate({
             </div>
             <label className="booking-line-field booking-choice-field"><span>Rate Code *</span><Choice label="Rate Code" value={rateCode} onChange={(value) => { setRateCode(value); setRoomRate(rateAmount(value)); }} items={rateItems.length ? rateItems : [{ value: 'BAR', label: 'BAR - Best Available Rate' }]} /></label>
             <label className="booking-line-field"><span>Room Rate</span><input type="number" min="0" step="0.01" value={roomRate} readOnly /></label>
+            <label className="booking-line-field"><span>Extra Pax (MYR)</span><input value={money.format(extraAdultRate)} readOnly /></label>
+            <label className="booking-line-field"><span>Child (MYR)</span><input value={money.format(extraChildRate)} readOnly disabled={!childRatesApplied} /></label>
             <label className="booking-line-field booking-choice-field"><span>Promo Code</span><Choice label="Promo Code" value={promoCode} onChange={setPromoCode} items={[
               { value: 'NONE', label: 'No Promo Code' },
               { value: 'PROMO10', label: 'PROMO10' },
@@ -401,6 +410,7 @@ export function BookingCreate({
           <div className="booking-room-summary">
             <div className="booking-room-summary-head"><strong>Summary</strong><strong>MYR</strong></div>
             <div><span>{nights} Night(s) x {roomQty} Room(s)</span><span>{money.format(roomSubtotal)}</span></div>
+            {childCharge > 0 && <div><span>Child</span><span>{money.format(childCharge)}</span></div>}
             <div><span>Less : Disc {nights} Night(s) x {roomQty} Room(s)</span><span>{money.format(roomDiscount)}</span></div>
             <div><span>Tax</span><span>{money.format(roomTax)}</span></div>
             <div className="booking-room-summary-total"><strong>Total</strong><strong>{money.format(roomTotal)}</strong></div>

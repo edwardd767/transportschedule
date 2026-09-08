@@ -1,8 +1,9 @@
 'use client';
 
 import { useMemo, useState, type FormEvent } from 'react';
-import { CalendarDays, Pencil, Plus, Trash2 } from 'lucide-react';
+import { User, Baby, CalendarDays, Pencil, Plus, Trash2 } from 'lucide-react';
 import { BookingAvailability } from '@/components/booking-availability';
+import { bookingRate } from '@/lib/booking-rate';
 import { Choice } from '@/components/hotel-choice';
 import { HotelDatePicker } from '@/components/hotel-date-picker';
 import {
@@ -120,7 +121,13 @@ export function BookingEdit({
   const nights = nightsBetween(arrival, departure);
   const bookingTotal = roomLines.reduce((total, room) => total + (room.total ?? 0), 0);
   const selectedRoom = activeRoomTypes.find((item) => item.code === roomType);
-  const roomSubtotal = nights * Math.max(1, roomQty) * Math.max(0, roomRate);
+  const configuredPaxRate = bookingRate(rateSetup, rateCode, roomType, arrival);
+  const extraAdultRate = configuredPaxRate?.extraAdult ?? 0;
+  const extraChildRate = childRatesApplied ? configuredPaxRate?.extraChild ?? 0 : 0;
+  const basePax = configuredPaxRate?.basePax ?? 2;
+  const extraAdultCount = Math.max(0, adults - basePax);
+  const childCharge = children * extraChildRate * nights * Math.max(1, roomQty);
+  const roomSubtotal = nights * Math.max(1, roomQty) * Math.max(0, roomRate + extraAdultCount * extraAdultRate + children * extraChildRate);
   const roomDiscount = nights * Math.max(1, roomQty) * Math.max(0, discountPerNight);
   const roomTax = 0;
   const roomTotal = Math.max(0, roomSubtotal - roomDiscount + roomTax);
@@ -292,7 +299,7 @@ export function BookingEdit({
             {roomLines.map((room, index) => (
               <div className="booking-edit-room-row" key={`${room.code}-${index}`}>
                 <span><small>📅 {prettyDate(arrival)} - {prettyDate(departure)}</small><b>{index + 1}</b></span>
-                <span><b>{room.code}</b></span>
+                <span><b>{room.code}</b><small className="booking-pax-count"><User size={13} aria-label="Adults" /><b>{room.adults ?? 0}</b><Baby size={13} aria-label="Children" /><b>{room.children ?? 0}</b></small></span>
                 <span><b>{room.rateCode || 'BAR'}</b><small>Subtotal</small></span>
                 <span><b>{room.count}</b><small>{money.format(room.total ?? 0)}</small></span>
                 <button type="button" aria-label={`Edit room type ${room.code}`} onClick={() => openEditRoom(index)}><Pencil size={17} /></button>
@@ -325,12 +332,15 @@ export function BookingEdit({
             </div>
             <label className="booking-line-field booking-choice-field"><span>Rate Code *</span><Choice label="Rate Code" value={rateCode} onChange={setRateCode} items={[{ value: 'BAR', label: 'BAR - Best Available Rate' }, { value: 'CORP', label: 'CORP - Corporate' }, { value: 'PROMO', label: 'PROMO - Promotion' }]} /></label>
             <label className="booking-line-field"><span>Room Rate</span><input type="number" min="0" step="0.01" value={roomRate} onChange={(event) => setRoomRate(Number(event.target.value))} /></label>
+            <label className="booking-line-field"><span>Extra Pax (MYR)</span><input value={money.format(extraAdultRate)} readOnly /></label>
+            <label className="booking-line-field"><span>Child (MYR)</span><input value={money.format(extraChildRate)} readOnly disabled={!childRatesApplied} /></label>
             <label className="booking-line-field booking-choice-field"><span>Promo Code</span><Choice label="Promo Code" value={promoCode} onChange={setPromoCode} items={[{ value: 'NONE', label: 'No Promo Code' }, { value: 'PROMO10', label: 'PROMO10' }]} /></label>
             <label className="booking-line-field"><span>Disc (Per Night)</span><input type="number" min="0" step="0.01" value={discountPerNight} onChange={(event) => setDiscountPerNight(Number(event.target.value))} /></label>
           </div>
           <div className="booking-room-summary">
             <div className="booking-room-summary-head"><strong>Summary</strong><strong>MYR</strong></div>
             <div><span>{nights} Night(s) x {roomQty} Room(s)</span><span>{money.format(roomSubtotal)}</span></div>
+            {childCharge > 0 && <div><span>Child</span><span>{money.format(childCharge)}</span></div>}
             <div><span>Less : Disc {nights} Night(s) x {roomQty} Room(s)</span><span>{money.format(roomDiscount)}</span></div>
             <div><span>Tax</span><span>{money.format(roomTax)}</span></div>
             <div className="booking-room-summary-total"><strong>Total</strong><strong>{money.format(roomTotal)}</strong></div>

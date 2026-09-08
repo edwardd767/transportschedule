@@ -5546,3 +5546,5 @@ p {
 .booking-room-rates footer button{border:0;border-radius:4px;background:#ff9827;color:#fff;padding:7px 12px;font-size:12px;font-weight:700;box-shadow:0 2px 4px #0003}
 
 .rate-extra-charges{display:flex;gap:8px;margin-top:4px;min-height:13px}.rate-extra-charges>span{display:inline-flex;align-items:center;gap:2px;color:#111}.rate-extra-charges b{font-size:10px;font-weight:500;color:#ff9000}.booking-room-rates tbody td{vertical-align:top;padding-top:7px}
+
+.booking-pax-count{display:flex!important;align-items:center;gap:4px;margin-top:4px}.booking-pax-count svg{color:#111}.booking-pax-count b{color:#ff9000;font-weight:500;margin-right:6px}
