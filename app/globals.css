@@ -904,18 +904,18 @@ p {
 .frontdesk-menu {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-top: 12px;
+  gap: 4px;
+  margin-top: 8px;
 }
 .frontdesk-item {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   text-align: left;
   background: #fff;
   border: 1px solid #e9e9ec;
-  border-radius: 9px;
-  padding: 16px;
+  border-radius: 6px;
+  padding: 12px;
   box-shadow: 0 2px 6px #0000000a;
 }
 .frontdesk-item:hover {
@@ -923,8 +923,8 @@ p {
   box-shadow: 0 4px 12px #00000012;
 }
 .frontdesk-icon {
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   flex: none;
   display: grid;
   place-items: center;
@@ -937,12 +937,12 @@ p {
   min-width: 0;
 }
 .frontdesk-body strong {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: #292929;
 }
 .frontdesk-body small {
-  font-size: 12px;
+  font-size: 11px;
   color: #7a7c84;
 }
 .frontdesk-body em {
