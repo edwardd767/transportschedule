@@ -5,3 +5,4 @@ export function AvailabilityDialog({ roomTypes, onClose }: { roomTypes: HotelRoo
 
 
 
+
