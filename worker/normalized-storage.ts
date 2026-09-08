@@ -448,8 +448,12 @@ const schemaStatements = [
   LANGUAGE plpgsql
   AS $$
   BEGIN
+    DELETE FROM public.hotelx_guestprofile WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_hotel_setup WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_rate_setup_validity WHERE property_id = p_property_id;
+    INSERT INTO public.hotelx_guestprofile (property_id, id, guest_name, mobile, email, nationality, identity_no, address, country, state, city, postcode, birth_date, occupation, account_name, guest_type, remark, newsletter, tourism_tax, visits, updated_at)
+    SELECT p_property_id, (item.value->>'id')::uuid, COALESCE(item.value->>'name',''), COALESCE(item.value->>'mobile',''), COALESCE(item.value->>'email',''), COALESCE(item.value->>'nationality',''), COALESCE(item.value->>'identityNo',''), COALESCE(item.value->>'address',''), COALESCE(item.value->>'country',''), COALESCE(item.value->>'state',''), COALESCE(item.value->>'city',''), COALESCE(item.value->>'postcode',''), NULLIF(item.value->>'birthDate','')::date, COALESCE(item.value->>'occupation',''), COALESCE(item.value->>'accountName',''), COALESCE(item.value->>'guestType','Normal'), COALESCE(item.value->>'remark',''), COALESCE((item.value->>'newsletter')::boolean,false), COALESCE((item.value->>'tourismTax')::boolean,false), COALESCE(NULLIF(item.value->>'visits','')::integer,0), COALESCE(NULLIF(item.value->>'updated','')::timestamptz,CURRENT_TIMESTAMP)
+    FROM jsonb_array_elements(COALESCE(p_state->'guestProfiles','[]'::jsonb)) AS item(value);
     DELETE FROM public.hotelx_season_calendar WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_rate_element WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_rate_type WHERE property_id = p_property_id;
@@ -947,6 +951,7 @@ const schemaStatements = [
         ), '[]'::jsonb),
         'segments', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', segment.segment_id, 'description', segment.description, 'displaySequence', segment.sort_order, 'icon', segment.icon, 'active', segment.active, 'updatedAt', segment.updated_at) ORDER BY segment.sort_order) FROM public.hotelx_segments AS segment WHERE segment.property_id = meta.id), '[]'::jsonb)
       ),
+      'guestProfiles', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', g.id, 'name', g.guest_name, 'mobile', g.mobile, 'email', g.email, 'nationality', g.nationality, 'identityNo', g.identity_no, 'address', g.address, 'country', g.country, 'state', g.state, 'city', g.city, 'postcode', g.postcode, 'birthDate', COALESCE(to_char(g.birth_date, 'YYYY-MM-DD'), ''), 'occupation', g.occupation, 'accountName', g.account_name, 'guestType', g.guest_type, 'remark', g.remark, 'newsletter', g.newsletter, 'tourismTax', g.tourism_tax, 'visits', g.visits, 'updated', to_char(g.updated_at, 'YYYY-MM-DD')) ORDER BY g.guest_name) FROM public.hotelx_guestprofile g WHERE g.property_id = meta.id), '[]'::jsonb),
       'bookings', COALESCE((
         SELECT jsonb_agg(jsonb_build_object(
           'reference', booking.booking_no,
