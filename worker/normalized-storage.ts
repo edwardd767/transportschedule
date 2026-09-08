@@ -368,6 +368,14 @@ const schemaStatements = [
     ADD COLUMN IF NOT EXISTS seasonal_rates jsonb NOT NULL DEFAULT '{}'::jsonb`,
   `ALTER TABLE public.hotelx_rate_setup_validity
     ADD COLUMN IF NOT EXISTS inclusive_elements jsonb NOT NULL DEFAULT '[]'::jsonb`,
+  `CREATE TABLE IF NOT EXISTS public.hotelx_rate_setup_validity_element (
+    property_id text NOT NULL,
+    validity_id uuid NOT NULL,
+    rate_element_id uuid NOT NULL,
+    PRIMARY KEY (property_id, validity_id, rate_element_id),
+    FOREIGN KEY (property_id, validity_id) REFERENCES public.hotelx_rate_setup_validity(property_id, id) ON DELETE CASCADE,
+    FOREIGN KEY (property_id, rate_element_id) REFERENCES public.hotelx_rate_element(property_id, id) ON DELETE CASCADE
+  )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_hotel_setup (
     property_id text PRIMARY KEY REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
     hotel_name text NOT NULL DEFAULT '', address text NOT NULL DEFAULT '', postcode text NOT NULL DEFAULT '', country text NOT NULL DEFAULT '', city text NOT NULL DEFAULT '', state text NOT NULL DEFAULT '', hotel_type text NOT NULL DEFAULT '', company_name text NOT NULL DEFAULT '', company_reg_no text NOT NULL DEFAULT '', sst_reg_no text NOT NULL DEFAULT '', ttx_reg_no text NOT NULL DEFAULT '', online_booking_url text NOT NULL DEFAULT '', live_run_date text NOT NULL DEFAULT '', contact_person text NOT NULL DEFAULT '', phone_no text NOT NULL DEFAULT '', mobile_no text NOT NULL DEFAULT '', reservation_email text NOT NULL DEFAULT '', business_email text NOT NULL DEFAULT '',
@@ -577,9 +585,14 @@ const schemaStatements = [
     SELECT p_property_id, (item.value->>'id')::uuid, item.ordinality::integer, item.value->>'code', item.value->>'description', COALESCE(item.value->>'rateTypeId', ''), COALESCE(NULLIF(item.value->>'rateFrequency', ''), 'Daily'), COALESCE((item.value->>'active')::boolean, true), COALESCE((item.value->>'web')::boolean, false), CASE WHEN COALESCE(item.value->>'updated', '') ~ '^\d{2} [A-Za-z]{3} \d{4}$' THEN to_date(item.value->>'updated', 'DD Mon YYYY') ELSE NULL END
     FROM jsonb_array_elements(COALESCE(p_state #> '{rateSetup,ratePlans}', '[]'::jsonb)) WITH ORDINALITY AS item(value, ordinality);
 
-    INSERT INTO public.hotelx_rate_setup_validity (property_id, rate_setup_id, id, sort_order, valid_from, valid_to, active, seasonal_rates, inclusive_elements)
-    SELECT p_property_id, (item.value->>'rateSetupId')::uuid, (item.value->>'id')::uuid, item.ordinality::integer, (item.value->>'from')::date, (item.value->>'to')::date, COALESCE((item.value->>'active')::boolean, true), COALESCE(item.value->'seasonalRates', '{}'::jsonb), COALESCE(item.value->'inclusiveElements', '[]'::jsonb)
+    INSERT INTO public.hotelx_rate_setup_validity (property_id, rate_setup_id, id, sort_order, valid_from, valid_to, active, seasonal_rates)
+    SELECT p_property_id, (item.value->>'rateSetupId')::uuid, (item.value->>'id')::uuid, item.ordinality::integer, (item.value->>'from')::date, (item.value->>'to')::date, COALESCE((item.value->>'active')::boolean, true), COALESCE(item.value->'seasonalRates', '{}'::jsonb)
     FROM jsonb_array_elements(COALESCE(p_state #> '{rateSetup,validity}', '[]'::jsonb)) WITH ORDINALITY AS item(value, ordinality);
+
+    INSERT INTO public.hotelx_rate_setup_validity_element (property_id, validity_id, rate_element_id)
+    SELECT p_property_id, (item.value->>'id')::uuid, element_id::uuid
+    FROM jsonb_array_elements(COALESCE(p_state #> '{rateSetup,validity}', '[]'::jsonb)) item(value)
+    CROSS JOIN LATERAL jsonb_array_elements_text(COALESCE(item.value->'inclusiveElements', '[]'::jsonb)) AS selected(element_id);
 
     INSERT INTO public.hotelx_hotel_setup (property_id, hotel_name, address, postcode, country, city, state, hotel_type, company_name, company_reg_no, sst_reg_no, ttx_reg_no, online_booking_url, live_run_date, contact_person, phone_no, mobile_no, reservation_email, business_email)
     VALUES (p_property_id, p_state #>> '{hotelMasters,profile,hotelName}', p_state #>> '{hotelMasters,profile,address}', p_state #>> '{hotelMasters,profile,postcode}', p_state #>> '{hotelMasters,profile,country}', p_state #>> '{hotelMasters,profile,city}', p_state #>> '{hotelMasters,profile,state}', p_state #>> '{hotelMasters,profile,hotelType}', p_state #>> '{hotelMasters,profile,companyName}', p_state #>> '{hotelMasters,profile,companyRegNo}', p_state #>> '{hotelMasters,profile,sstRegNo}', p_state #>> '{hotelMasters,profile,ttxRegNo}', p_state #>> '{hotelMasters,profile,onlineBookingUrl}', p_state #>> '{hotelMasters,profile,liveRunDate}', p_state #>> '{hotelMasters,profile,contactPerson}', p_state #>> '{hotelMasters,profile,phoneNo}', p_state #>> '{hotelMasters,profile,mobileNo}', p_state #>> '{hotelMasters,profile,reservationEmail}', p_state #>> '{hotelMasters,profile,businessEmail}');

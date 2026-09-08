@@ -88,6 +88,15 @@ CREATE TABLE IF NOT EXISTS public.hotelx_rate_setup_validity (
   CHECK (valid_to >= valid_from)
 );
 
+CREATE TABLE IF NOT EXISTS public.hotelx_rate_setup_validity_element (
+  property_id text NOT NULL,
+  validity_id uuid NOT NULL,
+  rate_element_id uuid NOT NULL,
+  PRIMARY KEY (property_id, validity_id, rate_element_id),
+  FOREIGN KEY (property_id, validity_id) REFERENCES public.hotelx_rate_setup_validity(property_id, id) ON DELETE CASCADE,
+  FOREIGN KEY (property_id, rate_element_id) REFERENCES public.hotelx_rate_element(property_id, id) ON DELETE CASCADE
+);
+
 ALTER TABLE public.hotelx_rate_setup_validity
   ADD COLUMN IF NOT EXISTS seasonal_rates jsonb NOT NULL DEFAULT '{}'::jsonb;
 ALTER TABLE public.hotelx_rate_setup_validity
