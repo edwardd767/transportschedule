@@ -803,7 +803,7 @@ function HomeContent({ store }: { store: TransportData }) {
               onDepartmentsChange={async (value) => { await store.run({ type: 'departmentSave', value }); setNotice('Department saved.'); }}
               roomTypes={hotelMasters.roomTypes}
               hotelProfile={hotelMasters.profile}
-              onHotelProfileChange={async (value) => { await store.run({ type: 'hotelProfileSave', value }); setNotice('Hotel Setup saved.'); }}
+              onHotelProfileChange={async (value) => { await store.run({ type: 'hotelProfileSave', value }); setNotice('General Policy saved.'); }}
               onRateDataChange={async (value) => { await store.run({ type: 'rateSetup', value }); setNotice('Rate Setup saved.'); }}
               onBack={() => { setRateSetupSection(null); setView('hotelsettings'); }}
             />

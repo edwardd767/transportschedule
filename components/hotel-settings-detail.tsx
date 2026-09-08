@@ -20,30 +20,29 @@ import { initialHotelProfile, type HotelDepartment, type HotelRoomType, type Roo
 import { HotelSetupModule as HotelSetupModuleV2 } from '@/components/hotel-setup-module';
 
 
-function StandardPolicyModule({ onBack }: { onBack: () => void }) {
+function StandardPolicyModule({ onBack, profile, onProfileChange }: { onBack: () => void; profile: HotelProfile; onProfileChange: (value: HotelProfile) => void | Promise<void> }) {
   const [policy, setPolicy] = useState<string | null>(null);
-  if (policy === 'General Policy') return <GeneralPolicyModule onBack={() => setPolicy(null)} />;
+  if (policy === 'General Policy') return <GeneralPolicyModule profile={profile} onProfileChange={onProfileChange} onBack={() => setPolicy(null)} />;
   const policies = ['Hotel Operational Policy', 'Security Deposit Policy', 'State & Tourism Tax', 'Room Status Policy', 'General Policy', 'Terms & Conditions', 'Advance Payment Policy', 'e-Invoice Policy'];
   return <section className="master-page standard-policy-page" aria-label="Standard Policy & Guidelines"><div className="standard-policy-list">{policies.map((item) => <button className="standard-policy-row" type="button" key={item} onClick={() => item === 'General Policy' && setPolicy(item)}><strong>{item}</strong>{item === 'State & Tourism Tax' ? <MoreVertical size={22} /> : <ChevronRight size={24} />}</button>)}</div><button className="secondary-button master-page-back" type="button" onClick={onBack}><ArrowLeft size={16} /> Back to Hotel Settings</button></section>;
 }
 
-function GeneralPolicyModule({ onBack }: { onBack: () => void }) {
-  const [editing, setEditing] = useState(false);
-  const [days, setDays] = useState('3');
-  const [currency, setCurrency] = useState('MYR');
-  const [floatAmount, setFloatAmount] = useState('0.00');
-  const [paxCount, setPaxCount] = useState('No. of Guest Profile Created');
-  const [childRatesApplied, setChildRatesApplied] = useState(false);
+function GeneralPolicyModule({ onBack, profile, onProfileChange }: { onBack: () => void; profile: HotelProfile; onProfileChange: (value: HotelProfile) => void | Promise<void> }) {
+  const [days, setDays] = useState(String(profile.bookingCancellationDays ?? 3));
+  const [currency, setCurrency] = useState(profile.currencyCode || 'MYR');
+  const [floatAmount, setFloatAmount] = useState(String(profile.floatAmount ?? 0));
+  const [paxCount, setPaxCount] = useState(profile.paxCount || 'No. of Guest Profile Created');
+  const [childRatesApplied, setChildRatesApplied] = useState(Boolean(profile.childRatesApplied));
   return <section className="master-page general-policy-page" aria-label="General Policy">
-    <div className="general-policy-head"><strong>General Policy</strong><button type="button" onClick={() => setEditing((value) => !value)}>{editing ? 'Done' : 'Edit'}</button></div>
+    <div className="general-policy-head"><strong>General Policy</strong></div>
     <div className="general-policy-card">
-      <label>Booking Cancellation Policy (days) *<input type="number" min="0" value={days} disabled={!editing} onChange={(event) => setDays(event.target.value)} /></label>
-      <label>Currency Code *<input value={currency} disabled={!editing} onChange={(event) => setCurrency(event.target.value.toUpperCase())} /></label>
-      <label>Float Amount *<input type="number" min="0" step="0.01" value={floatAmount} disabled={!editing} onChange={(event) => setFloatAmount(event.target.value)} /></label>
-      <label>Pax Count *<select value={paxCount} disabled={!editing} onChange={(event) => setPaxCount(event.target.value)}><option>No. of Guest Profile Created</option><option>No. of Pax Manual Updated</option></select></label>
-      <label className="general-policy-toggle"><span>Child Rates Applied</span><input type="checkbox" checked={childRatesApplied} disabled={!editing} onChange={(event) => setChildRatesApplied(event.target.checked)} /><i /></label>
+      <label>Booking Cancellation Policy (days) *<input type="number" min="0" value={days} onChange={(event) => setDays(event.target.value)} /></label>
+      <label>Currency Code *<input value={currency} onChange={(event) => setCurrency(event.target.value.toUpperCase())} /></label>
+      <label>Float Amount *<input type="number" min="0" step="0.01" value={floatAmount} onChange={(event) => setFloatAmount(event.target.value)} /></label>
+      <label>Pax Count *<select value={paxCount} onChange={(event) => setPaxCount(event.target.value)}><option>No. of Guest Profile Created</option><option>No. of Pax Manual Updated</option></select></label>
+      <label className="general-policy-toggle"><span>Child Rates Applied</span><input type="checkbox" checked={childRatesApplied} onChange={(event) => setChildRatesApplied(event.target.checked)} /><i /></label>
     </div>
-    <div className="master-page-actions"><button className="secondary-button" type="button" onClick={onBack}>Back to Standard Policy</button><button className="primary-button" type="button" disabled={!editing} onClick={() => setEditing(false)}>Save</button></div>
+    <div className="master-page-actions"><button className="secondary-button" type="button" onClick={onBack}>Back to Standard Policy</button><button className="primary-button" type="button" onClick={() => setEditing(false)}>Save</button></div>
   </section>;
 }
 
@@ -155,7 +154,7 @@ export function HotelSettingsDetail({
   if (kind === 'roomStatus') return <RoomStatusModule statuses={roomStatuses} onChange={onRoomStatusesChange} onBack={onBack} />;
   if (kind === 'department') return <DepartmentModule departments={departments} onChange={onDepartmentsChange} onBack={onBack} />;
   if (kind === 'standardPolicy') {
-    return <StandardPolicyModule onBack={onBack} />;
+    return <StandardPolicyModule profile={hotelProfile || initialHotelProfile} onProfileChange={onHotelProfileChange} onBack={onBack} />;
   }
   return (
     <section className="master-page" aria-label={page.title}>
