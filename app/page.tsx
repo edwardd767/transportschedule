@@ -774,7 +774,7 @@ function HomeContent({ store }: { store: TransportData }) {
             />
           </div>
         ) : view === 'segment' ? (
-          <div className="settings-scroll hotel-master-scroll" key="segment"><SegmentModule segments={hotelMasters.segments} onChange={async (value) => { await store.run({ type: 'segmentSave', value }); setNotice('Segment saved.'); }} onBack={() => setView('hotelsettings')} /></div>
+          <div className="settings-scroll hotel-master-scroll" key="segment"><SegmentModule segments={hotelMasters.segments || []} onChange={async (value) => { await store.run({ type: 'segmentSave', value }); setNotice('Segment saved.'); }} onBack={() => setView('hotelsettings')} /></div>
         ) : ['hotelsetup', 'department', 'floorplan', 'roomstatus', 'ratepolicy'].includes(view) ? (
           <div className="settings-scroll hotel-master-scroll" key={view}>
             <HotelSettingsDetail
