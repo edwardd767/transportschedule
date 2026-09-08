@@ -5429,7 +5429,7 @@ p {
 
 /* Rate setup validity editor */
 .validity-editor-page{max-width:100%;padding-bottom:24px}
-.validity-editor-page .master-detail-card{margin-top:8px;padding:0;overflow:hidden;border:1px solid #e1e1e1;border-radius:6px;background:#fff;box-shadow:0 2px 7px #00000012}
+.validity-editor-page .master-detail-card{margin:8px 0 0;padding:0;overflow:hidden;border:1px solid #e1e1e1;border-radius:6px;background:#fff;box-shadow:0 2px 7px #00000012}
 .validity-editor-page .master-section-label{padding:19px 20px 16px;background:#fff7ed;color:#f27f18;font-size:16px;font-weight:700}
 .validity-editor-page .rate-editor-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:0 20px 12px}
 .validity-editor-page .rate-editor-field{display:flex;flex-direction:column;gap:7px;color:#777;font-size:12px}
