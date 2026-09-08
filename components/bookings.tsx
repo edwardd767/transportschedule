@@ -29,6 +29,7 @@ import { BookingEdit } from '@/components/booking-edit';
 import { BillingSchedule } from '@/components/billing-schedule';
 import { BillingInstruction } from '@/components/billing-instruction';
 import { SpecialRequest } from '@/components/special-request';
+import { BookingAttachments } from '@/components/booking-attachments';
 import type { BookingTransportLeg } from '@/lib/booking-transport';
 
 function BookingOccupancy({ booking }: { booking: Booking }) {
@@ -92,6 +93,7 @@ export function Bookings({
   const [billingOpen, setBillingOpen] = useState(false);
   const [billingInstructionOpen, setBillingInstructionOpen] = useState(false);
   const [specialRequestOpen, setSpecialRequestOpen] = useState(false);
+  const [attachmentsOpen, setAttachmentsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('all');
   const [arrivalDate, setArrivalDate] = useState('');
@@ -152,6 +154,7 @@ export function Bookings({
   if (booking) {
     if (billingInstructionOpen) return <BillingInstruction booking={booking} onSave={onUpdate} onBack={() => setBillingInstructionOpen(false)} />;
     if (specialRequestOpen) return <SpecialRequest booking={booking} onSave={onUpdate} onBack={() => setSpecialRequestOpen(false)} />;
+    if (attachmentsOpen) return <BookingAttachments booking={booking} onSave={onUpdate} onBack={() => setAttachmentsOpen(false)} />;
     if (billingOpen) return <BillingSchedule booking={booking} bookingLegs={bookingLegs} onBack={() => setBillingOpen(false)} />;
     const rooms = booking.rooms.map((room) => `${room.code} : ${room.count}`).join('   ');
     const assignments =
@@ -225,6 +228,8 @@ export function Bookings({
                       ? setSpecialRequestOpen(true)
                     : section.title === 'Billing Instruction'
                       ? setBillingInstructionOpen(true)
+                    : section.title === 'Attachments'
+                      ? setAttachmentsOpen(true)
                     : section.title === 'Billing Schedule'
                       ? setBillingOpen(true)
                     : onNotice(`${section.title} is shown for reference. Editing this booking section is not included yet.`)

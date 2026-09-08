@@ -50,6 +50,7 @@ export type Booking = {
   cityAccount?: boolean;
   billingRemark?: string;
   specialRequests?: Record<string, string>;
+  attachments?: Array<{ room: string; remarks: string; fileName?: string }>;
 };
 
 // The guest names follow the supplied screen. Statuses and amounts are sample data.

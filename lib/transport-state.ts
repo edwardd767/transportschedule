@@ -716,6 +716,7 @@ export function applyTransportAction(
         cityAccount: v.cityAccount === true,
         billingRemark: typeof v.billingRemark === 'string' ? v.billingRemark.slice(0, 1000) : '',
         specialRequests: v.specialRequests && typeof v.specialRequests === 'object' ? v.specialRequests as Record<string, string> : {},
+        attachments: Array.isArray(v.attachments) ? v.attachments.slice(0, 100).map((item) => { const row = object(item); return { room: typeof row.room === 'string' ? row.room.slice(0, 120) : '', remarks: typeof row.remarks === 'string' ? row.remarks.slice(0, 2000) : '', fileName: typeof row.fileName === 'string' ? row.fileName.slice(0, 240) : '' }; }) : [],
       };
       return { ...normalized, bookings: [value, ...normalized.bookings] };
     }
@@ -783,6 +784,7 @@ export function applyTransportAction(
         cityAccount: v.cityAccount === true,
         billingRemark: typeof v.billingRemark === 'string' ? v.billingRemark.slice(0, 1000) : '',
         specialRequests: v.specialRequests && typeof v.specialRequests === 'object' ? v.specialRequests as Record<string, string> : {},
+        attachments: Array.isArray(v.attachments) ? v.attachments.slice(0, 100).map((item) => { const row = object(item); return { room: typeof row.room === 'string' ? row.room.slice(0, 120) : '', remarks: typeof row.remarks === 'string' ? row.remarks.slice(0, 2000) : '', fileName: typeof row.fileName === 'string' ? row.fileName.slice(0, 240) : '' }; }) : [],
       };
       return { ...normalized, bookings: normalized.bookings.map((item) => item.reference === reference ? value : item) };
     }
