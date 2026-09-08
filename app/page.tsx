@@ -711,6 +711,7 @@ function HomeContent({ store }: { store: TransportData }) {
           <Bookings
             bookings={bookings}
             roomTypes={hotelMasters.roomTypes}
+            rateSetup={rateSetup}
             segments={hotelMasters.segments}
             booking={activeBooking}
             onCreate={async (booking) => {

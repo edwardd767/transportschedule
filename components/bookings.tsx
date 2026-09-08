@@ -32,6 +32,7 @@ import { SpecialRequest } from '@/components/special-request';
 import { BookingAttachments } from '@/components/booking-attachments';
 import { AvailabilityDialog } from '@/components/availability-dialog';
 import type { BookingTransportLeg } from '@/lib/booking-transport';
+import type { RateSetupData } from '@/lib/rate-setup-data';
 
 function BookingOccupancy({ booking }: { booking: Booking }) {
   return (
@@ -57,6 +58,7 @@ function BookingOccupancy({ booking }: { booking: Booking }) {
 export function Bookings({
   bookings,
   roomTypes,
+  rateSetup,
   segments,
   booking,
   onSelect,
@@ -71,6 +73,7 @@ export function Bookings({
 }: {
   bookings: Booking[];
   roomTypes: HotelRoomType[];
+  rateSetup: RateSetupData;
   segments: HotelSegment[];
   booking: Booking | null;
   onSelect: (booking: Booking) => void;
@@ -145,6 +148,7 @@ export function Bookings({
       <BookingCreate
         bookings={bookings}
         roomTypes={roomTypes}
+        rateSetup={rateSetup}
         segments={segments}
         onCancel={() => setCreateOpen(false)}
         onNotice={onNotice}

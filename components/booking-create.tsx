@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { CalendarDays, Plus, X } from 'lucide-react';
 import { Choice } from '@/components/hotel-choice';
 import { HotelDatePicker } from '@/components/hotel-date-picker';
@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import type { Booking } from '@/lib/bookings';
+import type { RateSetupData } from '@/lib/rate-setup-data';
 import { nextBookingReference, type HotelRoomType, type HotelSegment } from '@/lib/hotel-masters';
 
 type RoomLine = {
@@ -59,6 +60,7 @@ export function BookingCreate({
 }: {
   bookings: Booking[];
   roomTypes: HotelRoomType[];
+  rateSetup?: RateSetupData;
   segments?: HotelSegment[];
   onCreate: (booking: Booking) => Promise<void>;
   onCancel: () => void;
@@ -82,6 +84,9 @@ export function BookingCreate({
   const [infants, setInfants] = useState(0);
   const [rateCode, setRateCode] = useState('BAR');
   const [roomRate, setRoomRate] = useState(0);
+  const activeRatePlans = (rateSetup?.ratePlans || []).filter((item) => item.active);
+  const rateItems = activeRatePlans.map((item) => ({ value: item.code, label: `${item.code} - ${item.description}` }));
+  const rateAmount = (code: string) => { const plan = activeRatePlans.find((item) => item.code === code); const valid = (rateSetup?.validity || []).find((item) => item.rateSetupId === plan?.id && item.active && arrival >= item.from && arrival <= item.to); const season = rateSetup?.calendar?.[arrival] || rateSetup?.seasons?.[0]?.id; return valid?.seasonalRates?.[roomType]?.[season || '']?.amount || 0; };
   const [promoCode, setPromoCode] = useState('NONE');
   const [discountPerNight, setDiscountPerNight] = useState(0);
   const [roomLines, setRoomLines] = useState<RoomLine[]>([]);
@@ -101,14 +106,21 @@ export function BookingCreate({
     [roomTypes],
   );
 
+  useEffect(() => {
+    if (activeRatePlans.length && !activeRatePlans.some((item) => item.code === rateCode)) {
+      setRateCode(activeRatePlans[0].code);
+    }
+    setRoomRate(rateAmount(rateCode));
+  }, [arrival, roomType, rateCode, rateSetup]);
+
   function resetRoomDraft() {
     setRoomType(activeRoomTypes[0]?.code ?? '');
     setRoomQty(1);
     setAdults(1);
     setChildren(0);
     setInfants(0);
-    setRateCode('BAR');
-    setRoomRate(0);
+    setRateCode(activeRatePlans[0]?.code ?? 'BAR');
+    setRoomRate(rateAmount(activeRatePlans[0]?.code ?? 'BAR'));
     setPromoCode('NONE');
     setDiscountPerNight(0);
   }
@@ -372,12 +384,8 @@ export function BookingCreate({
               <label className="booking-line-field"><span>No. of Child</span><input type="number" min="0" value={children} onChange={(event) => setChildren(Number(event.target.value))} /></label>
               <label className="booking-line-field"><span>No. of Infant</span><input type="number" min="0" value={infants} onChange={(event) => setInfants(Number(event.target.value))} /></label>
             </div>
-            <label className="booking-line-field booking-choice-field"><span>Rate Code *</span><Choice label="Rate Code" value={rateCode} onChange={setRateCode} items={[
-              { value: 'BAR', label: 'BAR - Best Available Rate' },
-              { value: 'CORP', label: 'CORP - Corporate' },
-              { value: 'PROMO', label: 'PROMO - Promotion' },
-            ]} /></label>
-            <label className="booking-line-field"><span>Room Rate</span><input type="number" min="0" step="0.01" value={roomRate} onChange={(event) => setRoomRate(Number(event.target.value))} /></label>
+            <label className="booking-line-field booking-choice-field"><span>Rate Code *</span><Choice label="Rate Code" value={rateCode} onChange={(value) => { setRateCode(value); setRoomRate(rateAmount(value)); }} items={rateItems.length ? rateItems : [{ value: 'BAR', label: 'BAR - Best Available Rate' }]} /></label>
+            <label className="booking-line-field"><span>Room Rate</span><input type="number" min="0" step="0.01" value={roomRate} readOnly /></label>
             <label className="booking-line-field booking-choice-field"><span>Promo Code</span><Choice label="Promo Code" value={promoCode} onChange={setPromoCode} items={[
               { value: 'NONE', label: 'No Promo Code' },
               { value: 'PROMO10', label: 'PROMO10' },
