@@ -5438,6 +5438,13 @@ p {
 .rate-validity-tabs{display:flex;align-items:stretch;gap:0;margin-top:14px;padding:0 20px;border:1px solid #ddd;background:#fff;box-shadow:0 2px 5px #00000012}
 .rate-validity-tabs>*{padding:15px 28px 13px;color:#7254e9;font-size:14px;white-space:nowrap}
 .rate-validity-tabs strong{border-bottom:2px solid #ff8d22;color:#222}
+.rate-validity-tabs button{border:0;background:none;cursor:pointer}
+.rate-inclusive-list{display:grid;gap:8px;margin-top:12px}
+.rate-element-overlay{position:fixed;inset:0;z-index:30;display:grid;place-items:center;background:#0008}
+.rate-element-modal{width:min(600px,calc(100vw - 32px));max-height:72vh;background:#fff;border-radius:5px;box-shadow:0 12px 35px #0005;overflow:hidden}
+.rate-element-modal h2{margin:0;padding:16px 18px;background:#fff7ed;color:#f27f18;font-size:16px}
+.rate-element-modal>input{width:calc(100% - 28px);margin:12px 14px;padding:10px;border:0;border-bottom:1px solid #aaa;font-size:15px}
+.rate-element-options{max-height:43vh;overflow:auto;padding:0 14px}.rate-element-options label{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid #eee}.rate-element-options label span{display:grid;flex:1}.rate-element-options small{color:#777}.rate-element-options b{font-size:13px}.rate-element-actions{display:flex;justify-content:flex-end;gap:8px;padding:12px 14px}.rate-element-actions button{border:0;border-radius:4px;padding:9px 16px;background:#ff9000;color:#fff;font-weight:700}
 .rate-seasonal-list{display:flex;flex-direction:column;gap:4px;margin-top:10px}
 .rate-seasonal-room{border:1px solid #e0e0e0;border-radius:5px;background:#fff;box-shadow:0 2px 5px #0000000d;overflow:hidden}
 .rate-seasonal-room summary{display:flex;align-items:center;justify-content:space-between;min-height:48px;padding:0 18px;font-size:13px;font-weight:700;cursor:pointer;list-style:none}
