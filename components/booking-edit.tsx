@@ -67,6 +67,7 @@ function initialRooms(booking: Booking): BookingRoom[] {
 }
 
 export function BookingEdit({
+  childRatesApplied = false,
   rateSetup,
   bookings,
   booking,
@@ -75,6 +76,7 @@ export function BookingEdit({
   onUpdate,
   onNotice,
 }: {
+  childRatesApplied?: boolean;
   rateSetup?: RateSetupData;
   bookings: Booking[];
   booking: Booking;
@@ -246,7 +248,7 @@ export function BookingEdit({
   return (
     <section className="booking-edit-page" aria-label={`Edit booking ${booking.reference}`}>
       <form className="booking-edit-scroll" onSubmit={confirmEdit}>
-        <BookingAvailability rateSetup={rateSetup} arrival={arrival} bookings={bookings} roomTypes={roomTypes} />
+        <BookingAvailability childRatesApplied={childRatesApplied} rateSetup={rateSetup} arrival={arrival} bookings={bookings} roomTypes={roomTypes} />
 
         <div className="booking-form-section">
           <div className="booking-section-heading">Stay Information</div>

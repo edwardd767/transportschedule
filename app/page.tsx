@@ -710,6 +710,7 @@ function HomeContent({ store }: { store: TransportData }) {
         </div>
         {view === 'booking' ? (
           <Bookings
+            childRatesApplied={hotelMasters.profile.childRatesApplied}
             bookings={bookings}
             roomTypes={hotelMasters.roomTypes}
             rateSetup={rateSetup}

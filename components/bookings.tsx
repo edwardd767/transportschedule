@@ -56,6 +56,7 @@ function BookingOccupancy({ booking }: { booking: Booking }) {
 }
 
 export function Bookings({
+  childRatesApplied = false,
   bookings,
   roomTypes,
   rateSetup,
@@ -71,6 +72,7 @@ export function Bookings({
   transportSummary,
   bookingLegs,
 }: {
+  childRatesApplied?: boolean;
   bookings: Booking[];
   roomTypes: HotelRoomType[];
   rateSetup: RateSetupData;
@@ -146,6 +148,7 @@ export function Bookings({
   if (createOpen) {
     return (
       <BookingCreate
+        childRatesApplied={childRatesApplied}
         bookings={bookings}
         roomTypes={roomTypes}
         rateSetup={rateSetup}
@@ -181,7 +184,7 @@ export function Bookings({
             </div>
             <div className="booking-detail-bottom"><span>{booking.reference} <span className="booking-divider">|</span> {booking.guest}</span></div>
           </div>
-          <BookingEdit rateSetup={rateSetup} bookings={bookings} booking={booking} roomTypes={roomTypes} onCancel={() => onEditingChange(false)} onNotice={onNotice} onUpdate={async (value) => { await onUpdate(value); onEditingChange(false); }} />
+          <BookingEdit childRatesApplied={childRatesApplied} rateSetup={rateSetup} bookings={bookings} booking={booking} roomTypes={roomTypes} onCancel={() => onEditingChange(false)} onNotice={onNotice} onUpdate={async (value) => { await onUpdate(value); onEditingChange(false); }} />
         </section>
       );
     }

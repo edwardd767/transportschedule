@@ -52,6 +52,7 @@ function prettyDate(value: string) {
 }
 
 export function BookingCreate({
+  childRatesApplied = false,
   bookings,
   roomTypes,
   rateSetup,
@@ -60,6 +61,7 @@ export function BookingCreate({
   onCancel,
   onNotice,
 }: {
+  childRatesApplied?: boolean;
   bookings: Booking[];
   roomTypes: HotelRoomType[];
   rateSetup?: RateSetupData;
@@ -252,7 +254,7 @@ export function BookingCreate({
       </div>
 
       <form className="booking-new-scroll" onSubmit={saveBooking}>
-        <BookingAvailability rateSetup={rateSetup} arrival={arrival} bookings={bookings} roomTypes={roomTypes} />
+        <BookingAvailability childRatesApplied={childRatesApplied} rateSetup={rateSetup} arrival={arrival} bookings={bookings} roomTypes={roomTypes} />
 
         <div className="booking-form-section">
           <div className="booking-section-heading">Stay Information</div>
