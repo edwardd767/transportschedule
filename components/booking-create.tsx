@@ -66,7 +66,14 @@ export function BookingCreate({
   onCancel: () => void;
   onNotice: (message: string) => void;
 }) {
-  const effectiveRateSetup = rateSetup ?? initialRateSetupData;
+  const effectiveRateSetup: RateSetupData = {
+    ...initialRateSetupData,
+    ...(rateSetup ?? {}),
+    seasons: Array.isArray(rateSetup?.seasons) ? rateSetup.seasons : initialRateSetupData.seasons,
+    calendar: rateSetup?.calendar && typeof rateSetup.calendar === 'object' ? rateSetup.calendar : initialRateSetupData.calendar,
+    ratePlans: Array.isArray(rateSetup?.ratePlans) ? rateSetup.ratePlans : initialRateSetupData.ratePlans,
+    validity: Array.isArray(rateSetup?.validity) ? rateSetup.validity : initialRateSetupData.validity,
+  };
   const activeRoomTypes = roomTypes.filter((item) => item.active);
   const [arrival, setArrival] = useState('2026-09-05');
   const [departure, setDeparture] = useState('2026-09-06');
