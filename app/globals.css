@@ -5529,3 +5529,18 @@ p {
 .booking-inline-availability .availability-total th{text-align:center}
 .booking-inline-availability .availability-total th:first-child,.booking-inline-availability .availability-occ th:first-child{text-align:left}
 .booking-inline-availability .availability-total .availability-current{color:#ff3156}
+
+.availability-room-link{border:0;background:none;padding:0;color:#ff8200;font:inherit;cursor:pointer;text-align:left}
+.availability-room-link:hover{text-decoration:underline}
+.booking-room-rates{width:min(600px,calc(100vw - 32px));max-width:600px!important;padding:12px;gap:10px;background:#fff;border-radius:4px}
+.booking-room-rates h2{background:#fcf3e8;color:#ff8700;font-size:13px;font-weight:700;margin:-12px -12px 0;padding:16px 12px}
+.room-rate-scroll{overflow:auto;max-height:60vh}
+.booking-room-rates table{border-collapse:collapse;min-width:740px;width:100%;font-size:10px;text-align:center}
+.booking-room-rates th,.booking-room-rates td{padding:5px 8px;white-space:nowrap}
+.booking-room-rates thead th{color:#999;font-size:10px}
+.booking-room-rates thead b,.booking-room-rates thead small{display:block}
+.booking-room-rates tbody th{text-align:left;color:#ff8200;font-weight:500;min-width:180px;position:sticky;left:0;background:#fff}
+.booking-room-rates tbody td{color:#8973bb;font-weight:700}
+.booking-room-rates tbody tr:nth-child(odd),.booking-room-rates tbody tr:nth-child(odd) th{background:#fcf3e8}
+.booking-room-rates footer{display:flex;justify-content:flex-end;padding-top:12px}
+.booking-room-rates footer button{border:0;border-radius:4px;background:#ff9827;color:#fff;padding:7px 12px;font-size:12px;font-weight:700;box-shadow:0 2px 4px #0003}

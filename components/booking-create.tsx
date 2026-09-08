@@ -252,7 +252,7 @@ export function BookingCreate({
       </div>
 
       <form className="booking-new-scroll" onSubmit={saveBooking}>
-        <BookingAvailability arrival={arrival} bookings={bookings} roomTypes={roomTypes} />
+        <BookingAvailability rateSetup={rateSetup} arrival={arrival} bookings={bookings} roomTypes={roomTypes} />
 
         <div className="booking-form-section">
           <div className="booking-section-heading">Stay Information</div>

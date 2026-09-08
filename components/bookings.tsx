@@ -181,7 +181,7 @@ export function Bookings({
             </div>
             <div className="booking-detail-bottom"><span>{booking.reference} <span className="booking-divider">|</span> {booking.guest}</span></div>
           </div>
-          <BookingEdit bookings={bookings} booking={booking} roomTypes={roomTypes} onCancel={() => onEditingChange(false)} onNotice={onNotice} onUpdate={async (value) => { await onUpdate(value); onEditingChange(false); }} />
+          <BookingEdit rateSetup={rateSetup} bookings={bookings} booking={booking} roomTypes={roomTypes} onCancel={() => onEditingChange(false)} onNotice={onNotice} onUpdate={async (value) => { await onUpdate(value); onEditingChange(false); }} />
         </section>
       );
     }
