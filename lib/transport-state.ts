@@ -715,6 +715,7 @@ export function applyTransportAction(
         referenceNo: typeof v.referenceNo === 'string' ? v.referenceNo.slice(0, 100) : '',
         cityAccount: v.cityAccount === true,
         billingRemark: typeof v.billingRemark === 'string' ? v.billingRemark.slice(0, 1000) : '',
+        specialRequests: v.specialRequests && typeof v.specialRequests === 'object' ? v.specialRequests as Record<string, string> : {},
       };
       return { ...normalized, bookings: [value, ...normalized.bookings] };
     }
@@ -781,6 +782,7 @@ export function applyTransportAction(
         referenceNo: typeof v.referenceNo === 'string' ? v.referenceNo.slice(0, 100) : '',
         cityAccount: v.cityAccount === true,
         billingRemark: typeof v.billingRemark === 'string' ? v.billingRemark.slice(0, 1000) : '',
+        specialRequests: v.specialRequests && typeof v.specialRequests === 'object' ? v.specialRequests as Record<string, string> : {},
       };
       return { ...normalized, bookings: normalized.bookings.map((item) => item.reference === reference ? value : item) };
     }

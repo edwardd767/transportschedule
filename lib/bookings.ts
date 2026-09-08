@@ -49,6 +49,7 @@ export type Booking = {
   referenceNo?: string;
   cityAccount?: boolean;
   billingRemark?: string;
+  specialRequests?: Record<string, string>;
 };
 
 // The guest names follow the supplied screen. Statuses and amounts are sample data.

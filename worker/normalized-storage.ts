@@ -260,6 +260,7 @@ const schemaStatements = [
   `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS reference_no text NOT NULL DEFAULT ''`,
   `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS city_account boolean NOT NULL DEFAULT false`,
   `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS billing_remark text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS special_requests jsonb NOT NULL DEFAULT '{}'::jsonb`,
   `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS adults integer NOT NULL DEFAULT 1`,
   `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS children integer NOT NULL DEFAULT 0`,
   `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS infants integer NOT NULL DEFAULT 0`,
@@ -499,7 +500,7 @@ const schemaStatements = [
       property_id, booking_no, sort_order, guest, arrival_date, departure_date, status,
       assigned_rooms, checked_in_guests, guests, amount, highlight_dates,
       group_name, phone, account_name, credit_limit, print_rate, state_tax, tourism_tax,
-      email, sales_channel, source, segment, reference_no, city_account, billing_remark
+      email, sales_channel, source, segment, reference_no, city_account, billing_remark, special_requests
     )
     SELECT p_property_id, item.value->>'reference', item.ordinality::integer,
       item.value->>'guest', item.value->>'arrival', item.value->>'departure',
@@ -514,7 +515,7 @@ const schemaStatements = [
       COALESCE((item.value->>'printRate')::boolean, true), COALESCE((item.value->>'stateTax')::boolean, true),
       COALESCE((item.value->>'tourismTax')::boolean, true), COALESCE(item.value->>'email', ''),
       COALESCE(item.value->>'salesChannel', 'Direct'), COALESCE(item.value->>'source', 'Booking'),
-      COALESCE(item.value->>'segment', 'Leisure'), COALESCE(item.value->>'referenceNo', ''), COALESCE((item.value->>'cityAccount')::boolean, false), COALESCE(item.value->>'billingRemark', '')
+      COALESCE(item.value->>'segment', 'Leisure'), COALESCE(item.value->>'referenceNo', ''), COALESCE((item.value->>'cityAccount')::boolean, false), COALESCE(item.value->>'billingRemark', ''), COALESCE(item.value->'specialRequests', '{}'::jsonb)
     FROM jsonb_array_elements(COALESCE(p_state->'bookings', '[]'::jsonb))
       WITH ORDINALITY AS item(value, ordinality);
 
@@ -921,7 +922,7 @@ const schemaStatements = [
           'groupName', booking.group_name, 'phone', booking.phone, 'accountName', booking.account_name,
           'creditLimit', booking.credit_limit::double precision, 'printRate', booking.print_rate, 'stateTax', booking.state_tax,
           'tourismTax', booking.tourism_tax, 'email', booking.email, 'salesChannel', booking.sales_channel,
-          'source', booking.source, 'segment', booking.segment, 'referenceNo', booking.reference_no, 'cityAccount', booking.city_account, 'billingRemark', booking.billing_remark
+          'source', booking.source, 'segment', booking.segment, 'referenceNo', booking.reference_no, 'cityAccount', booking.city_account, 'billingRemark', booking.billing_remark, 'specialRequests', booking.special_requests
         ) ORDER BY booking.sort_order)
         FROM public.hotelx_bookings AS booking
         WHERE booking.property_id = meta.id

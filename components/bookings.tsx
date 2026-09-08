@@ -28,6 +28,7 @@ import { BookingCreate } from '@/components/booking-create';
 import { BookingEdit } from '@/components/booking-edit';
 import { BillingSchedule } from '@/components/billing-schedule';
 import { BillingInstruction } from '@/components/billing-instruction';
+import { SpecialRequest } from '@/components/special-request';
 import type { BookingTransportLeg } from '@/lib/booking-transport';
 
 function BookingOccupancy({ booking }: { booking: Booking }) {
@@ -90,6 +91,7 @@ export function Bookings({
   const [createOpen, setCreateOpen] = useState(false);
   const [billingOpen, setBillingOpen] = useState(false);
   const [billingInstructionOpen, setBillingInstructionOpen] = useState(false);
+  const [specialRequestOpen, setSpecialRequestOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('all');
   const [arrivalDate, setArrivalDate] = useState('');
@@ -149,6 +151,7 @@ export function Bookings({
 
   if (booking) {
     if (billingInstructionOpen) return <BillingInstruction booking={booking} onSave={onUpdate} onBack={() => setBillingInstructionOpen(false)} />;
+    if (specialRequestOpen) return <SpecialRequest booking={booking} onSave={onUpdate} onBack={() => setSpecialRequestOpen(false)} />;
     if (billingOpen) return <BillingSchedule booking={booking} bookingLegs={bookingLegs} onBack={() => setBillingOpen(false)} />;
     const rooms = booking.rooms.map((room) => `${room.code} : ${room.count}`).join('   ');
     const assignments =
@@ -218,6 +221,8 @@ export function Bookings({
                   ? onOpenTransport(booking)
                   : section.title === 'Booking Info'
                     ? onEditingChange(true)
+                    : section.title === 'Special Request'
+                      ? setSpecialRequestOpen(true)
                     : section.title === 'Billing Instruction'
                       ? setBillingInstructionOpen(true)
                     : section.title === 'Billing Schedule'
