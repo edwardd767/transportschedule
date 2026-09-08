@@ -607,9 +607,6 @@ export function RateSetupModule({
 
   return (
     <div className="rate-setup-module">
-      <div className="rate-subpage-backline">
-        <button type="button" onClick={() => onSectionChange(null)}><ChevronLeft size={17} /> Rate Setup</button>
-      </div>
       {section === 'season-setup' ? <SeasonSetupPage seasons={data.seasons} onChange={(value) => savePart('seasons', value)} /> : null}
       {section === 'season-calendar' ? <SeasonCalendarPage seasons={data.seasons} assignments={data.calendar} onSave={(value) => savePart('calendar', value)} /> : null}
       {section === 'rate-element' ? <RateElementPage items={data.elements} onChange={(value) => savePart('elements', value)} /> : null}
