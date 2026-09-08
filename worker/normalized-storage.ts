@@ -352,9 +352,24 @@ const schemaStatements = [
     ADD COLUMN IF NOT EXISTS seasonal_rates jsonb NOT NULL DEFAULT '{}'::jsonb`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_hotel_setup (
     property_id text PRIMARY KEY REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    hotel_name text NOT NULL DEFAULT '', address text NOT NULL DEFAULT '', hotel_type text NOT NULL DEFAULT '', company_name text NOT NULL DEFAULT '', company_reg_no text NOT NULL DEFAULT '', sst_reg_no text NOT NULL DEFAULT '', ttx_reg_no text NOT NULL DEFAULT '', online_booking_url text NOT NULL DEFAULT '', live_run_date text NOT NULL DEFAULT '', contact_person text NOT NULL DEFAULT '', phone_no text NOT NULL DEFAULT '', mobile_no text NOT NULL DEFAULT '', reservation_email text NOT NULL DEFAULT '', business_email text NOT NULL DEFAULT '',
     profile jsonb NOT NULL DEFAULT '{}'::jsonb,
     updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS hotel_name text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS address text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS hotel_type text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS company_name text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS company_reg_no text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS sst_reg_no text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS ttx_reg_no text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS online_booking_url text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS live_run_date text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS contact_person text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS phone_no text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS mobile_no text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS reservation_email text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS business_email text NOT NULL DEFAULT ''`,
   `CREATE INDEX IF NOT EXISTS hotelx_season_calendar_season_idx
     ON public.hotelx_season_calendar(property_id, season_id, calendar_date)`,
   `CREATE INDEX IF NOT EXISTS hotelx_rate_element_name_idx
@@ -538,8 +553,8 @@ const schemaStatements = [
     SELECT p_property_id, item.value->>'rateSetupId', item.value->>'id', item.ordinality::integer, (item.value->>'from')::date, (item.value->>'to')::date, COALESCE((item.value->>'active')::boolean, true), COALESCE(item.value->'seasonalRates', '{}'::jsonb)
     FROM jsonb_array_elements(COALESCE(p_state #> '{rateSetup,validity}', '[]'::jsonb)) WITH ORDINALITY AS item(value, ordinality);
 
-    INSERT INTO public.hotelx_hotel_setup (property_id, profile)
-    VALUES (p_property_id, COALESCE(p_state #> '{hotelMasters,profile}', '{}'::jsonb));
+    INSERT INTO public.hotelx_hotel_setup (property_id, hotel_name, address, hotel_type, company_name, company_reg_no, sst_reg_no, ttx_reg_no, online_booking_url, live_run_date, contact_person, phone_no, mobile_no, reservation_email, business_email, profile)
+    VALUES (p_property_id, p_state #>> '{hotelMasters,profile,hotelName}', p_state #>> '{hotelMasters,profile,address}', p_state #>> '{hotelMasters,profile,hotelType}', p_state #>> '{hotelMasters,profile,companyName}', p_state #>> '{hotelMasters,profile,companyRegNo}', p_state #>> '{hotelMasters,profile,sstRegNo}', p_state #>> '{hotelMasters,profile,ttxRegNo}', p_state #>> '{hotelMasters,profile,onlineBookingUrl}', p_state #>> '{hotelMasters,profile,liveRunDate}', p_state #>> '{hotelMasters,profile,contactPerson}', p_state #>> '{hotelMasters,profile,phoneNo}', p_state #>> '{hotelMasters,profile,mobileNo}', p_state #>> '{hotelMasters,profile,reservationEmail}', p_state #>> '{hotelMasters,profile,businessEmail}', COALESCE(p_state #> '{hotelMasters,profile}', '{}'::jsonb));
 
     INSERT INTO public.hotelx_transport_rules (
       property_id, start_time, end_time, turnaround_minutes,
@@ -794,7 +809,7 @@ const schemaStatements = [
     meta.revision,
     jsonb_build_object(
       'hotelMasters', jsonb_build_object(
-        'profile', COALESCE((SELECT profile FROM public.hotelx_hotel_setup WHERE property_id = meta.id), '{}'::jsonb),
+        'profile', COALESCE((SELECT jsonb_build_object('hotelName', hotel_name, 'address', address, 'hotelType', hotel_type, 'companyName', company_name, 'companyRegNo', company_reg_no, 'sstRegNo', sst_reg_no, 'ttxRegNo', ttx_reg_no, 'onlineBookingUrl', online_booking_url, 'liveRunDate', live_run_date, 'contactPerson', contact_person, 'phoneNo', phone_no, 'mobileNo', mobile_no, 'reservationEmail', reservation_email, 'businessEmail', business_email) FROM public.hotelx_hotel_setup WHERE property_id = meta.id), '{}'::jsonb),
         'locations', COALESCE((
           SELECT jsonb_agg(jsonb_build_object(
             'code', location.code,
