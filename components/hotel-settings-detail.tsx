@@ -15,6 +15,7 @@ import { initialRateSetupData, type RateSetupData } from '@/lib/rate-setup-data'
 import { RoomStatusModule } from '@/components/room-status-module';
 import { DepartmentModule } from '@/components/department-module-polished';
 import { initialHotelProfile, type HotelDepartment, type HotelRoomType, type RoomStatus, type HotelProfile } from '@/lib/hotel-masters';
+import { HotelSetupModule as HotelSetupModuleV2 } from '@/components/hotel-setup-module';
 
 function HotelSetupModule({ profile, onChange, onBack }: { profile: HotelProfile; onChange: (value: HotelProfile) => void | Promise<void>; onBack: () => void }) {
   const [draft, setDraft] = useState(profile?.hotelName ? profile : initialHotelProfile); const [editing, setEditing] = useState(false); const [tab, setTab] = useState('Profile');
@@ -112,7 +113,7 @@ export function HotelSettingsDetail({
       </section>
     );
   }
-  if (kind === 'hotelSetup' && hotelProfile) return <HotelSetupModule profile={hotelProfile} onChange={onHotelProfileChange} onBack={onBack} />;
+  if (kind === 'hotelSetup' && hotelProfile) return <HotelSetupModuleV2 profile={hotelProfile} onChange={onHotelProfileChange} onBack={onBack} />;
   if (kind === 'roomStatus') return <RoomStatusModule statuses={roomStatuses} onChange={onRoomStatusesChange} onBack={onBack} />;
   if (kind === 'department') return <DepartmentModule departments={departments} onChange={onDepartmentsChange} onBack={onBack} />;
 

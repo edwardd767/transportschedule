@@ -92,12 +92,16 @@ ALTER TABLE public.hotelx_rate_setup_validity
 
 CREATE TABLE IF NOT EXISTS public.hotelx_hotel_setup (
   property_id text PRIMARY KEY REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
-  hotel_name text NOT NULL DEFAULT '', address text NOT NULL DEFAULT '', hotel_type text NOT NULL DEFAULT '', company_name text NOT NULL DEFAULT '', company_reg_no text NOT NULL DEFAULT '', sst_reg_no text NOT NULL DEFAULT '', ttx_reg_no text NOT NULL DEFAULT '', online_booking_url text NOT NULL DEFAULT '', live_run_date text NOT NULL DEFAULT '', contact_person text NOT NULL DEFAULT '', phone_no text NOT NULL DEFAULT '', mobile_no text NOT NULL DEFAULT '', reservation_email text NOT NULL DEFAULT '', business_email text NOT NULL DEFAULT '',
+  hotel_name text NOT NULL DEFAULT '', address text NOT NULL DEFAULT '', postcode text NOT NULL DEFAULT '', country text NOT NULL DEFAULT '', city text NOT NULL DEFAULT '', state text NOT NULL DEFAULT '', hotel_type text NOT NULL DEFAULT '', company_name text NOT NULL DEFAULT '', company_reg_no text NOT NULL DEFAULT '', sst_reg_no text NOT NULL DEFAULT '', ttx_reg_no text NOT NULL DEFAULT '', online_booking_url text NOT NULL DEFAULT '', live_run_date text NOT NULL DEFAULT '', contact_person text NOT NULL DEFAULT '', phone_no text NOT NULL DEFAULT '', mobile_no text NOT NULL DEFAULT '', reservation_email text NOT NULL DEFAULT '', business_email text NOT NULL DEFAULT '',
   profile jsonb NOT NULL DEFAULT '{}'::jsonb,
   updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS hotel_name text NOT NULL DEFAULT '';
+ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS postcode text NOT NULL DEFAULT '';
+ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS country text NOT NULL DEFAULT '';
+ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS city text NOT NULL DEFAULT '';
+ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS state text NOT NULL DEFAULT '';
 ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS address text NOT NULL DEFAULT '';
 ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS hotel_type text NOT NULL DEFAULT '';
 ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS company_name text NOT NULL DEFAULT '';
