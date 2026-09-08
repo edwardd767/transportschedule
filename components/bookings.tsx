@@ -30,6 +30,7 @@ import { BillingSchedule } from '@/components/billing-schedule';
 import { BillingInstruction } from '@/components/billing-instruction';
 import { SpecialRequest } from '@/components/special-request';
 import { BookingAttachments } from '@/components/booking-attachments';
+import { AvailabilityDialog } from '@/components/availability-dialog';
 import type { BookingTransportLeg } from '@/lib/booking-transport';
 
 function BookingOccupancy({ booking }: { booking: Booking }) {
@@ -96,6 +97,7 @@ export function Bookings({
   const [billingInstructionOpen, setBillingInstructionOpen] = useState(false);
   const [specialRequestOpen, setSpecialRequestOpen] = useState(false);
   const [attachmentsOpen, setAttachmentsOpen] = useState(false);
+  const [availabilityOpen, setAvailabilityOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('all');
   const [arrivalDate, setArrivalDate] = useState('');
@@ -258,7 +260,7 @@ export function Bookings({
           <button className="icon-button" aria-label="Search bookings" title="Search bookings" aria-pressed={searchOpen} onClick={() => setSearchOpen(!searchOpen)}><Search size={23} /></button>
           <button className="icon-button" aria-label="Filter bookings" title="Filter bookings" aria-pressed={filtersOpen} onClick={() => setFiltersOpen(!filtersOpen)}><SlidersHorizontal size={23} /></button>
           <button className="icon-button" aria-label={oldestFirst ? 'Sort newest bookings first' : 'Sort oldest bookings first'} title={oldestFirst ? 'Oldest bookings first' : 'Newest bookings first'} aria-pressed={oldestFirst} onClick={() => setOldestFirst(!oldestFirst)}><ArrowDownUp size={23} /></button>
-          <button className="icon-button" aria-label="Filter by arrival date" title="Filter by arrival date" aria-pressed={calendarOpen} onClick={() => setCalendarOpen(!calendarOpen)}><CalendarDays size={23} /></button>
+          <button className="icon-button" aria-label="View availability" title="View availability" onClick={() => setAvailabilityOpen(true)}><CalendarDays size={23} /></button>
         </div>
       </div>
       {(searchOpen || filtersOpen || calendarOpen || hasFilters) && (
@@ -307,6 +309,7 @@ export function Bookings({
       >
         <Plus size={28} />
       </button>
+      {availabilityOpen && <AvailabilityDialog roomTypes={roomTypes} onClose={() => setAvailabilityOpen(false)} />}
     </section>
   );
 }
