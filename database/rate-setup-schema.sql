@@ -81,6 +81,7 @@ CREATE TABLE IF NOT EXISTS public.hotelx_rate_setup_validity (
   valid_to date NOT NULL,
   active boolean NOT NULL DEFAULT true,
   seasonal_rates jsonb NOT NULL DEFAULT '{}'::jsonb,
+  inclusive_elements jsonb NOT NULL DEFAULT '[]'::jsonb,
   updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (property_id, rate_setup_id, id),
   FOREIGN KEY (property_id, rate_setup_id) REFERENCES public.hotelx_rate_setup(property_id, id) ON DELETE CASCADE,
@@ -89,6 +90,8 @@ CREATE TABLE IF NOT EXISTS public.hotelx_rate_setup_validity (
 
 ALTER TABLE public.hotelx_rate_setup_validity
   ADD COLUMN IF NOT EXISTS seasonal_rates jsonb NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE public.hotelx_rate_setup_validity
+  ADD COLUMN IF NOT EXISTS inclusive_elements jsonb NOT NULL DEFAULT '[]'::jsonb;
 
 CREATE TABLE IF NOT EXISTS public.hotelx_hotel_setup (
   property_id text PRIMARY KEY REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,

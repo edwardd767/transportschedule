@@ -273,7 +273,8 @@ function rateSetup(value: unknown): RateSetupData {
         seasonalRates[roomType][seasonId] = { amount: decimal(rate.amount, 'seasonal rate amount'), t1: decimal(rate.t1, 'seasonal rate T1'), t2: decimal(rate.t2, 'seasonal rate T2'), t3: decimal(rate.t3, 'seasonal rate T3') };
       }
     }
-    return { id: text(row.id, 'validity ID', true, 100), rateSetupId, from, to, active: boolean(row.active), seasonalRates };
+    const inclusiveElements = list(row.inclusiveElements).map((value) => text(value, 'inclusive element ID', true, 100));
+    return { id: text(row.id, 'validity ID', true, 100), rateSetupId, from, to, active: boolean(row.active), seasonalRates, inclusiveElements };
   });
   unique(validity);
   return { seasons, calendar, elements, rateTypes, ratePlans, validity };
