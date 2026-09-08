@@ -19,6 +19,30 @@ import { DepartmentModule } from '@/components/department-module-polished';
 import { initialHotelProfile, type HotelDepartment, type HotelRoomType, type RoomStatus, type HotelProfile } from '@/lib/hotel-masters';
 import { HotelSetupModule as HotelSetupModuleV2 } from '@/components/hotel-setup-module';
 
+
+function StandardPolicyModule({ onBack }: { onBack: () => void }) {
+  const [policy, setPolicy] = useState<string | null>(null);
+  if (policy === 'General Policy') return <GeneralPolicyModule onBack={() => setPolicy(null)} />;
+  const policies = ['Hotel Operational Policy', 'Security Deposit Policy', 'State & Tourism Tax', 'Room Status Policy', 'General Policy', 'Terms & Conditions', 'Advance Payment Policy', 'e-Invoice Policy'];
+  return <section className="master-page standard-policy-page" aria-label="Standard Policy & Guidelines"><div className="standard-policy-list">{policies.map((item) => <button className="standard-policy-row" type="button" key={item} onClick={() => item === 'General Policy' && setPolicy(item)}><strong>{item}</strong>{item === 'State & Tourism Tax' ? <MoreVertical size={22} /> : <ChevronRight size={24} />}</button>)}</div><button className="secondary-button master-page-back" type="button" onClick={onBack}><ArrowLeft size={16} /> Back to Hotel Settings</button></section>;
+}
+
+function GeneralPolicyModule({ onBack }: { onBack: () => void }) {
+  const [editing, setEditing] = useState(false);
+  const [days, setDays] = useState('3');
+  const [currency, setCurrency] = useState('MYR');
+  const [floatAmount, setFloatAmount] = useState('0.00');
+  return <section className="master-page general-policy-page" aria-label="General Policy">
+    <div className="general-policy-head"><strong>General Policy</strong><button type="button" onClick={() => setEditing((value) => !value)}>{editing ? 'Done' : 'Edit'}</button></div>
+    <div className="general-policy-card">
+      <label>Booking Cancellation Policy (days) *<input type="number" min="0" value={days} disabled={!editing} onChange={(event) => setDays(event.target.value)} /></label>
+      <label>Currency Code *<input value={currency} disabled={!editing} onChange={(event) => setCurrency(event.target.value.toUpperCase())} /></label>
+      <label>Float Amount *<input type="number" min="0" step="0.01" value={floatAmount} disabled={!editing} onChange={(event) => setFloatAmount(event.target.value)} /></label>
+    </div>
+    <div className="master-page-actions"><button className="secondary-button" type="button" onClick={onBack}>Back to Standard Policy</button><button className="primary-button" type="button" disabled={!editing} onClick={() => setEditing(false)}>Save</button></div>
+  </section>;
+}
+
 function HotelSetupModule({ profile, onChange, onBack }: { profile: HotelProfile; onChange: (value: HotelProfile) => void | Promise<void>; onBack: () => void }) {
   const [draft, setDraft] = useState(profile?.hotelName ? profile : initialHotelProfile); const [editing, setEditing] = useState(false); const [tab, setTab] = useState('Profile');
   useEffect(() => setDraft(profile?.hotelName ? profile : initialHotelProfile), [profile]);
@@ -127,24 +151,8 @@ export function HotelSettingsDetail({
   if (kind === 'roomStatus') return <RoomStatusModule statuses={roomStatuses} onChange={onRoomStatusesChange} onBack={onBack} />;
   if (kind === 'department') return <DepartmentModule departments={departments} onChange={onDepartmentsChange} onBack={onBack} />;
   if (kind === 'standardPolicy') {
-    const policies = ['Hotel Operational Policy', 'Security Deposit Policy', 'State & Tourism Tax', 'Room Status Policy', 'General Policy', 'Terms & Conditions', 'Advance Payment Policy', 'e-Invoice Policy'];
-    return (
-      <section className="master-page standard-policy-page" aria-label="Standard Policy & Guidelines">
-        <div className="standard-policy-list">
-          {policies.map((policy) => (
-            <button className="standard-policy-row" type="button" key={policy} aria-label={`Open ${policy}`}>
-              <strong>{policy}</strong>
-              {policy === 'State & Tourism Tax' ? <MoreVertical size={22} /> : <ChevronRight size={24} />}
-            </button>
-          ))}
-        </div>
-        <button className="secondary-button master-page-back" type="button" onClick={onBack}>
-          <ArrowLeft size={16} /> Back to Hotel Settings
-        </button>
-      </section>
-    );
+    return <StandardPolicyModule onBack={onBack} />;
   }
-
   return (
     <section className="master-page" aria-label={page.title}>
       <div className="master-list-head">
