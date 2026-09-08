@@ -32,12 +32,16 @@ function GeneralPolicyModule({ onBack }: { onBack: () => void }) {
   const [days, setDays] = useState('3');
   const [currency, setCurrency] = useState('MYR');
   const [floatAmount, setFloatAmount] = useState('0.00');
+  const [paxCount, setPaxCount] = useState('No. of Guest Profile Created');
+  const [childRatesApplied, setChildRatesApplied] = useState(false);
   return <section className="master-page general-policy-page" aria-label="General Policy">
     <div className="general-policy-head"><strong>General Policy</strong><button type="button" onClick={() => setEditing((value) => !value)}>{editing ? 'Done' : 'Edit'}</button></div>
     <div className="general-policy-card">
       <label>Booking Cancellation Policy (days) *<input type="number" min="0" value={days} disabled={!editing} onChange={(event) => setDays(event.target.value)} /></label>
       <label>Currency Code *<input value={currency} disabled={!editing} onChange={(event) => setCurrency(event.target.value.toUpperCase())} /></label>
       <label>Float Amount *<input type="number" min="0" step="0.01" value={floatAmount} disabled={!editing} onChange={(event) => setFloatAmount(event.target.value)} /></label>
+      <label>Pax Count *<select value={paxCount} disabled={!editing} onChange={(event) => setPaxCount(event.target.value)}><option>No. of Guest Profile Created</option><option>No. of Pax Manual Updated</option></select></label>
+      <label className="general-policy-toggle"><span>Child Rates Applied</span><input type="checkbox" checked={childRatesApplied} disabled={!editing} onChange={(event) => setChildRatesApplied(event.target.checked)} /><i /></label>
     </div>
     <div className="master-page-actions"><button className="secondary-button" type="button" onClick={onBack}>Back to Standard Policy</button><button className="primary-button" type="button" disabled={!editing} onClick={() => setEditing(false)}>Save</button></div>
   </section>;
