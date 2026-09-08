@@ -53,6 +53,7 @@ function prettyDate(value: string) {
 export function BookingCreate({
   bookings,
   roomTypes,
+  rateSetup,
   segments = [],
   onCreate,
   onCancel,
