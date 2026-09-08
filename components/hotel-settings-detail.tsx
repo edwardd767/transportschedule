@@ -141,7 +141,7 @@ export function HotelSettingsDetail({
   if (kind === 'ratePolicy') {
     return (
       <section className="master-page rate-setup-master-page" aria-label="Rate Setup">
-        <RateSetupModule section={rateSection} onSectionChange={onRateSectionChange} data={rateData} onChange={onRateDataChange} roomTypes={roomTypes} />
+        <RateSetupModule childRatesApplied={hotelProfile?.childRatesApplied ?? false} section={rateSection} onSectionChange={onRateSectionChange} data={rateData} onChange={onRateDataChange} roomTypes={roomTypes} />
         {!rateSection && (
           <button className="secondary-button master-page-back" type="button" onClick={onBack}>
             <ArrowLeft size={16} /> Back to Hotel Settings

@@ -1169,7 +1169,7 @@ function rateSetup(value) {
       for (const [seasonId, values] of Object.entries(object(seasonValues))) {
         if (!seasonId || seasonId.length > 100) continue;
         const rate2 = object(values);
-        seasonalRates[roomType][seasonId] = { amount: decimal(rate2.amount, "seasonal rate amount"), t1: decimal(rate2.t1, "seasonal rate T1"), t2: decimal(rate2.t2, "seasonal rate T2"), t3: decimal(rate2.t3, "seasonal rate T3"), ...Array.isArray(rate2.quotas) ? { quotas: list(rate2.quotas, 3).map((q) => number(q, "room quota", 0, 1e5)) } : {} };
+        seasonalRates[roomType][seasonId] = { basePax: number(rate2.basePax ?? 2, "base pax", 1, 1e5), extraAdult: decimal(rate2.extraAdult ?? 0, "extra adult charge"), extraChild: decimal(rate2.extraChild ?? 0, "extra child charge"), amount: decimal(rate2.amount, "seasonal rate amount"), t1: decimal(rate2.t1, "seasonal rate T1"), t2: decimal(rate2.t2, "seasonal rate T2"), t3: decimal(rate2.t3, "seasonal rate T3"), ...Array.isArray(rate2.quotas) ? { quotas: list(rate2.quotas, 3).map((q) => number(q, "room quota", 0, 1e5)) } : {} };
       }
     }
     const inclusiveElements = list(row.inclusiveElements).map((value2) => text(value2, "inclusive element ID", true, 100));
