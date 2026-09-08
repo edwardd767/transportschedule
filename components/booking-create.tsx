@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import type { Booking } from '@/lib/bookings';
-import type { RateSetupData } from '@/lib/rate-setup-data';
+import { initialRateSetupData, type RateSetupData } from '@/lib/rate-setup-data';
 import { nextBookingReference, type HotelRoomType, type HotelSegment } from '@/lib/hotel-masters';
 
 type RoomLine = {
@@ -66,6 +66,7 @@ export function BookingCreate({
   onCancel: () => void;
   onNotice: (message: string) => void;
 }) {
+  const effectiveRateSetup = rateSetup ?? initialRateSetupData;
   const activeRoomTypes = roomTypes.filter((item) => item.active);
   const [arrival, setArrival] = useState('2026-09-05');
   const [departure, setDeparture] = useState('2026-09-06');
@@ -84,9 +85,9 @@ export function BookingCreate({
   const [infants, setInfants] = useState(0);
   const [rateCode, setRateCode] = useState('BAR');
   const [roomRate, setRoomRate] = useState(0);
-  const activeRatePlans = (rateSetup?.ratePlans || []).filter((item) => item.active);
+  const activeRatePlans = effectiveRateSetup.ratePlans.filter((item) => item.active);
   const rateItems = activeRatePlans.map((item) => ({ value: item.code, label: `${item.code} - ${item.description}` }));
-  const rateAmount = (code: string) => { const plan = activeRatePlans.find((item) => item.code === code); const valid = (rateSetup?.validity || []).find((item) => item.rateSetupId === plan?.id && item.active && arrival >= item.from && arrival <= item.to); const season = rateSetup?.calendar?.[arrival] || rateSetup?.seasons?.[0]?.id; return valid?.seasonalRates?.[roomType]?.[season || '']?.amount || 0; };
+  const rateAmount = (code: string) => { const plan = activeRatePlans.find((item) => item.code === code); const valid = effectiveRateSetup.validity.find((item) => item.rateSetupId === plan?.id && item.active && arrival >= item.from && arrival <= item.to); const season = effectiveRateSetup.calendar[arrival] || effectiveRateSetup.seasons[0]?.id; return valid?.seasonalRates?.[roomType]?.[season || '']?.amount || 0; };
   const [promoCode, setPromoCode] = useState('NONE');
   const [discountPerNight, setDiscountPerNight] = useState(0);
   const [roomLines, setRoomLines] = useState<RoomLine[]>([]);
