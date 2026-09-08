@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS public.hotelx_rate_type (
 
 CREATE TABLE IF NOT EXISTS public.hotelx_rate_setup (
   property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
-  id text NOT NULL,
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
   sort_order integer NOT NULL,
   code text NOT NULL,
   description text NOT NULL,
@@ -74,8 +74,8 @@ ALTER TABLE public.hotelx_rate_setup
 
 CREATE TABLE IF NOT EXISTS public.hotelx_rate_setup_validity (
   property_id text NOT NULL,
-  rate_setup_id text NOT NULL,
-  id text NOT NULL,
+  rate_setup_id uuid NOT NULL,
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
   sort_order integer NOT NULL,
   valid_from date NOT NULL,
   valid_to date NOT NULL,

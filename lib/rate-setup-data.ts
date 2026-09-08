@@ -131,7 +131,7 @@ const firstRatePlans: Array<[string, string, string, boolean?, boolean?]> = [
 
 export const initialRatePlans: RatePlanItem[] = [
   ...firstRatePlans.map((item, index) => ({
-    id: `rate-${index + 1}`,
+    id: `b1000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
     code: item[0],
     description: item[1],
     rateTypeId: initialRateTypes.find((type) => type.name === item[0])?.id ?? initialRateTypes[0].id,
@@ -141,7 +141,7 @@ export const initialRatePlans: RatePlanItem[] = [
     web: item[4] ?? false,
   })),
   ...Array.from({ length: 35 }, (_, index) => ({
-    id: `rate-${index + 11}`,
+    id: `b1000000-0000-4000-8000-${String(index + 11).padStart(12, '0')}`,
     code: `RATE${String(index + 11).padStart(2, '0')}`,
     description: `Hotel Rate Plan ${index + 11}`,
     rateTypeId: initialRateTypes[0].id,

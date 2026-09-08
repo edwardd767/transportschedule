@@ -636,6 +636,12 @@ var initialRoomStatuses = [
   { code: "VI", description: "Vacant Inspection", color: "#2f4bc4", active: false },
   { code: "VR", description: "Vacant Ready", color: "#2ca9df", active: true }
 ];
+var initialSegments = [
+  ["04391124-0844-42c3-a2a3-d48bed9c080d", "Leisure"],
+  ["c927a6c9-2708-4414-ad15-47563757329c", "Corporate"],
+  ["7a1de9a2-8311-4e9b-8c6f-199071c97b5e", "Group"],
+  ["32112510-ed0f-4bfe-853d-e8892eda5423", "OTA"]
+].map(([id, description], index) => ({ id, description, displaySequence: index + 1, icon: "", active: true, updatedAt: "2026-09-08" }));
 var entries = (prefix, total) => Array.from({ length: total }, (_, index) => `${prefix} ${index + 1}`);
 var charges = (prefix, total) => Array.from({ length: total }, (_, index) => ({ id: `${prefix}-charge-${index + 1}`, title: index === 0 ? "Boat Service" : `Charge ${index + 1}`, amount: 0, taxScheme: "SST-3", outletCode: "", rateElement: false, guestAppFb: false, guestAppOnlineShop: false, posInterface: false, eventInterface: false, allowNegative: false, packageRedemption: false, kiosk: false, thirdPartyPos: false, eInvoice: false, msicCode: "55101", classification: "022" }));
 var initialDepartments = [
@@ -720,7 +726,8 @@ var initialHotelMasters = {
     ...roomsFor(roomTypes[2], 3, 301)
   ],
   roomStatuses: initialRoomStatuses,
-  departments: initialDepartments
+  departments: initialDepartments,
+  segments: initialSegments
 };
 var initialBookings = sampleBookings;
 
@@ -990,7 +997,7 @@ var firstRatePlans = [
 ];
 var initialRatePlans = [
   ...firstRatePlans.map((item, index) => ({
-    id: `rate-${index + 1}`,
+    id: `b1000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
     code: item[0],
     description: item[1],
     rateTypeId: initialRateTypes.find((type) => type.name === item[0])?.id ?? initialRateTypes[0].id,
@@ -1000,7 +1007,7 @@ var initialRatePlans = [
     web: item[4] ?? false
   })),
   ...Array.from({ length: 35 }, (_, index) => ({
-    id: `rate-${index + 11}`,
+    id: `b1000000-0000-4000-8000-${String(index + 11).padStart(12, "0")}`,
     code: `RATE${String(index + 11).padStart(2, "0")}`,
     description: `Hotel Rate Plan ${index + 11}`,
     rateTypeId: initialRateTypes[0].id,
@@ -1316,6 +1323,14 @@ function applyTransportAction(state, input) {
       if (new Set(value.map((item) => item.id)).size !== value.length) throw new Error("Duplicate department IDs.");
       return { ...state, hotelMasters: { ...state.hotelMasters, departments: value } };
     }
+    case "segmentSave": {
+      const value = list(action.value).map((item) => {
+        const row = object(item);
+        return { id: text(row.id, "segment ID", true, 60), description: text(row.description, "segment description", true, 100), displaySequence: number(row.displaySequence, "display sequence", 1, 9999), icon: text(row.icon, "segment icon", false, 240), active: boolean(row.active), updatedAt: text(row.updatedAt, "updated date", false, 30) };
+      });
+      if (new Set(value.map((item) => item.id)).size !== value.length) throw new Error("Duplicate segment IDs.");
+      return { ...state, hotelMasters: { ...state.hotelMasters, segments: value } };
+    }
     case "hotelProfileSave":
       return { ...state, hotelMasters: { ...state.hotelMasters, profile: action.value } };
     case "templates": {
@@ -1586,7 +1601,11 @@ function applyTransportAction(state, input) {
         referenceNo: typeof v.referenceNo === "string" ? v.referenceNo.slice(0, 100) : "",
         cityAccount: v.cityAccount === true,
         billingRemark: typeof v.billingRemark === "string" ? v.billingRemark.slice(0, 1e3) : "",
-        specialRequests: v.specialRequests && typeof v.specialRequests === "object" ? v.specialRequests : {}
+        specialRequests: v.specialRequests && typeof v.specialRequests === "object" ? v.specialRequests : {},
+        attachments: Array.isArray(v.attachments) ? v.attachments.slice(0, 100).map((item) => {
+          const row = object(item);
+          return { room: typeof row.room === "string" ? row.room.slice(0, 120) : "", remarks: typeof row.remarks === "string" ? row.remarks.slice(0, 2e3) : "", fileName: typeof row.fileName === "string" ? row.fileName.slice(0, 240) : "" };
+        }) : []
       };
       return { ...normalized, bookings: [value, ...normalized.bookings] };
     }
@@ -1659,7 +1678,11 @@ function applyTransportAction(state, input) {
         referenceNo: typeof v.referenceNo === "string" ? v.referenceNo.slice(0, 100) : "",
         cityAccount: v.cityAccount === true,
         billingRemark: typeof v.billingRemark === "string" ? v.billingRemark.slice(0, 1e3) : "",
-        specialRequests: v.specialRequests && typeof v.specialRequests === "object" ? v.specialRequests : {}
+        specialRequests: v.specialRequests && typeof v.specialRequests === "object" ? v.specialRequests : {},
+        attachments: Array.isArray(v.attachments) ? v.attachments.slice(0, 100).map((item) => {
+          const row = object(item);
+          return { room: typeof row.room === "string" ? row.room.slice(0, 120) : "", remarks: typeof row.remarks === "string" ? row.remarks.slice(0, 2e3) : "", fileName: typeof row.fileName === "string" ? row.fileName.slice(0, 240) : "" };
+        }) : []
       };
       return { ...normalized, bookings: normalized.bookings.map((item) => item.reference === reference ? value : item) };
     }
@@ -2104,6 +2127,16 @@ var schemaStatements = [
     sales_channels jsonb NOT NULL DEFAULT '[]'::jsonb,
     PRIMARY KEY (property_id, department_id)
   )`,
+  `CREATE TABLE IF NOT EXISTS public.hotelx_segments (
+    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    segment_id text NOT NULL,
+    sort_order integer NOT NULL,
+    description text NOT NULL,
+    icon text NOT NULL DEFAULT '',
+    active boolean NOT NULL DEFAULT true,
+    updated_at text NOT NULL DEFAULT '',
+    PRIMARY KEY (property_id, segment_id)
+  )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_incidentalcharges (
     property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
     charge_id text NOT NULL,
@@ -2158,6 +2191,7 @@ var schemaStatements = [
   `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS city_account boolean NOT NULL DEFAULT false`,
   `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS billing_remark text NOT NULL DEFAULT ''`,
   `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS special_requests jsonb NOT NULL DEFAULT '{}'::jsonb`,
+  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS attachments jsonb NOT NULL DEFAULT '[]'::jsonb`,
   `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS adults integer NOT NULL DEFAULT 1`,
   `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS children integer NOT NULL DEFAULT 0`,
   `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS infants integer NOT NULL DEFAULT 0`,
@@ -2314,6 +2348,7 @@ var schemaStatements = [
     DELETE FROM public.hotelx_room_master WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_roomstatus WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_department WHERE property_id = p_property_id;
+    DELETE FROM public.hotelx_segments WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_incidentalcharges WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_room_type_master WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_location_master WHERE property_id = p_property_id;
@@ -2383,6 +2418,11 @@ var schemaStatements = [
     FROM jsonb_array_elements(COALESCE(p_state #> '{hotelMasters,departments}', '[]'::jsonb))
       WITH ORDINALITY AS item(value, ordinality);
 
+    INSERT INTO public.hotelx_segments (property_id, segment_id, sort_order, description, icon, active, updated_at)
+    SELECT p_property_id, item.value->>'id', COALESCE(NULLIF(item.value->>'displaySequence',''),'1')::integer,
+      item.value->>'description', COALESCE(item.value->>'icon',''), COALESCE((item.value->>'active')::boolean, true), COALESCE(item.value->>'updatedAt','')
+    FROM jsonb_array_elements(COALESCE(p_state #> '{hotelMasters,segments}', '[]'::jsonb)) WITH ORDINALITY AS item(value, ordinality);
+
     INSERT INTO public.hotelx_incidentalcharges (
       property_id, charge_id, department_id, title, amount, tax_scheme, outlet_code, options, msic_code, classification
     )
@@ -2397,7 +2437,7 @@ var schemaStatements = [
       property_id, booking_no, sort_order, guest, arrival_date, departure_date, status,
       assigned_rooms, checked_in_guests, guests, amount, highlight_dates,
       group_name, phone, account_name, credit_limit, print_rate, state_tax, tourism_tax,
-      email, sales_channel, source, segment, reference_no, city_account, billing_remark, special_requests
+      email, sales_channel, source, segment, reference_no, city_account, billing_remark, special_requests, attachments
     )
     SELECT p_property_id, item.value->>'reference', item.ordinality::integer,
       item.value->>'guest', item.value->>'arrival', item.value->>'departure',
@@ -2412,7 +2452,7 @@ var schemaStatements = [
       COALESCE((item.value->>'printRate')::boolean, true), COALESCE((item.value->>'stateTax')::boolean, true),
       COALESCE((item.value->>'tourismTax')::boolean, true), COALESCE(item.value->>'email', ''),
       COALESCE(item.value->>'salesChannel', 'Direct'), COALESCE(item.value->>'source', 'Booking'),
-      COALESCE(item.value->>'segment', 'Leisure'), COALESCE(item.value->>'referenceNo', ''), COALESCE((item.value->>'cityAccount')::boolean, false), COALESCE(item.value->>'billingRemark', ''), COALESCE(item.value->'specialRequests', '{}'::jsonb)
+      COALESCE(item.value->>'segment', 'Leisure'), COALESCE(item.value->>'referenceNo', ''), COALESCE((item.value->>'cityAccount')::boolean, false), COALESCE(item.value->>'billingRemark', ''), COALESCE(item.value->'specialRequests', '{}'::jsonb), COALESCE(item.value->'attachments', '[]'::jsonb)
     FROM jsonb_array_elements(COALESCE(p_state->'bookings', '[]'::jsonb))
       WITH ORDINALITY AS item(value, ordinality);
 
@@ -2792,7 +2832,8 @@ var schemaStatements = [
           ) ORDER BY department.sort_order)
           FROM public.hotelx_department AS department
           WHERE department.property_id = meta.id
-        ), '[]'::jsonb)
+        ), '[]'::jsonb),
+        'segments', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', segment.segment_id, 'description', segment.description, 'displaySequence', segment.sort_order, 'icon', segment.icon, 'active', segment.active, 'updatedAt', segment.updated_at) ORDER BY segment.sort_order) FROM public.hotelx_segments AS segment WHERE segment.property_id = meta.id), '[]'::jsonb)
       ),
       'bookings', COALESCE((
         SELECT jsonb_agg(jsonb_build_object(
@@ -2819,7 +2860,7 @@ var schemaStatements = [
           'groupName', booking.group_name, 'phone', booking.phone, 'accountName', booking.account_name,
           'creditLimit', booking.credit_limit::double precision, 'printRate', booking.print_rate, 'stateTax', booking.state_tax,
           'tourismTax', booking.tourism_tax, 'email', booking.email, 'salesChannel', booking.sales_channel,
-          'source', booking.source, 'segment', booking.segment, 'referenceNo', booking.reference_no, 'cityAccount', booking.city_account, 'billingRemark', booking.billing_remark, 'specialRequests', booking.special_requests
+          'source', booking.source, 'segment', booking.segment, 'referenceNo', booking.reference_no, 'cityAccount', booking.city_account, 'billingRemark', booking.billing_remark, 'specialRequests', booking.special_requests, 'attachments', booking.attachments
         ) ORDER BY booking.sort_order)
         FROM public.hotelx_bookings AS booking
         WHERE booking.property_id = meta.id
