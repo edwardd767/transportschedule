@@ -207,6 +207,16 @@ const schemaStatements = [
     sales_channels jsonb NOT NULL DEFAULT '[]'::jsonb,
     PRIMARY KEY (property_id, department_id)
   )`,
+  `CREATE TABLE IF NOT EXISTS public.hotelx_segments (
+    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    segment_id text NOT NULL,
+    sort_order integer NOT NULL,
+    description text NOT NULL,
+    icon text NOT NULL DEFAULT '',
+    active boolean NOT NULL DEFAULT true,
+    updated_at text NOT NULL DEFAULT '',
+    PRIMARY KEY (property_id, segment_id)
+  )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_incidentalcharges (
     property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
     charge_id text NOT NULL,
@@ -418,6 +428,7 @@ const schemaStatements = [
     DELETE FROM public.hotelx_room_master WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_roomstatus WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_department WHERE property_id = p_property_id;
+    DELETE FROM public.hotelx_segments WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_incidentalcharges WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_room_type_master WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_location_master WHERE property_id = p_property_id;
@@ -486,6 +497,11 @@ const schemaStatements = [
       COALESCE(item.value->'reasons', '[]'::jsonb), COALESCE(item.value->'salesChannels', '[]'::jsonb)
     FROM jsonb_array_elements(COALESCE(p_state #> '{hotelMasters,departments}', '[]'::jsonb))
       WITH ORDINALITY AS item(value, ordinality);
+
+    INSERT INTO public.hotelx_segments (property_id, segment_id, sort_order, description, icon, active, updated_at)
+    SELECT p_property_id, item.value->>'id', COALESCE(NULLIF(item.value->>'displaySequence',''),'1')::integer,
+      item.value->>'description', COALESCE(item.value->>'icon',''), COALESCE((item.value->>'active')::boolean, true), COALESCE(item.value->>'updatedAt','')
+    FROM jsonb_array_elements(COALESCE(p_state #> '{hotelMasters,segments}', '[]'::jsonb)) WITH ORDINALITY AS item(value, ordinality);
 
     INSERT INTO public.hotelx_incidentalcharges (
       property_id, charge_id, department_id, title, amount, tax_scheme, outlet_code, options, msic_code, classification
@@ -896,7 +912,8 @@ const schemaStatements = [
           ) ORDER BY department.sort_order)
           FROM public.hotelx_department AS department
           WHERE department.property_id = meta.id
-        ), '[]'::jsonb)
+        ), '[]'::jsonb),
+        'segments', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', segment.segment_id, 'description', segment.description, 'displaySequence', segment.sort_order, 'icon', segment.icon, 'active', segment.active, 'updatedAt', segment.updated_at) ORDER BY segment.sort_order) FROM public.hotelx_segments AS segment WHERE segment.property_id = meta.id), '[]'::jsonb)
       ),
       'bookings', COALESCE((
         SELECT jsonb_agg(jsonb_build_object(
