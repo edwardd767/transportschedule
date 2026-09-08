@@ -1040,7 +1040,8 @@ function newTransportState() {
     bookingLegs: [],
     hotelMasters: initialHotelMasters,
     bookings: initialBookings,
-    rateSetup: initialRateSetupData
+    rateSetup: initialRateSetupData,
+    guestProfiles: []
   });
 }
 function normalizeTransportState(state) {
@@ -1078,7 +1079,8 @@ function normalizeTransportState(state) {
     bookingLegs: Array.isArray(state.bookingLegs) ? state.bookingLegs : [],
     hotelMasters,
     bookings,
-    rateSetup: rateSetup2
+    rateSetup: rateSetup2,
+    guestProfiles: Array.isArray(state.guestProfiles) ? state.guestProfiles : []
   };
 }
 function object(value) {
@@ -1334,6 +1336,8 @@ function applyTransportAction(state, input) {
     }
     case "hotelProfileSave":
       return { ...state, hotelMasters: { ...state.hotelMasters, profile: action.value } };
+    case "guestProfilesSave":
+      return { ...state, guestProfiles: action.value };
     case "templates": {
       const templates = list(action.value).map(template);
       unique(templates);
@@ -1924,6 +1928,30 @@ var queryNeon = async (connection, sql, params) => {
 
 // worker/normalized-storage.ts
 var schemaStatements = [
+  `CREATE TABLE IF NOT EXISTS public.hotelx_guestprofile (
+    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    id uuid NOT NULL,
+    guest_name text NOT NULL,
+    mobile text NOT NULL DEFAULT '',
+    email text NOT NULL DEFAULT '',
+    nationality text NOT NULL DEFAULT '',
+    identity_no text NOT NULL DEFAULT '',
+    address text NOT NULL DEFAULT '',
+    country text NOT NULL DEFAULT '',
+    state text NOT NULL DEFAULT '',
+    city text NOT NULL DEFAULT '',
+    postcode text NOT NULL DEFAULT '',
+    birth_date date,
+    occupation text NOT NULL DEFAULT '',
+    account_name text NOT NULL DEFAULT '',
+    guest_type text NOT NULL DEFAULT 'Normal',
+    remark text NOT NULL DEFAULT '',
+    newsletter boolean NOT NULL DEFAULT false,
+    tourism_tax boolean NOT NULL DEFAULT false,
+    visits integer NOT NULL DEFAULT 0,
+    updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (property_id, id)
+  )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_transport_meta (
     id text PRIMARY KEY,
     schema_version integer NOT NULL DEFAULT 2 CHECK (schema_version = 2),

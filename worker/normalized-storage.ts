@@ -2,6 +2,30 @@ import type { TransportState } from '../lib/transport-state';
 import { ApiError, type Query } from './neon';
 
 const schemaStatements = [
+  `CREATE TABLE IF NOT EXISTS public.hotelx_guestprofile (
+    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    id uuid NOT NULL,
+    guest_name text NOT NULL,
+    mobile text NOT NULL DEFAULT '',
+    email text NOT NULL DEFAULT '',
+    nationality text NOT NULL DEFAULT '',
+    identity_no text NOT NULL DEFAULT '',
+    address text NOT NULL DEFAULT '',
+    country text NOT NULL DEFAULT '',
+    state text NOT NULL DEFAULT '',
+    city text NOT NULL DEFAULT '',
+    postcode text NOT NULL DEFAULT '',
+    birth_date date,
+    occupation text NOT NULL DEFAULT '',
+    account_name text NOT NULL DEFAULT '',
+    guest_type text NOT NULL DEFAULT 'Normal',
+    remark text NOT NULL DEFAULT '',
+    newsletter boolean NOT NULL DEFAULT false,
+    tourism_tax boolean NOT NULL DEFAULT false,
+    visits integer NOT NULL DEFAULT 0,
+    updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (property_id, id)
+  )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_transport_meta (
     id text PRIMARY KEY,
     schema_version integer NOT NULL DEFAULT 2 CHECK (schema_version = 2),

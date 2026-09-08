@@ -43,6 +43,8 @@ import {
 } from './booking-transport';
 import { initialRateSetupData, type RateSetupData } from './rate-setup-data';
 
+export type GuestProfile = { id: string; name: string; mobile: string; email: string; nationality: string; identityNo: string; address: string; country: string; state: string; city: string; postcode: string; birthDate: string; occupation: string; accountName: string; guestType: string; remark: string; newsletter: boolean; tourismTax: boolean; visits: number; updated: string };
+
 export type TransportState = {
   setup: TransportSetup;
   trips: Trip[];
@@ -52,6 +54,7 @@ export type TransportState = {
   hotelMasters: HotelMasters;
   bookings: Booking[];
   rateSetup: RateSetupData;
+  guestProfiles: GuestProfile[];
 };
 export type DepartureInput = {
   id: string;
@@ -93,6 +96,7 @@ export type TransportAction =
   | { type: 'bookingCreate'; value: Booking }
   | { type: 'bookingUpdate'; value: Booking }
   | { type: 'rateSetup'; value: RateSetupData }
+  | { type: 'guestProfilesSave'; value: GuestProfile[] }
   | {
       type: 'transfers';
       bookingReference: string;
@@ -109,6 +113,7 @@ export function newTransportState(): TransportState {
     hotelMasters: initialHotelMasters,
     bookings: initialBookings,
     rateSetup: initialRateSetupData,
+    guestProfiles: [],
   });
 }
 
@@ -170,6 +175,7 @@ export function normalizeTransportState(state: TransportState): TransportState {
     hotelMasters,
     bookings,
     rateSetup,
+    guestProfiles: Array.isArray(state.guestProfiles) ? state.guestProfiles : [],
   };
 }
 
@@ -438,6 +444,8 @@ export function applyTransportAction(
     }
     case 'hotelProfileSave':
       return { ...state, hotelMasters: { ...state.hotelMasters, profile: action.value } };
+    case 'guestProfilesSave':
+      return { ...state, guestProfiles: action.value };
     case 'templates': {
       const templates = list(action.value).map(template);
       unique(templates);

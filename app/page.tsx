@@ -53,6 +53,7 @@ import { HotelSettingsDetail } from '@/components/hotel-settings-detail';
 import type { RateSetupSection } from '@/components/rate-setup';
 import { HotelMasterFiles } from '@/components/hotel-master-files';
 import { Bookings } from '@/components/bookings';
+import { GuestProfiles } from '@/components/guest-profiles';
 import { SegmentModule } from '@/components/segment-module';
 import type { Booking } from '@/lib/bookings';
 import { MonthTimetable } from '@/components/month-timetable';
@@ -196,11 +197,12 @@ function HomeContent({ store }: { store: TransportData }) {
     | 'booking'
     | 'frontdesk'
     | 'reporting'
+    | 'guestprofile'
   >('booking');
   const [rateSetupSection, setRateSetupSection] = useState<RateSetupSection | null>(null);
   const [bookingReference, setBookingReference] = useState<string | null>(null);
   const [bookingEditing, setBookingEditing] = useState(false);
-  const { setup, trips, templates, bookingLegs, hotelMasters, bookings, rateSetup } = store.state;
+  const { setup, trips, templates, bookingLegs, hotelMasters, bookings, rateSetup, guestProfiles } = store.state;
   const activeBooking =
     bookings.find((booking) => booking.reference === bookingReference) ?? null;
   const [scheduleView, setScheduleView] = useState<'day' | 'month'>('day');
@@ -568,6 +570,14 @@ function HomeContent({ store }: { store: TransportData }) {
           </div>
           <nav className="main-nav" aria-label="Main navigation">
             <button
+              className={view === 'guestprofile' ? 'active' : ''}
+              aria-current={view === 'guestprofile' ? 'page' : undefined}
+              onClick={() => setView('guestprofile')}
+            >
+              <Users />
+              Guest Profile
+            </button>
+            <button
               className={view === 'booking' ? 'active' : ''}
               aria-current={view === 'booking' ? 'page' : undefined}
               onClick={() => {
@@ -668,7 +678,7 @@ function HomeContent({ store }: { store: TransportData }) {
             </span>
           )}
           <div className="breadcrumb">
-            {view === 'booking' ? (
+          {view === 'guestprofile' ? <GuestProfiles profiles={guestProfiles} onBack={() => setView('booking')} onSave={async (value) => { await store.run({ type: 'guestProfilesSave', value }); setNotice('Guest profile saved.'); }} /> : view === 'booking' ? (
               <span>{activeBooking ? (bookingEditing ? '... / Edit' : '... / Booking') : 'Booking'}</span>
             ) : view === 'frontdesk' ? (
               <span>Front Desk</span>
