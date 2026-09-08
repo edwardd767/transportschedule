@@ -263,14 +263,14 @@ function rateSetup(value: unknown): RateSetupData {
     if (!validDate(from) || !validDate(to) || to < from) throw new Error('Validity end date must be on or after the start date.');
     const rateSetupId = text(row.rateSetupId, 'rate setup', true, 100);
     if (!ratePlanIds.has(rateSetupId)) throw new Error('Choose an existing Rate Setup for the validity period.');
-    const seasonalRates: Record<string, Record<string, { amount: number; t1: number; t2: number; t3: number }>> = {};
+    const seasonalRates: Record<string, Record<string, { amount: number; t1: number; t2: number; t3: number; quotas?: number[] }>> = {};
     for (const [roomType, seasonValues] of Object.entries(object(row.seasonalRates))) {
       if (!roomType || roomType.length > 100) continue;
       seasonalRates[roomType] = {};
       for (const [seasonId, values] of Object.entries(object(seasonValues))) {
         if (!seasonId || seasonId.length > 100) continue;
         const rate = object(values);
-        seasonalRates[roomType][seasonId] = { amount: decimal(rate.amount, 'seasonal rate amount'), t1: decimal(rate.t1, 'seasonal rate T1'), t2: decimal(rate.t2, 'seasonal rate T2'), t3: decimal(rate.t3, 'seasonal rate T3') };
+        seasonalRates[roomType][seasonId] = { amount: decimal(rate.amount, 'seasonal rate amount'), t1: decimal(rate.t1, 'seasonal rate T1'), t2: decimal(rate.t2, 'seasonal rate T2'), t3: decimal(rate.t3, 'seasonal rate T3'), ...(Array.isArray(rate.quotas) ? { quotas: list(rate.quotas, 3).map(q => number(q, 'room quota', 0, 100000)) } : {}) };
       }
     }
     const inclusiveElements = list(row.inclusiveElements).map((value) => text(value, 'inclusive element ID', true, 100));
