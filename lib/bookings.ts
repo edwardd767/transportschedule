@@ -47,6 +47,8 @@ export type Booking = {
   source?: string;
   segment?: string;
   referenceNo?: string;
+  cityAccount?: boolean;
+  billingRemark?: string;
 };
 
 // The guest names follow the supplied screen. Statuses and amounts are sample data.

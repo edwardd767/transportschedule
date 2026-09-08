@@ -1583,7 +1583,9 @@ function applyTransportAction(state, input) {
         salesChannel: typeof v.salesChannel === "string" ? v.salesChannel.slice(0, 80) : "Direct",
         source: typeof v.source === "string" ? v.source.slice(0, 80) : "Booking",
         segment: typeof v.segment === "string" ? v.segment.slice(0, 80) : "Leisure",
-        referenceNo: typeof v.referenceNo === "string" ? v.referenceNo.slice(0, 100) : ""
+        referenceNo: typeof v.referenceNo === "string" ? v.referenceNo.slice(0, 100) : "",
+        cityAccount: v.cityAccount === true,
+        billingRemark: typeof v.billingRemark === "string" ? v.billingRemark.slice(0, 1e3) : ""
       };
       return { ...normalized, bookings: [value, ...normalized.bookings] };
     }
@@ -1653,7 +1655,9 @@ function applyTransportAction(state, input) {
         salesChannel: typeof v.salesChannel === "string" ? v.salesChannel.slice(0, 80) : "Direct",
         source: typeof v.source === "string" ? v.source.slice(0, 80) : "Booking",
         segment: typeof v.segment === "string" ? v.segment.slice(0, 80) : "Leisure",
-        referenceNo: typeof v.referenceNo === "string" ? v.referenceNo.slice(0, 100) : ""
+        referenceNo: typeof v.referenceNo === "string" ? v.referenceNo.slice(0, 100) : "",
+        cityAccount: v.cityAccount === true,
+        billingRemark: typeof v.billingRemark === "string" ? v.billingRemark.slice(0, 1e3) : ""
       };
       return { ...normalized, bookings: normalized.bookings.map((item) => item.reference === reference ? value : item) };
     }
@@ -2149,6 +2153,8 @@ var schemaStatements = [
   `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS source text NOT NULL DEFAULT 'Booking'`,
   `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS segment text NOT NULL DEFAULT 'Leisure'`,
   `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS reference_no text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS city_account boolean NOT NULL DEFAULT false`,
+  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS billing_remark text NOT NULL DEFAULT ''`,
   `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS adults integer NOT NULL DEFAULT 1`,
   `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS children integer NOT NULL DEFAULT 0`,
   `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS infants integer NOT NULL DEFAULT 0`,
@@ -2388,7 +2394,7 @@ var schemaStatements = [
       property_id, booking_no, sort_order, guest, arrival_date, departure_date, status,
       assigned_rooms, checked_in_guests, guests, amount, highlight_dates,
       group_name, phone, account_name, credit_limit, print_rate, state_tax, tourism_tax,
-      email, sales_channel, source, segment, reference_no
+      email, sales_channel, source, segment, reference_no, city_account, billing_remark
     )
     SELECT p_property_id, item.value->>'reference', item.ordinality::integer,
       item.value->>'guest', item.value->>'arrival', item.value->>'departure',
@@ -2403,7 +2409,7 @@ var schemaStatements = [
       COALESCE((item.value->>'printRate')::boolean, true), COALESCE((item.value->>'stateTax')::boolean, true),
       COALESCE((item.value->>'tourismTax')::boolean, true), COALESCE(item.value->>'email', ''),
       COALESCE(item.value->>'salesChannel', 'Direct'), COALESCE(item.value->>'source', 'Booking'),
-      COALESCE(item.value->>'segment', 'Leisure'), COALESCE(item.value->>'referenceNo', '')
+      COALESCE(item.value->>'segment', 'Leisure'), COALESCE(item.value->>'referenceNo', ''), COALESCE((item.value->>'cityAccount')::boolean, false), COALESCE(item.value->>'billingRemark', '')
     FROM jsonb_array_elements(COALESCE(p_state->'bookings', '[]'::jsonb))
       WITH ORDINALITY AS item(value, ordinality);
 
@@ -2810,7 +2816,7 @@ var schemaStatements = [
           'groupName', booking.group_name, 'phone', booking.phone, 'accountName', booking.account_name,
           'creditLimit', booking.credit_limit::double precision, 'printRate', booking.print_rate, 'stateTax', booking.state_tax,
           'tourismTax', booking.tourism_tax, 'email', booking.email, 'salesChannel', booking.sales_channel,
-          'source', booking.source, 'segment', booking.segment, 'referenceNo', booking.reference_no
+          'source', booking.source, 'segment', booking.segment, 'referenceNo', booking.reference_no, 'cityAccount', booking.city_account, 'billingRemark', booking.billing_remark
         ) ORDER BY booking.sort_order)
         FROM public.hotelx_bookings AS booking
         WHERE booking.property_id = meta.id

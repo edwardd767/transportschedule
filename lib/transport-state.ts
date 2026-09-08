@@ -713,6 +713,8 @@ export function applyTransportAction(
         source: typeof v.source === 'string' ? v.source.slice(0, 80) : 'Booking',
         segment: typeof v.segment === 'string' ? v.segment.slice(0, 80) : 'Leisure',
         referenceNo: typeof v.referenceNo === 'string' ? v.referenceNo.slice(0, 100) : '',
+        cityAccount: v.cityAccount === true,
+        billingRemark: typeof v.billingRemark === 'string' ? v.billingRemark.slice(0, 1000) : '',
       };
       return { ...normalized, bookings: [value, ...normalized.bookings] };
     }
@@ -777,6 +779,8 @@ export function applyTransportAction(
         source: typeof v.source === 'string' ? v.source.slice(0, 80) : 'Booking',
         segment: typeof v.segment === 'string' ? v.segment.slice(0, 80) : 'Leisure',
         referenceNo: typeof v.referenceNo === 'string' ? v.referenceNo.slice(0, 100) : '',
+        cityAccount: v.cityAccount === true,
+        billingRemark: typeof v.billingRemark === 'string' ? v.billingRemark.slice(0, 1000) : '',
       };
       return { ...normalized, bookings: normalized.bookings.map((item) => item.reference === reference ? value : item) };
     }

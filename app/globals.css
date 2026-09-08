@@ -3391,6 +3391,7 @@ p {
 .billing-line small { color: #727985; }
 .billing-total { display: flex; justify-content: space-between; align-items: center; background: #fff6eb; border-radius: 8px; padding: 14px 18px; font-size: 16px; }
 .billing-total strong { color: #f06f1f; font-size: 20px; }
+.billing-instruction-page{padding:0;align-items:stretch}.billing-instruction-card{background:#fff;min-height:100%;display:flex;flex-direction:column}.billing-instruction-head{padding:14px 12px;background:#fff7ed;border-bottom:1px solid #e6ded4;color:#f27f18}.billing-instruction-head span,.billing-instruction-head strong{display:block}.billing-instruction-head span{font-size:12px}.billing-instruction-head strong{font-size:16px;margin-top:5px}.billing-instruction-form{padding:22px 12px;flex:1}.billing-check{display:flex;flex-direction:column;gap:10px;color:#888;font-size:14px}.billing-check span:last-child{display:flex;align-items:center;gap:10px;color:#333;font-size:15px}.billing-check input{width:18px;height:18px;accent-color:#ff8d12}.billing-remark{display:flex;flex-direction:column;gap:8px;margin-top:38px;color:#888;font-size:16px}.billing-remark textarea{min-height:72px;resize:vertical;border:0;border-bottom:1px solid #999;padding:4px 0;font:inherit;color:#333;outline:0}.billing-instruction-actions{display:flex;justify-content:flex-end;gap:10px;padding:12px;border-top:1px solid #eee}
 .transfer-party {
   max-width: 360px;
 }
