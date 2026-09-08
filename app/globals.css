@@ -5517,3 +5517,15 @@ p {
 .extra-pax-dialog>p{padding:0 16px;font-size:12px;color:#666}
 .extra-pax-summary{display:flex;align-items:center;gap:5px}
 .extra-pax-summary svg{color:#111}.extra-pax-summary b{color:#ff9000;font-weight:500;margin-right:12px}
+
+.booking-inline-availability{width:100%;box-shadow:0 2px 5px #0002;margin-bottom:8px;flex-shrink:0}
+.booking-inline-availability .availability-head{min-height:60px;padding:12px;background:#fcf3e8;gap:12px}
+.booking-inline-availability .availability-title{font-size:13px;font-weight:700;color:#ff9000;text-align:left;margin-right:auto}
+.booking-inline-availability .hotel-date-picker{width:185px;min-width:0}
+.booking-inline-availability .hotel-date-field{border:0;background:transparent;box-shadow:none;font-size:12px}
+.booking-inline-availability table{min-width:610px;font-size:11px}
+.booking-inline-availability th,.booking-inline-availability td{padding:4px 8px}
+.booking-inline-availability tbody tr{border:0}
+.booking-inline-availability .availability-total th{text-align:center}
+.booking-inline-availability .availability-total th:first-child,.booking-inline-availability .availability-occ th:first-child{text-align:left}
+.booking-inline-availability .availability-total .availability-current{color:#ff3156}

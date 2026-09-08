@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { CalendarDays, Plus, X } from 'lucide-react';
+import { BookingAvailability } from '@/components/booking-availability';
 import { Choice } from '@/components/hotel-choice';
 import { HotelDatePicker } from '@/components/hotel-date-picker';
 import {
@@ -251,13 +252,7 @@ export function BookingCreate({
       </div>
 
       <form className="booking-new-scroll" onSubmit={saveBooking}>
-        <div className="booking-form-section booking-availability-section">
-          <div className="booking-section-heading">Availability</div>
-          <div className="booking-availability-date">
-            <CalendarDays size={22} />
-            <HotelDatePicker value={arrival} onChange={setArrival} ariaLabel="Availability date" />
-          </div>
-        </div>
+        <BookingAvailability arrival={arrival} bookings={bookings} roomTypes={roomTypes} />
 
         <div className="booking-form-section">
           <div className="booking-section-heading">Stay Information</div>

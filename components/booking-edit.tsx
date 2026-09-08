@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type FormEvent } from 'react';
 import { CalendarDays, Pencil, Plus, Trash2 } from 'lucide-react';
+import { BookingAvailability } from '@/components/booking-availability';
 import { Choice } from '@/components/hotel-choice';
 import { HotelDatePicker } from '@/components/hotel-date-picker';
 import {
@@ -65,12 +66,14 @@ function initialRooms(booking: Booking): BookingRoom[] {
 }
 
 export function BookingEdit({
+  bookings,
   booking,
   roomTypes,
   onCancel,
   onUpdate,
   onNotice,
 }: {
+  bookings: Booking[];
   booking: Booking;
   roomTypes: HotelRoomType[];
   onCancel: () => void;
@@ -240,13 +243,7 @@ export function BookingEdit({
   return (
     <section className="booking-edit-page" aria-label={`Edit booking ${booking.reference}`}>
       <form className="booking-edit-scroll" onSubmit={confirmEdit}>
-        <div className="booking-form-section booking-availability-section">
-          <div className="booking-section-heading">Availability</div>
-          <div className="booking-availability-date">
-            <CalendarDays size={20} />
-            <HotelDatePicker value={arrival} onChange={setArrival} ariaLabel="Availability date" />
-          </div>
-        </div>
+        <BookingAvailability arrival={arrival} bookings={bookings} roomTypes={roomTypes} />
 
         <div className="booking-form-section">
           <div className="booking-section-heading">Stay Information</div>
