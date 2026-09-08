@@ -11,6 +11,7 @@ import {
   Network,
   Ship,
   Globe2,
+  KeyRound,
 } from 'lucide-react';
 
 const items = [
@@ -22,6 +23,7 @@ const items = [
   { key: 'room', label: 'Room', detail: 'Guest Room Setup.', icon: DoorOpen },
   { key: 'room-status', label: 'Room Status', detail: 'Room Status Setup.', icon: ClipboardList },
   { key: 'rate-policy', label: 'Rate Setup', detail: 'Hotel Rate Setup.', icon: ClipboardList },
+  { key: 'standard-policy', label: 'Standard Policy & Guidelines', detail: 'Hotel Operational Policy & Guidelines Setup.', icon: KeyRound },
   { key: 'segment', label: 'Segment', detail: 'Segment Setup.', icon: Globe2 },
   { key: 'transport', label: 'Transport Setup', detail: 'Transport Services, Routes and Schedule Setup.', icon: Ship },
 ] as const;
@@ -35,6 +37,7 @@ export function HotelSettingsMenu({
   onOpenRoom,
   onOpenRoomStatus,
   onOpenRatePolicy,
+  onOpenStandardPolicy,
   onOpenTransportSetup,
   onOpenSegment,
 }: {
@@ -46,6 +49,7 @@ export function HotelSettingsMenu({
   onOpenRoom: () => void;
   onOpenRoomStatus: () => void;
   onOpenRatePolicy: () => void;
+  onOpenStandardPolicy: () => void;
   onOpenTransportSetup: () => void;
   onOpenSegment: () => void;
 }) {
@@ -58,6 +62,7 @@ export function HotelSettingsMenu({
     room: onOpenRoom,
     'room-status': onOpenRoomStatus,
     'rate-policy': onOpenRatePolicy,
+    'standard-policy': onOpenStandardPolicy,
     transport: onOpenTransportSetup,
     segment: onOpenSegment,
   };

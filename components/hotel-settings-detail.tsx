@@ -29,7 +29,8 @@ export type HotelSettingsDetailKind =
   | 'department'
   | 'floorPlan'
   | 'roomStatus'
-  | 'ratePolicy';
+  | 'ratePolicy'
+  | 'standardPolicy';
 
 const pages = {
   hotelSetup: {
@@ -59,6 +60,13 @@ const pages = {
     section: 'Room Status Master',
     empty: 'Room status configuration will be maintained on this page.',
     icon: BedDouble,
+  },
+  standardPolicy: {
+    title: 'Standard Policy & Guidelines',
+    detail: 'Hotel Operational Policy & Guidelines Setup.',
+    section: 'Standard Policy & Guidelines',
+    empty: 'Hotel operational policies and guidelines will be maintained on this page.',
+    icon: ClipboardList,
   },
   ratePolicy: {
     title: 'Rate Setup',

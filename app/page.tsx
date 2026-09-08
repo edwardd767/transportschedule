@@ -191,6 +191,7 @@ function HomeContent({ store }: { store: TransportData }) {
     | 'room'
     | 'roomstatus'
     | 'ratepolicy'
+    | 'standardpolicy'
     | 'segment'
     | 'booking'
     | 'frontdesk'
@@ -608,8 +609,8 @@ function HomeContent({ store }: { store: TransportData }) {
               Digital Reporting
             </button>
             <button
-              className={['setup', 'hotelsettings', 'hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy'].includes(view) ? 'active' : ''}
-              aria-current={['setup', 'hotelsettings', 'hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy'].includes(view) ? 'page' : undefined}
+              className={['setup', 'hotelsettings', 'hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy', 'standardpolicy'].includes(view) ? 'active' : ''}
+              aria-current={['setup', 'hotelsettings', 'hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy', 'standardpolicy'].includes(view) ? 'page' : undefined}
               onClick={() => setView('hotelsettings')}
             >
               <Settings />
@@ -647,7 +648,7 @@ function HomeContent({ store }: { store: TransportData }) {
                 <ChevronLeft size={24} />
               </button>
             )}
-            {['hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy', 'setup'].includes(view) && (
+            {['hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy', 'standardpolicy', 'setup'].includes(view) && (
               <button
                 className="booking-back"
                 aria-label={view === 'ratepolicy' && rateSetupSection ? 'Back to Rate Setup' : 'Back to Hotel Settings'}
@@ -657,7 +658,7 @@ function HomeContent({ store }: { store: TransportData }) {
               </button>
             )}
             <div>
-              <small>{['setup', 'hotelsettings', 'hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy'].includes(view) ? 'HMS' : 'PMS'}</small>
+              <small>{['setup', 'hotelsettings', 'hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy', 'standardpolicy'].includes(view) ? 'HMS' : 'PMS'}</small>
               <strong>HOTEL PARADISE</strong>
             </div>
           </div>
@@ -677,7 +678,7 @@ function HomeContent({ store }: { store: TransportData }) {
               </>
             ) : view === 'hotelsettings' ? (
               <span>Hotel Settings</span>
-            ) : ['hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy'].includes(view) ? (
+            ) : ['hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy', 'standardpolicy'].includes(view) ? (
               <>
                 Hotel Settings <ChevronRight size={14} />{' '}
                 {view === 'hotelsetup'
@@ -770,17 +771,20 @@ function HomeContent({ store }: { store: TransportData }) {
               onOpenRoom={() => setView('room')}
               onOpenRoomStatus={() => setView('roomstatus')}
               onOpenRatePolicy={() => { setRateSetupSection(null); setView('ratepolicy'); }}
+              onOpenStandardPolicy={() => setView('standardpolicy')}
               onOpenTransportSetup={() => setView('setup')}
               onOpenSegment={() => setView('segment')}
             />
           </div>
         ) : view === 'segment' ? (
           <div className="settings-scroll hotel-master-scroll" key="segment"><SegmentModule segments={hotelMasters.segments || []} onChange={async (value) => { await store.run({ type: 'segmentSave', value }); setNotice('Segment saved.'); }} onBack={() => setView('hotelsettings')} /></div>
-        ) : ['hotelsetup', 'department', 'floorplan', 'roomstatus', 'ratepolicy'].includes(view) ? (
+        ) : ['hotelsetup', 'department', 'floorplan', 'roomstatus', 'ratepolicy', 'standardpolicy'].includes(view) ? (
           <div className="settings-scroll hotel-master-scroll" key={view}>
             <HotelSettingsDetail
               kind={
-                view === 'hotelsetup'
+                view === 'standardpolicy'
+                  ? 'standardPolicy'
+                  : view === 'hotelsetup'
                   ? 'hotelSetup'
                   : view === 'department'
                     ? 'department'
