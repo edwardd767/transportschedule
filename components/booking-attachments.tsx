@@ -18,7 +18,6 @@ export function BookingAttachments({ booking, onSave, onBack }: { booking: Booki
     try { await onSave({ ...booking, attachments: [...attachments, { room, remarks: remarks.trim(), fileName }] }); setAddOpen(false); setRoom(''); setRemarks(''); setFileName(''); } finally { setSaving(false); }
   }
   return <section className="booking-workspace booking-attachments-page" aria-label="Booking attachments">
-    <div className="booking-attachments-breadcrumb"><button className="booking-back-button" onClick={onBack} aria-label="Back"><span>‹</span></button>… / … / Attachments</div>
     <div className="booking-attachments-heading"><strong>Attachments {attachments.length}</strong><Search size={24} aria-hidden="true" /></div>
     {attachments.length === 0 ? <div className="booking-attachments-empty">No Record Found</div> : <div className="booking-attachments-list">{attachments.map((item, index) => <div className="booking-attachment-row" key={`${item.room}-${index}`}><strong>{item.room}</strong><small>{item.remarks}{item.fileName ? ` · ${item.fileName}` : ''}</small></div>)}</div>}
     <button className="booking-attachments-add" onClick={() => setAddOpen(true)} aria-label="Add attachment">+</button>
