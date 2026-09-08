@@ -181,7 +181,7 @@ export function Bookings({
       { title: 'Remarks' },
       { title: 'Incidental Charges', description: '0.00' },
       { title: 'Advance Payment', description: 'Total Amt: 0.00' },
-      { title: 'Billing Instruction', description: booking.accountName ? `Account: ${booking.accountName}` : 'No billing instruction' },
+      { title: 'Billing Instruction', description: booking.cityAccount || booking.billingRemark ? `${booking.cityAccount ? 'City Account: Yes' : 'City Account: No'}${booking.billingRemark ? ` · ${booking.billingRemark}` : ''}` : 'No billing instruction' },
       { title: 'Confirmation Letter', description: 'Not sent' },
       { title: 'Proforma Invoice', description: 'Not sent' },
       { title: 'Attachments', description: 'No record' },
