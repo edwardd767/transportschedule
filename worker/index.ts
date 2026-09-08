@@ -324,6 +324,7 @@ export function createWorker(
         }
         throw new ApiError('METHOD', 'This method is not supported.', 405);
       } catch (error) {
+        console.error('HotelX action failed', error instanceof Error ? error.message : error);
         if (error instanceof ApiError)
           return reply(
             { code: error.code, error: error.message },

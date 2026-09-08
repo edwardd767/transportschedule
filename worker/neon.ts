@@ -83,9 +83,8 @@ async function executeHttpQuery(
         continue;
       }
       if (!response.ok) {
-        const detail = (await response.json().catch(() => ({}))) as {
-          code?: string;
-        };
+        const detail = (await response.json().catch(() => ({}))) as { code?: string; message?: string; error?: string };
+        console.error('Neon query failed', response.status, detail);
         if (detail.code === '42P01')
           throw new ApiError(
             'STORAGE_MISSING',

@@ -574,11 +574,11 @@ const schemaStatements = [
     FROM jsonb_array_elements(COALESCE(p_state #> '{rateSetup,rateTypes}', '[]'::jsonb)) WITH ORDINALITY AS item(value, ordinality);
 
     INSERT INTO public.hotelx_rate_setup (property_id, id, sort_order, code, description, rate_type_id, rate_frequency, active, web, last_updated_on)
-    SELECT p_property_id, item.value->>'id', item.ordinality::integer, item.value->>'code', item.value->>'description', COALESCE(item.value->>'rateTypeId', ''), COALESCE(NULLIF(item.value->>'rateFrequency', ''), 'Daily'), COALESCE((item.value->>'active')::boolean, true), COALESCE((item.value->>'web')::boolean, false), CASE WHEN COALESCE(item.value->>'updated', '') ~ '^\d{2} [A-Za-z]{3} \d{4}$' THEN to_date(item.value->>'updated', 'DD Mon YYYY') ELSE NULL END
+    SELECT p_property_id, (item.value->>'id')::uuid, item.ordinality::integer, item.value->>'code', item.value->>'description', COALESCE(item.value->>'rateTypeId', ''), COALESCE(NULLIF(item.value->>'rateFrequency', ''), 'Daily'), COALESCE((item.value->>'active')::boolean, true), COALESCE((item.value->>'web')::boolean, false), CASE WHEN COALESCE(item.value->>'updated', '') ~ '^\d{2} [A-Za-z]{3} \d{4}$' THEN to_date(item.value->>'updated', 'DD Mon YYYY') ELSE NULL END
     FROM jsonb_array_elements(COALESCE(p_state #> '{rateSetup,ratePlans}', '[]'::jsonb)) WITH ORDINALITY AS item(value, ordinality);
 
     INSERT INTO public.hotelx_rate_setup_validity (property_id, rate_setup_id, id, sort_order, valid_from, valid_to, active, seasonal_rates, inclusive_elements)
-    SELECT p_property_id, item.value->>'rateSetupId', item.value->>'id', item.ordinality::integer, (item.value->>'from')::date, (item.value->>'to')::date, COALESCE((item.value->>'active')::boolean, true), COALESCE(item.value->'seasonalRates', '{}'::jsonb), COALESCE(item.value->'inclusiveElements', '[]'::jsonb)
+    SELECT p_property_id, (item.value->>'rateSetupId')::uuid, (item.value->>'id')::uuid, item.ordinality::integer, (item.value->>'from')::date, (item.value->>'to')::date, COALESCE((item.value->>'active')::boolean, true), COALESCE(item.value->'seasonalRates', '{}'::jsonb), COALESCE(item.value->'inclusiveElements', '[]'::jsonb)
     FROM jsonb_array_elements(COALESCE(p_state #> '{rateSetup,validity}', '[]'::jsonb)) WITH ORDINALITY AS item(value, ordinality);
 
     INSERT INTO public.hotelx_hotel_setup (property_id, hotel_name, address, postcode, country, city, state, hotel_type, company_name, company_reg_no, sst_reg_no, ttx_reg_no, online_booking_url, live_run_date, contact_person, phone_no, mobile_no, reservation_email, business_email)
