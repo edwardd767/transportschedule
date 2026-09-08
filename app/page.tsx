@@ -870,9 +870,9 @@ function HomeContent({ store }: { store: TransportData }) {
                   >
                     <span className="frontdesk-icon">
                       {item.svg ? (
-                        <SvgIcon size={30} markup={item.svg} />
+                        <SvgIcon size={28} markup={item.svg} />
                       ) : Icon ? (
-                        <Icon size={30} />
+                        <Icon size={28} />
                       ) : null}
                     </span>
                     <span className="frontdesk-body">
