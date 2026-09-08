@@ -570,14 +570,6 @@ function HomeContent({ store }: { store: TransportData }) {
           </div>
           <nav className="main-nav" aria-label="Main navigation">
             <button
-              className={view === 'guestprofile' ? 'active' : ''}
-              aria-current={view === 'guestprofile' ? 'page' : undefined}
-              onClick={() => setView('guestprofile')}
-            >
-              <Users />
-              Guest Profile
-            </button>
-            <button
               className={view === 'booking' ? 'active' : ''}
               aria-current={view === 'booking' ? 'page' : undefined}
               onClick={() => {
@@ -599,6 +591,14 @@ function HomeContent({ store }: { store: TransportData }) {
             >
               <ConciergeBell />
               Front Desk
+            </button>
+            <button
+              className={view === 'guestprofile' ? 'active' : ''}
+              aria-current={view === 'guestprofile' ? 'page' : undefined}
+              onClick={() => setView('guestprofile')}
+            >
+              <Users />
+              Guest Profile
             </button>
             {(view === 'frontdesk' || view === 'schedule') && (
               <div className="subnav">
@@ -678,7 +678,7 @@ function HomeContent({ store }: { store: TransportData }) {
             </span>
           )}
           <div className="breadcrumb">
-          {view === 'guestprofile' ? <GuestProfiles profiles={guestProfiles} onBack={() => setView('booking')} onSave={async (value) => { await store.run({ type: 'guestProfilesSave', value }); setNotice('Guest profile saved.'); }} /> : view === 'booking' ? (
+          {view === 'guestprofile' ? <span>Guest Profile</span> : view === 'booking' ? (
               <span>{activeBooking ? (bookingEditing ? '... / Edit' : '... / Booking') : 'Booking'}</span>
             ) : view === 'frontdesk' ? (
               <span>Front Desk</span>
@@ -718,7 +718,9 @@ function HomeContent({ store }: { store: TransportData }) {
             )}
           </div>
         </div>
-        {view === 'booking' ? (
+        {view === 'guestprofile' ? (
+          <GuestProfiles profiles={guestProfiles} onBack={() => setView('booking')} onSave={async (value) => { await store.run({ type: 'guestProfilesSave', value }); setNotice('Guest profile saved.'); }} />
+        ) : view === 'booking' ? (
           <Bookings
             childRatesApplied={hotelMasters.profile.childRatesApplied}
             bookings={bookings}
