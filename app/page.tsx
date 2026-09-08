@@ -53,6 +53,7 @@ import { HotelSettingsDetail } from '@/components/hotel-settings-detail';
 import type { RateSetupSection } from '@/components/rate-setup';
 import { HotelMasterFiles } from '@/components/hotel-master-files';
 import { Bookings } from '@/components/bookings';
+import { SegmentModule } from '@/components/segment-module';
 import type { Booking } from '@/lib/bookings';
 import { MonthTimetable } from '@/components/month-timetable';
 import { ScheduleTemplates } from '@/components/schedule-templates';
@@ -190,6 +191,7 @@ function HomeContent({ store }: { store: TransportData }) {
     | 'room'
     | 'roomstatus'
     | 'ratepolicy'
+    | 'segment'
     | 'booking'
     | 'frontdesk'
     | 'reporting'
@@ -767,8 +769,11 @@ function HomeContent({ store }: { store: TransportData }) {
               onOpenRoomStatus={() => setView('roomstatus')}
               onOpenRatePolicy={() => { setRateSetupSection(null); setView('ratepolicy'); }}
               onOpenTransportSetup={() => setView('setup')}
+              onOpenSegment={() => setView('segment')}
             />
           </div>
+        ) : view === 'segment' ? (
+          <div className="settings-scroll hotel-master-scroll" key="segment"><SegmentModule segments={hotelMasters.segments} onChange={async (value) => { await store.run({ type: 'segmentSave', value }); setNotice('Segment saved.'); }} onBack={() => setView('hotelsettings')} /></div>
         ) : ['hotelsetup', 'department', 'floorplan', 'roomstatus', 'ratepolicy'].includes(view) ? (
           <div className="settings-scroll hotel-master-scroll" key={view}>
             <HotelSettingsDetail

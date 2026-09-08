@@ -33,6 +33,7 @@ import {
   type HotelRoomType,
   type HotelDepartment,
   type RoomStatus,
+  type HotelSegment,
 } from './hotel-masters';
 import {
   addBookingTransportLeg,
@@ -87,6 +88,7 @@ export type TransportAction =
   | { type: 'hotelRoomSave'; value: HotelRoom }
   | { type: 'roomStatusSave'; value: RoomStatus[] }
   | { type: 'departmentSave'; value: HotelDepartment[] }
+  | { type: 'segmentSave'; value: HotelSegment[] }
   | { type: 'hotelProfileSave'; value: import('./hotel-masters').HotelProfile }
   | { type: 'bookingCreate'; value: Booking }
   | { type: 'bookingUpdate'; value: Booking }
@@ -427,6 +429,11 @@ export function applyTransportAction(
       const value = list(action.value).map((item) => { const row = object(item); return { id: text(row.id, 'department ID', true, 60), name: text(row.name, 'department name', true, 100), incidentalCharges: list(row.incidentalCharges).map((v) => { const charge = object(v); return { id: text(charge.id, 'charge ID', true, 100), title: text(charge.title, 'charge title', true, 100), amount: number(charge.amount, 'amount', 0, 999999), taxScheme: text(charge.taxScheme, 'tax scheme', true, 40), outletCode: text(charge.outletCode, 'outlet code', false, 40), rateElement: boolean(charge.rateElement), guestAppFb: boolean(charge.guestAppFb), guestAppOnlineShop: boolean(charge.guestAppOnlineShop), posInterface: boolean(charge.posInterface), eventInterface: boolean(charge.eventInterface), allowNegative: boolean(charge.allowNegative), packageRedemption: boolean(charge.packageRedemption), kiosk: boolean(charge.kiosk), thirdPartyPos: boolean(charge.thirdPartyPos), eInvoice: boolean(charge.eInvoice), msicCode: text(charge.msicCode, 'MSIC code', false, 40), classification: text(charge.classification, 'classification', false, 40) }; }), reasons: list(row.reasons).map((v) => text(v, 'reason', true, 100)), salesChannels: list(row.salesChannels).map((v) => text(v, 'sales channel', true, 100)) }; });
       if (new Set(value.map((item) => item.id)).size !== value.length) throw new Error('Duplicate department IDs.');
       return { ...state, hotelMasters: { ...state.hotelMasters, departments: value } };
+    }
+    case 'segmentSave': {
+      const value = list(action.value).map((item) => { const row = object(item); return { id: text(row.id, 'segment ID', true, 60), description: text(row.description, 'segment description', true, 100), displaySequence: number(row.displaySequence, 'display sequence', 1, 9999), icon: text(row.icon, 'segment icon', false, 240), active: boolean(row.active), updatedAt: text(row.updatedAt, 'updated date', false, 30) }; });
+      if (new Set(value.map((item) => item.id)).size !== value.length) throw new Error('Duplicate segment IDs.');
+      return { ...state, hotelMasters: { ...state.hotelMasters, segments: value } };
     }
     case 'hotelProfileSave':
       return { ...state, hotelMasters: { ...state.hotelMasters, profile: action.value } };

@@ -10,6 +10,7 @@ import {
   MapPin,
   Network,
   Ship,
+  Globe2,
 } from 'lucide-react';
 
 const items = [
@@ -21,6 +22,7 @@ const items = [
   { key: 'room', label: 'Room', detail: 'Guest Room Setup.', icon: DoorOpen },
   { key: 'room-status', label: 'Room Status', detail: 'Room Status Setup.', icon: ClipboardList },
   { key: 'rate-policy', label: 'Rate Setup', detail: 'Hotel Rate Setup.', icon: ClipboardList },
+  { key: 'segment', label: 'Segment', detail: 'Segment Setup.', icon: Globe2 },
   { key: 'transport', label: 'Transport Setup', detail: 'Transport Services, Routes and Schedule Setup.', icon: Ship },
 ] as const;
 
@@ -34,6 +36,7 @@ export function HotelSettingsMenu({
   onOpenRoomStatus,
   onOpenRatePolicy,
   onOpenTransportSetup,
+  onOpenSegment,
 }: {
   onOpenHotelSetup: () => void;
   onOpenDepartment: () => void;
@@ -44,6 +47,7 @@ export function HotelSettingsMenu({
   onOpenRoomStatus: () => void;
   onOpenRatePolicy: () => void;
   onOpenTransportSetup: () => void;
+  onOpenSegment: () => void;
 }) {
   const actions: Record<string, () => void> = {
     hotel: onOpenHotelSetup,
@@ -55,6 +59,7 @@ export function HotelSettingsMenu({
     'room-status': onOpenRoomStatus,
     'rate-policy': onOpenRatePolicy,
     transport: onOpenTransportSetup,
+    segment: onOpenSegment,
   };
 
   return (

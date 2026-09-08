@@ -32,6 +32,7 @@ export type HotelRoom = {
   active: boolean;
 };
 export type RoomStatus = { code: string; description: string; color: string; active: boolean };
+export type HotelSegment = { id: string; description: string; displaySequence: number; icon: string; active: boolean; updatedAt: string };
 export type HotelDepartment = {
   id: string;
   name: string;
@@ -49,6 +50,7 @@ export type HotelMasters = {
   rooms: HotelRoom[];
   roomStatuses: RoomStatus[];
   departments: HotelDepartment[];
+  segments: HotelSegment[];
 };
 export const initialHotelProfile: HotelProfile = { hotelName: 'HOTEL PARADISE', address: '123, JALAN TUN SAMBANTHAM', postcode: '47301', country: 'Malaysia', city: 'Petaling Jaya', state: 'Selangor', hotelType: 'Room', companyName: 'IFCA MSC Berhad', companyRegNo: '199701037892', sstRegNo: '29102119291', ttxRegNo: '', onlineBookingUrl: '', liveRunDate: '-', contactPerson: 'Edward Jacob', phoneNo: 'Member Service 03 7661 6238, Front Office 012 25...', mobileNo: '0125219931', reservationEmail: 'edwarddurai@ifca.com.my', businessEmail: 'arikh@ifca.com.my' };
 export const initialRoomStatuses: RoomStatus[] = [
@@ -61,6 +63,7 @@ export const initialRoomStatuses: RoomStatus[] = [
   { code: 'VI', description: 'Vacant Inspection', color: '#2f4bc4', active: false },
   { code: 'VR', description: 'Vacant Ready', color: '#2ca9df', active: true },
 ];
+export const initialSegments: HotelSegment[] = ['Leisure','Corporate','Group','OTA'].map((description, index) => ({ id: `segment-${index + 1}`, description, displaySequence: index + 1, icon: '', active: true, updatedAt: '2026-09-08' }));
 const entries = (prefix: string, total: number) => Array.from({ length: total }, (_, index) => `${prefix} ${index + 1}`);
 const charges = (prefix: string, total: number) => Array.from({ length: total }, (_, index) => ({ id: `${prefix}-charge-${index + 1}`, title: index === 0 ? 'Boat Service' : `Charge ${index + 1}`, amount: 0, taxScheme: 'SST-3', outletCode: '', rateElement: false, guestAppFb: false, guestAppOnlineShop: false, posInterface: false, eventInterface: false, allowNegative: false, packageRedemption: false, kiosk: false, thirdPartyPos: false, eInvoice: false, msicCode: '55101', classification: '022' }));
 export const initialDepartments: HotelDepartment[] = [
@@ -149,6 +152,7 @@ export const initialHotelMasters: HotelMasters = {
   ],
   roomStatuses: initialRoomStatuses,
   departments: initialDepartments,
+  segments: initialSegments,
 };
 
 export const initialBookings: Booking[] = sampleBookings;
