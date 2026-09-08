@@ -12,7 +12,7 @@ import {
 import { RateSetupModule, type RateSetupSection } from '@/components/rate-setup';
 import { initialRateSetupData, type RateSetupData } from '@/lib/rate-setup-data';
 import { RoomStatusModule } from '@/components/room-status-module';
-import { DepartmentModule } from '@/components/department-module';
+import { DepartmentModule } from '@/components/department-module-polished';
 import type { HotelDepartment, HotelRoomType, RoomStatus } from '@/lib/hotel-masters';
 
 export type HotelSettingsDetailKind =
