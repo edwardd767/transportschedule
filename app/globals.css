@@ -5472,3 +5472,6 @@ p {
 .rate-inclusive-menu{position:absolute;right:0;top:32px;z-index:8;min-width:110px;background:#fff;border-radius:4px;box-shadow:0 4px 14px rgba(0,0,0,.24);padding:6px}
 .rate-inclusive-menu button{display:block;width:100%;border:0;background:transparent;text-align:left;padding:9px 12px;cursor:pointer;color:#222;font-size:14px}
 .rate-inclusive-menu button:hover{background:#fff3e5}
+
+
+.standard-policy-list{display:flex;flex-direction:column;gap:6px;padding:0 0 18px}.standard-policy-row{width:100%;min-height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border:1px solid #e5e5e5;border-radius:6px;background:#fff;box-shadow:0 2px 5px #00000012;color:#111;text-align:left;cursor:pointer}.standard-policy-row strong{font-size:14px}.standard-policy-row svg{flex:none}.standard-policy-row:hover{background:#fff8ef}.standard-policy-page .master-page-back{margin-top:4px}

@@ -6,6 +6,8 @@ import {
   BedDouble,
   Building2,
   ClipboardList,
+  ChevronRight,
+  MoreVertical,
   Layers3,
   Network,
 } from 'lucide-react';
@@ -124,6 +126,24 @@ export function HotelSettingsDetail({
   if (kind === 'hotelSetup' && hotelProfile) return <HotelSetupModuleV2 profile={hotelProfile} onChange={onHotelProfileChange} onBack={onBack} />;
   if (kind === 'roomStatus') return <RoomStatusModule statuses={roomStatuses} onChange={onRoomStatusesChange} onBack={onBack} />;
   if (kind === 'department') return <DepartmentModule departments={departments} onChange={onDepartmentsChange} onBack={onBack} />;
+  if (kind === 'standardPolicy') {
+    const policies = ['Hotel Operational Policy', 'Security Deposit Policy', 'State & Tourism Tax', 'Room Status Policy', 'General Policy', 'Terms & Conditions', 'Advance Payment Policy', 'e-Invoice Policy'];
+    return (
+      <section className="master-page standard-policy-page" aria-label="Standard Policy & Guidelines">
+        <div className="standard-policy-list">
+          {policies.map((policy) => (
+            <button className="standard-policy-row" type="button" key={policy} aria-label={`Open ${policy}`}>
+              <strong>{policy}</strong>
+              {policy === 'State & Tourism Tax' ? <MoreVertical size={22} /> : <ChevronRight size={24} />}
+            </button>
+          ))}
+        </div>
+        <button className="secondary-button master-page-back" type="button" onClick={onBack}>
+          <ArrowLeft size={16} /> Back to Hotel Settings
+        </button>
+      </section>
+    );
+  }
 
   return (
     <section className="master-page" aria-label={page.title}>
