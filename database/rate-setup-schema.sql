@@ -90,6 +90,12 @@ CREATE TABLE IF NOT EXISTS public.hotelx_rate_setup_validity (
 ALTER TABLE public.hotelx_rate_setup_validity
   ADD COLUMN IF NOT EXISTS seasonal_rates jsonb NOT NULL DEFAULT '{}'::jsonb;
 
+CREATE TABLE IF NOT EXISTS public.hotelx_hotel_setup (
+  property_id text PRIMARY KEY REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+  profile jsonb NOT NULL DEFAULT '{}'::jsonb,
+  updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE INDEX IF NOT EXISTS hotelx_season_calendar_season_idx
   ON public.hotelx_season_calendar(property_id, season_id, calendar_date);
 CREATE INDEX IF NOT EXISTS hotelx_rate_element_name_idx

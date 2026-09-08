@@ -9,11 +9,19 @@ import {
   Layers3,
   Network,
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { RateSetupModule, type RateSetupSection } from '@/components/rate-setup';
 import { initialRateSetupData, type RateSetupData } from '@/lib/rate-setup-data';
 import { RoomStatusModule } from '@/components/room-status-module';
 import { DepartmentModule } from '@/components/department-module-polished';
-import type { HotelDepartment, HotelRoomType, RoomStatus } from '@/lib/hotel-masters';
+import type { HotelDepartment, HotelRoomType, RoomStatus, HotelProfile } from '@/lib/hotel-masters';
+
+function HotelSetupModule({ profile, onChange, onBack }: { profile: HotelProfile; onChange: (value: HotelProfile) => void | Promise<void>; onBack: () => void }) {
+  const [draft, setDraft] = useState(profile); const [editing, setEditing] = useState(false); const [tab, setTab] = useState('Profile');
+  useEffect(() => setDraft(profile), [profile]);
+  const field = (key: keyof HotelProfile, label: string) => <label className="hotel-profile-field"><span>{label}</span><input value={draft[key]} onChange={(e) => setDraft({ ...draft, [key]: e.target.value })} /></label>;
+  return <section className="master-page hotel-profile-page"><div className="hotel-profile-tabs">{['Profile', 'About', 'Gallery', 'Facilities'].map((item) => <button className={tab === item ? 'active' : ''} key={item} onClick={() => setTab(item)}>{item}</button>)}</div>{tab === 'Profile' && <><div className="hotel-profile-card"><div className="hotel-profile-card-head"><strong>Hotel Information</strong><button onClick={() => setEditing(!editing)}>{editing ? 'Done' : '✎'}</button></div>{editing ? <div className="hotel-profile-form">{field('hotelName', 'Hotel Name')}{field('address', 'Address')}{field('hotelType', 'Hotel Type')}{field('companyName', 'Company Name')}{field('companyRegNo', 'Company Reg. No')}{field('sstRegNo', 'SST Reg. No')}{field('ttxRegNo', 'TTx Reg. No')}{field('onlineBookingUrl', 'Online Booking URL')}{field('liveRunDate', 'Live Run Date')}</div> : <div className="hotel-profile-grid"><div>{field('hotelName', 'Hotel Name')}<div className="hotel-profile-value multiline"><span>Address</span>{draft.address}</div></div><div>{field('hotelType', 'Hotel Type')}{field('companyName', 'Company Name')}{field('companyRegNo', 'Company Reg. No')}{field('sstRegNo', 'SST Reg. No')}{field('ttxRegNo', 'TTx Reg. No')}{field('onlineBookingUrl', 'Online Booking URL')}{field('liveRunDate', 'Live Run Date')}</div></div>}</div><div className="hotel-profile-card"><div className="hotel-profile-card-head"><strong>Contact</strong><button onClick={() => setEditing(!editing)}>✎</button></div><div className="hotel-profile-grid"><div>{field('contactPerson', 'Contact Person')}{field('phoneNo', 'Phone No')}{field('reservationEmail', 'Reservation Email')}</div><div>{field('mobileNo', 'Mobile No')}{field('businessEmail', 'Business Email')}</div></div></div></>}{editing && <div className="master-page-actions"><button className="secondary-button" onClick={() => { setDraft(profile); setEditing(false); }}>Cancel</button><button className="primary-button" onClick={async () => { await onChange(draft); setEditing(false); }}>Save</button></div>}<button className="secondary-button master-page-back" onClick={onBack}><ArrowLeft size={16} /> Back to Hotel Settings</button></section>;
+}
 
 export type HotelSettingsDetailKind =
   | 'hotelSetup'
@@ -72,6 +80,8 @@ export function HotelSettingsDetail({
   departments = [],
   onDepartmentsChange = () => {},
   roomTypes = [],
+  hotelProfile,
+  onHotelProfileChange = () => {},
 }: {
   kind: HotelSettingsDetailKind;
   onBack: () => void;
@@ -84,6 +94,8 @@ export function HotelSettingsDetail({
   departments?: HotelDepartment[];
   onDepartmentsChange?: (value: HotelDepartment[]) => void | Promise<void>;
   roomTypes?: HotelRoomType[];
+  hotelProfile?: HotelProfile;
+  onHotelProfileChange?: (value: HotelProfile) => void | Promise<void>;
 }) {
   const page = pages[kind];
   const Icon = page.icon;
@@ -100,6 +112,7 @@ export function HotelSettingsDetail({
       </section>
     );
   }
+  if (kind === 'hotelSetup' && hotelProfile) return <HotelSetupModule profile={hotelProfile} onChange={onHotelProfileChange} onBack={onBack} />;
   if (kind === 'roomStatus') return <RoomStatusModule statuses={roomStatuses} onChange={onRoomStatusesChange} onBack={onBack} />;
   if (kind === 'department') return <DepartmentModule departments={departments} onChange={onDepartmentsChange} onBack={onBack} />;
 

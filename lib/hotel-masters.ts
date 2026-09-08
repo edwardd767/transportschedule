@@ -39,15 +39,18 @@ export type HotelDepartment = {
   reasons: string[];
   salesChannels: string[];
 };
+export type HotelProfile = { hotelName: string; address: string; hotelType: string; companyName: string; companyRegNo: string; sstRegNo: string; ttxRegNo: string; onlineBookingUrl: string; liveRunDate: string; contactPerson: string; phoneNo: string; mobileNo: string; reservationEmail: string; businessEmail: string };
 export type IncidentalCharge = { id: string; title: string; amount: number; taxScheme: string; outletCode: string; rateElement: boolean; guestAppFb: boolean; guestAppOnlineShop: boolean; posInterface: boolean; eventInterface: boolean; allowNegative: boolean; packageRedemption: boolean; kiosk: boolean; thirdPartyPos: boolean; eInvoice: boolean; msicCode: string; classification: string };
 
 export type HotelMasters = {
+  profile: HotelProfile;
   locations: HotelLocation[];
   roomTypes: HotelRoomType[];
   rooms: HotelRoom[];
   roomStatuses: RoomStatus[];
   departments: HotelDepartment[];
 };
+export const initialHotelProfile: HotelProfile = { hotelName: 'HOTEL PARADISE', address: '123, JALAN TUN SAMBANTHAM,\n47301, Petaling Jaya,\nSelangor, Malaysia', hotelType: 'Room', companyName: 'IFCA MSC Berhad', companyRegNo: '199701037892', sstRegNo: '29102119291', ttxRegNo: '', onlineBookingUrl: '', liveRunDate: '-', contactPerson: 'Edward Jacob', phoneNo: 'Member Service 03 7661 6238, Front Office 012 25...', mobileNo: '0125219931', reservationEmail: 'edwarddurai@ifca.com.my', businessEmail: 'arikh@ifca.com.my' };
 export const initialRoomStatuses: RoomStatus[] = [
   { code: 'OC', description: 'Occupied Clean', color: '#26743a', active: true },
   { code: 'OD', description: 'Occupied Dirty', color: '#a5001b', active: true },
@@ -136,6 +139,7 @@ function roomsFor(
 }
 
 export const initialHotelMasters: HotelMasters = {
+  profile: initialHotelProfile,
   locations,
   roomTypes,
   rooms: [

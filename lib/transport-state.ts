@@ -87,6 +87,7 @@ export type TransportAction =
   | { type: 'hotelRoomSave'; value: HotelRoom }
   | { type: 'roomStatusSave'; value: RoomStatus[] }
   | { type: 'departmentSave'; value: HotelDepartment[] }
+  | { type: 'hotelProfileSave'; value: import('./hotel-masters').HotelProfile }
   | { type: 'bookingCreate'; value: Booking }
   | { type: 'bookingUpdate'; value: Booking }
   | { type: 'rateSetup'; value: RateSetupData }
@@ -116,7 +117,7 @@ export function normalizeTransportState(state: TransportState): TransportState {
     Array.isArray(state.hotelMasters.roomTypes) &&
     Array.isArray(state.hotelMasters.rooms) &&
     state.hotelMasters.roomTypes.length
-      ? { ...state.hotelMasters, roomStatuses: Array.isArray(state.hotelMasters.roomStatuses) ? state.hotelMasters.roomStatuses : structuredClone(initialHotelMasters.roomStatuses), departments: Array.isArray(state.hotelMasters.departments) ? state.hotelMasters.departments.map((department, departmentIndex) => ({ ...department, incidentalCharges: Array.isArray(department.incidentalCharges) ? department.incidentalCharges.map((charge, chargeIndex) => typeof charge === 'string' ? { id: `${department.id || departmentIndex}-charge-${chargeIndex + 1}`, title: charge, amount: 0, taxScheme: 'SST-3', outletCode: '', rateElement: false, guestAppFb: false, guestAppOnlineShop: false, posInterface: false, eventInterface: false, allowNegative: false, packageRedemption: false, kiosk: false, thirdPartyPos: false, eInvoice: false, msicCode: '55101', classification: '022' } : charge) : [] })) : structuredClone(initialHotelMasters.departments) }
+      ? { ...state.hotelMasters, profile: state.hotelMasters.profile || structuredClone(initialHotelMasters.profile), roomStatuses: Array.isArray(state.hotelMasters.roomStatuses) ? state.hotelMasters.roomStatuses : structuredClone(initialHotelMasters.roomStatuses), departments: Array.isArray(state.hotelMasters.departments) ? state.hotelMasters.departments.map((department, departmentIndex) => ({ ...department, incidentalCharges: Array.isArray(department.incidentalCharges) ? department.incidentalCharges.map((charge, chargeIndex) => typeof charge === 'string' ? { id: `${department.id || departmentIndex}-charge-${chargeIndex + 1}`, title: charge, amount: 0, taxScheme: 'SST-3', outletCode: '', rateElement: false, guestAppFb: false, guestAppOnlineShop: false, posInterface: false, eventInterface: false, allowNegative: false, packageRedemption: false, kiosk: false, thirdPartyPos: false, eInvoice: false, msicCode: '55101', classification: '022' } : charge) : [] })) : structuredClone(initialHotelMasters.departments) }
       : structuredClone(initialHotelMasters);
   const bookings =
     Array.isArray(state.bookings) && state.bookings.length
@@ -427,6 +428,8 @@ export function applyTransportAction(
       if (new Set(value.map((item) => item.id)).size !== value.length) throw new Error('Duplicate department IDs.');
       return { ...state, hotelMasters: { ...state.hotelMasters, departments: value } };
     }
+    case 'hotelProfileSave':
+      return { ...state, hotelMasters: { ...state.hotelMasters, profile: action.value } };
     case 'templates': {
       const templates = list(action.value).map(template);
       unique(templates);

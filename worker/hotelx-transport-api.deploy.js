@@ -625,6 +625,7 @@ var amountFormatter = new Intl.NumberFormat("en-MY", {
 });
 
 // lib/hotel-masters.ts
+var initialHotelProfile = { hotelName: "HOTEL PARADISE", address: "123, JALAN TUN SAMBANTHAM,\n47301, Petaling Jaya,\nSelangor, Malaysia", hotelType: "Room", companyName: "IFCA MSC Berhad", companyRegNo: "199701037892", sstRegNo: "29102119291", ttxRegNo: "", onlineBookingUrl: "", liveRunDate: "-", contactPerson: "Edward Jacob", phoneNo: "Member Service 03 7661 6238, Front Office 012 25...", mobileNo: "0125219931", reservationEmail: "edwarddurai@ifca.com.my", businessEmail: "arikh@ifca.com.my" };
 var initialRoomStatuses = [
   { code: "OC", description: "Occupied Clean", color: "#26743a", active: true },
   { code: "OD", description: "Occupied Dirty", color: "#a5001b", active: true },
@@ -710,6 +711,7 @@ function roomsFor(type, floor, start) {
   });
 }
 var initialHotelMasters = {
+  profile: initialHotelProfile,
   locations,
   roomTypes,
   rooms: [
@@ -1035,7 +1037,7 @@ function newTransportState() {
   });
 }
 function normalizeTransportState(state) {
-  const hotelMasters = state.hotelMasters && Array.isArray(state.hotelMasters.locations) && Array.isArray(state.hotelMasters.roomTypes) && Array.isArray(state.hotelMasters.rooms) && state.hotelMasters.roomTypes.length ? { ...state.hotelMasters, roomStatuses: Array.isArray(state.hotelMasters.roomStatuses) ? state.hotelMasters.roomStatuses : structuredClone(initialHotelMasters.roomStatuses), departments: Array.isArray(state.hotelMasters.departments) ? state.hotelMasters.departments.map((department, departmentIndex) => ({ ...department, incidentalCharges: Array.isArray(department.incidentalCharges) ? department.incidentalCharges.map((charge, chargeIndex) => typeof charge === "string" ? { id: `${department.id || departmentIndex}-charge-${chargeIndex + 1}`, title: charge, amount: 0, taxScheme: "SST-3", outletCode: "", rateElement: false, guestAppFb: false, guestAppOnlineShop: false, posInterface: false, eventInterface: false, allowNegative: false, packageRedemption: false, kiosk: false, thirdPartyPos: false, eInvoice: false, msicCode: "55101", classification: "022" } : charge) : [] })) : structuredClone(initialHotelMasters.departments) } : structuredClone(initialHotelMasters);
+  const hotelMasters = state.hotelMasters && Array.isArray(state.hotelMasters.locations) && Array.isArray(state.hotelMasters.roomTypes) && Array.isArray(state.hotelMasters.rooms) && state.hotelMasters.roomTypes.length ? { ...state.hotelMasters, profile: state.hotelMasters.profile || structuredClone(initialHotelMasters.profile), roomStatuses: Array.isArray(state.hotelMasters.roomStatuses) ? state.hotelMasters.roomStatuses : structuredClone(initialHotelMasters.roomStatuses), departments: Array.isArray(state.hotelMasters.departments) ? state.hotelMasters.departments.map((department, departmentIndex) => ({ ...department, incidentalCharges: Array.isArray(department.incidentalCharges) ? department.incidentalCharges.map((charge, chargeIndex) => typeof charge === "string" ? { id: `${department.id || departmentIndex}-charge-${chargeIndex + 1}`, title: charge, amount: 0, taxScheme: "SST-3", outletCode: "", rateElement: false, guestAppFb: false, guestAppOnlineShop: false, posInterface: false, eventInterface: false, allowNegative: false, packageRedemption: false, kiosk: false, thirdPartyPos: false, eInvoice: false, msicCode: "55101", classification: "022" } : charge) : [] })) : structuredClone(initialHotelMasters.departments) } : structuredClone(initialHotelMasters);
   const bookings = Array.isArray(state.bookings) && state.bookings.length ? state.bookings : structuredClone(initialBookings);
   const savedRateSetup = state.rateSetup && Array.isArray(state.rateSetup.seasons) && state.rateSetup.seasons.length && state.rateSetup.calendar && typeof state.rateSetup.calendar === "object" && Array.isArray(state.rateSetup.elements) && state.rateSetup.elements.length && Array.isArray(state.rateSetup.rateTypes) && state.rateSetup.rateTypes.length && Array.isArray(state.rateSetup.ratePlans) && state.rateSetup.ratePlans.length && Array.isArray(state.rateSetup.validity) ? state.rateSetup : structuredClone(initialRateSetupData);
   const rateSetup2 = {
@@ -1314,6 +1316,8 @@ function applyTransportAction(state, input) {
       if (new Set(value.map((item) => item.id)).size !== value.length) throw new Error("Duplicate department IDs.");
       return { ...state, hotelMasters: { ...state.hotelMasters, departments: value } };
     }
+    case "hotelProfileSave":
+      return { ...state, hotelMasters: { ...state.hotelMasters, profile: action.value } };
     case "templates": {
       const templates = list(action.value).map(template);
       unique(templates);
@@ -2237,6 +2241,11 @@ var schemaStatements = [
   )`,
   `ALTER TABLE public.hotelx_rate_setup_validity
     ADD COLUMN IF NOT EXISTS seasonal_rates jsonb NOT NULL DEFAULT '{}'::jsonb`,
+  `CREATE TABLE IF NOT EXISTS public.hotelx_hotel_setup (
+    property_id text PRIMARY KEY REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    profile jsonb NOT NULL DEFAULT '{}'::jsonb,
+    updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
   `CREATE INDEX IF NOT EXISTS hotelx_season_calendar_season_idx
     ON public.hotelx_season_calendar(property_id, season_id, calendar_date)`,
   `CREATE INDEX IF NOT EXISTS hotelx_rate_element_name_idx
@@ -2264,6 +2273,7 @@ var schemaStatements = [
   LANGUAGE plpgsql
   AS $$
   BEGIN
+    DELETE FROM public.hotelx_hotel_setup WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_rate_setup_validity WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_season_calendar WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_rate_element WHERE property_id = p_property_id;
@@ -2418,6 +2428,9 @@ var schemaStatements = [
     INSERT INTO public.hotelx_rate_setup_validity (property_id, rate_setup_id, id, sort_order, valid_from, valid_to, active, seasonal_rates)
     SELECT p_property_id, item.value->>'rateSetupId', item.value->>'id', item.ordinality::integer, (item.value->>'from')::date, (item.value->>'to')::date, COALESCE((item.value->>'active')::boolean, true), COALESCE(item.value->'seasonalRates', '{}'::jsonb)
     FROM jsonb_array_elements(COALESCE(p_state #> '{rateSetup,validity}', '[]'::jsonb)) WITH ORDINALITY AS item(value, ordinality);
+
+    INSERT INTO public.hotelx_hotel_setup (property_id, profile)
+    VALUES (p_property_id, COALESCE(p_state #> '{hotelMasters,profile}', '{}'::jsonb));
 
     INSERT INTO public.hotelx_transport_rules (
       property_id, start_time, end_time, turnaround_minutes,
@@ -2672,6 +2685,7 @@ var schemaStatements = [
     meta.revision,
     jsonb_build_object(
       'hotelMasters', jsonb_build_object(
+        'profile', COALESCE((SELECT profile FROM public.hotelx_hotel_setup WHERE property_id = meta.id), '{}'::jsonb),
         'locations', COALESCE((
           SELECT jsonb_agg(jsonb_build_object(
             'code', location.code,

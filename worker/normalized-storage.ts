@@ -350,6 +350,11 @@ const schemaStatements = [
   )`,
   `ALTER TABLE public.hotelx_rate_setup_validity
     ADD COLUMN IF NOT EXISTS seasonal_rates jsonb NOT NULL DEFAULT '{}'::jsonb`,
+  `CREATE TABLE IF NOT EXISTS public.hotelx_hotel_setup (
+    property_id text PRIMARY KEY REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    profile jsonb NOT NULL DEFAULT '{}'::jsonb,
+    updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
   `CREATE INDEX IF NOT EXISTS hotelx_season_calendar_season_idx
     ON public.hotelx_season_calendar(property_id, season_id, calendar_date)`,
   `CREATE INDEX IF NOT EXISTS hotelx_rate_element_name_idx
@@ -377,6 +382,7 @@ const schemaStatements = [
   LANGUAGE plpgsql
   AS $$
   BEGIN
+    DELETE FROM public.hotelx_hotel_setup WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_rate_setup_validity WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_season_calendar WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_rate_element WHERE property_id = p_property_id;
@@ -531,6 +537,9 @@ const schemaStatements = [
     INSERT INTO public.hotelx_rate_setup_validity (property_id, rate_setup_id, id, sort_order, valid_from, valid_to, active, seasonal_rates)
     SELECT p_property_id, item.value->>'rateSetupId', item.value->>'id', item.ordinality::integer, (item.value->>'from')::date, (item.value->>'to')::date, COALESCE((item.value->>'active')::boolean, true), COALESCE(item.value->'seasonalRates', '{}'::jsonb)
     FROM jsonb_array_elements(COALESCE(p_state #> '{rateSetup,validity}', '[]'::jsonb)) WITH ORDINALITY AS item(value, ordinality);
+
+    INSERT INTO public.hotelx_hotel_setup (property_id, profile)
+    VALUES (p_property_id, COALESCE(p_state #> '{hotelMasters,profile}', '{}'::jsonb));
 
     INSERT INTO public.hotelx_transport_rules (
       property_id, start_time, end_time, turnaround_minutes,
@@ -785,6 +794,7 @@ const schemaStatements = [
     meta.revision,
     jsonb_build_object(
       'hotelMasters', jsonb_build_object(
+        'profile', COALESCE((SELECT profile FROM public.hotelx_hotel_setup WHERE property_id = meta.id), '{}'::jsonb),
         'locations', COALESCE((
           SELECT jsonb_agg(jsonb_build_object(
             'code', location.code,
