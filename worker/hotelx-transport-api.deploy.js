@@ -1995,7 +1995,7 @@ var schemaStatements = [
     id text NOT NULL,
     sort_order integer NOT NULL,
     booking_id text,
-    reference text NOT NULL,
+    booking_no text NOT NULL,
     name text NOT NULL,
     adults integer NOT NULL,
     children integer NOT NULL,
@@ -2124,7 +2124,7 @@ var schemaStatements = [
     guests integer NOT NULL,
     amount numeric(14,2) NOT NULL DEFAULT 0,
     highlight_dates boolean NOT NULL DEFAULT false,
-    PRIMARY KEY (property_id, reference)
+    PRIMARY KEY (property_id, booking_no)
   )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_booking_rooms (
     property_id text NOT NULL,
@@ -2133,10 +2133,11 @@ var schemaStatements = [
     sort_order integer NOT NULL,
     room_count integer NOT NULL CHECK (room_count >= 1),
     PRIMARY KEY (property_id, booking_reference, room_type_code),
-    FOREIGN KEY (property_id, booking_reference) REFERENCES public.hotelx_bookings(property_id, reference) ON DELETE CASCADE,
+    FOREIGN KEY (property_id, booking_reference) REFERENCES public.hotelx_bookings(property_id, booking_no) ON DELETE CASCADE,
     FOREIGN KEY (property_id, room_type_code) REFERENCES public.hotelx_room_type_master(property_id, code)
   )`,
   `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS group_name text NOT NULL DEFAULT ''`,
+  `DO $$ BEGIN IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='hotelx_bookings' AND column_name='reference') THEN ALTER TABLE public.hotelx_bookings RENAME COLUMN reference TO booking_no; END IF; END $$`,
   `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS phone text NOT NULL DEFAULT ''`,
   `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS account_name text NOT NULL DEFAULT ''`,
   `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS credit_limit numeric(14,2) NOT NULL DEFAULT 0`,
@@ -2384,7 +2385,7 @@ var schemaStatements = [
     CROSS JOIN LATERAL jsonb_array_elements(COALESCE(department.value->'incidentalCharges', '[]'::jsonb)) AS charge(value);
 
     INSERT INTO public.hotelx_bookings (
-      property_id, reference, sort_order, guest, arrival_date, departure_date, status,
+      property_id, booking_no, sort_order, guest, arrival_date, departure_date, status,
       assigned_rooms, checked_in_guests, guests, amount, highlight_dates,
       group_name, phone, account_name, credit_limit, print_rate, state_tax, tourism_tax,
       email, sales_channel, source, segment, reference_no
@@ -2786,7 +2787,7 @@ var schemaStatements = [
       ),
       'bookings', COALESCE((
         SELECT jsonb_agg(jsonb_build_object(
-          'reference', booking.reference,
+          'reference', booking.booking_no,
           'guest', booking.guest,
           'arrival', booking.arrival_date,
           'departure', booking.departure_date,
@@ -2799,7 +2800,7 @@ var schemaStatements = [
               'discount', br.discount::double precision, 'tax', br.tax::double precision, 'total', br.total::double precision
             ) ORDER BY br.sort_order)
             FROM public.hotelx_booking_rooms AS br
-            WHERE br.property_id = booking.property_id AND br.booking_reference = booking.reference
+            WHERE br.property_id = booking.property_id AND br.booking_reference = booking.booking_no
           ), '[]'::jsonb),
           'assignedRooms', booking.assigned_rooms,
           'checkedInGuests', booking.checked_in_guests,
@@ -3001,7 +3002,7 @@ var legacyReadSql = "/* normalized-legacy-read */ SELECT revision::text, state::
 var initializeSql = "/* normalized-initialize */ SELECT public.hotelx_transport_initialize($1, $2::integer, $3::jsonb)::text";
 var bookingExtrasReadSql = `/* normalized-booking-extras-read */
 SELECT
-  booking.reference,
+  booking.booking_no,
   booking.group_name,
   booking.phone,
   booking.account_name,
@@ -3029,7 +3030,7 @@ SELECT
 FROM public.hotelx_bookings AS booking
 LEFT JOIN public.hotelx_booking_rooms AS room
   ON room.property_id = booking.property_id
- AND room.booking_reference = booking.reference
+ AND room.booking_reference = booking.booking_no
 WHERE booking.property_id = $1
 ORDER BY booking.sort_order, room.sort_order`;
 var saveSql = "/* normalized-save */ SELECT public.hotelx_transport_save($1, $2::integer, $3::jsonb)::text";
