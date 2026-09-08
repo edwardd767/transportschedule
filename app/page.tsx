@@ -162,6 +162,10 @@ export default function Home() {
 }
 
 function HomeContent({ store }: { store: TransportData }) {
+  const todayKey = () => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  };
   useEffect(() => {
     const selectZero = (event: FocusEvent) => {
       const input = event.target;
@@ -171,7 +175,7 @@ function HomeContent({ store }: { store: TransportData }) {
     document.addEventListener('focusin', selectZero);
     return () => document.removeEventListener('focusin', selectZero);
   }, []);
-  const [date, setDate] = useState('2026-08-03');
+  const [date, setDate] = useState(todayKey);
   const [route, setRoute] = useState('all');
   const [query, setQuery] = useState('');
   const [view, setView] = useState<
@@ -587,7 +591,7 @@ function HomeContent({ store }: { store: TransportData }) {
               <div className="subnav">
                 <button
                   className={view === 'schedule' ? 'active' : ''}
-                  onClick={() => setView('schedule')}
+                  onClick={() => { setDate(todayKey()); setView('schedule'); }}
                 >
                   Transport
                 </button>
