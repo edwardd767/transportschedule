@@ -42,7 +42,7 @@ function GeneralPolicyModule({ onBack, profile, onProfileChange }: { onBack: () 
       <label>Pax Count *<select value={paxCount} onChange={(event) => setPaxCount(event.target.value)}><option>No. of Guest Profile Created</option><option>No. of Pax Manual Updated</option></select></label>
       <label className="general-policy-toggle"><span>Child Rates Applied</span><input type="checkbox" checked={childRatesApplied} onChange={(event) => setChildRatesApplied(event.target.checked)} /><i /></label>
     </div>
-    <div className="master-page-actions"><button className="secondary-button" type="button" onClick={onBack}>Back to Standard Policy</button><button className="primary-button" type="button" onClick={() => setEditing(false)}>Save</button></div>
+    <div className="master-page-actions"><button className="secondary-button" type="button" onClick={onBack}>Back to Standard Policy</button><button className="primary-button" type="button" onClick={async () => { await onProfileChange({ ...profile, bookingCancellationDays: Number(days), currencyCode: currency, floatAmount: Number(floatAmount), paxCount, childRatesApplied }); }}>Save</button></div>
   </section>;
 }
 
