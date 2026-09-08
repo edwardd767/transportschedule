@@ -52,7 +52,7 @@ export type HotelMasters = {
   departments: HotelDepartment[];
   segments: HotelSegment[];
 };
-export const initialHotelProfile: HotelProfile = { hotelName: 'HOTEL PARADISE', address: '123, JALAN TUN SAMBANTHAM', postcode: '47301', country: 'Malaysia', city: 'Petaling Jaya', state: 'Selangor', hotelType: 'Room', companyName: 'IFCA MSC Berhad', companyRegNo: '199701037892', sstRegNo: '29102119291', ttxRegNo: '', onlineBookingUrl: '', liveRunDate: '-', contactPerson: 'Edward Jacob', phoneNo: 'Member Service 03 7661 6238, Front Office 012 25...', mobileNo: '0125219931', reservationEmail: 'edwarddurai@ifca.com.my', businessEmail: 'arikh@ifca.com.my', bookingCancellationDays: 3, currencyCode: 'MYR', floatAmount: 0, paxCount: 'No. of Guest Profile Created', childRatesApplied: false };
+export const initialHotelProfile: HotelProfile = { hotelName: 'HOTEL PARADISE', address: '123, JALAN TUN SAMBANTHAM', postcode: '47301', country: 'Malaysia', city: 'Petaling Jaya', state: 'Selangor', hotelType: 'Room', companyName: 'IFCA MSC Berhad', companyRegNo: '199701037892', sstRegNo: '29102119291', ttxRegNo: '', onlineBookingUrl: '', liveRunDate: '-', contactPerson: 'Edward Jacob', phoneNo: 'Member Service 03 7661 6238, Front Office 012 25...', mobileNo: '0125219931', reservationEmail: 'edwarddurai@ifca.com.my', businessEmail: 'arikh@ifca.com.my', bookingCancellationDays: 3, currencyCode: 'MYR', floatAmount: 0, paxCount: 'No. of Pax Manual Updated', childRatesApplied: false };
 export const initialRoomStatuses: RoomStatus[] = [
   { code: 'OC', description: 'Occupied Clean', color: '#26743a', active: true },
   { code: 'OD', description: 'Occupied Dirty', color: '#a5001b', active: true },
