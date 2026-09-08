@@ -5486,3 +5486,5 @@ p {
 .rate-row-edit{grid-column:6;grid-row:1;align-self:center;justify-self:end;margin:0}
 .rate-season-row label{gap:2px}
 .rate-season-row input{min-height:30px;padding:4px 7px}
+.rate-season-row{grid-template-columns:minmax(145px,1fr) minmax(105px,1fr) repeat(3,minmax(105px,1fr)) 30px;align-items:center;padding:7px 6px}
+.rate-summary-amount{font-weight:700;color:#222}.rate-summary-detail{font-size:12px;color:#222}.rate-row-edit{grid-column:6;grid-row:1}
