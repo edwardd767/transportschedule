@@ -60,7 +60,6 @@ import { MonthTimetable } from '@/components/month-timetable';
 import { ScheduleTemplates } from '@/components/schedule-templates';
 import { BookingTransfers } from '@/components/booking-transfers';
 import { EditTransportTrip } from '@/components/edit-transport-trip';
-import { TransportListingReport } from '@/components/transport-listing-report';
 import {
   TransportConnection,
   TransportDataContext,
@@ -684,9 +683,7 @@ function HomeContent({ store }: { store: TransportData }) {
             ) : view === 'frontdesk' ? (
               <span>Front Desk</span>
             ) : view === 'reporting' ? (
-              <>
-                Digital Reporting <ChevronRight size={14} /> Transport Listing
-              </>
+              <span>Digital Reporting</span>
             ) : view === 'hotelsettings' ? (
               <span>Hotel Settings</span>
             ) : view === 'standardpolicy' ? (
@@ -869,12 +866,10 @@ function HomeContent({ store }: { store: TransportData }) {
             />
           </div>
         ) : view === 'reporting' ? (
-          <TransportListingReport
-            trips={trips}
-            setup={setup}
-            bookingLegs={bookingLegs}
-            bookings={bookings}
-          />
+          <section className="reporting-page" aria-label="Digital Reporting">
+            <div className="listing-title"><div><h1>Digital Reporting</h1><span className="context-tag"><ChartNoAxesCombined size={14} /> Reports</span></div></div>
+            <div className="empty-state reporting-empty"><ChartNoAxesCombined size={42} /><h3>Digital Reporting</h3><p>Select a report to view its results.</p></div>
+          </section>
         ) : view === 'frontdesk' ? (
           <div className="frontdesk-scroll" key="frontdesk">
             <div className="listing-title">
