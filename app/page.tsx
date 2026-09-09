@@ -26,6 +26,7 @@ import {
   Search,
   Settings,
   Ship,
+  Star,
   Users,
   Trash2,
   Waves,
@@ -60,7 +61,6 @@ import { MonthTimetable } from '@/components/month-timetable';
 import { ScheduleTemplates } from '@/components/schedule-templates';
 import { BookingTransfers } from '@/components/booking-transfers';
 import { EditTransportTrip } from '@/components/edit-transport-trip';
-import { TransportListingReport } from '@/components/transport-listing-report';
 import {
   TransportConnection,
   TransportDataContext,
@@ -101,6 +101,8 @@ function SvgIcon({ size = 24, markup }: { size?: number; markup: string }) {
     />
   );
 }
+
+const digitalReports = ['Booking Advance Payment Listing', 'Booking Status', 'Cashier Collection Summary', 'Cashier Detail Listing', 'Cashier Summary', 'City Ledger Transaction Listing', 'Consolidated e-Invoice', 'Daily Posting Detail', 'Daily Revenue Summary', 'Debtor Aging Detail', 'Debtor Aging Summary'];
 
 const frontDeskMenu = [
   {
@@ -207,6 +209,8 @@ function HomeContent({ store }: { store: TransportData }) {
     bookings.find((booking) => booking.reference === bookingReference) ?? null;
   const [scheduleView, setScheduleView] = useState<'day' | 'month'>('day');
   const [listingMenuOpen, setListingMenuOpen] = useState(false);
+  const [reportSearch, setReportSearch] = useState('');
+  const [reportCategory, setReportCategory] = useState('All');
   const [boatFilter, setBoatFilter] = useState('all');
   const [transferBooking, setTransferBooking] = useState<Booking | null>(null);
   const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
@@ -867,12 +871,11 @@ function HomeContent({ store }: { store: TransportData }) {
             />
           </div>
         ) : view === 'reporting' ? (
-          <TransportListingReport
-            trips={trips}
-            setup={setup}
-            bookingLegs={bookingLegs}
-            bookings={bookings}
-          />
+          <section className="digital-report-catalog" aria-label="Digital Reporting">
+            <div className="digital-report-banner"><div><small>HMS</small><strong>HOTEL PARADISE</strong></div><span>Digital Report</span></div>
+            <div className="digital-report-tools"><label><Search size={21} /><input placeholder="Search here..." value={reportSearch} onChange={(event) => setReportSearch(event.target.value)} /></label><select value={reportCategory} onChange={(event) => setReportCategory(event.target.value)}><option>All</option><option>Finance</option><option>Booking</option></select></div>
+            <div className="digital-report-list">{digitalReports.filter((report) => report.toLowerCase().includes(reportSearch.toLowerCase())).map((report) => <button type="button" className="digital-report-card" key={report}><span><strong>{report}</strong><small>Description</small></span><Star size={23} /></button>)}</div>
+          </section>
         ) : view === 'frontdesk' ? (
           <div className="frontdesk-scroll" key="frontdesk">
             <div className="listing-title">
