@@ -29,6 +29,18 @@ function baseNightRate(room: BookingRoom, date: string, rateSetup: RateSetupData
   return configured ?? room.roomRate ?? (room.total && room.count ? room.total / room.count : 0);
 }
 
+function breakfastCharge(room: BookingRoom, date: string, rateSetup: RateSetupData, rateCode: string) {
+  const plan = rateSetup.ratePlans.find(item => item.active && item.code === rateCode);
+  const season = rateSetup.calendar[date];
+  const validity = plan && season ? rateSetup.validity.filter(item => item.active && item.rateSetupId === plan.id && item.from <= date && date <= item.to).sort((a, b) => b.from.localeCompare(a.from))[0] : undefined;
+  const rate = validity?.seasonalRates?.[room.code]?.[season];
+  const names = (validity?.inclusiveElements ?? []).map(id => rateSetup.elements.find(item => item.id === id)?.name.toLowerCase() ?? '');
+  if (!names.some(name => name.includes('breakfast'))) return 0;
+  const adult = rate?.extraAdult ?? rateSetup.elements.find(item => item.name.toLowerCase().includes('breakfast') && item.name.toLowerCase().includes('adult'))?.amount ?? 0;
+  const child = rate?.extraChild ?? rateSetup.elements.find(item => item.name.toLowerCase().includes('breakfast') && item.name.toLowerCase().includes('child'))?.amount ?? 0;
+  return (room.adults ?? 1) * adult + (room.children ?? 0) * child;
+}
+
 type BillingLine = {
   id: string;
   roomKey: string;
@@ -39,6 +51,7 @@ type BillingLine = {
   promoCode: string;
   amount: number;
   baseAmount: number;
+  breakfast: number;
 };
 
 function lineAdjustment(booking: Booking, line: BillingLine) {
@@ -69,6 +82,7 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
           const id = `${roomKey}-${date}`;
           const adjustment = booking.billingSchedule?.find((item) => item.id === id);
           const baseAmount = baseNightRate(room, date, rateSetup);
+          const breakfast = breakfastCharge(room, date, rateSetup, adjustment?.rateCode || room.rateCode || 'BAR');
           rows.push({
             id,
             roomKey,
@@ -79,6 +93,7 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
             promoCode: adjustment?.promoCode || room.promoCode || '',
             amount: adjustment?.total ?? baseAmount,
             baseAmount,
+            breakfast,
           });
         });
       });
@@ -172,7 +187,7 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
               {isRoomOpen && <div className="billing-room-detail">
                 <div className="billing-date-range"><label>{inputDateLabel(fromDate)}<CalendarDays size={18} /><input type="date" value={fromDate} min={booking.arrival} max={addDays(booking.departure, -1)} onChange={(event) => setFromDate(event.target.value)} /></label><ChevronRight size={20} /><label>{inputDateLabel(toDate)}<CalendarDays size={18} /><input type="date" value={toDate} min={booking.arrival} max={addDays(booking.departure, -1)} onChange={(event) => setToDate(event.target.value)} /></label></div>
                 <label className="billing-select-all"><input type="checkbox" checked={allSelected} onChange={() => setSelected(allSelected ? selected.filter((id) => !visibleIds.includes(id)) : Array.from(new Set([...selected, ...visibleIds])))} /> Select All</label>
-                {dailyLines.map((line) => <label className="billing-daily-line" key={line.id}><input type="checkbox" checked={selected.includes(line.id)} onChange={() => toggleLine(line.id)} /><span><strong>{dayLabel(line.date)} | {line.rateCode}</strong><small>Room Charge</small></span><span><strong>{money(line.amount)}</strong><small>{money(line.amount)}</small></span></label>)}
+                {dailyLines.map((line) => <label className="billing-daily-line" key={line.id}><input type="checkbox" checked={selected.includes(line.id)} onChange={() => toggleLine(line.id)} /><span><strong>{dayLabel(line.date)} | {line.rateCode}</strong><small>Room {money(Math.max(0, line.amount - line.breakfast))}<br />{line.breakfast > 0 ? `Breakfast ${money(line.breakfast)}` : 'Room Charge'}</small></span><span><strong>{money(line.amount)}</strong><small>{money(line.amount)}</small></span></label>)}
               </div>}
             </div>;
           })}
