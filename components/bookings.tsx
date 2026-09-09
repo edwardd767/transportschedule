@@ -328,7 +328,7 @@ export function Bookings({
       >
         <Plus size={28} />
       </button>
-      {availabilityOpen && <AvailabilityDialog roomTypes={roomTypes} onClose={() => setAvailabilityOpen(false)} />}
+      {availabilityOpen && <AvailabilityDialog bookings={bookings} roomTypes={roomTypes} onClose={() => setAvailabilityOpen(false)} />}
     </section>
   );
 }

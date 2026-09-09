@@ -2244,6 +2244,17 @@ var schemaStatements = [
   `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS tax numeric(14,2) NOT NULL DEFAULT 0`,
   `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS total numeric(14,2) NOT NULL DEFAULT 0`,
   `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS guest_profile_ids jsonb NOT NULL DEFAULT '[]'::jsonb`,
+  `CREATE TABLE IF NOT EXISTS public.hotelx_room_availability (
+    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    availability_date date NOT NULL,
+    room_type_code text NOT NULL,
+    total_rooms integer NOT NULL DEFAULT 0 CHECK (total_rooms >= 0),
+    occupied_rooms integer NOT NULL DEFAULT 0 CHECK (occupied_rooms >= 0),
+    available_rooms integer NOT NULL DEFAULT 0 CHECK (available_rooms >= 0),
+    occ_percent numeric(8,2) NOT NULL DEFAULT 0,
+    updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (property_id, availability_date, room_type_code)
+  )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_season_master (
     property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
     id text NOT NULL,
@@ -2400,6 +2411,7 @@ var schemaStatements = [
     DELETE FROM public.hotelx_rate_setup WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_season_master WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_booking_rooms WHERE property_id = p_property_id;
+    DELETE FROM public.hotelx_room_availability WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_bookings WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_room_master WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_roomstatus WHERE property_id = p_property_id;
@@ -2529,6 +2541,56 @@ var schemaStatements = [
     FROM jsonb_array_elements(COALESCE(p_state->'bookings', '[]'::jsonb)) AS booking(value)
     CROSS JOIN LATERAL jsonb_array_elements(COALESCE(booking.value->'rooms', '[]'::jsonb))
       WITH ORDINALITY AS room(value, ordinality);
+
+    INSERT INTO public.hotelx_room_availability (
+      property_id, availability_date, room_type_code, total_rooms, occupied_rooms, available_rooms, occ_percent
+    )
+    WITH availability_window AS (
+      SELECT
+        LEAST(CURRENT_DATE, COALESCE(MIN(arrival_date::date), CURRENT_DATE)) AS start_date,
+        GREATEST(CURRENT_DATE + INTERVAL '365 days', COALESCE(MAX((departure_date::date - INTERVAL '1 day')::date), CURRENT_DATE)) AS end_date
+      FROM public.hotelx_bookings
+      WHERE property_id = p_property_id
+    ),
+    calendar AS (
+      SELECT generate_series(start_date, end_date, INTERVAL '1 day')::date AS availability_date
+      FROM availability_window
+    ),
+    occupied AS (
+      SELECT
+        day.availability_date,
+        room.room_type_code,
+        SUM(room.room_count)::integer AS occupied_rooms
+      FROM calendar AS day
+      JOIN public.hotelx_bookings AS booking
+        ON booking.property_id = p_property_id
+       AND booking.status IN ('Booked', 'Inhouse')
+       AND booking.arrival_date::date <= day.availability_date
+       AND day.availability_date < booking.departure_date::date
+      JOIN public.hotelx_booking_rooms AS room
+        ON room.property_id = booking.property_id
+       AND room.booking_reference = booking.booking_no
+      GROUP BY day.availability_date, room.room_type_code
+    )
+    SELECT
+      p_property_id,
+      day.availability_date,
+      room_type.code,
+      room_type.total_room,
+      COALESCE(occupied.occupied_rooms, 0),
+      GREATEST(0, room_type.total_room - COALESCE(occupied.occupied_rooms, 0)),
+      CASE
+        WHEN room_type.total_room > 0
+          THEN ROUND((COALESCE(occupied.occupied_rooms, 0)::numeric / room_type.total_room::numeric) * 100, 2)
+        ELSE 0
+      END
+    FROM calendar AS day
+    CROSS JOIN public.hotelx_room_type_master AS room_type
+    LEFT JOIN occupied
+      ON occupied.availability_date = day.availability_date
+     AND occupied.room_type_code = room_type.code
+    WHERE room_type.property_id = p_property_id
+      AND room_type.active = true;
 
     INSERT INTO public.hotelx_season_master (property_id, id, sort_order, name, color, active)
     SELECT p_property_id, item.value->>'id', item.ordinality::integer, item.value->>'name', COALESCE(item.value->>'color', '#ff9100'), COALESCE((item.value->>'active')::boolean, true)
