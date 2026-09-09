@@ -1562,7 +1562,7 @@ function applyTransportAction(state, input) {
     case "roomingEnsure": {
       const booking = state.bookings.find((item) => item.reference === action.reference);
       if (!booking?.rooms.length || booking.rooms.some((room) => room.guestProfileIds?.length)) return state;
-      const profile = { id: crypto.randomUUID(), name: booking.guest, mobile: booking.phone || "", email: booking.email || "", nationality: "Malaysian", identityNo: "", address: "", country: "Malaysia", state: "", city: "", postcode: "", birthDate: "", occupation: "", accountName: "", guestType: "Normal", remark: "", newsletter: false, tourismTax: false, visits: 0, updated: (/* @__PURE__ */ new Date()).toISOString().slice(0, 10) };
+      const profile = { id: crypto.randomUUID(), name: booking.guest, mobile: booking.phone || "", email: booking.email || "", nationality: "Malaysian", identityNo: "", address: "", country: "Malaysia", state: "", city: "", postcode: "", birthDate: "", occupation: "", accountName: "", guestType: "Normal", adultChild: "Adult", remark: "", newsletter: false, tourismTax: false, visits: 0, updated: (/* @__PURE__ */ new Date()).toISOString().slice(0, 10) };
       return { ...state, guestProfiles: [...state.guestProfiles, profile], bookings: state.bookings.map((item) => item.reference === booking.reference ? { ...item, rooms: item.rooms.map((room, index) => index === 0 ? { ...room, guestProfileIds: [profile.id] } : room) } : item) };
     }
     case "bookingCreate": {
@@ -1639,7 +1639,7 @@ function applyTransportAction(state, input) {
           return { room: typeof row.room === "string" ? row.room.slice(0, 120) : "", remarks: typeof row.remarks === "string" ? row.remarks.slice(0, 2e3) : "", fileName: typeof row.fileName === "string" ? row.fileName.slice(0, 240) : "" };
         }) : []
       };
-      const profile = { id: crypto.randomUUID(), name: value.guest, mobile: value.phone || "", email: value.email || "", nationality: "Malaysian", identityNo: "", address: "", country: "Malaysia", state: "", city: "", postcode: "", birthDate: "", occupation: "", accountName: value.accountName || "", guestType: "Normal", remark: "", newsletter: false, tourismTax: false, visits: 0, updated: (/* @__PURE__ */ new Date()).toISOString().slice(0, 10) };
+      const profile = { id: crypto.randomUUID(), name: value.guest, mobile: value.phone || "", email: value.email || "", nationality: "Malaysian", identityNo: "", address: "", country: "Malaysia", state: "", city: "", postcode: "", birthDate: "", occupation: "", accountName: value.accountName || "", guestType: "Normal", adultChild: "Adult", remark: "", newsletter: false, tourismTax: false, visits: 0, updated: (/* @__PURE__ */ new Date()).toISOString().slice(0, 10) };
       if (value.rooms[0]) value.rooms[0].guestProfileIds = [profile.id];
       return { ...normalized, guestProfiles: [...normalized.guestProfiles, profile], bookings: [value, ...normalized.bookings] };
     }
@@ -1983,7 +1983,7 @@ var schemaStatements = [
     updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (property_id, id)
   )`,
-  `ALTER TABLE public.hotelx_guestprofile ADD COLUMN IF NOT EXISTS vehicle text NOT NULL DEFAULT '', ADD COLUMN IF NOT EXISTS payment_remark1 text NOT NULL DEFAULT '', ADD COLUMN IF NOT EXISTS payment_remark2 text NOT NULL DEFAULT '', ADD COLUMN IF NOT EXISTS tax_exempt_reason text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_guestprofile ADD COLUMN IF NOT EXISTS vehicle text NOT NULL DEFAULT '', ADD COLUMN IF NOT EXISTS payment_remark1 text NOT NULL DEFAULT '', ADD COLUMN IF NOT EXISTS payment_remark2 text NOT NULL DEFAULT '', ADD COLUMN IF NOT EXISTS tax_exempt_reason text NOT NULL DEFAULT '', ADD COLUMN IF NOT EXISTS adult_child text NOT NULL DEFAULT 'Adult'`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_transport_meta (
     id text PRIMARY KEY,
     schema_version integer NOT NULL DEFAULT 2 CHECK (schema_version = 2),
@@ -2424,8 +2424,8 @@ var schemaStatements = [
     DELETE FROM public.hotelx_guestprofile WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_hotel_setup WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_rate_setup_validity WHERE property_id = p_property_id;
-    INSERT INTO public.hotelx_guestprofile (property_id, id, guest_name, mobile, email, nationality, identity_no, address, country, state, city, postcode, birth_date, occupation, account_name, guest_type, remark, newsletter, tourism_tax, visits, updated_at)
-    SELECT p_property_id, (item.value->>'id')::uuid, COALESCE(item.value->>'name',''), COALESCE(item.value->>'mobile',''), COALESCE(item.value->>'email',''), COALESCE(item.value->>'nationality',''), COALESCE(item.value->>'identityNo',''), COALESCE(item.value->>'address',''), COALESCE(item.value->>'country',''), COALESCE(item.value->>'state',''), COALESCE(item.value->>'city',''), COALESCE(item.value->>'postcode',''), NULLIF(item.value->>'birthDate','')::date, COALESCE(item.value->>'occupation',''), COALESCE(item.value->>'accountName',''), COALESCE(item.value->>'guestType','Normal'), COALESCE(item.value->>'remark',''), COALESCE((item.value->>'newsletter')::boolean,false), COALESCE((item.value->>'tourismTax')::boolean,false), COALESCE(NULLIF(item.value->>'visits','')::integer,0), COALESCE(NULLIF(item.value->>'updated','')::timestamptz,CURRENT_TIMESTAMP)
+    INSERT INTO public.hotelx_guestprofile (property_id, id, guest_name, mobile, email, nationality, identity_no, address, country, state, city, postcode, birth_date, occupation, account_name, guest_type, adult_child, remark, newsletter, tourism_tax, visits, updated_at)
+    SELECT p_property_id, (item.value->>'id')::uuid, COALESCE(item.value->>'name',''), COALESCE(item.value->>'mobile',''), COALESCE(item.value->>'email',''), COALESCE(item.value->>'nationality',''), COALESCE(item.value->>'identityNo',''), COALESCE(item.value->>'address',''), COALESCE(item.value->>'country',''), COALESCE(item.value->>'state',''), COALESCE(item.value->>'city',''), COALESCE(item.value->>'postcode',''), NULLIF(item.value->>'birthDate','')::date, COALESCE(item.value->>'occupation',''), COALESCE(item.value->>'accountName',''), COALESCE(item.value->>'guestType','Normal'), COALESCE(item.value->>'adultChild','Adult'), COALESCE(item.value->>'remark',''), COALESCE((item.value->>'newsletter')::boolean,false), COALESCE((item.value->>'tourismTax')::boolean,false), COALESCE(NULLIF(item.value->>'visits','')::integer,0), COALESCE(NULLIF(item.value->>'updated','')::timestamptz,CURRENT_TIMESTAMP)
     FROM jsonb_array_elements(COALESCE(p_state->'guestProfiles','[]'::jsonb)) AS item(value);
     UPDATE public.hotelx_guestprofile g SET vehicle = COALESCE(item.value->>'vehicle',''), payment_remark1 = COALESCE(item.value->>'paymentRemark1',''), payment_remark2 = COALESCE(item.value->>'paymentRemark2',''), tax_exempt_reason = COALESCE(item.value->>'taxExemptReason','')
     FROM jsonb_array_elements(COALESCE(p_state->'guestProfiles','[]'::jsonb)) AS item(value)
@@ -2979,7 +2979,7 @@ var schemaStatements = [
         ), '[]'::jsonb),
         'segments', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', segment.segment_id, 'description', segment.description, 'displaySequence', segment.sort_order, 'icon', segment.icon, 'active', segment.active, 'updatedAt', segment.updated_at) ORDER BY segment.sort_order) FROM public.hotelx_segments AS segment WHERE segment.property_id = meta.id), '[]'::jsonb)
       ),
-      'guestProfiles', COALESCE((SELECT jsonb_agg(jsonb_build_object('vehicle', g.vehicle, 'paymentRemark1', g.payment_remark1, 'paymentRemark2', g.payment_remark2, 'taxExemptReason', g.tax_exempt_reason, 'id', g.id, 'name', g.guest_name, 'mobile', g.mobile, 'email', g.email, 'nationality', g.nationality, 'identityNo', g.identity_no, 'address', g.address, 'country', g.country, 'state', g.state, 'city', g.city, 'postcode', g.postcode, 'birthDate', COALESCE(to_char(g.birth_date, 'YYYY-MM-DD'), ''), 'occupation', g.occupation, 'accountName', g.account_name, 'guestType', g.guest_type, 'remark', g.remark, 'newsletter', g.newsletter, 'tourismTax', g.tourism_tax, 'visits', g.visits, 'updated', to_char(g.updated_at, 'YYYY-MM-DD')) ORDER BY g.guest_name) FROM public.hotelx_guestprofile g WHERE g.property_id = meta.id), '[]'::jsonb),
+      'guestProfiles', COALESCE((SELECT jsonb_agg(jsonb_build_object('vehicle', g.vehicle, 'paymentRemark1', g.payment_remark1, 'paymentRemark2', g.payment_remark2, 'taxExemptReason', g.tax_exempt_reason, 'id', g.id, 'name', g.guest_name, 'mobile', g.mobile, 'email', g.email, 'nationality', g.nationality, 'identityNo', g.identity_no, 'address', g.address, 'country', g.country, 'state', g.state, 'city', g.city, 'postcode', g.postcode, 'birthDate', COALESCE(to_char(g.birth_date, 'YYYY-MM-DD'), ''), 'occupation', g.occupation, 'accountName', g.account_name, 'guestType', g.guest_type, 'adultChild', g.adult_child, 'remark', g.remark, 'newsletter', g.newsletter, 'tourismTax', g.tourism_tax, 'visits', g.visits, 'updated', to_char(g.updated_at, 'YYYY-MM-DD')) ORDER BY g.guest_name) FROM public.hotelx_guestprofile g WHERE g.property_id = meta.id), '[]'::jsonb),
       'bookings', COALESCE((
         SELECT jsonb_agg(jsonb_build_object(
           'reference', booking.booking_no,
