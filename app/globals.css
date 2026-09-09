@@ -5676,3 +5676,16 @@ p {
 .manager-segment-table{min-width:1040px;width:100%}
 .manager-segment-table th,.manager-segment-table td{border:1px solid #777}
 .manager-segment-table tbody th{font-weight:400}
+.digital-report-catalog:has(.historical-forecast-report){min-width:0}
+.historical-forecast-report{min-width:0;max-width:100%;min-height:100%;background:#fff;padding:18px;color:#111}
+.historical-forecast-heading{text-align:center;padding:18px 0 24px;font-size:14px;line-height:1.25}
+.historical-forecast-heading h2{margin:0;font-size:16px;font-weight:700}
+.historical-forecast-heading p{margin:2px 0 0}
+.historical-forecast-wrap{max-width:100%;overflow:auto;padding-bottom:4px}
+.historical-forecast-table{border-collapse:collapse;min-width:1500px;width:100%;font-size:12px;line-height:1.12;color:#000}
+.historical-forecast-table th,.historical-forecast-table td{padding:4px 6px;text-align:right;white-space:nowrap;border-bottom:1px solid #111}
+.historical-forecast-table th:first-child,.historical-forecast-table td:first-child{text-align:left}
+.historical-forecast-table thead th{background:#c7c7c7;font-weight:700;text-align:center}
+.historical-forecast-table tbody th{font-weight:400}
+.historical-forecast-table .forecast-total-row th,.historical-forecast-table .forecast-total-row td{font-weight:700;border-top:2px solid #111}
+.historical-criteria{margin:10px 0 0;color:#f00;font-size:11px;line-height:1.6}

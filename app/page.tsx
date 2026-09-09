@@ -1,6 +1,7 @@
 'use client';
 import { HotelDatePicker } from '@/components/hotel-date-picker';
 import { BookingStatusReport } from '@/components/booking-status-report';
+import { HistoricalForecastReport } from '@/components/historical-forecast-report';
 import { ManagerReport } from '@/components/manager-report';
 import {
   useEffect,
@@ -106,7 +107,7 @@ function SvgIcon({ size = 24, markup }: { size?: number; markup: string }) {
 }
 
 
-const digitalReports = ['Booking Advance Payment Listing', 'Booking Status', 'Manager Report', 'Cashier Collection Summary', 'Cashier Detail Listing', 'Cashier Summary', 'City Ledger Transaction Listing', 'Consolidated e-Invoice', 'Daily Posting Detail', 'Daily Revenue Summary', 'Debtor Aging Detail', 'Debtor Aging Summary'];
+const digitalReports = ['Booking Advance Payment Listing', 'Booking Status', 'Manager Report', 'Hotel Historical & Forecast Report', 'Cashier Collection Summary', 'Cashier Detail Listing', 'Cashier Summary', 'City Ledger Transaction Listing', 'Consolidated e-Invoice', 'Daily Posting Detail', 'Daily Revenue Summary', 'Debtor Aging Detail', 'Debtor Aging Summary'];
 
 const frontDeskMenu = [
   {
@@ -884,7 +885,7 @@ function HomeContent({ store }: { store: TransportData }) {
           <TransportListingReport trips={trips} setup={setup} bookingLegs={bookingLegs} bookings={bookings} />
         ) : view === 'reporting' ? (
           <section className="digital-report-catalog" aria-label="Digital Reporting">
-            {!selectedReport ? <><div className="digital-report-tools"><label><Search size={21} /><input placeholder="Search here..." value={reportSearch} onChange={(event) => setReportSearch(event.target.value)} /></label><select value={reportCategory} onChange={(event) => setReportCategory(event.target.value)}><option>All</option><option>Finance</option><option>Booking</option></select></div><div className="digital-report-list">{digitalReports.filter((report) => report.toLowerCase().includes(reportSearch.toLowerCase())).map((report) => <button type="button" className="digital-report-card" key={report} onClick={() => ['Booking Status', 'Manager Report'].includes(report) && setSelectedReport(report)}><span><strong>{report}</strong><small>{report === 'Booking Status' ? 'View booking status by date' : report === 'Manager Report' ? 'View manager statistics from booking data' : 'Description'}</small></span><Star size={23} /></button>)}</div></> : selectedReport === 'Manager Report' ? <ManagerReport hotelMasters={hotelMasters} bookings={bookings} date={reportFrom} onDate={setReportFrom} onBack={() => setSelectedReport(null)} /> : <BookingStatusReport profiles={guestProfiles} hotelName={hotelMasters.profile.hotelName} bookings={bookings} from={reportFrom} to={reportTo} onFrom={setReportFrom} onTo={setReportTo} onBack={() => setSelectedReport(null)} />}
+            {!selectedReport ? <><div className="digital-report-tools"><label><Search size={21} /><input placeholder="Search here..." value={reportSearch} onChange={(event) => setReportSearch(event.target.value)} /></label><select value={reportCategory} onChange={(event) => setReportCategory(event.target.value)}><option>All</option><option>Finance</option><option>Booking</option></select></div><div className="digital-report-list">{digitalReports.filter((report) => report.toLowerCase().includes(reportSearch.toLowerCase())).map((report) => <button type="button" className="digital-report-card" key={report} onClick={() => ['Booking Status', 'Manager Report', 'Hotel Historical & Forecast Report'].includes(report) && setSelectedReport(report)}><span><strong>{report}</strong><small>{report === 'Booking Status' ? 'View booking status by date' : report === 'Manager Report' ? 'View manager statistics from booking data' : report === 'Hotel Historical & Forecast Report' ? 'View historical and forecast occupancy' : 'Description'}</small></span><Star size={23} /></button>)}</div></> : selectedReport === 'Manager Report' ? <ManagerReport hotelMasters={hotelMasters} bookings={bookings} date={reportFrom} onDate={setReportFrom} onBack={() => setSelectedReport(null)} /> : selectedReport === 'Hotel Historical & Forecast Report' ? <HistoricalForecastReport hotelMasters={hotelMasters} bookings={bookings} from={reportFrom} to={reportTo} onFrom={setReportFrom} onTo={setReportTo} onBack={() => setSelectedReport(null)} /> : <BookingStatusReport profiles={guestProfiles} hotelName={hotelMasters.profile.hotelName} bookings={bookings} from={reportFrom} to={reportTo} onFrom={setReportFrom} onTo={setReportTo} onBack={() => setSelectedReport(null)} />}
           </section>
         ) : view === 'frontdesk' ? (
           <div className="frontdesk-scroll" key="frontdesk">
