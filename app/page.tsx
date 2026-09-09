@@ -966,7 +966,7 @@ function HomeContent({ store }: { store: TransportData }) {
                   <button className="schedule-listing-trigger" type="button" aria-expanded={listingMenuOpen} onClick={() => setListingMenuOpen((open) => !open)}>
                     <List size={16} /> Listing <ChevronRight size={14} className={listingMenuOpen ? 'listing-menu-open' : ''} />
                   </button>
-                  {listingMenuOpen && <div className="schedule-listing-popover"><button type="button" onClick={() => { setListingMenuOpen(false); setView('reporting'); }}><ChartNoAxesCombined size={16} /> Digital Reporting</button></div>}
+                  {listingMenuOpen && <div className="schedule-listing-popover"><button type="button" onClick={() => { setListingMenuOpen(false); setScheduleView('day'); }}><List size={16} /> Transport Listing</button></div>}
                 </div>
                 <button
                   className="primary-button"
