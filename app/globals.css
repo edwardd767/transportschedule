@@ -5705,3 +5705,37 @@ p {
 .rooming-actions .primary-button{background:#ff9800;box-shadow:0 2px 4px #0002}
 .rooming-edit-label{float:right;font-size:10px}
 .rooming-profile-card .rooming-form-grid .rooming-check input{width:16px;height:16px;min-height:16px}
+
+/* Billing schedule reference: compact hierarchy, daily charges and controls. */
+.billing-schedule-page{font-family:var(--font-hotelx),sans-serif;font-style:normal;padding-inline:0}
+.billing-schedule-breadcrumb{height:22px;font-size:10px;padding:0 12px}
+.billing-schedule-breadcrumb button{display:none}
+.billing-schedule-breadcrumb span{font-weight:400}
+.billing-schedule-summary{margin-bottom:12px;background:#faf2e7}
+.billing-schedule-summary .booking-detail-top{padding:7px 12px 2px}
+.billing-schedule-summary .booking-detail-bottom{padding:0 12px 8px;font-size:10px;line-height:16px}
+.billing-schedule-summary .booking-stay strong{font-size:12px;line-height:18px;font-weight:700}
+.billing-schedule-summary .booking-stay span,.billing-schedule-summary .booking-amount{font-size:10px;font-weight:400}
+.billing-schedule-scroll{padding:0 5px}
+.billing-room-type-card{padding:0 12px 7px;border:0;box-shadow:0 2px 7px #0002}
+.billing-room-type-head{padding:8px 0;border-bottom:1px solid #ddd}
+.billing-room-type-head strong,.billing-room-head strong{font-size:14px;line-height:20px;font-weight:600;color:#ff9400}
+.billing-room-type-head small,.billing-room-head small{font-size:10px;line-height:16px;font-weight:400;margin-top:0;gap:3px}
+.billing-room-type-head>svg,.billing-room-head>svg{color:#777;stroke-width:2.5;width:16px;height:16px}
+.billing-room-head{width:calc(100% - 25px);margin-left:25px;padding:5px 10px 6px 0;border-bottom:1px solid #ddd}
+.billing-room-detail{padding:14px 0 5px 25px;border-bottom:1px solid #ddd}
+.billing-date-range{gap:10px;margin:0 6px 12px}
+.billing-date-range label{font-size:12px;line-height:18px;padding:9px 36px 9px 9px;border-color:#c5c5c5}
+.billing-date-range label svg{width:20px;height:20px;right:20px;top:8px;color:#777}
+.billing-select-all{margin-left:38px;font-size:12px;font-weight:600;padding:8px 0 10px;gap:12px}
+.billing-daily-line{margin-left:0;padding:4px 0 4px 38px;grid-template-columns:18px 1fr auto;gap:7px;font-size:12px;line-height:16px;border-bottom:0;background:white}
+.billing-daily-line:nth-of-type(even){background:white}
+.billing-daily-line:nth-of-type(odd){background:#faf5ee}
+.billing-daily-line strong{font-weight:600;line-height:16px}
+.billing-daily-line small{font-size:10px;line-height:15px;margin-top:0;font-weight:400}
+.billing-breakdown-labels,.billing-breakdown-values{gap:0}
+.billing-select-all input,.billing-daily-line input{appearance:none;border:2px solid #929292;border-radius:2px;background:white;width:18px;height:18px;margin:0}
+.billing-select-all input:checked,.billing-daily-line input:checked{appearance:auto;accent-color:#ff9800}
+.billing-daily-line input{align-self:start;margin-top:7px}
+.billing-schedule-actions{height:54px}
+.billing-schedule-actions .primary-button{min-width:150px;height:36px;font-family:inherit;font-size:14px;font-weight:500}
