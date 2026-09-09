@@ -872,7 +872,6 @@ function HomeContent({ store }: { store: TransportData }) {
           </div>
         ) : view === 'reporting' ? (
           <section className="digital-report-catalog" aria-label="Digital Reporting">
-            <div className="digital-report-banner"><div><small>HMS</small><strong>HOTEL PARADISE</strong></div><span>Digital Report</span></div>
             <div className="digital-report-tools"><label><Search size={21} /><input placeholder="Search here..." value={reportSearch} onChange={(event) => setReportSearch(event.target.value)} /></label><select value={reportCategory} onChange={(event) => setReportCategory(event.target.value)}><option>All</option><option>Finance</option><option>Booking</option></select></div>
             <div className="digital-report-list">{digitalReports.filter((report) => report.toLowerCase().includes(reportSearch.toLowerCase())).map((report) => <button type="button" className="digital-report-card" key={report}><span><strong>{report}</strong><small>Description</small></span><Star size={23} /></button>)}</div>
           </section>
