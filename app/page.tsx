@@ -772,6 +772,7 @@ function HomeContent({ store }: { store: TransportData }) {
             }
             bookingLegs={bookingLegs}
             guestProfiles={guestProfiles}
+            onRoomingOpen={async reference => { await store.run({ type: 'roomingEnsure', reference }); }}
             onGuestProfilesSave={async (value) => { await store.run({ type: 'guestProfilesSave', value }); setNotice('Guest profile saved.'); }}
             onOpenTransport={setTransferBooking}
           />

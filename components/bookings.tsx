@@ -75,6 +75,7 @@ export function Bookings({
   bookingLegs,
   guestProfiles,
   onGuestProfilesSave,
+  onRoomingOpen,
 }: {
   childRatesApplied?: boolean;
   bookings: Booking[];
@@ -93,6 +94,7 @@ export function Bookings({
   bookingLegs: BookingTransportLeg[];
   guestProfiles: GuestProfile[];
   onGuestProfilesSave: (profiles: GuestProfile[]) => Promise<void>;
+  onRoomingOpen: (reference: string) => Promise<void>;
 }) {
   const totalWithTransport = (item: Booking) => {
     const transport = bookingLegs
@@ -245,7 +247,7 @@ export function Bookings({
                     : section.title === 'Booking Info'
                     ? onEditingChange(true)
                     : section.title === 'Rooming List'
-                      ? setRoomingOpen(true)
+                      ? void onRoomingOpen(booking.reference).then(() => setRoomingOpen(true)).catch(error => onNotice(error.message))
                     : section.title === 'Special Request'
                       ? setSpecialRequestOpen(true)
                     : section.title === 'Billing Instruction'

@@ -43,8 +43,9 @@ import {
 } from './booking-transport';
 import { initialRateSetupData, type RateSetupData } from './rate-setup-data';
 
-export type GuestProfile = { id: string; name: string; mobile: string; email: string; nationality: string; identityNo: string; address: string; country: string; state: string; city: string; postcode: string; birthDate: string; occupation: string; accountName: string; guestType: string; remark: string; newsletter: boolean; tourismTax: boolean; visits: number; updated: string };
+export type GuestProfile = GuestProfileDetails & { id: string; name: string; mobile: string; email: string; nationality: string; identityNo: string; address: string; country: string; state: string; city: string; postcode: string; birthDate: string; occupation: string; accountName: string; guestType: string; remark: string; newsletter: boolean; tourismTax: boolean; visits: number; updated: string };
 
+export type GuestProfileDetails = { vehicle?: string; paymentRemark1?: string; paymentRemark2?: string; taxExemptReason?: string };
 export type TransportState = {
   setup: TransportSetup;
   trips: Trip[];
@@ -94,6 +95,7 @@ export type TransportAction =
   | { type: 'segmentSave'; value: HotelSegment[] }
   | { type: 'hotelProfileSave'; value: import('./hotel-masters').HotelProfile }
   | { type: 'bookingCreate'; value: Booking }
+  | { type: 'roomingEnsure'; reference: string }
   | { type: 'bookingUpdate'; value: Booking }
   | { type: 'rateSetup'; value: RateSetupData }
   | { type: 'guestProfilesSave'; value: GuestProfile[] }
@@ -663,6 +665,12 @@ export function applyTransportAction(
       }));
       return { ...normalized, hotelMasters: { ...normalized.hotelMasters, rooms, roomTypes } };
     }
+    case 'roomingEnsure': {
+      const booking = state.bookings.find(item => item.reference === action.reference);
+      if (!booking?.rooms.length || booking.rooms.some(room => room.guestProfileIds?.length)) return state;
+      const profile: GuestProfile = { id: crypto.randomUUID(), name: booking.guest, mobile: booking.phone || '', email: booking.email || '', nationality: 'Malaysian', identityNo: '', address: '', country: 'Malaysia', state: '', city: '', postcode: '', birthDate: '', occupation: '', accountName: '', guestType: 'Normal', remark: '', newsletter: false, tourismTax: false, visits: 0, updated: new Date().toISOString().slice(0, 10) };
+      return { ...state, guestProfiles: [...state.guestProfiles, profile], bookings: state.bookings.map(item => item.reference === booking.reference ? { ...item, rooms: item.rooms.map((room, index) => index === 0 ? { ...room, guestProfileIds: [profile.id] } : room) } : item) };
+    }
     case 'bookingCreate': {
       const normalized = normalizeTransportState(state);
       const v = object(action.value);
@@ -734,7 +742,9 @@ export function applyTransportAction(
         specialRequests: v.specialRequests && typeof v.specialRequests === 'object' ? v.specialRequests as Record<string, string> : {},
         attachments: Array.isArray(v.attachments) ? v.attachments.slice(0, 100).map((item) => { const row = object(item); return { room: typeof row.room === 'string' ? row.room.slice(0, 120) : '', remarks: typeof row.remarks === 'string' ? row.remarks.slice(0, 2000) : '', fileName: typeof row.fileName === 'string' ? row.fileName.slice(0, 240) : '' }; }) : [],
       };
-      return { ...normalized, bookings: [value, ...normalized.bookings] };
+      const profile: GuestProfile = { id: crypto.randomUUID(), name: value.guest, mobile: value.phone || '', email: value.email || '', nationality: 'Malaysian', identityNo: '', address: '', country: 'Malaysia', state: '', city: '', postcode: '', birthDate: '', occupation: '', accountName: value.accountName || '', guestType: 'Normal', remark: '', newsletter: false, tourismTax: false, visits: 0, updated: new Date().toISOString().slice(0, 10) };
+      if (value.rooms[0]) value.rooms[0].guestProfileIds = [profile.id];
+      return { ...normalized, guestProfiles: [...normalized.guestProfiles, profile], bookings: [value, ...normalized.bookings] };
     }
     case 'bookingUpdate': {
       const normalized = normalizeTransportState(state);
@@ -761,6 +771,7 @@ export function applyTransportAction(
           throw new Error(`Maximum guest capacity for ${count} ${code} room(s) is ${master.maxGuest * count}.`);
         return {
           code, count, adults, children, infants,
+          guestProfileIds: Array.isArray(room.guestProfileIds) ? room.guestProfileIds.filter((id): id is string => typeof id === 'string' && normalized.guestProfiles.some(profile => profile.id === id)) : existing.rooms.find(item => item.code === code)?.guestProfileIds ?? [],
           rateCode: typeof room.rateCode === 'string' ? room.rateCode.slice(0, 40) : undefined,
           roomRate: finite(room.roomRate),
           promoCode: typeof room.promoCode === 'string' ? room.promoCode.slice(0, 40) : undefined,
