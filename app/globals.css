@@ -5689,6 +5689,19 @@ p {
 .historical-forecast-table tbody th{font-weight:400}
 .historical-forecast-table .forecast-total-row th,.historical-forecast-table .forecast-total-row td{font-weight:700;border-top:2px solid #111}
 .historical-criteria{margin:10px 0 0;color:#f00;font-size:11px;line-height:1.6}
+.digital-report-catalog:has(.production-analysis-report){min-width:0}
+.production-analysis-report{min-width:0;max-width:100%;min-height:100%;background:#fff;padding:18px;color:#111}
+.production-analysis-heading{text-align:center;padding:18px 0 20px;font-size:12px;line-height:1.25}
+.production-analysis-heading h2{margin:0;font-size:14px;font-weight:700}
+.production-analysis-heading p{margin:0}
+.production-analysis-wrap{max-width:100%;overflow:auto}
+.production-analysis-table{border-collapse:collapse;min-width:1180px;width:100%;font-size:12px;line-height:1.15;color:#000}
+.production-analysis-table th,.production-analysis-table td{border:1px solid #777;padding:3px 5px;text-align:right;white-space:nowrap}
+.production-analysis-table th:first-child,.production-analysis-table td:first-child{text-align:left}
+.production-analysis-table thead th{background:#c7c7c7;font-weight:700;text-align:center}
+.production-analysis-table tbody th{font-weight:400}
+.production-analysis-table .production-total-row th,.production-analysis-table .production-total-row td{font-weight:700;border-top:2px solid #111}
+.production-analysis-footer{font-size:11px;color:#333;margin-top:12px;line-height:1.7}
 
 /* Guest editor typography and spacing matched to the reference form. */
 .rooming-page[aria-label="Guest profile details"] .rooming-booking-line{padding:8px 12px;background:#faf2e7}
