@@ -3440,6 +3440,7 @@ p {
 .billing-daily-line span:first-of-type strong{display:block}
 .billing-daily-line small{display:block;margin-top:3px;font-size:12px}
 .billing-daily-line>span:last-child{text-align:right}
+.billing-breakdown-labels,.billing-breakdown-values{display:flex;flex-direction:column;gap:2px}.billing-breakdown-labels small,.billing-breakdown-values small{line-height:15px}.billing-daily-line>span:nth-child(2),.billing-daily-line>span:nth-child(3){display:flex;flex-direction:column}.billing-daily-line:nth-of-type(even){background:#fcf4ea}
 .billing-schedule-actions{position:fixed;left:var(--sidebar-width, 206px);right:0;bottom:0;height:66px;background:#fff;box-shadow:0 -2px 10px #0002;display:flex;align-items:center;justify-content:center;z-index:20}
 .billing-schedule-actions .primary-button{min-width:154px;height:38px}
 .billing-schedule-actions .primary-button:disabled{background:#ddd;color:#aaa}
