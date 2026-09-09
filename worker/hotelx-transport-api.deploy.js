@@ -2233,6 +2233,7 @@ var schemaStatements = [
   `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS discount numeric(14,2) NOT NULL DEFAULT 0`,
   `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS tax numeric(14,2) NOT NULL DEFAULT 0`,
   `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS total numeric(14,2) NOT NULL DEFAULT 0`,
+  `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS guest_profile_ids jsonb NOT NULL DEFAULT '[]'::jsonb`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_season_master (
     property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
     id text NOT NULL,
@@ -2501,7 +2502,7 @@ var schemaStatements = [
     INSERT INTO public.hotelx_booking_rooms (
       property_id, booking_reference, room_type_code, sort_order, room_count,
       adults, children, infants, rate_code, room_rate, promo_code, discount_per_night,
-      subtotal, discount, tax, total
+      subtotal, discount, tax, total, guest_profile_ids
     )
     SELECT p_property_id, booking.value->>'reference', room.value->>'code',
       room.ordinality::integer, COALESCE(NULLIF(room.value->>'count', ''), '1')::integer,
@@ -2510,7 +2511,8 @@ var schemaStatements = [
       COALESCE(NULLIF(room.value->>'roomRate', ''), '0')::numeric, COALESCE(room.value->>'promoCode', ''),
       COALESCE(NULLIF(room.value->>'discountPerNight', ''), '0')::numeric, COALESCE(NULLIF(room.value->>'subtotal', ''), '0')::numeric,
       COALESCE(NULLIF(room.value->>'discount', ''), '0')::numeric, COALESCE(NULLIF(room.value->>'tax', ''), '0')::numeric,
-      COALESCE(NULLIF(room.value->>'total', ''), '0')::numeric
+      COALESCE(NULLIF(room.value->>'total', ''), '0')::numeric,
+      COALESCE(room.value->'guestProfileIds', '[]'::jsonb)
     FROM jsonb_array_elements(COALESCE(p_state->'bookings', '[]'::jsonb)) AS booking(value)
     CROSS JOIN LATERAL jsonb_array_elements(COALESCE(booking.value->'rooms', '[]'::jsonb))
       WITH ORDINALITY AS room(value, ordinality);
@@ -2890,7 +2892,8 @@ var schemaStatements = [
               'code', br.room_type_code, 'count', br.room_count, 'adults', br.adults, 'children', br.children, 'infants', br.infants,
               'rateCode', br.rate_code, 'roomRate', br.room_rate::double precision, 'promoCode', br.promo_code,
               'discountPerNight', br.discount_per_night::double precision, 'subtotal', br.subtotal::double precision,
-              'discount', br.discount::double precision, 'tax', br.tax::double precision, 'total', br.total::double precision
+              'discount', br.discount::double precision, 'tax', br.tax::double precision, 'total', br.total::double precision,
+              'guestProfileIds', br.guest_profile_ids
             ) ORDER BY br.sort_order)
             FROM public.hotelx_booking_rooms AS br
             WHERE br.property_id = booking.property_id AND br.booking_reference = booking.booking_no
@@ -3120,6 +3123,7 @@ SELECT
   COALESCE(room.discount, 0)::text,
   COALESCE(room.tax, 0)::text,
   COALESCE(room.total, 0)::text
+  ,COALESCE(room.guest_profile_ids, '[]'::jsonb)::text
 FROM public.hotelx_bookings AS booking
 LEFT JOIN public.hotelx_booking_rooms AS room
   ON room.property_id = booking.property_id
