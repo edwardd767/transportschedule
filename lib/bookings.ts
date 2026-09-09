@@ -22,6 +22,8 @@ export type BookingRoom = {
   discount?: number;
   tax?: number;
   total?: number;
+  /** Guest profile records assigned to this room through the Rooming List. */
+  guestProfileIds?: string[];
 };
 export type Booking = {
   reference: string;

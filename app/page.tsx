@@ -771,6 +771,8 @@ function HomeContent({ store }: { store: TransportData }) {
                 : undefined
             }
             bookingLegs={bookingLegs}
+            guestProfiles={guestProfiles}
+            onGuestProfilesSave={async (value) => { await store.run({ type: 'guestProfilesSave', value }); setNotice('Guest profile saved.'); }}
             onOpenTransport={setTransferBooking}
           />
         ) : view === 'hotelsettings' ? (

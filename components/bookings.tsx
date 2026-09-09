@@ -33,6 +33,8 @@ import { BookingAttachments } from '@/components/booking-attachments';
 import { AvailabilityDialog } from '@/components/availability-dialog';
 import type { BookingTransportLeg } from '@/lib/booking-transport';
 import type { RateSetupData } from '@/lib/rate-setup-data';
+import type { GuestProfile } from '@/lib/transport-state';
+import { RoomingList } from '@/components/rooming-list';
 
 function BookingOccupancy({ booking }: { booking: Booking }) {
   return (
@@ -71,6 +73,8 @@ export function Bookings({
   onEditingChange,
   transportSummary,
   bookingLegs,
+  guestProfiles,
+  onGuestProfilesSave,
 }: {
   childRatesApplied?: boolean;
   bookings: Booking[];
@@ -87,6 +91,8 @@ export function Bookings({
   onEditingChange: (editing: boolean) => void;
   transportSummary?: string;
   bookingLegs: BookingTransportLeg[];
+  guestProfiles: GuestProfile[];
+  onGuestProfilesSave: (profiles: GuestProfile[]) => Promise<void>;
 }) {
   const totalWithTransport = (item: Booking) => {
     const transport = bookingLegs
@@ -103,6 +109,7 @@ export function Bookings({
   const [specialRequestOpen, setSpecialRequestOpen] = useState(false);
   const [attachmentsOpen, setAttachmentsOpen] = useState(false);
   const [availabilityOpen, setAvailabilityOpen] = useState(false);
+  const [roomingOpen, setRoomingOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('all');
   const [arrivalDate, setArrivalDate] = useState('');
@@ -164,6 +171,7 @@ export function Bookings({
   }
 
   if (booking) {
+    if (roomingOpen) return <RoomingList booking={booking} profiles={guestProfiles} onProfilesSave={onGuestProfilesSave} onBookingSave={onUpdate} onBack={() => setRoomingOpen(false)} />;
     if (billingInstructionOpen) return <BillingInstruction booking={booking} onSave={onUpdate} onBack={() => setBillingInstructionOpen(false)} />;
     if (specialRequestOpen) return <SpecialRequest booking={booking} onSave={onUpdate} onBack={() => setSpecialRequestOpen(false)} />;
     if (attachmentsOpen) return <BookingAttachments booking={booking} onSave={onUpdate} onBack={() => setAttachmentsOpen(false)} />;
@@ -234,8 +242,10 @@ export function Bookings({
               onClick={() =>
                 section.title === 'Transport'
                   ? onOpenTransport(booking)
-                  : section.title === 'Booking Info'
+                    : section.title === 'Booking Info'
                     ? onEditingChange(true)
+                    : section.title === 'Rooming List'
+                      ? setRoomingOpen(true)
                     : section.title === 'Special Request'
                       ? setSpecialRequestOpen(true)
                     : section.title === 'Billing Instruction'
