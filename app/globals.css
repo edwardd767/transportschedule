@@ -8,6 +8,8 @@
 .rooming-scan{display:flex;align-items:center;flex-direction:column;padding:10px;gap:10px}.rooming-scan>div{width:235px;height:145px;background:#e3e3e3;border-radius:9px;display:grid;place-items:center;color:#23468b}.rooming-scan>label{display:flex;align-items:center;gap:8px;background:#ff9400;color:#fff;padding:9px 14px;border-radius:4px;cursor:pointer}.rooming-scan .rooming-scan-result{display:block;background:white;color:#555;width:100%;font-size:12px}.rooming-scan textarea{display:block;width:100%;min-height:100px;border:1px solid #ddd}
 .rooming-profile-card .rooming-form-grid{padding:12px 16px}
 .rooming-profile-card .rooming-form-grid label{padding:16px 0}
+.rooming-profile-card .rooming-form-grid input,.rooming-profile-card .rooming-form-grid select{width:100%;min-height:38px;padding:4px 0;border:0;border-bottom:1px solid #aaa;border-radius:0;outline:0;background:transparent;color:#111;font:inherit;font-size:18px}.rooming-profile-card .rooming-form-grid select{appearance:auto}
+.guest-profile-grid input,.guest-profile-grid select{width:100%;min-height:38px;padding:4px 0;border:0;border-bottom:1px solid #aaa;border-radius:0;outline:0;background:transparent;color:#111;font:inherit;font-size:18px}.guest-profile-grid select{appearance:auto}
 .rooming-pax-dialog{width:min(600px,calc(100vw - 32px));max-width:600px!important;border-radius:4px;gap:0}
 .rooming-pax-dialog h2{font-size:13px;color:#ff9000;background:#fcf3e8;padding:12px}
 .rooming-pax-dialog>small{background:#fcf3e8;padding:0 12px 12px}
