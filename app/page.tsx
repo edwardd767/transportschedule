@@ -612,6 +612,14 @@ function HomeContent({ store }: { store: TransportData }) {
               </div>
             )}
             <button
+              className={view === 'reporting' ? 'active' : ''}
+              aria-current={view === 'reporting' ? 'page' : undefined}
+              onClick={() => setView('reporting')}
+            >
+              <ChartNoAxesCombined />
+              Digital Reporting
+            </button>
+            <button
               className={['setup', 'hotelsettings', 'hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy', 'standardpolicy'].includes(view) ? 'active' : ''}
               aria-current={['setup', 'hotelsettings', 'hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy', 'standardpolicy'].includes(view) ? 'page' : undefined}
               onClick={() => setView('hotelsettings')}
