@@ -29,7 +29,9 @@ function StandardPolicyModule({ onBack, profile, onProfileChange }: { onBack: ()
 }
 
 function HotelOperationalPolicyModule({ onBack, profile, onProfileChange }: { onBack: () => void; profile: HotelProfile; onProfileChange: (value: HotelProfile) => void | Promise<void> }) {
-  const [draft, setDraft] = useState<HotelOperationalPolicy>(profile.operationalPolicy || initialHotelProfile.operationalPolicy);
+  const defaultPolicy = initialHotelProfile.operationalPolicy;
+  const savedPolicy = profile.operationalPolicy || {};
+  const [draft, setDraft] = useState<HotelOperationalPolicy>({ ...defaultPolicy, ...savedPolicy, occupancy: { ...defaultPolicy.occupancy, ...(savedPolicy.occupancy || {}) } });
   const toggle = (key: 'postpaid' | 'floorPlan' | 'cashierClosure') => setDraft({ ...draft, [key]: !draft[key] });
   const occupancy = (key: keyof HotelOperationalPolicy['occupancy']) => setDraft({ ...draft, occupancy: { ...draft.occupancy, [key]: !draft.occupancy[key] } });
   const timeField = (key: 'standardCheckInTime' | 'standardCheckOutTime' | 'nightAuditCutOffTime', label: string) => <label className="operational-time-field"><span>{label} *</span><input value={draft[key]} onChange={(event) => setDraft({ ...draft, [key]: event.target.value })} /><span className="operational-clock">◷</span></label>;
