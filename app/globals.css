@@ -8,7 +8,7 @@
 .rooming-scan{display:flex;align-items:center;flex-direction:column;padding:10px;gap:10px}.rooming-scan>div{width:235px;height:145px;background:#e3e3e3;border-radius:9px;display:grid;place-items:center;color:#23468b}.rooming-scan>label{display:flex;align-items:center;gap:8px;background:#ff9400;color:#fff;padding:9px 14px;border-radius:4px;cursor:pointer}.rooming-scan .rooming-scan-result{display:block;background:white;color:#555;width:100%;font-size:12px}.rooming-scan textarea{display:block;width:100%;min-height:100px;border:1px solid #ddd}
 .rooming-profile-card .rooming-form-grid{padding:12px 16px}
 .rooming-profile-card .rooming-form-grid label{padding:16px 0}
-.rooming-profile-card .rooming-form-grid input,.rooming-profile-card .rooming-form-grid select{width:100%;min-height:38px;padding:4px 0;border:0;border-bottom:1px solid #aaa;border-radius:0;outline:0;background:transparent;color:#111;font:inherit;font-size:18px}.rooming-profile-card .rooming-form-grid select{appearance:auto}
+.rooming-profile-card .rooming-form-grid input,.rooming-profile-card .rooming-form-grid select{width:100%;min-height:38px;padding:4px 0;border:0;border-bottom:1px solid #aaa;border-radius:0;outline:0;background:transparent;color:#111;font:inherit;font-size:16px}.rooming-profile-card .rooming-form-grid select{appearance:auto}
 .guest-profile-grid input,.guest-profile-grid select{width:100%;min-height:38px;padding:4px 0;border:0;border-bottom:1px solid #aaa;border-radius:0;outline:0;background:transparent;color:#111;font:inherit;font-size:18px}.guest-profile-grid select{appearance:auto}
 .rooming-pax-dialog{width:min(600px,calc(100vw - 32px));max-width:600px!important;border-radius:4px;gap:0}
 .rooming-pax-dialog h2{font-size:13px;color:#ff9000;background:#fcf3e8;padding:12px}
@@ -5689,3 +5689,19 @@ p {
 .historical-forecast-table tbody th{font-weight:400}
 .historical-forecast-table .forecast-total-row th,.historical-forecast-table .forecast-total-row td{font-weight:700;border-top:2px solid #111}
 .historical-criteria{margin:10px 0 0;color:#f00;font-size:11px;line-height:1.6}
+
+/* Guest editor typography and spacing matched to the reference form. */
+.rooming-page[aria-label="Guest profile details"] .rooming-booking-line{padding:8px 12px;background:#faf2e7}
+.rooming-page[aria-label="Guest profile details"] .rooming-booking-line strong{font-size:12px;font-weight:700;line-height:18px;border-bottom:1px solid white}
+.rooming-page[aria-label="Guest profile details"] .rooming-booking-line small{font-size:10px;line-height:16px;margin-top:0}
+.rooming-profile-card .rooming-form-grid{padding:0 12px 12px}
+.rooming-profile-card .rooming-form-grid label{padding:12px 0;gap:0;min-width:0}
+.rooming-profile-card .rooming-form-grid label>span{font-size:12px;line-height:18px;font-weight:400;font-style:normal;color:#85909d}
+.rooming-profile-card .rooming-form-grid input,.rooming-profile-card .rooming-form-grid select{height:34px;min-height:34px;font-family:var(--font-hotelx),sans-serif;font-size:16px;font-weight:400;font-style:normal;line-height:24px;color:#07182a;border-bottom:1px solid #999;padding:3px 0}
+.rooming-profile-card .rooming-form-grid select{appearance:none;padding-right:22px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='m1 1 5 5 5-5' fill='%23777'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 6px center}
+.rooming-scan{padding:9px 10px 0;gap:10px}
+.rooming-scan>label{font-size:14px;font-weight:600;line-height:20px;padding:8px 14px;background:#ff9800;box-shadow:0 2px 4px #0003}
+.rooming-actions button{font-family:inherit;font-size:14px;font-weight:600;height:36px;padding:7px 18px}
+.rooming-actions .primary-button{background:#ff9800;box-shadow:0 2px 4px #0002}
+.rooming-edit-label{float:right;font-size:10px}
+.rooming-profile-card .rooming-form-grid .rooming-check input{width:16px;height:16px;min-height:16px}
