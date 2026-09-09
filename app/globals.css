@@ -5635,3 +5635,14 @@ p {
 .guest-profile-grid>label:nth-child(2){grid-column:1;grid-row:1}.guest-profile-grid>label:nth-child(3){grid-column:2;grid-row:1}
 .rooming-form-grid>label:nth-child(1){grid-column:1/-1}.rooming-form-grid>label:nth-child(2){grid-column:1;grid-row:2}.rooming-form-grid>label:nth-last-child(2){grid-column:2;grid-row:2}
 .booking-status-report{padding:18px;background:#fff;min-height:100%}.report-view-head{display:flex;gap:18px;align-items:center;border-bottom:1px solid #ddd;padding-bottom:12px}.report-view-head button{border:0;background:transparent;color:#e87500;font-weight:700}.report-date-filter{display:flex;gap:24px;padding:16px 0}.report-date-filter label{display:flex;gap:8px;align-items:center;font-size:13px}.report-date-filter input{border:1px solid #bbb;padding:7px}.report-table-wrap{overflow:auto;border-top:1px solid #222}.booking-status-report table{border-collapse:collapse;min-width:1800px;width:100%;font-size:12px}.booking-status-report th{background:#c4c4c4;text-align:left;padding:4px}.booking-status-report td{padding:5px 4px;border-bottom:1px solid #ddd;vertical-align:top}.report-total-line{padding:14px 0;font-weight:700;border-top:1px solid #222}
+.digital-report-catalog:has(.booking-status-report){min-width:0}
+.booking-status-report{min-width:0;max-width:100%}
+.booking-status-report .report-table-wrap{max-height:60vh;max-width:100%;overflow:auto;scrollbar-gutter:stable;border:1px solid #bbb}
+.booking-status-report th{position:sticky;top:0;z-index:1;min-width:85px}
+.booking-status-report td{min-width:85px}
+.booking-status-report th:nth-child(3),.booking-status-report th:nth-child(20),.booking-status-report th:nth-child(21){min-width:170px}
+.booking-report-heading{text-align:center;padding:20px 0}
+.booking-report-heading h2{font-weight:700;font-size:20px}
+.booking-report-heading p{margin-top:8px}
+.booking-report-note{font-size:12px;color:#555;margin:8px 0}
+.booking-status-report .report-date-filter{flex-wrap:wrap}

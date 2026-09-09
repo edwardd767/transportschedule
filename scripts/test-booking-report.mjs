@@ -1,0 +1,17 @@
+import { build } from 'esbuild';
+import { createRequire } from 'node:module';
+import { renderToStaticMarkup } from 'react-dom/server';
+import React from 'react';
+import assert from 'node:assert/strict';
+const result = await build({entryPoints:['components/booking-status-report.tsx'],bundle:true,write:false,platform:'node',format:'cjs',packages:'external',jsx:'automatic'});
+const module = {exports:{}};
+new Function('require','module','exports',result.outputFiles[0].text)(createRequire(import.meta.url),module,module.exports);
+const booking = {reference:'TEST',guest:'Guest',arrival:'2026-09-09',departure:'2026-09-10',status:'Booked',amount:600,guests:6,rooms:[{code:'SPK',count:2,adults:2,children:1,guestProfileIds:['g']},{code:'DLQ',count:1,adults:1,children:0}],accountName:'Company',segment:'Business'};
+const props = {bookings:[booking],profiles:[{id:'g',nationality:'Malaysian',guestType:'Normal'}],hotelName:'Hotel',from:'2026-09-09',to:'2026-09-10',onFrom:()=>{},onTo:()=>{},onBack:()=>{}};
+const html=renderToStaticMarkup(React.createElement(module.exports.BookingStatusReport,props));
+assert.equal((html.match(/scope="col"/g)||[]).length,25);
+for(const value of ['Corp/TA','Nationality','Segment','Company','Malaysian','SPK','DLQ','5/2','Total Room: 3']) assert.ok(html.includes(value),value);
+assert.ok(!html.includes('HotelX'));
+const empty=renderToStaticMarkup(React.createElement(module.exports.BookingStatusReport,{...props,from:'2026-10-01',to:'2026-10-02'}));
+assert.ok(empty.includes('No bookings match'));
+console.log('Report: 25 columns, linked profiles, multi-room counts and date filtering pass.');
