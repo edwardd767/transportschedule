@@ -688,7 +688,9 @@ function HomeContent({ store }: { store: TransportData }) {
               </>
             ) : view === 'hotelsettings' ? (
               <span>Hotel Settings</span>
-            ) : ['hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy', 'standardpolicy'].includes(view) ? (
+            ) : view === 'standardpolicy' ? (
+              <>Hotel Settings <ChevronRight size={14} /> Standard Policy &amp; Guidelines</>
+            ) : ['hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy'].includes(view) ? (
               <>
                 Hotel Settings <ChevronRight size={14} />{' '}
                 {view === 'hotelsetup'
