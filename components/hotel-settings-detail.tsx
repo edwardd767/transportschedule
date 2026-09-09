@@ -16,15 +16,31 @@ import { RateSetupModule, type RateSetupSection } from '@/components/rate-setup'
 import { initialRateSetupData, type RateSetupData } from '@/lib/rate-setup-data';
 import { RoomStatusModule } from '@/components/room-status-module';
 import { DepartmentModule } from '@/components/department-module-polished';
-import { initialHotelProfile, type HotelDepartment, type HotelRoomType, type RoomStatus, type HotelProfile } from '@/lib/hotel-masters';
+import { initialHotelProfile, type HotelDepartment, type HotelRoomType, type RoomStatus, type HotelProfile, type HotelOperationalPolicy } from '@/lib/hotel-masters';
 import { HotelSetupModule as HotelSetupModuleV2 } from '@/components/hotel-setup-module';
 
 
 function StandardPolicyModule({ onBack, profile, onProfileChange }: { onBack: () => void; profile: HotelProfile; onProfileChange: (value: HotelProfile) => void | Promise<void> }) {
   const [policy, setPolicy] = useState<string | null>(null);
+  if (policy === 'Hotel Operational Policy') return <HotelOperationalPolicyModule profile={profile} onProfileChange={onProfileChange} onBack={() => setPolicy(null)} />;
   if (policy === 'General Policy') return <GeneralPolicyModule profile={profile} onProfileChange={onProfileChange} onBack={() => setPolicy(null)} />;
   const policies = ['Hotel Operational Policy', 'Security Deposit Policy', 'State & Tourism Tax', 'Room Status Policy', 'General Policy', 'Terms & Conditions', 'Advance Payment Policy', 'e-Invoice Policy'];
-  return <section className="master-page standard-policy-page" aria-label="Standard Policy & Guidelines"><div className="standard-policy-list">{policies.map((item) => <button className="standard-policy-row" type="button" key={item} onClick={() => item === 'General Policy' && setPolicy(item)}><strong>{item}</strong>{item === 'State & Tourism Tax' ? <MoreVertical size={22} /> : <ChevronRight size={24} />}</button>)}</div><button className="secondary-button master-page-back" type="button" onClick={onBack}><ArrowLeft size={16} /> Back to Hotel Settings</button></section>;
+  return <section className="master-page standard-policy-page" aria-label="Standard Policy & Guidelines"><div className="standard-policy-list">{policies.map((item) => <button className="standard-policy-row" type="button" key={item} onClick={() => (item === 'General Policy' || item === 'Hotel Operational Policy') && setPolicy(item)}><strong>{item}</strong>{item === 'State & Tourism Tax' ? <MoreVertical size={22} /> : <ChevronRight size={24} />}</button>)}</div><button className="secondary-button master-page-back" type="button" onClick={onBack}><ArrowLeft size={16} /> Back to Hotel Settings</button></section>;
+}
+
+function HotelOperationalPolicyModule({ onBack, profile, onProfileChange }: { onBack: () => void; profile: HotelProfile; onProfileChange: (value: HotelProfile) => void | Promise<void> }) {
+  const [draft, setDraft] = useState<HotelOperationalPolicy>(profile.operationalPolicy || initialHotelProfile.operationalPolicy);
+  const toggle = (key: 'postpaid' | 'floorPlan' | 'cashierClosure') => setDraft({ ...draft, [key]: !draft[key] });
+  const occupancy = (key: keyof HotelOperationalPolicy['occupancy']) => setDraft({ ...draft, occupancy: { ...draft.occupancy, [key]: !draft.occupancy[key] } });
+  const timeField = (key: 'standardCheckInTime' | 'standardCheckOutTime' | 'nightAuditCutOffTime', label: string) => <label className="operational-time-field"><span>{label} *</span><input value={draft[key]} onChange={(event) => setDraft({ ...draft, [key]: event.target.value })} /><span className="operational-clock">◷</span></label>;
+  const switchField = (label: string, checked: boolean, onChange: () => void) => <button type="button" className={`operational-switch-row ${checked ? 'is-on' : ''}`} onClick={onChange}><span>{label}</span><i aria-hidden="true" /></button>;
+  return <section className="master-page operational-policy-page" aria-label="Hotel Operational Policy">
+    <div className="operational-policy-head"><strong>Hotel Operational Policy</strong><button type="button" onClick={onBack}>Edit</button></div>
+    <div className="operational-policy-card">{timeField('standardCheckInTime', 'Standard Check In Time')}{timeField('standardCheckOutTime', 'Standard Check Out Time')}{timeField('nightAuditCutOffTime', 'Night Audit Cut Off Time')}{switchField('Postpaid', draft.postpaid, () => toggle('postpaid'))}{switchField('Floor Plan', draft.floorPlan, () => toggle('floorPlan'))}{switchField('Cashier Closure', draft.cashierClosure, () => toggle('cashierClosure'))}</div>
+    <div className="operational-policy-card operational-occupancy-card"><div className="operational-section-head"><strong>Occupancy Calculation Formula</strong><span>⌃</span></div>{switchField('House Use', draft.occupancy.houseUse, () => occupancy('houseUse'))}{switchField('Day Use', draft.occupancy.dayUse, () => occupancy('dayUse'))}{switchField('Complimentary', draft.occupancy.complimentary, () => occupancy('complimentary'))}{switchField('OOO', draft.occupancy.ooo, () => occupancy('ooo'))}{switchField('OOI', draft.occupancy.ooi, () => occupancy('ooi'))}</div>
+    <div className="operational-policy-card operational-collapsed"><strong>CMS Interface</strong><span>⌄</span></div>
+    <div className="master-page-actions"><button className="secondary-button" type="button" onClick={onBack}>Cancel</button><button className="primary-button" type="button" onClick={async () => { await onProfileChange({ ...profile, operationalPolicy: draft }); }}>Save</button></div>
+  </section>;
 }
 
 function GeneralPolicyModule({ onBack, profile, onProfileChange }: { onBack: () => void; profile: HotelProfile; onProfileChange: (value: HotelProfile) => void | Promise<void> }) {
