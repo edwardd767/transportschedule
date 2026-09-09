@@ -239,6 +239,19 @@ const schemaStatements = [
     sales_channels jsonb NOT NULL DEFAULT '[]'::jsonb,
     PRIMARY KEY (property_id, department_id)
   )`,
+  `CREATE TABLE IF NOT EXISTS public.hotelx_sales_channel (
+    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    department_id text NOT NULL,
+    sales_channel_id text NOT NULL,
+    sort_order integer NOT NULL,
+    sales_channel_name text NOT NULL,
+    active boolean NOT NULL DEFAULT true,
+    PRIMARY KEY (property_id, department_id, sales_channel_id),
+    FOREIGN KEY (property_id, department_id)
+      REFERENCES public.hotelx_department(property_id, department_id) ON DELETE CASCADE
+  )`,
+  `CREATE INDEX IF NOT EXISTS hotelx_sales_channel_department_idx
+    ON public.hotelx_sales_channel(property_id, department_id, sort_order)`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_segments (
     property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
     segment_id text NOT NULL,
@@ -489,6 +502,7 @@ const schemaStatements = [
     DELETE FROM public.hotelx_bookings WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_room_master WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_roomstatus WHERE property_id = p_property_id;
+    DELETE FROM public.hotelx_sales_channel WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_department WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_segments WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_incidentalcharges WHERE property_id = p_property_id;
@@ -559,6 +573,17 @@ const schemaStatements = [
       COALESCE(item.value->'reasons', '[]'::jsonb), COALESCE(item.value->'salesChannels', '[]'::jsonb)
     FROM jsonb_array_elements(COALESCE(p_state #> '{hotelMasters,departments}', '[]'::jsonb))
       WITH ORDINALITY AS item(value, ordinality);
+
+    INSERT INTO public.hotelx_sales_channel (
+      property_id, department_id, sales_channel_id, sort_order, sales_channel_name, active
+    )
+    SELECT p_property_id, department.value->>'id',
+      department.value->>'id' || '-sales-channel-' || channel.ordinality::text,
+      channel.ordinality::integer, channel.value #>> '{}', true
+    FROM jsonb_array_elements(COALESCE(p_state #> '{hotelMasters,departments}', '[]'::jsonb))
+      AS department(value)
+    CROSS JOIN LATERAL jsonb_array_elements(COALESCE(department.value->'salesChannels', '[]'::jsonb))
+      WITH ORDINALITY AS channel(value, ordinality);
 
     INSERT INTO public.hotelx_segments (property_id, segment_id, sort_order, description, icon, active, updated_at)
     SELECT p_property_id, item.value->>'id', COALESCE(NULLIF(item.value->>'displaySequence',''),'1')::integer,
@@ -1021,7 +1046,13 @@ const schemaStatements = [
                 AND charge.department_id = department.department_id
             ), '[]'::jsonb),
             'reasons', department.reasons,
-            'salesChannels', department.sales_channels
+            'salesChannels', COALESCE((
+              SELECT jsonb_agg(channel.sales_channel_name ORDER BY channel.sort_order)
+              FROM public.hotelx_sales_channel AS channel
+              WHERE channel.property_id = department.property_id
+                AND channel.department_id = department.department_id
+                AND channel.active
+            ), department.sales_channels, '[]'::jsonb)
           ) ORDER BY department.sort_order)
           FROM public.hotelx_department AS department
           WHERE department.property_id = meta.id
@@ -1457,4 +1488,3 @@ export function createNormalizedTransportStorage(
     },
   };
 }
-

@@ -1959,6 +1959,12 @@ var queryNeon = async (connection, sql, params) => {
 
 // worker/normalized-storage.ts
 var schemaStatements = [
+  `CREATE TABLE IF NOT EXISTS public.hotelx_country (code text PRIMARY KEY, name text NOT NULL UNIQUE)`,
+  `CREATE TABLE IF NOT EXISTS public.hotelx_state (country_code text NOT NULL REFERENCES public.hotelx_country(code) ON DELETE CASCADE, code text NOT NULL, name text NOT NULL, PRIMARY KEY(country_code, code))`,
+  `CREATE TABLE IF NOT EXISTS public.hotelx_city (country_code text NOT NULL, state_code text NOT NULL, name text NOT NULL, PRIMARY KEY(country_code, state_code, name), FOREIGN KEY(country_code, state_code) REFERENCES public.hotelx_state(country_code, code) ON DELETE CASCADE)`,
+  `INSERT INTO public.hotelx_country (code,name) VALUES ('MY','Malaysia'),('SG','Singapore'),('TH','Thailand'),('ID','Indonesia'),('BN','Brunei'),('AU','Australia'),('CN','China'),('IN','India'),('JP','Japan'),('KR','South Korea'),('GB','United Kingdom'),('US','United States') ON CONFLICT DO NOTHING`,
+  `INSERT INTO public.hotelx_state (country_code,code,name) VALUES ('MY','SEL','Selangor'),('MY','KUL','Kuala Lumpur'),('MY','JHR','Johor'),('MY','PNG','Penang'),('MY','PRK','Perak'),('MY','SBH','Sabah'),('MY','SWK','Sarawak'),('MY','NSN','Negeri Sembilan'),('MY','MLK','Melaka'),('MY','KDH','Kedah'),('MY','PHG','Pahang'),('MY','KTN','Kelantan'),('MY','TRG','Terengganu'),('MY','PLS','Perlis'),('MY','LBN','Labuan'),('MY','PJY','Putrajaya') ON CONFLICT DO NOTHING`,
+  `INSERT INTO public.hotelx_city (country_code,state_code,name) VALUES ('MY','SEL','Petaling Jaya'),('MY','SEL','Shah Alam'),('MY','SEL','Subang Jaya'),('MY','SEL','Klang'),('MY','KUL','Kuala Lumpur'),('MY','JHR','Johor Bahru'),('MY','JHR','Mersing'),('MY','PNG','George Town'),('MY','PRK','Ipoh'),('MY','SBH','Kota Kinabalu'),('MY','SWK','Kuching'),('MY','NSN','Seremban'),('MY','MLK','Melaka'),('MY','KDH','Alor Setar'),('MY','PHG','Kuantan'),('MY','KTN','Kota Bharu'),('MY','TRG','Kuala Terengganu'),('MY','PLS','Kangar'),('MY','LBN','Victoria'),('MY','PJY','Putrajaya') ON CONFLICT DO NOTHING`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_guestprofile (
     property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
     id uuid NOT NULL,
@@ -2190,6 +2196,19 @@ var schemaStatements = [
     sales_channels jsonb NOT NULL DEFAULT '[]'::jsonb,
     PRIMARY KEY (property_id, department_id)
   )`,
+  `CREATE TABLE IF NOT EXISTS public.hotelx_sales_channel (
+    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    department_id text NOT NULL,
+    sales_channel_id text NOT NULL,
+    sort_order integer NOT NULL,
+    sales_channel_name text NOT NULL,
+    active boolean NOT NULL DEFAULT true,
+    PRIMARY KEY (property_id, department_id, sales_channel_id),
+    FOREIGN KEY (property_id, department_id)
+      REFERENCES public.hotelx_department(property_id, department_id) ON DELETE CASCADE
+  )`,
+  `CREATE INDEX IF NOT EXISTS hotelx_sales_channel_department_idx
+    ON public.hotelx_sales_channel(property_id, department_id, sort_order)`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_segments (
     property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
     segment_id text NOT NULL,
@@ -2440,6 +2459,7 @@ var schemaStatements = [
     DELETE FROM public.hotelx_bookings WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_room_master WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_roomstatus WHERE property_id = p_property_id;
+    DELETE FROM public.hotelx_sales_channel WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_department WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_segments WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_incidentalcharges WHERE property_id = p_property_id;
@@ -2510,6 +2530,17 @@ var schemaStatements = [
       COALESCE(item.value->'reasons', '[]'::jsonb), COALESCE(item.value->'salesChannels', '[]'::jsonb)
     FROM jsonb_array_elements(COALESCE(p_state #> '{hotelMasters,departments}', '[]'::jsonb))
       WITH ORDINALITY AS item(value, ordinality);
+
+    INSERT INTO public.hotelx_sales_channel (
+      property_id, department_id, sales_channel_id, sort_order, sales_channel_name, active
+    )
+    SELECT p_property_id, department.value->>'id',
+      department.value->>'id' || '-sales-channel-' || channel.ordinality::text,
+      channel.ordinality::integer, channel.value #>> '{}', true
+    FROM jsonb_array_elements(COALESCE(p_state #> '{hotelMasters,departments}', '[]'::jsonb))
+      AS department(value)
+    CROSS JOIN LATERAL jsonb_array_elements(COALESCE(department.value->'salesChannels', '[]'::jsonb))
+      WITH ORDINALITY AS channel(value, ordinality);
 
     INSERT INTO public.hotelx_segments (property_id, segment_id, sort_order, description, icon, active, updated_at)
     SELECT p_property_id, item.value->>'id', COALESCE(NULLIF(item.value->>'displaySequence',''),'1')::integer,
@@ -2972,7 +3003,13 @@ var schemaStatements = [
                 AND charge.department_id = department.department_id
             ), '[]'::jsonb),
             'reasons', department.reasons,
-            'salesChannels', department.sales_channels
+            'salesChannels', COALESCE((
+              SELECT jsonb_agg(channel.sales_channel_name ORDER BY channel.sort_order)
+              FROM public.hotelx_sales_channel AS channel
+              WHERE channel.property_id = department.property_id
+                AND channel.department_id = department.department_id
+                AND channel.active
+            ), department.sales_channels, '[]'::jsonb)
           ) ORDER BY department.sort_order)
           FROM public.hotelx_department AS department
           WHERE department.property_id = meta.id
