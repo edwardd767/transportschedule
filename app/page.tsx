@@ -107,7 +107,7 @@ function SvgIcon({ size = 24, markup }: { size?: number; markup: string }) {
 }
 
 
-const digitalReports = ['Booking Advance Payment Listing', 'Booking Status', 'Manager Report', 'Hotel Historical & Forecast Report', 'Cashier Collection Summary', 'Cashier Detail Listing', 'Cashier Summary', 'City Ledger Transaction Listing', 'Consolidated e-Invoice', 'Daily Posting Detail', 'Daily Revenue Summary', 'Debtor Aging Detail', 'Debtor Aging Summary'];
+const digitalReports = ['Booking Status', 'Manager Report', 'Hotel Historical & Forecast Report'];
 
 const frontDeskMenu = [
   {
