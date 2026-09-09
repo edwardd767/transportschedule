@@ -5739,3 +5739,14 @@ p {
 .billing-daily-line input{align-self:start;margin-top:7px}
 .billing-schedule-actions{height:54px}
 .billing-schedule-actions .primary-button{min-width:150px;height:36px;font-family:inherit;font-size:14px;font-weight:500}
+
+.rooming-page[aria-label="Room guest list"] .rooming-pax-head{font-size:14px;font-weight:400;min-height:40px}
+.rooming-pax-count{font-size:14px;gap:5px;margin-left:14px}
+.rooming-guest-card{padding:0 14px 12px}
+.rooming-guest-card .rooming-table-head{font-weight:400;font-size:12px;padding:10px 0 6px;grid-template-columns:24px 1fr}
+.rooming-guest-row{grid-template-columns:24px 1fr 64px;padding:10px 0;gap:10px;font-size:14px;border-top:0;border-bottom:1px solid #ddd}
+.rooming-guest-row>div strong{display:flex;align-items:center;gap:5px;font-weight:600}
+.rooming-guest-row small{font-size:12px;margin-top:8px}
+.rooming-profile-button{position:relative;width:64px;height:44px;padding:0;align-self:center}
+.guest-photo-placeholder{width:60px;height:36px;background:#aaa;display:block}
+.rooming-profile-button>svg{position:absolute;right:-3px;bottom:-4px;background:#ff174c;color:#fff;box-sizing:content-box;padding:5px;border-radius:50%}

@@ -1,11 +1,13 @@
 'use client';
 
-import { Eye, Pencil, Plus, ScanLine, ContactRound, UserRound, UserRoundPen } from 'lucide-react';
+import { Baby, ClipboardList, Eye, Pencil, Plus, ScanLine, ContactRound, UserRound, UserRoundPen } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { stayDates } from '@/lib/bookings';
 import type { Booking } from '@/lib/bookings';
 import type { GuestProfile } from '@/lib/transport-state';
+import { regeneratePaxBilling } from '@/lib/pax-billing';
+import type { RateSetupData } from '@/lib/rate-setup-data';
 import { geography } from '@/lib/geography';
 
 type Page = 'rooms' | 'guests' | 'profile';
@@ -17,7 +19,9 @@ const emptyProfile = (booking: Booking): GuestProfile => ({
   newsletter: false, tourismTax: false, visits: 0, updated: today(),
 });
 
-export function RoomingList({ booking, profiles, onProfilesSave, onBookingSave, onBack }: {
+export function RoomingList({ booking, profiles, onProfilesSave, onBookingSave, onBack, paxCountPolicy, rateSetup }: {
+  paxCountPolicy: string;
+  rateSetup: RateSetupData;
   booking: Booking;
   profiles: GuestProfile[];
   onProfilesSave: (profiles: GuestProfile[]) => Promise<void>;
@@ -28,20 +32,41 @@ export function RoomingList({ booking, profiles, onProfilesSave, onBookingSave, 
   const [roomIndex, setRoomIndex] = useState(0);
   const [draft, setDraft] = useState<GuestProfile | null>(null);
   const [paxOpen, setPaxOpen] = useState(false);
-  const [paxDraft, setPaxDraft] = useState('1');
+  const [adultDraft, setAdultDraft] = useState('1');
+  const [childDraft, setChildDraft] = useState('0');
+  const profilePolicy = /guest profile created/i.test(paxCountPolicy);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [scanText, setScanText] = useState('');
   const run = async (action: () => Promise<void>) => { setBusy(true); setError(''); try { await action(); } catch (e) { setError(e instanceof Error ? e.message : 'Unable to save. Please try again.'); } finally { setBusy(false); } };
   const room = booking.rooms[roomIndex];
   const assigned = useMemo(() => (room?.guestProfileIds ?? []).map(id => profiles.find(profile => profile.id === id)).filter(Boolean) as GuestProfile[], [profiles, room]);
-  const pax = Math.max(1, (room?.adults ?? booking.guests ?? 1) + (room?.children ?? 0));
+  const pax = Math.max(0, (room?.adults ?? booking.guests ?? 1) + (room?.children ?? 0));
   const roomLabel = `${room?.code ?? 'Room'} | Room ${roomIndex + 1} | ${room?.rateCode ?? 'BAR'} Room Only`;
   const locationStates = geography.states[draft?.country ?? ''] || [];
   const locationCities = geography.cities[`${draft?.country ?? ''}|${draft?.state ?? ''}`] || [];
   const updateDraft = (key: keyof GuestProfile, value: string) => setDraft(current => current ? { ...current, [key]: value, ...(key === 'country' ? { state: '', city: '' } : key === 'state' ? { city: '' } : {}) } as GuestProfile : current);
 
-  const openGuests = (index: number) => { setRoomIndex(index); setPage('guests'); };
+  const saveRooms = async (rooms: Booking['rooms']) => {
+    await onBookingSave(regeneratePaxBilling({ ...booking, rooms, guests: rooms.reduce((sum,r) => sum + ((r.adults ?? 1) + (r.children ?? 0)) * r.count, 0) }, rateSetup, booking));
+  };
+  const openGuests = (index: number) => { void run(async () => {
+    const target = booking.rooms[index];
+    const ids = [...(target.guestProfileIds ?? [])];
+    const next = [...profiles];
+    if (profilePolicy) {
+      for (const kind of ['Adult', 'Child'] as const) {
+        const desired = kind === 'Adult' ? target.adults ?? 1 : target.children ?? 0;
+        const present = ids.filter(id => (next.find(p => p.id === id)?.adultChild || 'Adult') === kind).length;
+        for (let i = present; i < desired; i++) {
+          const id = crypto.randomUUID();
+          if (!next.some(p => p.id === id)) next.push({ ...emptyProfile(booking), id, name: `${kind} ${i + 1}`, adultChild: kind }); ids.push(id);
+        }
+      }
+      if (ids.length !== (target.guestProfileIds ?? []).length) { await onProfilesSave(next); await saveRooms(booking.rooms.map((r,i) => i === index ? { ...r, guestProfileIds: ids } : r)); }
+    }
+    setRoomIndex(index); setPage('guests');
+  }); };
   const editProfile = (profile?: GuestProfile) => { setDraft(profile ? { ...profile } : emptyProfile(booking)); setPage('profile'); };
   const saveProfile = async () => {
     if (!draft?.name.trim()) return;
@@ -49,16 +74,16 @@ export function RoomingList({ booking, profiles, onProfilesSave, onBookingSave, 
     const nextProfiles = [value, ...profiles.filter(item => item.id !== value.id)];
     const currentRoom = booking.rooms[roomIndex];
     const ids = Array.from(new Set([...(currentRoom.guestProfileIds ?? []), value.id]));
-    const rooms = booking.rooms.map((item, index) => index === roomIndex ? { ...item, guestProfileIds: ids } : item);
+    const rooms = booking.rooms.map((item, index) => index === roomIndex ? { ...item, guestProfileIds: ids, ...(profilePolicy ? { adults: ids.filter(id => (nextProfiles.find(p => p.id === id)?.adultChild || 'Adult') === 'Adult').length, children: ids.filter(id => nextProfiles.find(p => p.id === id)?.adultChild === 'Child').length } : {}) } : item);
     await onProfilesSave(nextProfiles);
-    await onBookingSave({ ...booking, rooms });
+    await saveRooms(rooms);
     setDraft(null);
     setPage('guests');
   };
   const removeProfile = async () => {
     if (!draft) return;
-    const rooms = booking.rooms.map((item, index) => index === roomIndex ? { ...item, guestProfileIds: (item.guestProfileIds ?? []).filter(id => id !== draft.id) } : item);
-    await onBookingSave({ ...booking, rooms });
+    const rooms = booking.rooms.map((item, index) => index === roomIndex ? { ...item, guestProfileIds: (item.guestProfileIds ?? []).filter(id => id !== draft.id), ...(profilePolicy ? { adults: assigned.filter(p => p.id !== draft.id && p.adultChild !== 'Child').length, children: assigned.filter(p => p.id !== draft.id && p.adultChild === 'Child').length } : {}) } : item);
+    await saveRooms(rooms);
     setDraft(null);
     setPage('guests');
   };
@@ -80,16 +105,16 @@ export function RoomingList({ booking, profiles, onProfilesSave, onBookingSave, 
   if (page === 'guests') return <section className="rooming-page" aria-label="Room guest list">
     <RoomingHeader booking={booking} label="Guest List" onBack={() => setPage('rooms')} />
     <div className="rooming-booking-line"><strong>{booking.reference} | {booking.guest}</strong><small>{roomLabel}</small></div>
-    <div className="rooming-pax-head"><span><UserRound size={16} /> No. of Pax: {pax} <b className="rooming-pax-count"><UserRound size={15} /> {room?.adults ?? 1} <ContactRound size={15} /> {room?.children ?? 0}</b></span><button type="button" aria-label="Edit number of pax" onClick={() => { setPaxDraft(String(pax)); setPaxOpen(true); setError(''); }}><Pencil size={17} /></button></div>
-    <Dialog open={paxOpen} onOpenChange={setPaxOpen}><DialogContent className="rooming-pax-dialog" aria-describedby={undefined} showCloseButton={false}><DialogTitle>{booking.reference} | {booking.guest}</DialogTitle><small>{roomLabel}</small><form onSubmit={event => { event.preventDefault(); void run(async () => { const value = Number(paxDraft); if (!Number.isInteger(value) || value < 1 || value < (room.children ?? 0) + 1) throw new Error('Enter a whole pax count including the existing children and at least one adult.'); const rooms = booking.rooms.map((item, index) => index === roomIndex ? { ...item, adults: value - (item.children ?? 0) } : item); await onBookingSave({ ...booking, rooms, guests: rooms.reduce((sum, item) => sum + ((item.adults ?? 1) + (item.children ?? 0)) * item.count, 0) }); setPaxOpen(false); }); }}><label>No. of Pax.<input aria-label="No. of Pax" type="number" min="1" step="1" required value={paxDraft} onChange={event => setPaxDraft(event.target.value)} /></label>{error && <p role="alert">{error}</p>}<footer><button type="button" disabled={busy} onClick={() => setPaxOpen(false)}>Cancel</button><button disabled={busy} type="submit">Confirm</button></footer></form></DialogContent></Dialog>
-    <div className="rooming-guest-card"><div className="rooming-table-head"><span>No.</span><span>Guest Name(s)</span></div>{assigned.length ? assigned.map((profile, index) => <div className="rooming-guest-row" key={profile.id}><strong>{index + 1}.</strong><div><strong><UserRound size={14} /> {profile.name}</strong><small>{profile.mobile || profile.email || 'Guest profile pending contact details'}</small></div><button type="button" className="rooming-profile-button" aria-label={`Open ${profile.name} profile`} title="Open guest profile" onClick={() => editProfile(profile)}><UserRoundPen size={18} /></button></div>) : <div className="rooming-empty">No guest profile is assigned yet. Add the first guest profile for this room.</div>}</div>
+    <div className="rooming-pax-head"><span><UserRound size={16} /> No. of Pax: {pax} <b className="rooming-pax-count"><UserRound size={15} /> {room?.adults ?? 1} <Baby size={15} /> {room?.children ?? 0}</b></span><button type="button" aria-label="Edit number of pax" onClick={() => { setAdultDraft(String(room.adults ?? 1)); setChildDraft(String(room.children ?? 0)); setPaxOpen(true); setError(''); }}><Pencil size={17} /></button></div>
+    <Dialog open={paxOpen} onOpenChange={setPaxOpen}><DialogContent className="rooming-pax-dialog" aria-describedby={undefined} showCloseButton={false}><DialogTitle>{booking.reference} | {booking.guest}</DialogTitle><small>{roomLabel}</small><form onSubmit={event => { event.preventDefault(); void run(async () => { const adults = Number(adultDraft), children = Number(childDraft); if (![adults,children].every(n => Number.isInteger(n) && n >= 0) || adults + children < 1) throw new Error('Enter adult and child counts with at least one guest.'); const rooms = booking.rooms.map((item,index) => index === roomIndex ? { ...item, adults, children } : item); await saveRooms(rooms); setPaxOpen(false); }); }}><label>No. of Adult<input aria-label="No. of Adult" type="number" min="0" step="1" required value={adultDraft} onChange={e => setAdultDraft(e.target.value)} /></label><label>No. of Child<input aria-label="No. of Child" type="number" min="0" step="1" required value={childDraft} onChange={e => setChildDraft(e.target.value)} /></label>{error && <p role="alert">{error}</p>}<footer><button type="button" disabled={busy} onClick={() => setPaxOpen(false)}>Cancel</button><button disabled={busy} type="submit">Confirm</button></footer></form></DialogContent></Dialog>
+    <div className="rooming-guest-card"><div className="rooming-table-head"><span>No.</span><span>Guest Name(s)</span></div>{assigned.length ? assigned.map((profile, index) => <div className="rooming-guest-row" key={profile.id}><strong>{index + 1}.</strong><div><strong>{profile.adultChild === 'Child' ? <Baby size={17} /> : <UserRound size={17} fill="currentColor" />} {profile.name}</strong><small>{profile.identityNo || profile.mobile || 'To Scan'}</small></div><button type="button" className="rooming-profile-button" aria-label={`Open ${profile.name} profile`} title="Open guest profile" onClick={() => editProfile(profile)}><span className="guest-photo-placeholder" /><ClipboardList size={15} /></button></div>) : <div className="rooming-empty">No guest profile is assigned yet. Add the first guest profile for this room.</div>}</div>
     <button type="button" className="rooming-add" aria-label="Add guest profile" onClick={() => editProfile()}><Plus size={29} /></button>
   </section>;
 
   return <section className="rooming-page" aria-label="Rooming list">
     <RoomingHeader booking={booking} label="Rooming List" onBack={onBack} />
     <div className="rooming-booking-line"><strong>{booking.reference} | {booking.guest}</strong><small>{booking.rooms.map(item => `${item.code} ${item.count}`).join(' | ')}</small></div>
-    <div className="rooming-room-card"><div className="rooming-table-head rooming-room-head"><span>No.</span><span>Room Type</span><span><UserRound size={14} /></span><span>Guest Name(s)</span></div>{booking.rooms.map((item, index) => { const guests = (item.guestProfileIds ?? []).map(id => profiles.find(profile => profile.id === id)).filter(Boolean) as GuestProfile[]; return <div className="rooming-room-row" key={`${item.code}-${index}`}><strong>{index + 1}.</strong><div><strong>{item.code}</strong><small>{item.rateCode ?? 'BAR'} Room Only</small></div><span>{Math.max(1, (item.adults ?? booking.guests ?? 1) + (item.children ?? 0))}</span><div><strong>{guests.map(profile => profile.name).join(', ') || booking.guest}</strong><small>{guests.length ? `${guests.length} guest profile${guests.length === 1 ? '' : 's'}` : 'No guest profile assigned'}</small></div><button type="button" className="rooming-view-button" aria-label={`View ${item.code} guest list`} title="View guest list" onClick={() => openGuests(index)}><Eye size={20} /></button></div>; })}</div>
+    {error && <p role="alert">{error}</p>}<div className="rooming-room-card"><div className="rooming-table-head rooming-room-head"><span>No.</span><span>Room Type</span><span><UserRound size={14} /></span><span>Guest Name(s)</span></div>{booking.rooms.map((item, index) => { const guests = (item.guestProfileIds ?? []).map(id => profiles.find(profile => profile.id === id)).filter(Boolean) as GuestProfile[]; return <div className="rooming-room-row" key={`${item.code}-${index}`}><strong>{index + 1}.</strong><div><strong>{item.code}</strong><small>{item.rateCode ?? 'BAR'} Room Only</small></div><span>{Math.max(1, (item.adults ?? booking.guests ?? 1) + (item.children ?? 0))}</span><div><strong>{guests.map(profile => profile.name).join(', ') || booking.guest}</strong><small>{guests.length ? `${guests.length} guest profile${guests.length === 1 ? '' : 's'}` : 'No guest profile assigned'}</small></div><button type="button" className="rooming-view-button" disabled={busy} aria-label={`View ${item.code} guest list`} title="View guest list" onClick={() => openGuests(index)}><Eye size={20} /></button></div>; })}</div>
   </section>;
 }
 

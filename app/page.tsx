@@ -738,6 +738,7 @@ function HomeContent({ store }: { store: TransportData }) {
           <GuestProfiles profiles={guestProfiles} onBack={() => setView('booking')} onSave={async (value) => { await store.run({ type: 'guestProfilesSave', value }); setNotice('Guest profile saved.'); }} />
         ) : view === 'booking' ? (
           <Bookings
+            paxCountPolicy={hotelMasters.profile.paxCount}
             childRatesApplied={hotelMasters.profile.childRatesApplied}
             bookings={bookings}
             roomTypes={hotelMasters.roomTypes}

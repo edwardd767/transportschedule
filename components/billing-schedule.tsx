@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { CalendarDays, ChevronDown, ChevronRight, ChevronUp, DoorClosed, UserRound } from 'lucide-react';
 import type { BillingScheduleAdjustment, Booking, BookingRoom } from '@/lib/bookings';
+import { paxNight } from '@/lib/pax-billing';
 import { bookingRate } from '@/lib/booking-rate';
 import type { BookingTransportLeg } from '@/lib/booking-transport';
 import type { RateSetupData } from '@/lib/rate-setup-data';
@@ -26,20 +27,9 @@ function eachStayDate(arrival: string, departure: string) {
 
 function baseNightRate(room: BookingRoom, date: string, rateSetup: RateSetupData) {
   const configured = bookingRate(rateSetup, room.rateCode || 'BAR', room.code, date)?.amount;
-  return configured ?? room.roomRate ?? (room.total && room.count ? room.total / room.count : 0);
+  return (configured !== undefined ? paxNight(room, date, rateSetup).total : undefined) ?? room.roomRate ?? (room.total && room.count ? room.total / room.count : 0);
 }
 
-function breakfastCharge(room: BookingRoom, date: string, rateSetup: RateSetupData, rateCode: string) {
-  const plan = rateSetup.ratePlans.find(item => item.active && item.code === rateCode);
-  const season = rateSetup.calendar[date];
-  const validity = plan && season ? rateSetup.validity.filter(item => item.active && item.rateSetupId === plan.id && item.from <= date && date <= item.to).sort((a, b) => b.from.localeCompare(a.from))[0] : undefined;
-  const rate = validity?.seasonalRates?.[room.code]?.[season];
-  const names = (validity?.inclusiveElements ?? []).map(id => rateSetup.elements.find(item => item.id === id)?.name.toLowerCase() ?? '');
-  if (!names.some(name => name.includes('breakfast'))) return 0;
-  const adult = rate?.extraAdult ?? rateSetup.elements.find(item => item.name.toLowerCase().includes('breakfast') && item.name.toLowerCase().includes('adult'))?.amount ?? 0;
-  const child = rate?.extraChild ?? rateSetup.elements.find(item => item.name.toLowerCase().includes('breakfast') && item.name.toLowerCase().includes('child'))?.amount ?? 0;
-  return (room.adults ?? 1) * adult + (room.children ?? 0) * child;
-}
 
 type BillingLine = {
   id: string;
@@ -51,7 +41,7 @@ type BillingLine = {
   promoCode: string;
   amount: number;
   baseAmount: number;
-  breakfast: number;
+  elements: { name: string; amount: number }[];
 };
 
 function lineAdjustment(booking: Booking, line: BillingLine) {
@@ -82,7 +72,7 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
           const id = `${roomKey}-${date}`;
           const adjustment = booking.billingSchedule?.find((item) => item.id === id);
           const baseAmount = baseNightRate(room, date, rateSetup);
-          const breakfast = breakfastCharge(room, date, rateSetup, adjustment?.rateCode || room.rateCode || 'BAR');
+          const elements = paxNight(room, date, rateSetup, adjustment?.rateCode || room.rateCode || 'BAR').elements.filter(e => e.rhythm === 'Daily' || (e.rhythm === 'First Night' ? date === booking.arrival : date === addDays(booking.departure, -1)));
           rows.push({
             id,
             roomKey,
@@ -93,7 +83,7 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
             promoCode: adjustment?.promoCode || room.promoCode || '',
             amount: adjustment?.total ?? baseAmount,
             baseAmount,
-            breakfast,
+            elements,
           });
         });
       });
@@ -187,7 +177,7 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
               {isRoomOpen && <div className="billing-room-detail">
                 <div className="billing-date-range"><label>{inputDateLabel(fromDate)}<CalendarDays size={18} /><input type="date" value={fromDate} min={booking.arrival} max={addDays(booking.departure, -1)} onChange={(event) => setFromDate(event.target.value)} /></label><ChevronRight size={20} /><label>{inputDateLabel(toDate)}<CalendarDays size={18} /><input type="date" value={toDate} min={booking.arrival} max={addDays(booking.departure, -1)} onChange={(event) => setToDate(event.target.value)} /></label></div>
                 <label className="billing-select-all"><input type="checkbox" checked={allSelected} onChange={() => setSelected(allSelected ? selected.filter((id) => !visibleIds.includes(id)) : Array.from(new Set([...selected, ...visibleIds])))} /> Select All</label>
-                {dailyLines.map((line) => <label className="billing-daily-line" key={line.id}><input type="checkbox" checked={selected.includes(line.id)} onChange={() => toggleLine(line.id)} /><span><strong>{dayLabel(line.date)} | {line.rateCode}</strong><span className="billing-breakdown-labels"><small>Room Charge</small>{line.breakfast > 0 && <small>Breakfast</small>}</span></span><span><strong>{money(line.amount)}</strong><span className="billing-breakdown-values"><small>{money(Math.max(0, line.amount - line.breakfast))}</small>{line.breakfast > 0 && <small>{money(line.breakfast)}</small>}</span></span></label>)}
+                {dailyLines.map((line) => <label className="billing-daily-line" key={line.id}><input type="checkbox" checked={selected.includes(line.id)} onChange={() => toggleLine(line.id)} /><span><strong>{dayLabel(line.date)} | {line.rateCode}</strong><span className="billing-breakdown-labels"><small>Room Charge</small>{line.elements.map((e,i) => <small key={i}>{e.name}</small>)}</span></span><span><strong>{money(line.amount)}</strong><span className="billing-breakdown-values"><small>{money(Math.max(0, line.amount - line.elements.reduce((sum,e) => sum + e.amount, 0)))}</small>{line.elements.map((e,i) => <small key={i}>{money(e.amount)}</small>)}</span></span></label>)}
               </div>}
             </div>;
           })}

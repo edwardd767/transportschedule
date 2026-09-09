@@ -58,6 +58,7 @@ function BookingOccupancy({ booking }: { booking: Booking }) {
 }
 
 export function Bookings({
+  paxCountPolicy = "",
   childRatesApplied = false,
   bookings,
   roomTypes,
@@ -77,6 +78,7 @@ export function Bookings({
   onGuestProfilesSave,
   onRoomingOpen,
 }: {
+  paxCountPolicy?: string;
   childRatesApplied?: boolean;
   bookings: Booking[];
   roomTypes: HotelRoomType[];
@@ -173,7 +175,7 @@ export function Bookings({
   }
 
   if (booking) {
-    if (roomingOpen) return <RoomingList booking={booking} profiles={guestProfiles} onProfilesSave={onGuestProfilesSave} onBookingSave={onUpdate} onBack={() => setRoomingOpen(false)} />;
+    if (roomingOpen) return <RoomingList paxCountPolicy={paxCountPolicy} rateSetup={rateSetup} booking={booking} profiles={guestProfiles} onProfilesSave={onGuestProfilesSave} onBookingSave={onUpdate} onBack={() => setRoomingOpen(false)} />;
     if (billingInstructionOpen) return <BillingInstruction booking={booking} onSave={onUpdate} onBack={() => setBillingInstructionOpen(false)} />;
     if (specialRequestOpen) return <SpecialRequest booking={booking} onSave={onUpdate} onBack={() => setSpecialRequestOpen(false)} />;
     if (attachmentsOpen) return <BookingAttachments booking={booking} onSave={onUpdate} onBack={() => setAttachmentsOpen(false)} />;
