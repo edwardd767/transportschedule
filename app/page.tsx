@@ -107,7 +107,7 @@ function SvgIcon({ size = 24, markup }: { size?: number; markup: string }) {
 }
 
 
-const digitalReports = ['Booking Status', 'Manager Report', 'Hotel Historical & Forecast Report'];
+const digitalReports = ['Booking Status', 'Manager Report', 'Hotel Historical & Forecast Report', 'Production Analysis by Corp/Govt/Travel Agent', 'Production Analysis by Rate Code', 'Production Analysis by Rate Type', 'Production Analysis by Room No', 'Production Analysis by Room Type', 'Production Analysis by Sales Channel', 'Production Analysis by Segment', 'Production Analysis by Source', 'Production Analysis by State/Country/Nationality'];
 
 const frontDeskMenu = [
   {
