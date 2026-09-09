@@ -11,3 +11,6 @@ for(const [adults,children,total,food] of [[1,1,210,15],[2,1,220,25],[0,2,210,10
 data.elements[0].basis='Flat Rate';assert.equal(paxNight({code:'SPK',adults:5,children:0},'2026-09-09',data).elements[0].amount,10);
 const b=regeneratePaxBilling({arrival:'2026-09-09',departure:'2026-09-10',rooms:[{code:'SPK',count:1,adults:2,children:1}]},data);assert.equal(b.amount,220);assert.equal(b.billingSchedule.length,1);
 console.log('Six adult/child scenarios, flat elements, checkout exclusion and regeneration passed.');
+
+const sample=paxNight({code:'SPK',adults:2,children:1},'2026-09-09',data);assert.equal(sample.extraPax,10);assert.equal(sample.total,220);
+const noExtra=paxNight({code:'SPK',adults:1,children:1},'2026-09-09',data);assert.equal(noExtra.extraPax,0);

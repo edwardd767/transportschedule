@@ -41,6 +41,7 @@ type BillingLine = {
   promoCode: string;
   amount: number;
   baseAmount: number;
+  extraPax: number;
   elements: { name: string; amount: number }[];
 };
 
@@ -84,6 +85,7 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
             amount: adjustment?.total ?? baseAmount,
             baseAmount,
             elements,
+            extraPax: paxNight(room, date, rateSetup, adjustment?.rateCode || room.rateCode || 'BAR').extraPax,
           });
         });
       });
@@ -177,7 +179,7 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
               {isRoomOpen && <div className="billing-room-detail">
                 <div className="billing-date-range"><label>{inputDateLabel(fromDate)}<CalendarDays size={18} /><input type="date" value={fromDate} min={booking.arrival} max={addDays(booking.departure, -1)} onChange={(event) => setFromDate(event.target.value)} /></label><ChevronRight size={20} /><label>{inputDateLabel(toDate)}<CalendarDays size={18} /><input type="date" value={toDate} min={booking.arrival} max={addDays(booking.departure, -1)} onChange={(event) => setToDate(event.target.value)} /></label></div>
                 <label className="billing-select-all"><input type="checkbox" checked={allSelected} onChange={() => setSelected(allSelected ? selected.filter((id) => !visibleIds.includes(id)) : Array.from(new Set([...selected, ...visibleIds])))} /> Select All</label>
-                {dailyLines.map((line) => <label className="billing-daily-line" key={line.id}><input type="checkbox" checked={selected.includes(line.id)} onChange={() => toggleLine(line.id)} /><span><strong>{dayLabel(line.date)} | {line.rateCode}</strong><span className="billing-breakdown-labels"><small>Room Charge</small>{line.elements.map((e,i) => <small key={i}>{e.name}</small>)}</span></span><span><strong>{money(line.amount)}</strong><span className="billing-breakdown-values"><small>{money(Math.max(0, line.amount - line.elements.reduce((sum,e) => sum + e.amount, 0)))}</small>{line.elements.map((e,i) => <small key={i}>{money(e.amount)}</small>)}</span></span></label>)}
+                {dailyLines.map((line) => <label className="billing-daily-line" key={line.id}><input type="checkbox" checked={selected.includes(line.id)} onChange={() => toggleLine(line.id)} /><span><strong>{dayLabel(line.date)} | {line.rateCode}</strong><span className="billing-breakdown-labels"><small>Room Charge</small>{line.elements.map((e,i) => <small key={i}>{e.name}</small>)}{line.extraPax > 0 && <small>Extra Pax</small>}</span></span><span><strong>{money(line.amount)}</strong><span className="billing-breakdown-values"><small>{money(Math.max(0, line.amount - line.extraPax - line.elements.reduce((sum,e) => sum + e.amount, 0)))}</small>{line.elements.map((e,i) => <small key={i}>{money(e.amount)}</small>)}{line.extraPax > 0 && <small>{money(line.extraPax)}</small>}</span></span></label>)}
               </div>}
             </div>;
           })}

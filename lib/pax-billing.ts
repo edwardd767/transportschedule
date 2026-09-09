@@ -8,7 +8,8 @@ export function paxNight(room: BookingRoom, date: string, data: RateSetupData, c
   const included = rate?.basePax ?? 2;
   const extraAdults = Math.max(0, adults - included);
   const extraChildren = Math.max(0, children - Math.max(0, included - adults));
-  const total = (rate?.amount ?? room.roomRate ?? 0) + extraAdults * (rate?.extraAdult ?? 0) + extraChildren * (rate?.extraChild ?? 0);
+  const extraPax = extraAdults * (rate?.extraAdult ?? 0) + extraChildren * (rate?.extraChild ?? 0);
+  const total = (rate?.amount ?? room.roomRate ?? 0) + extraPax;
   const plan = data.ratePlans.find(p => p.active && p.code === code);
   const validity = data.validity.filter(v => v.active && v.rateSetupId === plan?.id && v.from <= date && v.to >= date).sort((a,b) => b.from.localeCompare(a.from))[0];
   const elements = (validity?.inclusiveElements ?? []).flatMap(id => {
@@ -17,7 +18,7 @@ export function paxNight(room: BookingRoom, date: string, data: RateSetupData, c
     const count = /flat/i.test(e.basis) ? 1 : /child/i.test(e.name + e.basis) ? children : /adult/i.test(e.name + e.basis) ? adults : adults + children;
     return [{ name: e.name, amount: e.amount * count, rhythm: e.postingRhythm }];
   });
-  return { total, elements };
+  return { total, elements, extraPax };
 }
 
 export function regeneratePaxBilling(booking: Booking, data: RateSetupData, previous?: Booking): Booking {
