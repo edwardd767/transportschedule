@@ -11,8 +11,8 @@ const dateLabel = (value: string) => value ? value.split('-').reverse().join('/'
 
 type Scope = 'today' | 'month' | 'year';
 const periods: Scope[] = ['today', 'month', 'year'];
-const metricColumns = ['Room', 'Guest', 'Room Rev.', 'Other Rev.', 'FNB Rev.', 'ARR'];
-const cellFormats = ['number', 'number', 'money', 'money', 'money', 'money'];
+const metricColumns = ['Room', 'Guest', 'Child', 'Room Rev.', 'Other Rev.', 'FNB Rev.', 'ARR'];
+const cellFormats = ['number', 'number', 'number', 'money', 'money', 'money', 'money'];
 
 function startOfMonth(date: string) {
   return `${date.slice(0, 7)}-01`;
@@ -24,6 +24,10 @@ function startOfYear(date: string) {
 
 function countRooms(booking: Booking) {
   return booking.rooms.reduce((sum, room) => sum + room.count, 0);
+}
+
+function countChildren(booking: Booking) {
+  return booking.rooms.reduce((sum, room) => sum + (room.children ?? 0) * room.count, 0);
 }
 
 function nights(booking: Booking) {
@@ -45,8 +49,9 @@ function production(rows: Booking[], date: string, scope: Scope) {
     ? relevant.reduce((sum, booking) => sum + countRooms(booking), 0)
     : relevant.reduce((sum, booking) => sum + countRooms(booking) * nights(booking), 0);
   const guest = relevant.reduce((sum, booking) => sum + booking.guests, 0);
+  const child = relevant.reduce((sum, booking) => sum + countChildren(booking), 0);
   const roomRev = relevant.reduce((sum, booking) => sum + booking.amount, 0);
-  return { room, guest, roomRev, otherRev: 0, fnbRev: 0, arr: room ? roomRev / room : 0 };
+  return { room, guest, child, roomRev, otherRev: 0, fnbRev: 0, arr: room ? roomRev / room : 0 };
 }
 
 function sourceOf(booking: Booking) {
@@ -62,7 +67,7 @@ function buildRows(bookings: Booking[], date: string) {
   return [...groups.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([source, rows]) => {
     const cells = periods.flatMap((scope) => {
       const value = production(rows, date, scope);
-      return [value.room, value.guest, value.roomRev, value.otherRev, value.fnbRev, value.arr];
+      return [value.room, value.guest, value.child, value.roomRev, value.otherRev, value.fnbRev, value.arr];
     });
     return { source, cells };
   });
@@ -89,7 +94,7 @@ export function ProductionAnalysisTAGov({ bookings, hotelMasters, date, onDate, 
   const rows = buildRows(bookings, date);
   const totalCells = periods.flatMap((scope) => {
     const value = production(bookings, date, scope);
-    return [value.room, value.guest, value.roomRev, value.otherRev, value.fnbRev, value.arr];
+    return [value.room, value.guest, value.child, value.roomRev, value.otherRev, value.fnbRev, value.arr];
   });
   return <div className="production-analysis-report">
     <div className="report-view-head"><button type="button" onClick={onBack}>‹ Back to reports</button><strong>Production Analysis By Corp/Govt/Travel Agent</strong></div>

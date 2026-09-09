@@ -5695,7 +5695,7 @@ p {
 .production-analysis-heading h2{margin:0;font-size:14px;font-weight:700}
 .production-analysis-heading p{margin:0}
 .production-analysis-wrap{max-width:100%;overflow:auto}
-.production-analysis-table{border-collapse:collapse;min-width:1180px;width:100%;font-size:12px;line-height:1.15;color:#000}
+.production-analysis-table{border-collapse:collapse;min-width:1320px;width:100%;font-size:12px;line-height:1.15;color:#000}
 .production-analysis-table th,.production-analysis-table td{border:1px solid #777;padding:3px 5px;text-align:right;white-space:nowrap}
 .production-analysis-table th:first-child,.production-analysis-table td:first-child{text-align:left}
 .production-analysis-table thead th{background:#c7c7c7;font-weight:700;text-align:center}
