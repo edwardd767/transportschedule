@@ -206,6 +206,7 @@ function HomeContent({ store }: { store: TransportData }) {
   const activeBooking =
     bookings.find((booking) => booking.reference === bookingReference) ?? null;
   const [scheduleView, setScheduleView] = useState<'day' | 'month'>('day');
+  const [listingMenuOpen, setListingMenuOpen] = useState(false);
   const [boatFilter, setBoatFilter] = useState('all');
   const [transferBooking, setTransferBooking] = useState<Booking | null>(null);
   const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
@@ -611,14 +612,6 @@ function HomeContent({ store }: { store: TransportData }) {
               </div>
             )}
             <button
-              className={view === 'reporting' ? 'active' : ''}
-              aria-current={view === 'reporting' ? 'page' : undefined}
-              onClick={() => setView('reporting')}
-            >
-              <ChartNoAxesCombined />
-              Digital Reporting
-            </button>
-            <button
               className={['setup', 'hotelsettings', 'hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy', 'standardpolicy'].includes(view) ? 'active' : ''}
               aria-current={['setup', 'hotelsettings', 'hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy', 'standardpolicy'].includes(view) ? 'page' : undefined}
               onClick={() => setView('hotelsettings')}
@@ -959,6 +952,12 @@ function HomeContent({ store }: { store: TransportData }) {
                   >
                     <CalendarDays size={16} /> Month calendar
                   </button>
+                </div>
+                <div className="schedule-listing-menu">
+                  <button className="schedule-listing-trigger" type="button" aria-expanded={listingMenuOpen} onClick={() => setListingMenuOpen((open) => !open)}>
+                    <List size={16} /> Listing <ChevronRight size={14} className={listingMenuOpen ? 'listing-menu-open' : ''} />
+                  </button>
+                  {listingMenuOpen && <div className="schedule-listing-popover"><button type="button" onClick={() => { setListingMenuOpen(false); setView('reporting'); }}><ChartNoAxesCombined size={16} /> Digital Reporting</button></div>}
                 </div>
                 <button
                   className="primary-button"
