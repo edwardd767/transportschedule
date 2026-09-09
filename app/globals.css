@@ -3405,6 +3405,48 @@ p {
 .billing-line small { color: #727985; }
 .billing-total { display: flex; justify-content: space-between; align-items: center; background: #fff6eb; border-radius: 8px; padding: 14px 18px; font-size: 16px; }
 .billing-total strong { color: #f06f1f; font-size: 20px; }
+.billing-schedule-page{position:relative;min-height:100%;padding:0 12px 78px;background:#f3f3f3;align-content:start;gap:0;overflow:auto}
+.billing-schedule-page .rooming-hotel-header{margin:10px 0 0}
+.billing-schedule-page .rooming-breadcrumb{margin:0;background:#ff8a19}
+.billing-schedule-summary{border-radius:0;margin:0 0 16px;box-shadow:none;border:0;border-bottom:1px solid #ebe2d8;background:#fff7ee}
+.billing-schedule-summary .booking-detail-top{padding:10px 12px 4px}
+.billing-schedule-summary .booking-detail-bottom{padding:0 12px 10px}
+.billing-schedule-summary .booking-stay span{display:inline-flex;align-items:center;gap:3px;color:#0b1f46;font-size:12px}
+.billing-schedule-summary .booking-amount{color:#ff2a5b}
+.billing-schedule-scroll{display:grid;gap:10px}
+.billing-room-type-card{background:#fff;border:1px solid #ddd;border-radius:4px;box-shadow:0 1px 5px #0002;overflow:hidden}
+.billing-room-type-head,.billing-room-head{width:100%;border:0;background:#fff;display:flex;align-items:center;justify-content:space-between;text-align:left}
+.billing-room-type-head{padding:12px 14px;border-bottom:1px solid #e6e0d8;color:#ff810f}
+.billing-room-type-head strong{display:block;font-size:16px}
+.billing-room-type-head small,.billing-room-head small{display:flex;align-items:center;gap:4px;margin-top:4px;color:#111;font-size:12px;font-weight:600}
+.billing-room-block{border-bottom:1px solid #eee}
+.billing-room-block:last-child{border-bottom:0}
+.billing-room-head{padding:8px 36px 8px 46px;color:#ff810f}
+.billing-room-head strong{display:block;font-size:14px}
+.billing-room-detail{padding:10px 32px 12px 46px}
+.billing-date-range{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;margin-bottom:14px}
+.billing-date-range label{position:relative;height:38px;border:1px solid #d0d0d0;border-radius:4px;background:#fff;padding:10px 42px 9px 12px;font-size:13px}
+.billing-date-range label svg{position:absolute;right:12px;top:9px;color:#666}
+.billing-date-range input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.billing-select-all,.billing-daily-line{display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:8px;margin-left:28px;padding:8px 0;font-size:13px}
+.billing-select-all{display:flex;font-weight:700}
+.billing-select-all input,.billing-daily-line input{width:18px;height:18px;accent-color:#ff8c12}
+.billing-daily-line{border-bottom:1px solid #e5e0d8}
+.billing-daily-line span:first-of-type strong{display:block}
+.billing-daily-line small{display:block;margin-top:3px;font-size:12px}
+.billing-daily-line>span:last-child{text-align:right}
+.billing-schedule-actions{position:fixed;left:var(--sidebar-width, 206px);right:0;bottom:0;height:66px;background:#fff;box-shadow:0 -2px 10px #0002;display:flex;align-items:center;justify-content:center;z-index:20}
+.billing-schedule-actions .primary-button{min-width:154px;height:38px}
+.billing-schedule-actions .primary-button:disabled{background:#ddd;color:#aaa}
+.billing-rate-dialog{width:min(600px,calc(100vw - 28px));background:#fff;border-radius:4px;box-shadow:0 10px 35px #0005;overflow:hidden}
+.billing-rate-dialog-title{height:32px;background:#fff8ef;border-bottom:1px solid #e7dbcd;display:flex;align-items:center;justify-content:space-between;padding:0 12px;color:#ff810f}
+.billing-rate-dialog-title button{border:0;background:transparent;font-size:12px;color:#333}
+.billing-rate-dialog-sub{height:28px;background:#fff8ef;border-bottom:1px solid #eee1d4;display:flex;align-items:center;gap:4px;padding:0 12px;font-weight:700;font-size:13px}
+.billing-rate-fields{display:grid;grid-template-columns:1fr 1fr;gap:28px 40px;padding:22px 12px 24px}
+.billing-rate-fields label{display:grid;gap:5px;color:#8a8d96;font-size:13px}
+.billing-rate-fields input,.billing-rate-fields select{height:30px;border:0;border-bottom:1px solid #999;background:#fff;font-size:16px;color:#333;outline:0}
+.billing-rate-actions{display:flex;justify-content:flex-end;gap:10px;padding:8px 12px 8px}
+.billing-rate-actions button{border:0;border-radius:4px;background:#ff8a19;color:#fff;font-weight:700;padding:9px 14px;min-width:72px;box-shadow:0 2px 5px #0002}
 .billing-instruction-page{padding:0;align-items:stretch}.billing-instruction-card{background:#fff;min-height:100%;display:flex;flex-direction:column}.billing-instruction-head{padding:14px 12px;background:#fff7ed;border-bottom:1px solid #e6ded4;color:#f27f18}.billing-instruction-head span,.billing-instruction-head strong{display:block}.billing-instruction-head span{font-size:12px}.billing-instruction-head strong{font-size:16px;margin-top:5px}.billing-instruction-form{padding:22px 12px;flex:1}.billing-check{display:flex;flex-direction:column;gap:10px;color:#888;font-size:14px}.billing-check span:last-child{display:flex;align-items:center;gap:10px;color:#333;font-size:15px}.billing-check input{width:18px;height:18px;accent-color:#ff8d12}.billing-remark{display:flex;flex-direction:column;gap:8px;margin-top:38px;color:#888;font-size:16px}.billing-remark textarea{min-height:72px;resize:vertical;border:0;border-bottom:1px solid #999;padding:4px 0;font:inherit;color:#333;outline:0}.billing-instruction-actions{display:flex;justify-content:flex-end;gap:10px;padding:12px;border-top:1px solid #eee}
 .billing-instruction-overlay{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:18px;background:#0005}.billing-instruction-overlay .billing-instruction-card{width:min(600px,100%);min-height:0;max-height:90vh;border-radius:4px;box-shadow:0 8px 30px #0004;overflow:hidden}.billing-instruction-overlay .billing-instruction-form{flex:none;min-height:190px}.billing-instruction-overlay .billing-instruction-head{padding:12px}.billing-instruction-overlay .billing-instruction-actions{background:#fff}.billing-instruction-overlay .secondary-button,.billing-instruction-overlay .primary-button{min-width:72px}
 .transfer-party {

@@ -295,6 +295,7 @@ const schemaStatements = [
   `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS reference_no text NOT NULL DEFAULT ''`,
   `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS city_account boolean NOT NULL DEFAULT false`,
   `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS billing_remark text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS billing_schedule jsonb NOT NULL DEFAULT '[]'::jsonb`,
   `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS special_requests jsonb NOT NULL DEFAULT '{}'::jsonb`,
   `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS attachments jsonb NOT NULL DEFAULT '[]'::jsonb`,
   `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS adults integer NOT NULL DEFAULT 1`,
@@ -570,7 +571,7 @@ const schemaStatements = [
       property_id, booking_no, sort_order, guest, arrival_date, departure_date, status,
       assigned_rooms, checked_in_guests, guests, amount, highlight_dates,
       group_name, phone, account_name, credit_limit, print_rate, state_tax, tourism_tax,
-      email, sales_channel, source, segment, reference_no, city_account, billing_remark, special_requests, attachments
+      email, sales_channel, source, segment, reference_no, city_account, billing_remark, billing_schedule, special_requests, attachments
     )
     SELECT p_property_id, item.value->>'reference', item.ordinality::integer,
       item.value->>'guest', item.value->>'arrival', item.value->>'departure',
@@ -585,7 +586,7 @@ const schemaStatements = [
       COALESCE((item.value->>'printRate')::boolean, true), COALESCE((item.value->>'stateTax')::boolean, true),
       COALESCE((item.value->>'tourismTax')::boolean, true), COALESCE(item.value->>'email', ''),
       COALESCE(item.value->>'salesChannel', 'Direct'), COALESCE(item.value->>'source', 'Booking'),
-      COALESCE(item.value->>'segment', 'Leisure'), COALESCE(item.value->>'referenceNo', ''), COALESCE((item.value->>'cityAccount')::boolean, false), COALESCE(item.value->>'billingRemark', ''), COALESCE(item.value->'specialRequests', '{}'::jsonb), COALESCE(item.value->'attachments', '[]'::jsonb)
+      COALESCE(item.value->>'segment', 'Leisure'), COALESCE(item.value->>'referenceNo', ''), COALESCE((item.value->>'cityAccount')::boolean, false), COALESCE(item.value->>'billingRemark', ''), COALESCE(item.value->'billingSchedule', '[]'::jsonb), COALESCE(item.value->'specialRequests', '{}'::jsonb), COALESCE(item.value->'attachments', '[]'::jsonb)
     FROM jsonb_array_elements(COALESCE(p_state->'bookings', '[]'::jsonb))
       WITH ORDINALITY AS item(value, ordinality);
 
@@ -1046,7 +1047,7 @@ const schemaStatements = [
           'groupName', booking.group_name, 'phone', booking.phone, 'accountName', booking.account_name,
           'creditLimit', booking.credit_limit::double precision, 'printRate', booking.print_rate, 'stateTax', booking.state_tax,
           'tourismTax', booking.tourism_tax, 'email', booking.email, 'salesChannel', booking.sales_channel,
-          'source', booking.source, 'segment', booking.segment, 'referenceNo', booking.reference_no, 'cityAccount', booking.city_account, 'billingRemark', booking.billing_remark, 'specialRequests', booking.special_requests, 'attachments', booking.attachments
+          'source', booking.source, 'segment', booking.segment, 'referenceNo', booking.reference_no, 'cityAccount', booking.city_account, 'billingRemark', booking.billing_remark, 'billingSchedule', booking.billing_schedule, 'specialRequests', booking.special_requests, 'attachments', booking.attachments
         ) ORDER BY booking.sort_order)
         FROM public.hotelx_bookings AS booking
         WHERE booking.property_id = meta.id
@@ -1256,6 +1257,7 @@ SELECT
   booking.source,
   booking.segment,
   booking.reference_no,
+  COALESCE(booking.billing_schedule, '[]'::jsonb)::text,
   COALESCE(room.room_type_code, ''),
   COALESCE(room.adults, 1)::text,
   COALESCE(room.children, 0)::text,
@@ -1352,22 +1354,24 @@ export function createNormalizedTransportStorage(
       booking.segment = values[11] ?? 'Leisure';
       booking.referenceNo = values[12] ?? '';
 
-      const roomCode = values[13];
+      if (values[13]) booking.billingSchedule = JSON.parse(values[13]);
+
+      const roomCode = values[14];
       if (!roomCode) continue;
       const room = booking.rooms.find((item) => item.code === roomCode);
       if (!room) continue;
-      room.adults = numeric(values[14]);
-      room.children = numeric(values[15]);
-      room.infants = numeric(values[16]);
-      room.rateCode = values[17] ?? 'BAR';
-      room.roomRate = numeric(values[18]);
-      room.promoCode = values[19] ?? '';
-      room.discountPerNight = numeric(values[20]);
-      room.subtotal = numeric(values[21]);
-      room.discount = numeric(values[22]);
-      room.tax = numeric(values[23]);
-      room.total = numeric(values[24]);
-      if (values[25]) room.guestProfileIds = JSON.parse(values[25]);
+      room.adults = numeric(values[15]);
+      room.children = numeric(values[16]);
+      room.infants = numeric(values[17]);
+      room.rateCode = values[18] ?? 'BAR';
+      room.roomRate = numeric(values[19]);
+      room.promoCode = values[20] ?? '';
+      room.discountPerNight = numeric(values[21]);
+      room.subtotal = numeric(values[22]);
+      room.discount = numeric(values[23]);
+      room.tax = numeric(values[24]);
+      room.total = numeric(values[25]);
+      if (values[26]) room.guestProfileIds = JSON.parse(values[26]);
     }
     return [row[0], JSON.stringify(state)];
   };

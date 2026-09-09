@@ -25,6 +25,18 @@ export type BookingRoom = {
   /** Guest profile records assigned to this room through the Rooming List. */
   guestProfileIds?: string[];
 };
+export type BillingScheduleAdjustment = {
+  id: string;
+  roomKey: string;
+  roomTypeCode: string;
+  roomLabel: string;
+  date: string;
+  rateCode: string;
+  promoCode?: string;
+  roomRate: number;
+  discount: number;
+  total: number;
+};
 export type Booking = {
   reference: string;
   guest: string;
@@ -51,6 +63,7 @@ export type Booking = {
   referenceNo?: string;
   cityAccount?: boolean;
   billingRemark?: string;
+  billingSchedule?: BillingScheduleAdjustment[];
   specialRequests?: Record<string, string>;
   attachments?: Array<{ room: string; remarks: string; fileName?: string }>;
 };

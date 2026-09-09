@@ -177,7 +177,7 @@ export function Bookings({
     if (billingInstructionOpen) return <BillingInstruction booking={booking} onSave={onUpdate} onBack={() => setBillingInstructionOpen(false)} />;
     if (specialRequestOpen) return <SpecialRequest booking={booking} onSave={onUpdate} onBack={() => setSpecialRequestOpen(false)} />;
     if (attachmentsOpen) return <BookingAttachments booking={booking} onSave={onUpdate} onBack={() => setAttachmentsOpen(false)} />;
-    if (billingOpen) return <BillingSchedule booking={booking} bookingLegs={bookingLegs} onBack={() => setBillingOpen(false)} />;
+    if (billingOpen) return <BillingSchedule booking={booking} bookingLegs={bookingLegs} rateSetup={rateSetup} onSave={onUpdate} onBack={() => setBillingOpen(false)} />;
     const rooms = booking.rooms.map((room) => `${room.code} : ${room.count}`).join('   ');
     const assignments =
       booking.rooms.length === 1

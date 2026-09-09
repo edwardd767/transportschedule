@@ -23,7 +23,7 @@ import {
   type DayNote,
   type BookingTransferSelection,
 } from './transport-planning';
-import type { Booking } from './bookings';
+import type { BillingScheduleAdjustment, Booking } from './bookings';
 import {
   initialBookings,
   initialHotelMasters,
@@ -286,6 +286,29 @@ function rateSetup(value: unknown): RateSetupData {
   });
   unique(validity);
   return { seasons, calendar, elements, rateTypes, ratePlans, validity };
+}
+
+function billingSchedule(value: unknown): BillingScheduleAdjustment[] {
+  return Array.isArray(value)
+    ? value.slice(0, 500).map((entry) => {
+        const row = object(entry);
+        const roomRate = typeof row.roomRate === 'number' && Number.isFinite(row.roomRate) && row.roomRate >= 0 ? row.roomRate : 0;
+        const discount = typeof row.discount === 'number' && Number.isFinite(row.discount) && row.discount >= 0 ? row.discount : 0;
+        const total = typeof row.total === 'number' && Number.isFinite(row.total) && row.total >= 0 ? row.total : Math.max(0, roomRate - discount);
+        return {
+          id: text(row.id, 'billing schedule id', true, 120).slice(0, 120),
+          roomKey: text(row.roomKey, 'billing room key', true, 120).slice(0, 120),
+          roomTypeCode: text(row.roomTypeCode, 'billing room type', true, 20).trim().toUpperCase(),
+          roomLabel: text(row.roomLabel, 'billing room label', false, 80).slice(0, 80),
+          date: text(row.date, 'billing schedule date', true, 10),
+          rateCode: text(row.rateCode, 'billing rate code', true, 40).slice(0, 40),
+          promoCode: typeof row.promoCode === 'string' ? row.promoCode.slice(0, 40) : '',
+          roomRate,
+          discount,
+          total,
+        };
+      }).filter((item) => /^\d{4}-\d{2}-\d{2}$/.test(item.date))
+    : [];
 }
 function departure(value: unknown): DepartureInput {
   const v = object(value);
@@ -739,6 +762,7 @@ export function applyTransportAction(
         referenceNo: typeof v.referenceNo === 'string' ? v.referenceNo.slice(0, 100) : '',
         cityAccount: v.cityAccount === true,
         billingRemark: typeof v.billingRemark === 'string' ? v.billingRemark.slice(0, 1000) : '',
+        billingSchedule: billingSchedule(v.billingSchedule),
         specialRequests: v.specialRequests && typeof v.specialRequests === 'object' ? v.specialRequests as Record<string, string> : {},
         attachments: Array.isArray(v.attachments) ? v.attachments.slice(0, 100).map((item) => { const row = object(item); return { room: typeof row.room === 'string' ? row.room.slice(0, 120) : '', remarks: typeof row.remarks === 'string' ? row.remarks.slice(0, 2000) : '', fileName: typeof row.fileName === 'string' ? row.fileName.slice(0, 240) : '' }; }) : [],
       };
@@ -810,6 +834,7 @@ export function applyTransportAction(
         referenceNo: typeof v.referenceNo === 'string' ? v.referenceNo.slice(0, 100) : '',
         cityAccount: v.cityAccount === true,
         billingRemark: typeof v.billingRemark === 'string' ? v.billingRemark.slice(0, 1000) : '',
+        billingSchedule: billingSchedule(v.billingSchedule),
         specialRequests: v.specialRequests && typeof v.specialRequests === 'object' ? v.specialRequests as Record<string, string> : {},
         attachments: Array.isArray(v.attachments) ? v.attachments.slice(0, 100).map((item) => { const row = object(item); return { room: typeof row.room === 'string' ? row.room.slice(0, 120) : '', remarks: typeof row.remarks === 'string' ? row.remarks.slice(0, 2000) : '', fileName: typeof row.fileName === 'string' ? row.fileName.slice(0, 240) : '' }; }) : [],
       };
