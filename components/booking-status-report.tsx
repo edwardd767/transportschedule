@@ -23,7 +23,6 @@ export function BookingStatusReport({ bookings, profiles, hotelName, from, to, o
     <div className="report-view-head"><button type="button" onClick={onBack}>‹ Back to reports</button><strong>Booking Status Report</strong></div>
     <div className="report-date-filter"><label>Arrival Start Date<input type="date" value={from} max={to || undefined} onChange={event => onFrom(event.target.value)} /></label><label>Arrival End Date<input type="date" value={to} min={from || undefined} onChange={event => onTo(event.target.value)} /></label></div>
     <header className="booking-report-heading"><div>{hotelName}</div><h2>Booking Status Report</h2><p>Arrival Start Date: <b>{dateLabel(from)}</b> &nbsp; Arrival End Date: <b>{dateLabel(to)}</b></p></header>
-    <p className="booking-report-note">Scroll horizontally to view all columns. “—” means no saved value. Booking date, assigned room number, deposit and audit details are not currently supplied by the booking records; the date filter uses arrival dates.</p>
     <div className="report-table-wrap" tabIndex={0} role="region" aria-label="Booking status report, scroll to view all columns"><table><thead><tr>{columns.map(item => <th scope="col" key={item}>{item}</th>)}</tr></thead><tbody>
       {rows.map(item => {
         const ids = new Set(item.rooms.flatMap(room => room.guestProfileIds ?? []));
