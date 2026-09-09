@@ -148,8 +148,7 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
   }
 
   return <section className="booking-workspace billing-schedule billing-schedule-page" aria-label="Billing schedule">
-    <div className="rooming-hotel-header billing-schedule-header"><button type="button" className="rooming-back" onClick={onBack} aria-label="Back to booking">‹</button><div><small>HMS</small><strong>HOTEL PARADISE</strong></div></div>
-    <div className="rooming-breadcrumb">... / ... / Billing Schedule</div>
+    <div className="billing-schedule-breadcrumb"><button type="button" onClick={onBack} aria-label="Back to booking">‹</button><span>... / ... / Billing Schedule</span></div>
     <div className="booking-detail-summary billing-schedule-summary">
       <div className="booking-detail-top"><div className="booking-stay"><strong>{stayLabel(booking.arrival)} - {stayLabel(booking.departure)}</strong><span><DoorClosed size={14} /> 0/1&nbsp;&nbsp; <UserRound size={14} /> 0/1</span></div><strong className="booking-amount">{money(roomTotal + transportTotal)}</strong></div>
       <div className="booking-detail-bottom"><span>{booking.reference} <span className="booking-divider">|</span> {booking.guest}</span></div>

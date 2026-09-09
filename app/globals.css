@@ -3405,9 +3405,10 @@ p {
 .billing-line small { color: #727985; }
 .billing-total { display: flex; justify-content: space-between; align-items: center; background: #fff6eb; border-radius: 8px; padding: 14px 18px; font-size: 16px; }
 .billing-total strong { color: #f06f1f; font-size: 20px; }
-.billing-schedule-page{position:relative;min-height:100%;padding:0 12px 78px;background:#f3f3f3;align-content:start;gap:0;overflow:auto}
-.billing-schedule-page .rooming-hotel-header{margin:10px 0 0}
-.billing-schedule-page .rooming-breadcrumb{margin:0;background:#ff8a19}
+.billing-schedule-page{position:relative;min-height:100%;padding:0 14px 78px;background:#f3f3f3;align-content:start;gap:0;overflow:auto}
+.billing-schedule-breadcrumb{height:26px;background:#ff8a19;display:flex;align-items:center;gap:4px;padding:0 12px;font-size:11px}
+.billing-schedule-breadcrumb button{width:22px;height:22px;border:0;background:transparent;color:#333;font-size:20px;line-height:20px;padding:0}
+.billing-schedule-breadcrumb span{font-weight:600}
 .billing-schedule-summary{border-radius:0;margin:0 0 16px;box-shadow:none;border:0;border-bottom:1px solid #ebe2d8;background:#fff7ee}
 .billing-schedule-summary .booking-detail-top{padding:10px 12px 4px}
 .billing-schedule-summary .booking-detail-bottom{padding:0 12px 10px}
