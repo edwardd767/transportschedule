@@ -61,6 +61,7 @@ import { MonthTimetable } from '@/components/month-timetable';
 import { ScheduleTemplates } from '@/components/schedule-templates';
 import { BookingTransfers } from '@/components/booking-transfers';
 import { EditTransportTrip } from '@/components/edit-transport-trip';
+import { TransportListingReport } from '@/components/transport-listing-report';
 import {
   TransportConnection,
   TransportDataContext,
@@ -199,6 +200,7 @@ function HomeContent({ store }: { store: TransportData }) {
     | 'booking'
     | 'frontdesk'
     | 'reporting'
+    | 'transportlisting'
     | 'guestprofile'
   >('booking');
   const [rateSetupSection, setRateSetupSection] = useState<RateSetupSection | null>(null);
@@ -687,6 +689,8 @@ function HomeContent({ store }: { store: TransportData }) {
               <span>{activeBooking ? (bookingEditing ? '... / Edit' : '... / Booking') : 'Booking'}</span>
             ) : view === 'frontdesk' ? (
               <span>Front Desk</span>
+            ) : view === 'transportlisting' ? (
+              <span>Transport <ChevronRight size={14} /> Listing</span>
             ) : view === 'reporting' ? (
               <span>Digital Reporting</span>
             ) : view === 'hotelsettings' ? (
@@ -870,6 +874,8 @@ function HomeContent({ store }: { store: TransportData }) {
               }
             />
           </div>
+        ) : view === 'transportlisting' ? (
+          <TransportListingReport trips={trips} setup={setup} bookingLegs={bookingLegs} bookings={bookings} />
         ) : view === 'reporting' ? (
           <section className="digital-report-catalog" aria-label="Digital Reporting">
             <div className="digital-report-tools"><label><Search size={21} /><input placeholder="Search here..." value={reportSearch} onChange={(event) => setReportSearch(event.target.value)} /></label><select value={reportCategory} onChange={(event) => setReportCategory(event.target.value)}><option>All</option><option>Finance</option><option>Booking</option></select></div>
@@ -965,7 +971,7 @@ function HomeContent({ store }: { store: TransportData }) {
                   <button className="schedule-listing-trigger" type="button" aria-expanded={listingMenuOpen} onClick={() => setListingMenuOpen((open) => !open)}>
                     <List size={16} /> Listing <ChevronRight size={14} className={listingMenuOpen ? 'listing-menu-open' : ''} />
                   </button>
-                  {listingMenuOpen && <div className="schedule-listing-popover"><button type="button" onClick={() => { setListingMenuOpen(false); setScheduleView('day'); }}><List size={16} /> Transport Listing</button></div>}
+                  {listingMenuOpen && <div className="schedule-listing-popover"><button type="button" onClick={() => { setListingMenuOpen(false); setView('transportlisting'); }}><List size={16} /> Transport Listing</button></div>}
                 </div>
                 <button
                   className="primary-button"
