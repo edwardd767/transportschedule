@@ -21,7 +21,7 @@ if (!html.includes('Booking Listing') || !html.includes('/transportschedule/')) 
 const pages = new URL('../dist/pages/', import.meta.url);
 mkdirSync(pages, { recursive: true });
 cpSync(new URL('transportschedule/_next/', output), new URL('_next/', pages), { recursive: true });
-for (const file of ['index.html', 'index.rsc', 'favicon.svg']) {
+for (const file of ['index.html', 'index.rsc', 'icon.png']) {
   cpSync(new URL(file, output), new URL(file, pages));
 }
 writeFileSync(new URL('.nojekyll', pages), '');
