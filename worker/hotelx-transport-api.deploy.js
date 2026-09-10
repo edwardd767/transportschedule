@@ -2194,7 +2194,6 @@ var schemaStatements = [
     department_name text NOT NULL,
     incidental_charges jsonb NOT NULL DEFAULT '[]'::jsonb,
     reasons jsonb NOT NULL DEFAULT '[]'::jsonb,
-    sales_channels jsonb NOT NULL DEFAULT '[]'::jsonb,
     PRIMARY KEY (property_id, department_id)
   )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_sales_channel (
@@ -2210,21 +2209,34 @@ var schemaStatements = [
   )`,
   `CREATE INDEX IF NOT EXISTS hotelx_sales_channel_department_idx
     ON public.hotelx_sales_channel(property_id, department_id, sort_order)`,
-  `INSERT INTO public.hotelx_sales_channel (
-      property_id, department_id, sales_channel_id, sort_order, sales_channel_name, active
-    )
-    SELECT department.property_id, department.department_id,
-      department.department_id || '-sales-channel-' || channel.ordinality::text,
-      channel.ordinality::integer, channel.value #>> '{}', true
-    FROM public.hotelx_department AS department
-    CROSS JOIN LATERAL jsonb_array_elements(COALESCE(department.sales_channels, '[]'::jsonb))
-      WITH ORDINALITY AS channel(value, ordinality)
-    WHERE NOT EXISTS (
-      SELECT 1 FROM public.hotelx_sales_channel AS existing
-      WHERE existing.property_id = department.property_id
-        AND existing.department_id = department.department_id
-    )
-    ON CONFLICT DO NOTHING`,
+  `DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'hotelx_department'
+          AND column_name = 'sales_channels'
+      ) THEN
+        EXECUTE $sql$
+          INSERT INTO public.hotelx_sales_channel (
+            property_id, department_id, sales_channel_id, sort_order, sales_channel_name, active
+          )
+          SELECT department.property_id, department.department_id,
+            department.department_id || '-sales-channel-' || channel.ordinality::text,
+            channel.ordinality::integer, channel.value #>> '{}', true
+          FROM public.hotelx_department AS department
+          CROSS JOIN LATERAL jsonb_array_elements(COALESCE(department.sales_channels, '[]'::jsonb))
+            WITH ORDINALITY AS channel(value, ordinality)
+          WHERE NOT EXISTS (
+            SELECT 1 FROM public.hotelx_sales_channel AS existing
+            WHERE existing.property_id = department.property_id
+              AND existing.department_id = department.department_id
+          )
+          ON CONFLICT DO NOTHING
+        $sql$;
+      END IF;
+    END $$`,
+  `ALTER TABLE public.hotelx_department DROP COLUMN IF EXISTS sales_channels`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_segments (
     property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
     segment_id text NOT NULL,
@@ -2539,11 +2551,11 @@ var schemaStatements = [
       WITH ORDINALITY AS item(value, ordinality);
 
     INSERT INTO public.hotelx_department (
-      property_id, department_id, sort_order, department_name, incidental_charges, reasons, sales_channels
+      property_id, department_id, sort_order, department_name, incidental_charges, reasons
     )
     SELECT p_property_id, item.value->>'id', item.ordinality::integer,
       item.value->>'name', COALESCE(item.value->'incidentalCharges', '[]'::jsonb),
-      COALESCE(item.value->'reasons', '[]'::jsonb), COALESCE(item.value->'salesChannels', '[]'::jsonb)
+      COALESCE(item.value->'reasons', '[]'::jsonb)
     FROM jsonb_array_elements(COALESCE(p_state #> '{hotelMasters,departments}', '[]'::jsonb))
       WITH ORDINALITY AS item(value, ordinality);
 
@@ -3025,7 +3037,7 @@ var schemaStatements = [
               WHERE channel.property_id = department.property_id
                 AND channel.department_id = department.department_id
                 AND channel.active
-            ), department.sales_channels, '[]'::jsonb)
+            ), '[]'::jsonb)
           ) ORDER BY department.sort_order)
           FROM public.hotelx_department AS department
           WHERE department.property_id = meta.id
