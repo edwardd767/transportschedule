@@ -54,6 +54,17 @@ export type HotelMasters = {
   segments: HotelSegment[];
 };
 export const initialHotelProfile: HotelProfile = { hotelName: 'HOTEL PARADISE', address: '123, JALAN TUN SAMBANTHAM', postcode: '47301', country: 'Malaysia', city: 'Petaling Jaya', state: 'Selangor', hotelType: 'Room', companyName: 'IFCA MSC Berhad', companyRegNo: '199701037892', sstRegNo: '29102119291', ttxRegNo: '', onlineBookingUrl: '', liveRunDate: '-', contactPerson: 'Edward Jacob', phoneNo: 'Member Service 03 7661 6238, Front Office 012 25...', mobileNo: '0125219931', reservationEmail: 'edwarddurai@ifca.com.my', businessEmail: 'arikh@ifca.com.my', bookingCancellationDays: 3, currencyCode: 'MYR', floatAmount: 0, paxCount: 'No. of Pax Manual Updated', childRatesApplied: false, operationalPolicy: { standardCheckInTime: '01:00 PM', standardCheckOutTime: '12:00 PM', nightAuditCutOffTime: '10:00 AM', postpaid: false, floorPlan: false, cashierClosure: false, occupancy: { houseUse: true, dayUse: true, complimentary: true, ooo: false, ooi: false } } };
+export const defaultSalesChannels = ['Direct', 'Website', 'OTA', 'Corporate'];
+const legacySalesChannelPattern = /^Sales Channel \d+$/;
+export function cleanSalesChannels(channels: string[] = []) {
+  const unique = Array.from(new Set(channels.map((item) => item.trim()).filter(Boolean)));
+  if (!unique.length || unique.every((item) => legacySalesChannelPattern.test(item))) return defaultSalesChannels;
+  return unique;
+}
+export function salesChannelsFromDepartments(departments: HotelDepartment[] = []) {
+  const salesDepartment = departments.find((department) => department.id === 'sales-marketing') ?? departments.find((department) => department.name.toLowerCase() === 'sales & marketing') ?? departments.find((department) => department.salesChannels.length);
+  return cleanSalesChannels(salesDepartment?.salesChannels ?? []);
+}
 export const initialRoomStatuses: RoomStatus[] = [
   { code: 'OC', description: 'Occupied Clean', color: '#26743a', active: true },
   { code: 'OD', description: 'Occupied Dirty', color: '#a5001b', active: true },
@@ -77,8 +88,8 @@ export const initialDepartments: HotelDepartment[] = [
   ['city-ledger', 'City Ledger', 17, 0, 0], ['food-beverages', 'Food and Beverages', 47, 4, 0],
   ['front-office', 'Front Office', 19, 5, 0], ['hotel-adjustment', 'Hotel Adjustment', 1, 0, 0],
   ['housekeeping', 'Housekeeping', 8, 7, 0], ['room-revenue', 'Room Revenue', 6, 5, 0],
-  ['room-service', 'Room service', 1, 0, 0], ['sales-marketing', 'Sales & Marketing', 0, 0, 13],
-].map(([id, name, chargeCount, reasons, channels]) => ({ id: String(id), name: String(name), incidentalCharges: charges(String(id), Number(chargeCount)), reasons: entries('Reason', Number(reasons)), salesChannels: entries('Sales Channel', Number(channels)) }));
+  ['room-service', 'Room service', 1, 0, 0], ['sales-marketing', 'Sales & Marketing', 0, 0, defaultSalesChannels.length],
+].map(([id, name, chargeCount, reasons, channels]) => ({ id: String(id), name: String(name), incidentalCharges: charges(String(id), Number(chargeCount)), reasons: entries('Reason', Number(reasons)), salesChannels: String(id) === 'sales-marketing' ? defaultSalesChannels : entries('Sales Channel', Number(channels)) }));
 
 const locations: HotelLocation[] = Array.from({ length: 7 }, (_, index) => ({
   code: `L${index + 1}`,

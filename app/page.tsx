@@ -80,6 +80,7 @@ import {
   TransportRecovery,
 } from '@/components/transport-connection';
 import { useTransportData, type TransportData } from '@/lib/use-transport-data';
+import { salesChannelsFromDepartments } from '@/lib/hotel-masters';
 import {
   Sheet,
   SheetContent,
@@ -753,6 +754,7 @@ function HomeContent({ store }: { store: TransportData }) {
             roomTypes={hotelMasters.roomTypes}
             rateSetup={rateSetup}
             segments={hotelMasters.segments}
+            salesChannels={salesChannelsFromDepartments(hotelMasters.departments)}
             booking={activeBooking}
             onCreate={async (booking) => {
               await store.run({ type: 'bookingCreate', value: booking });

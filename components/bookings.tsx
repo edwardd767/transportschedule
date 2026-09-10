@@ -64,6 +64,7 @@ export function Bookings({
   roomTypes,
   rateSetup,
   segments,
+  salesChannels,
   booking,
   onSelect,
   onOpenTransport,
@@ -84,6 +85,7 @@ export function Bookings({
   roomTypes: HotelRoomType[];
   rateSetup: RateSetupData;
   segments: HotelSegment[];
+  salesChannels: string[];
   booking: Booking | null;
   onSelect: (booking: Booking) => void;
   onOpenTransport: (booking: Booking) => void;
@@ -164,6 +166,7 @@ export function Bookings({
         roomTypes={roomTypes}
         rateSetup={rateSetup}
         segments={segments}
+        salesChannels={salesChannels}
         onCancel={() => setCreateOpen(false)}
         onNotice={onNotice}
         onCreate={async (value) => {
@@ -196,7 +199,7 @@ export function Bookings({
             </div>
             <div className="booking-detail-bottom"><span>{booking.reference} <span className="booking-divider">|</span> {booking.guest}</span></div>
           </div>
-          <BookingEdit childRatesApplied={childRatesApplied} rateSetup={rateSetup} bookings={bookings} booking={booking} roomTypes={roomTypes} onCancel={() => onEditingChange(false)} onNotice={onNotice} onUpdate={async (value) => { await onUpdate(value); onEditingChange(false); }} />
+          <BookingEdit childRatesApplied={childRatesApplied} rateSetup={rateSetup} bookings={bookings} booking={booking} roomTypes={roomTypes} salesChannels={salesChannels} onCancel={() => onEditingChange(false)} onNotice={onNotice} onUpdate={async (value) => { await onUpdate(value); onEditingChange(false); }} />
         </section>
       );
     }

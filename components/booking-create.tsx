@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import type { Booking } from '@/lib/bookings';
 import { initialRateSetupData, type RateSetupData } from '@/lib/rate-setup-data';
-import { nextBookingReference, type HotelRoomType, type HotelSegment } from '@/lib/hotel-masters';
+import { defaultSalesChannels, nextBookingReference, type HotelRoomType, type HotelSegment } from '@/lib/hotel-masters';
 
 type RoomLine = {
   id: string;
@@ -58,6 +58,7 @@ export function BookingCreate({
   roomTypes,
   rateSetup,
   segments = [],
+  salesChannels = defaultSalesChannels,
   onCreate,
   onCancel,
   onNotice,
@@ -67,6 +68,7 @@ export function BookingCreate({
   roomTypes: HotelRoomType[];
   rateSetup?: RateSetupData;
   segments?: HotelSegment[];
+  salesChannels?: string[];
   onCreate: (booking: Booking) => Promise<void>;
   onCancel: () => void;
   onNotice: (message: string) => void;
@@ -99,6 +101,7 @@ export function BookingCreate({
   const [roomRate, setRoomRate] = useState(0);
   const activeRatePlans = effectiveRateSetup.ratePlans.filter((item) => item.active);
   const rateItems = activeRatePlans.map((item) => ({ value: item.code, label: `${item.code} - ${item.description}` }));
+  const salesChannelItems = salesChannels.map((item) => ({ value: item, label: item }));
   const rateAmount = (code: string) => { const plan = activeRatePlans.find((item) => item.code === code); const valid = effectiveRateSetup.validity.find((item) => item.rateSetupId === plan?.id && item.active && arrival >= item.from && arrival <= item.to); const season = effectiveRateSetup.calendar[arrival] || effectiveRateSetup.seasons[0]?.id; return valid?.seasonalRates?.[roomType]?.[season || '']?.amount || 0; };
   const [promoCode, setPromoCode] = useState('NONE');
   const [discountPerNight, setDiscountPerNight] = useState(0);
@@ -322,12 +325,7 @@ export function BookingCreate({
             </label>
             <label className="booking-line-field booking-choice-field">
               <span>Sales Channel</span>
-              <Choice label="Sales Channel" value={salesChannel} onChange={setSalesChannel} items={[
-                { value: 'Direct', label: 'Direct' },
-                { value: 'Website', label: 'Website' },
-                { value: 'OTA', label: 'OTA' },
-                { value: 'Corporate', label: 'Corporate' },
-              ]} />
+              <Choice label="Sales Channel" value={salesChannel} onChange={setSalesChannel} items={salesChannelItems} />
             </label>
             <label className="booking-line-field booking-choice-field">
               <span>Source *</span>

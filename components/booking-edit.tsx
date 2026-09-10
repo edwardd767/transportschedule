@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import type { Booking, BookingRoom } from '@/lib/bookings';
 import type { RateSetupData } from '@/lib/rate-setup-data';
-import type { HotelRoomType } from '@/lib/hotel-masters';
+import { defaultSalesChannels, type HotelRoomType } from '@/lib/hotel-masters';
 
 const money = new Intl.NumberFormat('en-MY', {
   minimumFractionDigits: 2,
@@ -73,6 +73,7 @@ export function BookingEdit({
   bookings,
   booking,
   roomTypes,
+  salesChannels = defaultSalesChannels,
   onCancel,
   onUpdate,
   onNotice,
@@ -82,6 +83,7 @@ export function BookingEdit({
   bookings: Booking[];
   booking: Booking;
   roomTypes: HotelRoomType[];
+  salesChannels?: string[];
   onCancel: () => void;
   onUpdate: (booking: Booking) => Promise<void>;
   onNotice: (message: string) => void;
@@ -113,6 +115,7 @@ export function BookingEdit({
   const [infants, setInfants] = useState(0);
   const [rateCode, setRateCode] = useState('BAR');
   const [roomRate, setRoomRate] = useState(0);
+  const salesChannelItems = salesChannels.map((item) => ({ value: item, label: item }));
   const [promoCode, setPromoCode] = useState('NONE');
   const [discountPerNight, setDiscountPerNight] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -285,7 +288,7 @@ export function BookingEdit({
           </div>
           <div className="booking-contact-grid booking-contact-lower">
             <label className="booking-line-field booking-full-field"><span>Email Address</span><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} /></label>
-            <label className="booking-line-field booking-choice-field"><span>Sales Channel</span><Choice label="Sales Channel" value={salesChannel} onChange={setSalesChannel} items={[{ value: 'Direct', label: 'Direct' }, { value: 'Website', label: 'Website' }, { value: 'OTA', label: 'OTA' }, { value: 'Corporate', label: 'Corporate' }]} /></label>
+            <label className="booking-line-field booking-choice-field"><span>Sales Channel</span><Choice label="Sales Channel" value={salesChannel} onChange={setSalesChannel} items={salesChannelItems} /></label>
             <label className="booking-line-field booking-choice-field"><span>Source *</span><Choice label="Source" value={source} onChange={setSource} items={[{ value: 'Booking', label: 'Booking' }, { value: 'Walk-In', label: 'Walk-In' }, { value: 'OTA', label: 'OTA' }, { value: 'Corporate', label: 'Corporate' }]} /></label>
             <label className="booking-line-field booking-choice-field"><span>Segment *</span><Choice label="Segment" value={segment} onChange={setSegment} items={[{ value: 'Leisure', label: 'Leisure' }, { value: 'Corporate', label: 'Corporate' }, { value: 'Group', label: 'Group' }, { value: 'OTA', label: 'OTA' }]} /></label>
             <label className="booking-line-field"><span>Reference No</span><input value={referenceNo} onChange={(event) => setReferenceNo(event.target.value)} /></label>
