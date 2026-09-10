@@ -148,6 +148,9 @@ export function normalizeTransportState(state: TransportState): TransportState {
       ...element,
       postingRhythm: element.postingRhythm ?? 'Daily',
     })),
+    addOns: Array.isArray(savedRateSetup.addOns)
+      ? savedRateSetup.addOns.map((item) => ({ ...item, postingRhythm: item.postingRhythm ?? 'Daily' }))
+      : structuredClone(initialRateSetupData.addOns),
     ratePlans: savedRateSetup.ratePlans.map((plan) => ({
       ...plan,
       rateTypeId: plan.rateTypeId ?? '',
@@ -249,6 +252,17 @@ function rateSetup(value: unknown): RateSetupData {
     return { id: text(row.id, 'rate element ID', true, 100), name: text(row.name, 'rate element', true, 160).trim(), basis, postingRhythm: postingRhythm as 'Daily' | 'First Night' | 'Last Night', min, max, amount: decimal(row.amount, 'rate element amount'), active: boolean(row.active) };
   });
   unique(elements);
+  const addOns = list(v.addOns ?? [], 1000).map((entry) => {
+    const row = object(entry);
+    const min = number(row.min, 'minimum quantity', 0, 10000);
+    const max = number(row.max, 'maximum quantity', min, 10000);
+    const basis = text(row.basis, 'charge basis', true, 80);
+    if (!['Flat Rate', 'Per Person', 'Per Adult', 'Per Child', 'Per Infant'].includes(basis)) throw new Error('Choose a valid charge basis.');
+    const postingRhythm = typeof row.postingRhythm === 'string' ? row.postingRhythm : 'Daily';
+    if (!['Daily', 'First Night', 'Last Night'].includes(postingRhythm)) throw new Error('Choose a valid posting rhythm.');
+    return { id: text(row.id, 'add-on ID', true, 100), name: text(row.name, 'add-on item', true, 160).trim(), basis, postingRhythm: postingRhythm as 'Daily' | 'First Night' | 'Last Night', min, max, amount: decimal(row.amount, 'add-on amount'), active: boolean(row.active) };
+  });
+  unique(addOns);
   const rateTypes = list(v.rateTypes, 1000).map((entry) => {
     const row = object(entry);
     return { id: text(row.id, 'rate type ID', true, 100), name: text(row.name, 'rate type', true, 160).trim(), active: boolean(row.active) };
@@ -286,7 +300,7 @@ function rateSetup(value: unknown): RateSetupData {
     return { id: text(row.id, 'validity ID', true, 100), rateSetupId, from, to, active: boolean(row.active), seasonalRates, inclusiveElements, addOnElements };
   });
   unique(validity);
-  return { seasons, calendar, elements, rateTypes, ratePlans, validity };
+  return { seasons, calendar, elements, addOns, rateTypes, ratePlans, validity };
 }
 
 function billingSchedule(value: unknown): BillingScheduleAdjustment[] {
