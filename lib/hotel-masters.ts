@@ -58,12 +58,14 @@ export const defaultSalesChannels = ['Direct', 'Website', 'OTA', 'Corporate'];
 const legacySalesChannelPattern = /^Sales Channel \d+$/;
 export function cleanSalesChannels(channels: string[] = []) {
   const unique = Array.from(new Set(channels.map((item) => item.trim()).filter(Boolean)));
-  if (!unique.length || unique.every((item) => legacySalesChannelPattern.test(item))) return defaultSalesChannels;
+  if (!unique.length) return [];
+  if (unique.every((item) => legacySalesChannelPattern.test(item))) return defaultSalesChannels;
   return unique;
 }
 export function salesChannelsFromDepartments(departments: HotelDepartment[] = []) {
   const salesDepartment = departments.find((department) => department.id === 'sales-marketing') ?? departments.find((department) => department.name.toLowerCase() === 'sales & marketing') ?? departments.find((department) => department.salesChannels.length);
-  return cleanSalesChannels(salesDepartment?.salesChannels ?? []);
+  const channels = cleanSalesChannels(salesDepartment?.salesChannels ?? []);
+  return channels.length ? channels : defaultSalesChannels;
 }
 export const initialRoomStatuses: RoomStatus[] = [
   { code: 'OC', description: 'Occupied Clean', color: '#26743a', active: true },
