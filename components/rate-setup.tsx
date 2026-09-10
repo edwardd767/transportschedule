@@ -164,7 +164,7 @@ const moduleItems: { key: RateSetupSection; label: string; detail: string }[] = 
   { key: 'season-setup', label: 'Season Setup', detail: 'Season: 4' },
   { key: 'season-calendar', label: 'Season Calendar', detail: 'Latest updated on 23 Jul 2026' },
   { key: 'rate-element', label: 'Rate Element', detail: 'Latest update on 19 Aug 2026' },
-  { key: 'add-on', label: 'Add On Item', detail: 'Latest update on 19 Aug 2026' },
+  { key: 'add-on', label: 'Add On Setup', detail: 'Latest update on 19 Aug 2026' },
   { key: 'rate-type', label: 'Rate Type', detail: 'Latest updated on 23 Jul 2026' },
   { key: 'rate-setup', label: 'Rate Setup', detail: 'Latest updated on 27 Aug 2026' },
 ];
@@ -483,7 +483,7 @@ function AddOnPage({ items, onChange }: { items: AddOnItem[]; onChange: (value: 
 
   return (
     <div className="rate-section-page">
-      <SearchHeader title="Add On Item" count={items.length} query={query} onQuery={setQuery} />
+      <SearchHeader title="Add On Setup" count={items.length} query={query} onQuery={setQuery} />
       <div className="rate-row-list">
         {filtered.map((item) => (
           <div className={`rate-list-row detailed${item.active ? '' : ' inactive'}`} key={item.id}>
@@ -503,8 +503,8 @@ function AddOnPage({ items, onChange }: { items: AddOnItem[]; onChange: (value: 
       </div>
       <FloatingAdd label="Add add on item" onClick={() => setDraft({ id: crypto.randomUUID(), name: '', basis: 'Flat Rate', postingRhythm: 'Daily', min: 1, max: 1, amount: 0, active: true })} />
       {draft && (
-        <EditorModal title={items.some((item) => item.id === draft.id) ? 'Edit Add On Item' : 'New Add On Item'} onCancel={() => setDraft(null)} onSave={save}>
-          <label className="rate-editor-field">Add On Item<input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /></label>
+        <EditorModal title={items.some((item) => item.id === draft.id) ? 'Edit Add On Setup' : 'New Add On Setup'} onCancel={() => setDraft(null)} onSave={save}>
+          <label className="rate-editor-field">Add On Setup<input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /></label>
           <label className="rate-editor-field">Charge Basis<select value={draft.basis} onChange={(event) => setDraft({ ...draft, basis: event.target.value })}><option>Flat Rate</option><option>Per Person</option><option>Per Adult</option><option>Per Child</option><option>Per Infant</option></select></label>
           <label className="rate-editor-field">Posting Rhythm<select value={draft.postingRhythm} onChange={(event) => setDraft({ ...draft, postingRhythm: event.target.value as AddOnItem['postingRhythm'] })}><option>Daily</option><option>First Night</option><option>Last Night</option></select></label>
           <div className="rate-editor-grid"><label className="rate-editor-field">Minimum<input type="number" min="0" value={draft.min} onChange={(event) => setDraft({ ...draft, min: Number(event.target.value) })} /></label><label className="rate-editor-field">Maximum<input type="number" min="0" value={draft.max} onChange={(event) => setDraft({ ...draft, max: Number(event.target.value) })} /></label></div>
