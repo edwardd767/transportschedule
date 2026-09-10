@@ -122,8 +122,8 @@ const pages = {
     icon: ClipboardList,
   },
   ratePolicy: {
-    title: 'Rate Policy',
-    detail: 'Rate Policy Setup.',
+    title: 'Rate Setup',
+    detail: 'Hotel Rate Setup.',
     section: 'Rate Setup Master',
     empty: 'Hotel rates will be maintained on this page.',
     icon: ClipboardList,
