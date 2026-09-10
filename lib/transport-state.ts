@@ -282,7 +282,8 @@ function rateSetup(value: unknown): RateSetupData {
       }
     }
     const inclusiveElements = list(row.inclusiveElements).map((value) => text(value, 'inclusive element ID', true, 100));
-    return { id: text(row.id, 'validity ID', true, 100), rateSetupId, from, to, active: boolean(row.active), seasonalRates, inclusiveElements };
+    const addOnElements = list(row.addOnElements).map((value) => text(value, 'add-on element ID', true, 100));
+    return { id: text(row.id, 'validity ID', true, 100), rateSetupId, from, to, active: boolean(row.active), seasonalRates, inclusiveElements, addOnElements };
   });
   unique(validity);
   return { seasons, calendar, elements, rateTypes, ratePlans, validity };

@@ -40,6 +40,21 @@ ALTER TABLE public.hotelx_rate_element
   ADD COLUMN IF NOT EXISTS posting_rhythm text NOT NULL DEFAULT 'Daily'
   CHECK (posting_rhythm IN ('Daily', 'First Night', 'Last Night'));
 
+CREATE TABLE IF NOT EXISTS public.hotelx_addon (
+  property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+  id text NOT NULL,
+  sort_order integer NOT NULL,
+  name text NOT NULL,
+  basis text NOT NULL,
+  posting_rhythm text NOT NULL DEFAULT 'Daily' CHECK (posting_rhythm IN ('Daily', 'First Night', 'Last Night')),
+  min_qty integer NOT NULL DEFAULT 0 CHECK (min_qty >= 0),
+  max_qty integer NOT NULL DEFAULT 0 CHECK (max_qty >= min_qty),
+  amount numeric(14,2) NOT NULL DEFAULT 0 CHECK (amount >= 0),
+  active boolean NOT NULL DEFAULT true,
+  updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (property_id, id)
+);
+
 CREATE TABLE IF NOT EXISTS public.hotelx_rate_type (
   property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
   id text NOT NULL,
@@ -82,6 +97,7 @@ CREATE TABLE IF NOT EXISTS public.hotelx_rate_setup_validity (
   active boolean NOT NULL DEFAULT true,
   seasonal_rates jsonb NOT NULL DEFAULT '{}'::jsonb,
   inclusive_elements jsonb NOT NULL DEFAULT '[]'::jsonb,
+  add_on_elements jsonb NOT NULL DEFAULT '[]'::jsonb,
   updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (property_id, rate_setup_id, id),
   FOREIGN KEY (property_id, rate_setup_id) REFERENCES public.hotelx_rate_setup(property_id, id) ON DELETE CASCADE,
@@ -92,6 +108,8 @@ ALTER TABLE public.hotelx_rate_setup_validity
   ADD COLUMN IF NOT EXISTS seasonal_rates jsonb NOT NULL DEFAULT '{}'::jsonb;
 ALTER TABLE public.hotelx_rate_setup_validity
   ADD COLUMN IF NOT EXISTS inclusive_elements jsonb NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE public.hotelx_rate_setup_validity
+  ADD COLUMN IF NOT EXISTS add_on_elements jsonb NOT NULL DEFAULT '[]'::jsonb;
 
 CREATE TABLE IF NOT EXISTS public.hotelx_hotel_setup (
   property_id text PRIMARY KEY REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,

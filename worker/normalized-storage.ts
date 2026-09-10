@@ -404,6 +404,20 @@ const schemaStatements = [
   `ALTER TABLE public.hotelx_rate_element
     ADD COLUMN IF NOT EXISTS posting_rhythm text NOT NULL DEFAULT 'Daily'
     CHECK (posting_rhythm IN ('Daily', 'First Night', 'Last Night'))`,
+  `CREATE TABLE IF NOT EXISTS public.hotelx_addon (
+    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    id text NOT NULL,
+    sort_order integer NOT NULL,
+    name text NOT NULL,
+    basis text NOT NULL,
+    posting_rhythm text NOT NULL DEFAULT 'Daily' CHECK (posting_rhythm IN ('Daily', 'First Night', 'Last Night')),
+    min_qty integer NOT NULL DEFAULT 0 CHECK (min_qty >= 0),
+    max_qty integer NOT NULL DEFAULT 0 CHECK (max_qty >= min_qty),
+    amount numeric(14,2) NOT NULL DEFAULT 0 CHECK (amount >= 0),
+    active boolean NOT NULL DEFAULT true,
+    updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (property_id, id)
+  )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_rate_type (
     property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
     id text NOT NULL,
@@ -443,6 +457,7 @@ const schemaStatements = [
     active boolean NOT NULL DEFAULT true,
     seasonal_rates jsonb NOT NULL DEFAULT '{}'::jsonb,
     inclusive_elements jsonb NOT NULL DEFAULT '[]'::jsonb,
+    add_on_elements jsonb NOT NULL DEFAULT '[]'::jsonb,
     updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (property_id, rate_setup_id, id),
     FOREIGN KEY (property_id, rate_setup_id)
@@ -453,6 +468,8 @@ const schemaStatements = [
     ADD COLUMN IF NOT EXISTS seasonal_rates jsonb NOT NULL DEFAULT '{}'::jsonb`,
   `ALTER TABLE public.hotelx_rate_setup_validity
     ADD COLUMN IF NOT EXISTS inclusive_elements jsonb NOT NULL DEFAULT '[]'::jsonb`,
+  `ALTER TABLE public.hotelx_rate_setup_validity
+    ADD COLUMN IF NOT EXISTS add_on_elements jsonb NOT NULL DEFAULT '[]'::jsonb`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_hotel_setup (
     property_id text PRIMARY KEY REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
     hotel_name text NOT NULL DEFAULT '', address text NOT NULL DEFAULT '', postcode text NOT NULL DEFAULT '', country text NOT NULL DEFAULT '', city text NOT NULL DEFAULT '', state text NOT NULL DEFAULT '', hotel_type text NOT NULL DEFAULT '', company_name text NOT NULL DEFAULT '', company_reg_no text NOT NULL DEFAULT '', sst_reg_no text NOT NULL DEFAULT '', ttx_reg_no text NOT NULL DEFAULT '', online_booking_url text NOT NULL DEFAULT '', live_run_date text NOT NULL DEFAULT '', contact_person text NOT NULL DEFAULT '', phone_no text NOT NULL DEFAULT '', mobile_no text NOT NULL DEFAULT '', reservation_email text NOT NULL DEFAULT '', business_email text NOT NULL DEFAULT '', booking_cancellation_days integer NOT NULL DEFAULT 3, currency_code text NOT NULL DEFAULT 'MYR', float_amount numeric(12,2) NOT NULL DEFAULT 0, pax_count text NOT NULL DEFAULT 'No. of Pax Manual Updated', child_rates_applied boolean NOT NULL DEFAULT false,
@@ -739,8 +756,8 @@ const schemaStatements = [
     SELECT p_property_id, (item.value->>'id')::uuid, item.ordinality::integer, item.value->>'code', item.value->>'description', COALESCE(item.value->>'rateTypeId', ''), COALESCE(NULLIF(item.value->>'rateFrequency', ''), 'Daily'), COALESCE((item.value->>'active')::boolean, true), COALESCE((item.value->>'web')::boolean, false), CASE WHEN COALESCE(item.value->>'updated', '') ~ '^\d{2} [A-Za-z]{3} \d{4}$' THEN to_date(item.value->>'updated', 'DD Mon YYYY') ELSE NULL END
     FROM jsonb_array_elements(COALESCE(p_state #> '{rateSetup,ratePlans}', '[]'::jsonb)) WITH ORDINALITY AS item(value, ordinality);
 
-    INSERT INTO public.hotelx_rate_setup_validity (property_id, rate_setup_id, id, sort_order, valid_from, valid_to, active, seasonal_rates, inclusive_elements)
-    SELECT p_property_id, (item.value->>'rateSetupId')::uuid, (item.value->>'id')::uuid, item.ordinality::integer, (item.value->>'from')::date, (item.value->>'to')::date, COALESCE((item.value->>'active')::boolean, true), COALESCE(item.value->'seasonalRates', '{}'::jsonb), COALESCE(item.value->'inclusiveElements', '[]'::jsonb)
+    INSERT INTO public.hotelx_rate_setup_validity (property_id, rate_setup_id, id, sort_order, valid_from, valid_to, active, seasonal_rates, inclusive_elements, add_on_elements)
+    SELECT p_property_id, (item.value->>'rateSetupId')::uuid, (item.value->>'id')::uuid, item.ordinality::integer, (item.value->>'from')::date, (item.value->>'to')::date, COALESCE((item.value->>'active')::boolean, true), COALESCE(item.value->'seasonalRates', '{}'::jsonb), COALESCE(item.value->'inclusiveElements', '[]'::jsonb), COALESCE(item.value->'addOnElements', '[]'::jsonb)
     FROM jsonb_array_elements(COALESCE(p_state #> '{rateSetup,validity}', '[]'::jsonb)) WITH ORDINALITY AS item(value, ordinality);
 
     INSERT INTO public.hotelx_hotel_setup (property_id, hotel_name, address, postcode, country, city, state, hotel_type, company_name, company_reg_no, sst_reg_no, ttx_reg_no, online_booking_url, live_run_date, contact_person, phone_no, mobile_no, reservation_email, business_email, booking_cancellation_days, currency_code, float_amount, pax_count, child_rates_applied, operational_policy)
@@ -1124,7 +1141,7 @@ const schemaStatements = [
         'elements', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', e.id, 'name', e.name, 'basis', e.basis, 'postingRhythm', e.posting_rhythm, 'min', e.min_qty, 'max', e.max_qty, 'amount', e.amount::double precision, 'active', e.active) ORDER BY e.sort_order) FROM public.hotelx_rate_element e WHERE e.property_id = meta.id), '[]'::jsonb),
         'rateTypes', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', t.id, 'name', t.name, 'active', t.active) ORDER BY t.sort_order) FROM public.hotelx_rate_type t WHERE t.property_id = meta.id), '[]'::jsonb),
         'ratePlans', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', r.id, 'code', r.code, 'description', r.description, 'rateTypeId', r.rate_type_id, 'rateFrequency', r.rate_frequency, 'updated', COALESCE(to_char(r.last_updated_on, 'DD Mon YYYY'), ''), 'active', r.active, 'web', r.web) ORDER BY r.sort_order) FROM public.hotelx_rate_setup r WHERE r.property_id = meta.id), '[]'::jsonb),
-        'validity', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', v.id, 'rateSetupId', v.rate_setup_id, 'from', to_char(v.valid_from, 'YYYY-MM-DD'), 'to', to_char(v.valid_to, 'YYYY-MM-DD'), 'active', v.active, 'seasonalRates', v.seasonal_rates, 'inclusiveElements', v.inclusive_elements) ORDER BY v.sort_order) FROM public.hotelx_rate_setup_validity v WHERE v.property_id = meta.id), '[]'::jsonb)
+        'validity', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', v.id, 'rateSetupId', v.rate_setup_id, 'from', to_char(v.valid_from, 'YYYY-MM-DD'), 'to', to_char(v.valid_to, 'YYYY-MM-DD'), 'active', v.active, 'seasonalRates', v.seasonal_rates, 'inclusiveElements', v.inclusive_elements, 'addOnElements', v.add_on_elements) ORDER BY v.sort_order) FROM public.hotelx_rate_setup_validity v WHERE v.property_id = meta.id), '[]'::jsonb)
       ),
       'setup', jsonb_build_object(
         'operators', COALESCE((
