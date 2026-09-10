@@ -18,6 +18,7 @@ import { RoomStatusModule } from '@/components/room-status-module';
 import { DepartmentModule } from '@/components/department-module-polished';
 import { initialHotelProfile, type HotelDepartment, type HotelRoomType, type RoomStatus, type HotelProfile, type HotelOperationalPolicy } from '@/lib/hotel-masters';
 import { HotelSetupModule as HotelSetupModuleV2 } from '@/components/hotel-setup-module';
+import { TimePicker } from '@/components/time-picker';
 
 
 function StandardPolicyModule({ onBack, profile, onProfileChange }: { onBack: () => void; profile: HotelProfile; onProfileChange: (value: HotelProfile) => void | Promise<void> }) {
@@ -32,9 +33,10 @@ function HotelOperationalPolicyModule({ onBack, profile, onProfileChange }: { on
   const defaultPolicy = initialHotelProfile.operationalPolicy;
   const savedPolicy = profile.operationalPolicy || {};
   const [draft, setDraft] = useState<HotelOperationalPolicy>({ ...defaultPolicy, ...savedPolicy, occupancy: { ...defaultPolicy.occupancy, ...(savedPolicy.occupancy || {}) } });
+  const [editingTime, setEditingTime] = useState<'standardCheckInTime' | 'standardCheckOutTime' | 'nightAuditCutOffTime' | null>(null);
   const toggle = (key: 'postpaid' | 'floorPlan' | 'cashierClosure') => setDraft({ ...draft, [key]: !draft[key] });
   const occupancy = (key: keyof HotelOperationalPolicy['occupancy']) => setDraft({ ...draft, occupancy: { ...draft.occupancy, [key]: !draft.occupancy[key] } });
-  const timeField = (key: 'standardCheckInTime' | 'standardCheckOutTime' | 'nightAuditCutOffTime', label: string) => <label className="operational-time-field"><span>{label} *</span><input value={draft[key]} onChange={(event) => setDraft({ ...draft, [key]: event.target.value })} /><span className="operational-clock">◷</span></label>;
+  const timeField = (key: 'standardCheckInTime' | 'standardCheckOutTime' | 'nightAuditCutOffTime', label: string) => <div className="operational-time-field"><span>{label} *</span><button type="button" className="operational-time-value" onClick={() => setEditingTime(key)}>{draft[key]}</button><span className="operational-clock">◷</span></div>;
   const switchField = (label: string, checked: boolean, onChange: () => void) => <button type="button" className={`operational-switch-row ${checked ? 'is-on' : ''}`} onClick={onChange}><span>{label}</span><i aria-hidden="true" /></button>;
   return <section className="master-page operational-policy-page" aria-label="Hotel Operational Policy">
     <div className="operational-policy-head"><strong>Hotel Operational Policy</strong><button type="button" onClick={onBack}>Edit</button></div>
@@ -42,6 +44,7 @@ function HotelOperationalPolicyModule({ onBack, profile, onProfileChange }: { on
     <div className="operational-policy-card operational-occupancy-card"><div className="operational-section-head"><strong>Occupancy Calculation Formula</strong><span>⌃</span></div>{switchField('House Use', draft.occupancy.houseUse, () => occupancy('houseUse'))}{switchField('Day Use', draft.occupancy.dayUse, () => occupancy('dayUse'))}{switchField('Complimentary', draft.occupancy.complimentary, () => occupancy('complimentary'))}{switchField('OOO', draft.occupancy.ooo, () => occupancy('ooo'))}{switchField('OOI', draft.occupancy.ooi, () => occupancy('ooi'))}</div>
     <div className="operational-policy-card operational-collapsed"><strong>CMS Interface</strong><span>⌄</span></div>
     <div className="master-page-actions"><button className="secondary-button" type="button" onClick={onBack}>Cancel</button><button className="primary-button" type="button" onClick={async () => { await onProfileChange({ ...profile, operationalPolicy: draft }); }}>Save</button></div>
+    {editingTime && <TimePicker value={draft[editingTime]} onCancel={() => setEditingTime(null)} onConfirm={(value) => { setDraft({ ...draft, [editingTime]: value }); setEditingTime(null); }} />}
   </section>;
 }
 
