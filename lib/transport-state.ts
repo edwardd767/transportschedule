@@ -148,9 +148,9 @@ export function normalizeTransportState(state: TransportState): TransportState {
       ...element,
       postingRhythm: element.postingRhythm ?? 'Daily',
     })),
-    addOns: Array.isArray(savedRateSetup.addOns) && savedRateSetup.addOns.length
+    addOns: Array.isArray(savedRateSetup.addOns)
       ? savedRateSetup.addOns.map((item) => ({ ...item, postingRhythm: item.postingRhythm ?? 'Daily' }))
-      : structuredClone(initialRateSetupData.addOns),
+      : [],
     ratePlans: savedRateSetup.ratePlans.map((plan) => ({
       ...plan,
       rateTypeId: plan.rateTypeId ?? '',

@@ -1022,17 +1022,11 @@ var initialCalendar = {};
 for (let day = 1; day <= 30; day += 1) {
   initialCalendar[`2026-09-${String(day).padStart(2, "0")}`] = "non-peak";
 }
-var initialAddOnItems = [
-  { id: "addon-1", name: "Extra Bed", basis: "Flat Rate", postingRhythm: "Daily", min: 1, max: 1, amount: 80, active: true },
-  { id: "addon-2", name: "Airport Transfer", basis: "Per Person", postingRhythm: "First Night", min: 1, max: 6, amount: 120, active: true },
-  { id: "addon-3", name: "Late Checkout", basis: "Flat Rate", postingRhythm: "Daily", min: 1, max: 1, amount: 100, active: true },
-  { id: "addon-4", name: "Romantic Setup", basis: "Flat Rate", postingRhythm: "Daily", min: 1, max: 1, amount: 150, active: true }
-];
 var initialRateSetupData = {
   seasons: initialRateSeasons,
   calendar: initialCalendar,
   elements: initialRateElements,
-  addOns: initialAddOnItems,
+  addOns: [],
   rateTypes: initialRateTypes,
   ratePlans: initialRatePlans,
   validity: []
@@ -1062,7 +1056,7 @@ function normalizeTransportState(state) {
       ...element,
       postingRhythm: element.postingRhythm ?? "Daily"
     })),
-    addOns: Array.isArray(savedRateSetup.addOns) && savedRateSetup.addOns.length ? savedRateSetup.addOns.map((item) => ({ ...item, postingRhythm: item.postingRhythm ?? "Daily" })) : structuredClone(initialRateSetupData.addOns),
+    addOns: Array.isArray(savedRateSetup.addOns) ? savedRateSetup.addOns.map((item) => ({ ...item, postingRhythm: item.postingRhythm ?? "Daily" })) : [],
     ratePlans: savedRateSetup.ratePlans.map((plan) => ({
       ...plan,
       rateTypeId: plan.rateTypeId ?? "",
