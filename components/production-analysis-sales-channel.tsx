@@ -46,10 +46,6 @@ function salesChannelOf(booking: Booking) {
   return booking.salesChannel || 'Direct';
 }
 
-function debtorCategoryOf(booking: Booking) {
-  return booking.segment || 'FIT';
-}
-
 function production(rows: Booking[], date: string, scope: Scope) {
   const from = scopeFrom(date, scope);
   const relevant = rows.filter((booking) => overlaps(booking, from, date) && !['Cancelled', 'No Show'].includes(booking.status));
@@ -63,26 +59,18 @@ function production(rows: Booking[], date: string, scope: Scope) {
 }
 
 function buildRows(bookings: Booking[], date: string) {
-  const groups = new Map<string, Map<string, Booking[]>>();
+  const groups = new Map<string, Booking[]>();
   for (const booking of bookings.filter((item) => overlaps(item, startOfYear(date), date) && !['Cancelled', 'No Show'].includes(item.status))) {
     const channel = salesChannelOf(booking);
-    const category = debtorCategoryOf(booking);
-    const byCategory = groups.get(channel) ?? new Map<string, Booking[]>();
-    byCategory.set(category, [...(byCategory.get(category) ?? []), booking]);
-    groups.set(channel, byCategory);
+    groups.set(channel, [...(groups.get(channel) ?? []), booking]);
   }
-  const rows: Array<{ channel: string; category: string; cells: number[] }> = [];
-  for (const channel of [...groups.keys()].sort((a, b) => a.localeCompare(b))) {
-    const byCategory = groups.get(channel)!;
-    for (const category of [...byCategory.keys()].sort((a, b) => a.localeCompare(b))) {
-      const cells = periods.flatMap((scope) => {
-        const value = production(byCategory.get(category)!, date, scope);
-        return [value.room, value.guest, value.child, value.roomRev, value.otherRev, value.fnbRev, value.arr];
-      });
-      rows.push({ channel, category, cells });
-    }
-  }
-  return rows;
+  return [...groups.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([channel, rows]) => {
+    const cells = periods.flatMap((scope) => {
+      const value = production(rows, date, scope);
+      return [value.room, value.guest, value.child, value.roomRev, value.otherRev, value.fnbRev, value.arr];
+    });
+    return { channel, cells };
+  });
 }
 
 function printStamp(value: Date) {
@@ -91,8 +79,8 @@ function printStamp(value: Date) {
   return `${datePart}, ${timePart}`;
 }
 
-function SalesChannelRow({ channel, category, cells, total }: { channel: string; category: string; cells: number[]; total?: boolean }) {
-  return <tr className={total ? 'production-total-row' : undefined}><th scope="row">{channel}</th><td className="production-room-type">{category}</td>{cells.map((value, index) => <td key={index}>{cellFormats[index % metricColumns.length] === 'money' ? money(value) : number(value)}</td>)}</tr>;
+function SalesChannelRow({ channel, cells, total }: { channel: string; cells: number[]; total?: boolean }) {
+  return <tr className={total ? 'production-total-row' : undefined}><th scope="row">{channel}</th>{cells.map((value, index) => <td key={index}>{cellFormats[index % metricColumns.length] === 'money' ? money(value) : number(value)}</td>)}</tr>;
 }
 
 export function ProductionAnalysisSalesChannel({ bookings, hotelMasters, date, onDate, onBack }: {
@@ -112,7 +100,7 @@ export function ProductionAnalysisSalesChannel({ bookings, hotelMasters, date, o
     <div className="report-view-head"><button type="button" onClick={onBack}>‹ Back to reports</button><strong>Production Analysis by Sales Channel</strong></div>
     <div className="report-date-filter"><label>Report Date<input type="date" value={date} onChange={event => onDate(event.target.value)} /></label></div>
     <header className="production-analysis-heading"><div>{hotelMasters.profile.hotelName}</div><h2>Production Analysis By Sales Channel</h2><p>{dateLabel(date)}</p></header>
-    <div className="production-analysis-wrap"><table className="production-analysis-table"><thead><tr><th rowSpan={2} scope="col">Sales Channel</th><th rowSpan={2} scope="col">Debtor Category</th>{periods.map(scope => <th key={scope} colSpan={metricColumns.length} scope="colgroup">{scope === 'today' ? 'TODAY' : scope === 'month' ? 'MONTH TO DATE' : 'YEAR TO DATE'}</th>)}</tr><tr>{periods.flatMap(scope => metricColumns.map(column => <th key={`${scope}-${column}`} scope="col">{column}</th>))}</tr></thead><tbody>{rows.map(row => <SalesChannelRow key={`${row.channel}-${row.category}`} channel={row.channel} category={row.category} cells={row.cells} />)}{!rows.length && <tr><td colSpan={metricColumns.length * periods.length + 2}>No booking data found for this report date.</td></tr>}<SalesChannelRow channel="Total" category="" cells={totalCells} total /><SalesChannelRow channel="Grand Total" category="" cells={totalCells} total /></tbody></table></div>
+    <div className="production-analysis-wrap"><table className="production-analysis-table"><thead><tr><th rowSpan={2} scope="col">Sales Channel</th>{periods.map(scope => <th key={scope} colSpan={metricColumns.length} scope="colgroup">{scope === 'today' ? 'TODAY' : scope === 'month' ? 'MONTH TO DATE' : 'YEAR TO DATE'}</th>)}</tr><tr>{periods.flatMap(scope => metricColumns.map(column => <th key={`${scope}-${column}`} scope="col">{column}</th>))}</tr></thead><tbody>{rows.map(row => <SalesChannelRow key={row.channel} channel={row.channel} cells={row.cells} />)}{!rows.length && <tr><td colSpan={metricColumns.length * periods.length + 1}>No booking data found for this report date.</td></tr>}<SalesChannelRow channel="Total" cells={totalCells} total /><SalesChannelRow channel="Grand Total" cells={totalCells} total /></tbody></table></div>
     <footer className="production-analysis-footer">
       <div>Hotel Date - {dateLabel(date)}</div>
       <div>CRITERIA:</div>
