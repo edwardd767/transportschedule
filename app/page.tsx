@@ -745,7 +745,7 @@ function HomeContent({ store }: { store: TransportData }) {
           </div>
         </div>
         {view === 'guestprofile' ? (
-          <GuestProfiles profiles={guestProfiles} onBack={() => setView('booking')} onSave={async (value) => { await store.run({ type: 'guestProfilesSave', value }); setNotice('Guest profile saved.'); }} />
+          <GuestProfiles profiles={guestProfiles} onSave={async (value) => { await store.run({ type: 'guestProfilesSave', value }); setNotice('Guest profile saved.'); }} />
         ) : view === 'booking' ? (
           <Bookings
             paxCountPolicy={hotelMasters.profile.paxCount}
