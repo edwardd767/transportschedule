@@ -8,12 +8,12 @@ import {
   ClipboardList,
   DoorClosed,
   Plus,
+  RotateCw,
   Search,
   SlidersHorizontal,
   UserRound,
   X,
 } from 'lucide-react';
-import { Choice } from '@/components/hotel-choice';
 import { HotelDatePicker } from '@/components/hotel-date-picker';
 import {
   bookingAmount,
@@ -35,6 +35,15 @@ import type { BookingTransportLeg } from '@/lib/booking-transport';
 import type { RateSetupData } from '@/lib/rate-setup-data';
 import type { GuestProfile } from '@/lib/transport-state';
 import { RoomingList } from '@/components/rooming-list';
+
+const advanceStatusOptions = [
+  { value: 'Booked', label: 'Booked' },
+  { value: 'Cancelled', label: 'Cancelled' },
+  { value: 'No Show', label: 'NoShow' },
+  { value: 'Inhouse', label: 'Inhouse' },
+  { value: 'Checkout', label: 'CheckOut' },
+  { value: 'Waitlist', label: 'Waitlist' },
+];
 
 function BookingOccupancy({ booking }: { booking: Booking }) {
   return (
@@ -107,8 +116,7 @@ export function Bookings({
     return bookingAmount({ ...item, amount: item.amount + transport });
   };
   const [searchOpen, setSearchOpen] = useState(false);
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [advanceOpen, setAdvanceOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [billingOpen, setBillingOpen] = useState(false);
   const [billingInstructionOpen, setBillingInstructionOpen] = useState(false);
@@ -117,22 +125,28 @@ export function Bookings({
   const [availabilityOpen, setAvailabilityOpen] = useState(false);
   const [roomingOpen, setRoomingOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const [status, setStatus] = useState('all');
-  const [arrivalDate, setArrivalDate] = useState('');
   const [oldestFirst, setOldestFirst] = useState(false);
+  const [advance, setAdvance] = useState({ arrivalStart: '', arrivalEnd: '', departureStart: '', departureEnd: '', bookingDate: '', status: '', roomType: '', bookingNo: '', guestName: '', accountName: '', referenceNo: '', groupName: '' });
   const listRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const previousScroll = useRef(0);
   const lastBooking = useRef<string | null>(null);
-  const hasFilters = Boolean(query || arrivalDate || status !== 'all');
-  const filtered = bookings.filter(
-    (item) =>
-      (status === 'all' || item.status === status) &&
-      (!arrivalDate || item.arrival === arrivalDate) &&
-      `${item.reference} ${item.guest}`
-        .toLowerCase()
-        .includes(query.trim().toLowerCase()),
-  );
+  const hasFilters = Boolean(query || Object.values(advance).some(Boolean));
+  const filtered = bookings.filter((item) => {
+    if (query.trim() && !`${item.reference} ${item.guest}`.toLowerCase().includes(query.trim().toLowerCase())) return false;
+    if (advance.arrivalStart && item.arrival < advance.arrivalStart) return false;
+    if (advance.arrivalEnd && item.arrival > advance.arrivalEnd) return false;
+    if (advance.departureStart && item.departure < advance.departureStart) return false;
+    if (advance.departureEnd && item.departure > advance.departureEnd) return false;
+    if (advance.status && item.status !== advance.status) return false;
+    if (advance.roomType && !item.rooms.some((room) => room.code === advance.roomType)) return false;
+    if (advance.bookingNo && !item.reference.toLowerCase().includes(advance.bookingNo.toLowerCase())) return false;
+    if (advance.guestName && !item.guest.toLowerCase().includes(advance.guestName.toLowerCase())) return false;
+    if (advance.accountName && !(item.accountName ?? '').toLowerCase().includes(advance.accountName.toLowerCase())) return false;
+    if (advance.referenceNo && !(item.referenceNo ?? '').toLowerCase().includes(advance.referenceNo.toLowerCase())) return false;
+    if (advance.groupName && !(item.groupName ?? '').toLowerCase().includes(advance.groupName.toLowerCase())) return false;
+    return true;
+  });
   const shown = oldestFirst ? [...filtered].reverse() : filtered;
 
   useEffect(() => {
@@ -154,8 +168,7 @@ export function Bookings({
   }
   function resetFilters() {
     setQuery('');
-    setStatus('all');
-    setArrivalDate('');
+    setAdvance({ arrivalStart: '', arrivalEnd: '', departureStart: '', departureEnd: '', bookingDate: '', status: '', roomType: '', bookingNo: '', guestName: '', accountName: '', referenceNo: '', groupName: '' });
   }
 
   if (createOpen) {
@@ -282,23 +295,56 @@ export function Bookings({
         <h1>Booking Listing <span>({shown.length})</span></h1>
         <div className="booking-toolbar">
           <button className="icon-button" aria-label="Search bookings" title="Search bookings" aria-pressed={searchOpen} onClick={() => setSearchOpen(!searchOpen)}><Search size={23} /></button>
-          <button className="icon-button" aria-label="Filter bookings" title="Filter bookings" aria-pressed={filtersOpen} onClick={() => setFiltersOpen(!filtersOpen)}><SlidersHorizontal size={23} /></button>
+          <button className="icon-button" aria-label="Advance search" title="Advance search" aria-pressed={advanceOpen} onClick={() => setAdvanceOpen(true)}><SlidersHorizontal size={23} /></button>
           <button className="icon-button" aria-label={oldestFirst ? 'Sort newest bookings first' : 'Sort oldest bookings first'} title={oldestFirst ? 'Oldest bookings first' : 'Newest bookings first'} aria-pressed={oldestFirst} onClick={() => setOldestFirst(!oldestFirst)}><ArrowDownUp size={23} /></button>
           <button className="icon-button" aria-label="View availability" title="View availability" onClick={() => setAvailabilityOpen(true)}><CalendarDays size={23} /></button>
         </div>
       </div>
-      {(searchOpen || filtersOpen || calendarOpen || hasFilters) && (
+      {(searchOpen || query || hasFilters) && (
         <div className="booking-filters">
           {(searchOpen || query) && (
             <label className="search-field"><Search size={17} /><input autoFocus={searchOpen} aria-label="Search booking reference or guest" placeholder="Search reference or guest" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
           )}
-          {(filtersOpen || status !== 'all') && (
-            <Choice label="Booking status" value={status} onChange={setStatus} items={[{ value: 'all', label: 'All statuses' }, ...bookingStatuses.map((value) => ({ value, label: value }))]} />
-          )}
-          {(calendarOpen || arrivalDate) && (
-            <label className="booking-date-filter">Arrival date<HotelDatePicker value={arrivalDate} onChange={setArrivalDate} ariaLabel="Arrival date" /></label>
-          )}
           {hasFilters && <button className="secondary-button" onClick={resetFilters}><X size={15} /> Clear filters</button>}
+        </div>
+      )}
+      {advanceOpen && (
+        <div className="advance-search-layer">
+          <button type="button" className="advance-search-scrim" aria-label="Close advance search" onClick={() => setAdvanceOpen(false)} />
+          <dialog open className="advance-search-panel" aria-label="Advance Search">
+            <div className="advance-search-head">
+              <strong>Advance Search</strong>
+              <button type="button" className="advance-search-reset" onClick={resetFilters}><RotateCw size={15} /> Reset</button>
+            </div>
+            <div className="advance-search-body">
+              <div className="advance-search-group">
+                <span className="advance-search-group-label">Arrival Date</span>
+                <div className="advance-search-pair">
+                  <div className="advance-search-field"><span>Start Date</span><HotelDatePicker value={advance.arrivalStart} onChange={(value) => setAdvance({ ...advance, arrivalStart: value })} ariaLabel="Arrival start date" /></div>
+                  <div className="advance-search-field"><span>End Date</span><HotelDatePicker value={advance.arrivalEnd} onChange={(value) => setAdvance({ ...advance, arrivalEnd: value })} ariaLabel="Arrival end date" /></div>
+                </div>
+              </div>
+              <div className="advance-search-group">
+                <span className="advance-search-group-label">Departure Date</span>
+                <div className="advance-search-pair">
+                  <div className="advance-search-field"><span>Start Date</span><HotelDatePicker value={advance.departureStart} onChange={(value) => setAdvance({ ...advance, departureStart: value })} ariaLabel="Departure start date" /></div>
+                  <div className="advance-search-field"><span>End Date</span><HotelDatePicker value={advance.departureEnd} onChange={(value) => setAdvance({ ...advance, departureEnd: value })} ariaLabel="Departure end date" /></div>
+                </div>
+              </div>
+              <div className="advance-search-field"><span>Booking Date</span><HotelDatePicker value={advance.bookingDate} onChange={(value) => setAdvance({ ...advance, bookingDate: value })} ariaLabel="Booking date" /></div>
+              <label className="advance-search-field"><span>Status</span><select value={advance.status} onChange={(event) => setAdvance({ ...advance, status: event.target.value })}><option value="">Select status</option>{advanceStatusOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
+              <label className="advance-search-field"><span>Room Type</span><select value={advance.roomType} onChange={(event) => setAdvance({ ...advance, roomType: event.target.value })}><option value="">Select room type</option>{roomTypes.map((room) => <option key={room.code} value={room.code}>{room.code} - {room.description}</option>)}</select></label>
+              <label className="advance-search-field"><span>Booking No</span><input value={advance.bookingNo} onChange={(event) => setAdvance({ ...advance, bookingNo: event.target.value })} /></label>
+              <label className="advance-search-field"><span>Guest Name</span><input value={advance.guestName} onChange={(event) => setAdvance({ ...advance, guestName: event.target.value })} /></label>
+              <label className="advance-search-field"><span>Account Name</span><input value={advance.accountName} onChange={(event) => setAdvance({ ...advance, accountName: event.target.value })} /></label>
+              <label className="advance-search-field"><span>Reference No</span><input value={advance.referenceNo} onChange={(event) => setAdvance({ ...advance, referenceNo: event.target.value })} /></label>
+              <label className="advance-search-field"><span>Group Name</span><input value={advance.groupName} onChange={(event) => setAdvance({ ...advance, groupName: event.target.value })} /></label>
+            </div>
+            <div className="advance-search-actions">
+              <button type="button" className="primary-button" onClick={() => setAdvanceOpen(false)}>Cancel</button>
+              <button type="button" className="primary-button" onClick={() => setAdvanceOpen(false)}>Confirm</button>
+            </div>
+          </dialog>
         </div>
       )}
       <div className="booking-legend" aria-label="Booking statuses">
