@@ -67,6 +67,7 @@ import type { RateSetupSection } from '@/components/rate-setup';
 import { HotelMasterFiles } from '@/components/hotel-master-files';
 import { Bookings } from '@/components/bookings';
 import { GuestProfiles } from '@/components/guest-profiles';
+import { CheckIn } from '@/components/check-in';
 import { SegmentModule } from '@/components/segment-module';
 import type { Booking } from '@/lib/bookings';
 import { MonthTimetable } from '@/components/month-timetable';
@@ -125,6 +126,7 @@ const frontDeskMenu = [
     label: 'Check-in',
     detail: 'Check-in: 1 out of 1',
     svg: checkinSvg,
+    view: 'checkin' as const,
   },
   {
     key: 'group-check-in',
@@ -213,6 +215,7 @@ function HomeContent({ store }: { store: TransportData }) {
     | 'segment'
     | 'booking'
     | 'frontdesk'
+    | 'checkin'
     | 'reporting'
     | 'transportlisting'
     | 'guestprofile'
@@ -691,6 +694,15 @@ function HomeContent({ store }: { store: TransportData }) {
                 <ChevronLeft size={24} />
               </button>
             )}
+            {view === 'checkin' && (
+              <button
+                className="booking-back"
+                aria-label="Back to Front Desk"
+                onClick={() => setView('frontdesk')}
+              >
+                <ChevronLeft size={24} />
+              </button>
+            )}
             <div>
               <small>{['setup', 'hotelsettings', 'hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy', 'standardpolicy'].includes(view) ? 'HMS' : 'PMS'}</small>
               <strong>HOTEL PARADISE</strong>
@@ -706,6 +718,8 @@ function HomeContent({ store }: { store: TransportData }) {
               <span>{activeBooking ? (bookingEditing ? '... / Edit' : '... / Booking') : 'Booking'}</span>
             ) : view === 'frontdesk' ? (
               <span>Front Desk</span>
+            ) : view === 'checkin' ? (
+              <>... <ChevronRight size={14} /> Check In</>
             ) : view === 'transportlisting' ? (
               <span>Transport <ChevronRight size={14} /> Listing</span>
             ) : view === 'reporting' ? (
@@ -943,6 +957,8 @@ function HomeContent({ store }: { store: TransportData }) {
               })}
             </div>
           </div>
+        ) : view === 'checkin' ? (
+          <CheckIn bookings={bookings} />
         ) : (
           <>
             <div className="listing-title">
