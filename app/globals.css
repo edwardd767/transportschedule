@@ -5011,6 +5011,7 @@ p {
   text-align: left;
   font: inherit;
   font-size: 14px;
+  white-space: nowrap;
   cursor: pointer;
 }
 .rate-popup-menu button:hover {
