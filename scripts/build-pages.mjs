@@ -21,9 +21,11 @@ if (!html.includes('Booking Listing') || !html.includes('/transportschedule/')) 
 const pages = new URL('../dist/pages/', import.meta.url);
 mkdirSync(pages, { recursive: true });
 cpSync(new URL('transportschedule/_next/', output), new URL('_next/', pages), { recursive: true });
-for (const file of ['index.html', 'index.rsc', 'icon.png']) {
+for (const file of ['index.rsc', 'icon.png']) {
   cpSync(new URL(file, output), new URL(file, pages));
 }
+const prefixedHtml = html.replace(/href="\/icon\.png/g, 'href="/transportschedule/icon.png');
+writeFileSync(new URL('index.html', pages), prefixedHtml);
 writeFileSync(new URL('.nojekyll', pages), '');
 const assetUrls = [...html.matchAll(/(?:src|href)="(\/transportschedule\/[^"?#]+)"/g)];
 for (const [, assetUrl] of assetUrls) {

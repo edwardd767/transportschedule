@@ -11,10 +11,6 @@ const hotelFont = Poppins({
 export const metadata: Metadata = {
   title: 'HotelX | Development Use',
   description: 'HotelX speedboat schedule and passenger management prototype.',
-  icons: {
-    icon: '/icon.png',
-    apple: '/icon.png',
-  },
 };
 
 export default function RootLayout({
