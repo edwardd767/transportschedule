@@ -16,17 +16,6 @@ export type RateElementItem = {
   active: boolean;
 };
 
-export type AddOnItem = {
-  id: string;
-  name: string;
-  basis: string;
-  postingRhythm: 'Daily' | 'First Night' | 'Last Night';
-  min: number;
-  max: number;
-  amount: number;
-  active: boolean;
-};
-
 export type RateTypeItem = {
   id: string;
   name: string;
@@ -59,7 +48,6 @@ export type RateSetupData = {
   seasons: RateSeason[];
   calendar: Record<string, string>;
   elements: RateElementItem[];
-  addOns: AddOnItem[];
   rateTypes: RateTypeItem[];
   ratePlans: RatePlanItem[];
   validity: RateValidityItem[];
@@ -171,18 +159,10 @@ for (let day = 1; day <= 30; day += 1) {
   initialCalendar[`2026-09-${String(day).padStart(2, '0')}`] = 'non-peak';
 }
 
-export const initialAddOnItems: AddOnItem[] = [
-  { id: 'addon-1', name: 'Extra Bed', basis: 'Flat Rate', postingRhythm: 'Daily', min: 1, max: 1, amount: 80, active: true },
-  { id: 'addon-2', name: 'Airport Transfer', basis: 'Per Person', postingRhythm: 'First Night', min: 1, max: 6, amount: 120, active: true },
-  { id: 'addon-3', name: 'Late Checkout', basis: 'Flat Rate', postingRhythm: 'Daily', min: 1, max: 1, amount: 100, active: true },
-  { id: 'addon-4', name: 'Romantic Setup', basis: 'Flat Rate', postingRhythm: 'Daily', min: 1, max: 1, amount: 150, active: true },
-];
-
 export const initialRateSetupData: RateSetupData = {
   seasons: initialRateSeasons,
   calendar: initialCalendar,
   elements: initialRateElements,
-  addOns: initialAddOnItems,
   rateTypes: initialRateTypes,
   ratePlans: initialRatePlans,
   validity: [],
