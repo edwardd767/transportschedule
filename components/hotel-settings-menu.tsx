@@ -22,7 +22,7 @@ const items = [
   { key: 'room-type', label: 'Room Type', detail: 'Room Type Setup.', icon: BedDouble },
   { key: 'room', label: 'Room', detail: 'Guest Room Setup.', icon: DoorOpen },
   { key: 'room-status', label: 'Room Status', detail: 'Room Status Setup.', icon: ClipboardList },
-  { key: 'rate-policy', label: 'Rate Setup', detail: 'Hotel Rate Setup.', icon: ClipboardList },
+  { key: 'rate-policy', label: 'Rate Policy', detail: 'Rate Policy Setup.', icon: ClipboardList },
   { key: 'standard-policy', label: 'Standard Policy & Guidelines', detail: 'Hotel Operational Policy & Guidelines Setup.', icon: KeyRound },
   { key: 'segment', label: 'Segment', detail: 'Segment Setup.', icon: Globe2 },
   { key: 'transport', label: 'Transport Setup', detail: 'Transport Services, Routes and Schedule Setup.', icon: Ship },
