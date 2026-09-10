@@ -4917,6 +4917,19 @@ p {
 .rate-setup-module-menu {
   padding-bottom: 12px;
 }
+.rate-setup-module-menu .hotel-settings-card {
+  min-height: 64px;
+  padding: 10px 14px;
+}
+.rate-setup-module-menu .hotel-settings-card-copy strong {
+  color: #111;
+  font-size: 13px;
+  font-weight: 700;
+}
+.rate-setup-module-menu .hotel-settings-card-copy > span {
+  color: #6b7280;
+  font-size: 11px;
+}
 .rate-subpage-backline {
   display: flex;
   align-items: center;
