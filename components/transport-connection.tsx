@@ -8,6 +8,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import { InhouseGuestBridge } from '@/components/inhouse-guest-bridge';
 import type { TransportData } from '@/lib/use-transport-data';
 
 export const TransportDataContext = createContext<TransportData | null>(null);
@@ -41,6 +42,7 @@ export function TransportConnection({ store }: { store: TransportData }) {
   const busy = Boolean(store.pending);
   return (
     <>
+      <InhouseGuestBridge store={store} />
       <button
         type="button"
         className="connection-button"
