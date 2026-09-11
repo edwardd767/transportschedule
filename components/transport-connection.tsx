@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { Cloud, RefreshCw } from 'lucide-react';
 import {
   Dialog,
@@ -42,6 +42,23 @@ export function TransportRecovery() {
 export function TransportConnection({ store }: { store: TransportData }) {
   const [open, setOpen] = useState(false);
   const busy = Boolean(store.pending);
+
+  useEffect(() => {
+    const hideTransportGuestProfileSubnav = () => {
+      document.querySelectorAll<HTMLElement>('.main-nav .subnav').forEach((subnav) => {
+        const buttons = Array.from(subnav.querySelectorAll('button'));
+        const isTransportSubnav =
+          buttons.length === 1 && buttons[0]?.textContent?.trim() === 'Transport';
+        if (isTransportSubnav) subnav.style.display = 'none';
+      });
+    };
+
+    hideTransportGuestProfileSubnav();
+    const observer = new MutationObserver(hideTransportGuestProfileSubnav);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <>
       <InhouseGuestBridge store={store} />
