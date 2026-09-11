@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Booking } from '@/lib/bookings';
 
 export function SpecialRequest({
@@ -16,6 +16,14 @@ export function SpecialRequest({
     booking.specialRequests || {},
   );
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !saving) onBack();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [onBack, saving]);
 
   const save = async () => {
     setSaving(true);
