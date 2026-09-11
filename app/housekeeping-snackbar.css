@@ -22,6 +22,29 @@
   line-height: 1.25 !important;
 }
 
+/* HotelX standard: text-entry controls must not show an orange focus border/ring. */
+[aria-label="Housekeeping Room Management"] input,
+[aria-label="Housekeeping Room Management"] input:focus,
+[aria-label="Housekeeping Room Management"] input:focus-visible,
+[aria-label="Housekeeping Room Management"] textarea,
+[aria-label="Housekeeping Room Management"] textarea:focus,
+[aria-label="Housekeeping Room Management"] textarea:focus-visible,
+[aria-label="Housekeeping Room Management"] select:focus,
+[aria-label="Housekeeping Room Management"] select:focus-visible {
+  border-color: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+  --tw-ring-color: transparent !important;
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+}
+
+[aria-label="Housekeeping Room Management"] label:focus-within {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+}
+
 @media (max-width: 720px) {
   [aria-label="Housekeeping Room Management"] [role="status"] {
     max-width: calc(100vw - 24px) !important;
