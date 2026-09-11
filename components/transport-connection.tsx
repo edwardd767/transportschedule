@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { InhouseGuestBridge } from '@/components/inhouse-guest-bridge';
 import { BookingRemarksBridge } from '@/components/booking-remarks-bridge';
+import { HousekeepingBridge } from '@/components/housekeeping-bridge';
 import type { TransportData } from '@/lib/use-transport-data';
 
 export const TransportDataContext = createContext<TransportData | null>(null);
@@ -45,6 +46,7 @@ export function TransportConnection({ store }: { store: TransportData }) {
     <>
       <InhouseGuestBridge store={store} />
       <BookingRemarksBridge store={store} />
+      <HousekeepingBridge store={store} />
       <button
         type="button"
         className="connection-button"
