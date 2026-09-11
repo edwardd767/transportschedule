@@ -12,9 +12,14 @@ import {
   Search,
   SlidersHorizontal,
 } from 'lucide-react';
+import type { Booking } from '@/lib/bookings';
 import type { TransportData } from '@/lib/use-transport-data';
 
 type HousekeepingStatus = string;
+type AssignmentMap = Record<string, string[]>;
+type OperationalPolicyWithHousekeeping = TransportData['state']['hotelMasters']['profile']['operationalPolicy'] & {
+  housekeepingRoomStatuses?: Record<string, string>;
+};
 
 type StatusLegendItem = {
   code: string;
@@ -27,10 +32,14 @@ type RoomRow = {
   roomType: string;
   status: HousekeepingStatus;
   guest: string;
+  bookingReference?: string;
+  bookingStatus?: Booking['status'];
   locationCode: string;
   location: string;
   checkout?: string;
 };
+
+const assignmentKey = '_roomAssignments';
 
 const fallbackLegend: StatusLegendItem[] = [
   { code: 'OC', label: 'Occupied Clean', color: '#ec86c1' },
@@ -56,6 +65,44 @@ function checkoutText(departure: string, checkoutTime: string) {
   return `C/O In ${hours} hrs`;
 }
 
+function readAssignments(booking: Booking): AssignmentMap {
+  const raw = booking.specialRequests?.[assignmentKey];
+  if (!raw) return {};
+  try {
+    const value = JSON.parse(raw) as Record<string, unknown>;
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+    return Object.fromEntries(
+      Object.entries(value).map(([roomType, roomNos]) => [
+        roomType,
+        Array.isArray(roomNos)
+          ? Array.from(new Set(roomNos.filter((roomNo): roomNo is string => typeof roomNo === 'string' && roomNo.trim()).map((roomNo) => roomNo.trim())))
+          : [],
+      ]),
+    );
+  } catch {
+    return {};
+  }
+}
+
+function withAssignments(booking: Booking, assignments: AssignmentMap): Booking {
+  const cleaned = Object.fromEntries(
+    Object.entries(assignments)
+      .map(([roomType, roomNos]) => [roomType, Array.from(new Set(roomNos))] as const)
+      .filter(([, roomNos]) => roomNos.length),
+  );
+  return {
+    ...booking,
+    specialRequests: {
+      ...(booking.specialRequests ?? {}),
+      [assignmentKey]: JSON.stringify(cleaned),
+    },
+  };
+}
+
+function assignedRoomCount(assignments: AssignmentMap) {
+  return Object.values(assignments).reduce((total, roomNos) => total + roomNos.length, 0);
+}
+
 function buildRows(store: TransportData): RoomRow[] {
   const { hotelMasters, bookings } = store.state;
   const activeRooms = [...hotelMasters.rooms]
@@ -64,47 +111,38 @@ function buildRows(store: TransportData): RoomRow[] {
   const locations = new Map(
     hotelMasters.locations.map((item) => [item.code, item.description]),
   );
-  const availableByType = new Map<string, typeof activeRooms>();
-  for (const room of activeRooms) {
-    const list = availableByType.get(room.roomTypeCode) ?? [];
-    list.push(room);
-    availableByType.set(room.roomTypeCode, list);
-  }
+  const persistedStatuses =
+    (hotelMasters.profile.operationalPolicy as OperationalPolicyWithHousekeeping)
+      .housekeepingRoomStatuses ?? {};
 
-  const occupiedByRoom = new Map<string, { guest: string; departure: string }>();
-  const used = new Set<string>();
-  const inhouseBookings = bookings.filter((booking) => booking.status === 'Inhouse');
-  for (const booking of inhouseBookings) {
-    let remaining = Math.max(0, booking.assignedRooms || 0);
-    for (const bookedRoom of booking.rooms) {
-      for (let index = 0; index < bookedRoom.count && remaining > 0; index += 1) {
-        const candidate = (availableByType.get(bookedRoom.code) ?? []).find(
-          (room) => !used.has(room.roomNo),
-        );
-        if (!candidate) break;
-        used.add(candidate.roomNo);
-        occupiedByRoom.set(candidate.roomNo, {
-          guest: booking.guest || booking.accountName || 'N/A',
-          departure: booking.departure,
-        });
-        remaining -= 1;
+  const assignedByRoom = new Map<string, Booking>();
+  for (const booking of bookings) {
+    if (!['Booked', 'Inhouse'].includes(booking.status)) continue;
+    for (const roomNos of Object.values(readAssignments(booking))) {
+      for (const roomNo of roomNos) {
+        if (!assignedByRoom.has(roomNo)) assignedByRoom.set(roomNo, booking);
       }
-      if (remaining <= 0) break;
     }
   }
 
   const checkoutTime =
     hotelMasters.profile.operationalPolicy.standardCheckOutTime || '12:00 PM';
   return activeRooms.map((room) => {
-    const occupied = occupiedByRoom.get(room.roomNo);
+    const assignedBooking = assignedByRoom.get(room.roomNo);
+    const defaultStatus = assignedBooking?.status === 'Inhouse' ? 'OD' : 'VC';
     return {
       roomNo: room.roomNo,
       roomType: room.roomTypeCode,
-      status: occupied ? 'OD' : 'VC',
-      guest: occupied?.guest ?? 'N/A',
+      status: persistedStatuses[room.roomNo] || defaultStatus,
+      guest: assignedBooking?.guest || assignedBooking?.accountName || 'N/A',
+      bookingReference: assignedBooking?.reference,
+      bookingStatus: assignedBooking?.status,
       locationCode: room.locationCode,
       location: locations.get(room.locationCode) ?? room.locationCode ?? 'N/A',
-      checkout: occupied ? checkoutText(occupied.departure, checkoutTime) : undefined,
+      checkout:
+        assignedBooking?.status === 'Inhouse'
+          ? checkoutText(assignedBooking.departure, checkoutTime)
+          : undefined,
     };
   });
 }
@@ -113,7 +151,11 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
   const [query, setQuery] = useState('');
   const [location, setLocation] = useState('all');
   const [statusFilter, setStatusFilter] = useState<HousekeepingStatus | 'all'>('all');
-  const [roomStatuses, setRoomStatuses] = useState<Record<string, HousekeepingStatus>>({});
+  const [editingRoom, setEditingRoom] = useState<RoomRow | null>(null);
+  const [statusDraft, setStatusDraft] = useState('VC');
+  const [bookingDraft, setBookingDraft] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   const statusLegend = useMemo<StatusLegendItem[]>(() => {
     const fromDatabase = store.state.hotelMasters.roomStatuses
@@ -125,7 +167,7 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
   const baseRows = useMemo(() => buildRows(store), [
     store.state.hotelMasters.rooms,
     store.state.hotelMasters.locations,
-    store.state.hotelMasters.profile.operationalPolicy.standardCheckOutTime,
+    store.state.hotelMasters.profile.operationalPolicy,
     store.state.bookings,
   ]);
 
@@ -137,29 +179,120 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
   const rows = useMemo(
     () =>
       baseRows
-        .map((room) => ({ ...room, status: roomStatuses[room.roomNo] ?? room.status }))
         .filter((room) => statusFilter === 'all' || room.status === statusFilter)
         .filter((room) => location === 'all' || room.locationCode === location)
         .filter((room) =>
-          `${room.roomNo} ${room.roomType} ${room.guest} ${room.status} ${room.location}`
+          `${room.roomNo} ${room.roomType} ${room.guest} ${room.bookingReference ?? ''} ${room.status} ${room.location}`
             .toLowerCase()
             .includes(query.toLowerCase().trim()),
         ),
-    [baseRows, location, query, roomStatuses, statusFilter],
+    [baseRows, location, query, statusFilter],
   );
+
+  const assignmentCandidates = useMemo(() => {
+    if (!editingRoom) return [];
+    return store.state.bookings
+      .filter(
+        (booking) =>
+          ['Booked', 'Inhouse'].includes(booking.status) &&
+          booking.rooms.some((room) => room.code === editingRoom.roomType),
+      )
+      .map((booking) => {
+        const requested = booking.rooms.find((room) => room.code === editingRoom.roomType)?.count ?? 0;
+        const assigned = readAssignments(booking)[editingRoom.roomType] ?? [];
+        const alreadyAssigned = assigned.includes(editingRoom.roomNo);
+        return {
+          booking,
+          requested,
+          assigned: assigned.length,
+          disabled: !alreadyAssigned && assigned.length >= requested,
+        };
+      });
+  }, [editingRoom, store.state.bookings]);
 
   const statusColor = (code: string) =>
     statusLegend.find((item) => item.code === code)?.color ?? '#888';
 
-  const cycleStatus = (roomNo: string) => {
-    setRoomStatuses((current) => {
-      const row = baseRows.find((item) => item.roomNo === roomNo);
-      const currentCode = current[roomNo] ?? row?.status ?? statusLegend[0]?.code ?? 'VC';
-      const index = statusLegend.findIndex((item) => item.code === currentCode);
-      const next = statusLegend[(index + 1 + statusLegend.length) % statusLegend.length]?.code ?? currentCode;
-      return { ...current, [roomNo]: next };
-    });
+  const openEditor = (room: RoomRow) => {
+    setEditingRoom(room);
+    setStatusDraft(room.status);
+    setBookingDraft(room.bookingReference ?? '');
+    setSaveError('');
   };
+
+  const saveRoom = async () => {
+    if (!editingRoom || saving) return;
+    setSaving(true);
+    setSaveError('');
+    try {
+      const profile = store.state.hotelMasters.profile;
+      const policy = profile.operationalPolicy as OperationalPolicyWithHousekeeping;
+      let nextState = await store.run({
+        type: 'hotelProfileSave',
+        value: {
+          ...profile,
+          operationalPolicy: {
+            ...policy,
+            housekeepingRoomStatuses: {
+              ...(policy.housekeepingRoomStatuses ?? {}),
+              [editingRoom.roomNo]: statusDraft,
+            },
+          },
+        },
+      });
+
+      const desiredAssignments = new Map<string, AssignmentMap>();
+      for (const booking of nextState.bookings) {
+        const current = readAssignments(booking);
+        const cleaned = Object.fromEntries(
+          Object.entries(current).map(([roomType, roomNos]) => [
+            roomType,
+            roomNos.filter((roomNo) => roomNo !== editingRoom.roomNo),
+          ]),
+        );
+        desiredAssignments.set(booking.reference, cleaned);
+      }
+
+      if (bookingDraft) {
+        const target = nextState.bookings.find((booking) => booking.reference === bookingDraft);
+        if (!target || !['Booked', 'Inhouse'].includes(target.status))
+          throw new Error('Choose an active booking for this room.');
+        const requested = target.rooms.find((room) => room.code === editingRoom.roomType)?.count ?? 0;
+        if (!requested)
+          throw new Error(`Booking ${target.reference} does not contain room type ${editingRoom.roomType}.`);
+        const targetAssignments = desiredAssignments.get(target.reference) ?? {};
+        const assigned = targetAssignments[editingRoom.roomType] ?? [];
+        if (assigned.length >= requested)
+          throw new Error(`All ${editingRoom.roomType} rooms are already assigned for ${target.reference}.`);
+        targetAssignments[editingRoom.roomType] = [...assigned, editingRoom.roomNo];
+        desiredAssignments.set(target.reference, targetAssignments);
+      }
+
+      for (const booking of nextState.bookings) {
+        const desired = desiredAssignments.get(booking.reference) ?? {};
+        if (JSON.stringify(readAssignments(booking)) === JSON.stringify(desired)) continue;
+        nextState = await store.run({
+          type: 'bookingUpdate',
+          value: withAssignments(booking, desired),
+        });
+      }
+
+      setEditingRoom(null);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Unable to save room changes.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!editingRoom) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !saving) setEditingRoom(null);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [editingRoom, saving]);
 
   const propertyName = store.state.hotelMasters.profile.hotelName || 'HOTEL PARADISE';
 
@@ -259,7 +392,7 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
                     </div>
                     <div className="mt-1 flex items-center gap-2">
                       <DoorOpen size={17} className="text-[#444]" />
-                      <span>{room.location}</span>
+                      <span>{room.bookingReference ? `${room.bookingReference} · ${room.location}` : room.location}</span>
                     </div>
                   </div>
 
@@ -267,9 +400,9 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
                     {occupied && room.checkout ? <strong className="text-[11px]">{room.checkout}</strong> : <span />}
                     <button
                       type="button"
-                      aria-label={`Edit room ${room.roomNo} status`}
-                      title="Change room status"
-                      onClick={() => cycleStatus(room.roomNo)}
+                      aria-label={`Edit room ${room.roomNo}`}
+                      title="Edit housekeeping status and room assignment"
+                      onClick={() => openEditor(room)}
                       className="border-0 bg-transparent p-1 text-[#ff8a18]"
                     >
                       <Pencil size={21} fill="currentColor" />
@@ -282,6 +415,49 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
           {!rows.length && <div className="rounded bg-white p-8 text-center text-sm text-[#777]">No rooms match the selected filters.</div>}
         </div>
       </div>
+
+      {editingRoom && (
+        <div className="absolute inset-0 z-[80] flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-label={`Edit room ${editingRoom.roomNo}`}>
+          <div className="w-full max-w-[480px] overflow-hidden rounded-[5px] border border-[#dedede] bg-white shadow-2xl">
+            <div className="bg-[#fff6eb] px-4 py-3">
+              <div className="text-[11px] font-medium text-[#f28b00]">Housekeeping</div>
+              <div className="mt-1 border-b border-[#e6ddd3] pb-2 text-[16px] font-semibold text-[#333]">
+                Room {editingRoom.roomNo} · {editingRoom.roomType}
+              </div>
+            </div>
+            <div className="space-y-4 px-4 py-5">
+              <label className="block">
+                <span className="mb-1 block text-[12px] text-[#777]">Current Housekeeping Status</span>
+                <select value={statusDraft} onChange={(event) => setStatusDraft(event.target.value)} className="h-10 w-full rounded-[4px] border border-[#ccc] bg-white px-3 text-[13px] outline-none focus:border-[#999]">
+                  {statusLegend.map((item) => <option key={item.code} value={item.code}>{item.code} - {item.label}</option>)}
+                </select>
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-[12px] text-[#777]">Room Assignment</span>
+                <select value={bookingDraft} onChange={(event) => setBookingDraft(event.target.value)} className="h-10 w-full rounded-[4px] border border-[#ccc] bg-white px-3 text-[13px] outline-none focus:border-[#999]">
+                  <option value="">Not Assigned</option>
+                  {assignmentCandidates.map(({ booking, requested, assigned, disabled }) => (
+                    <option key={booking.reference} value={booking.reference} disabled={disabled}>
+                      {booking.reference} | {booking.guest} | {booking.status} ({assigned}/{requested})
+                    </option>
+                  ))}
+                </select>
+                <small className="mt-1 block text-[11px] text-[#888]">Only Booked/Inhouse bookings containing {editingRoom.roomType} are shown.</small>
+              </label>
+              {bookingDraft && (() => {
+                const booking = store.state.bookings.find((item) => item.reference === bookingDraft);
+                const assignments = booking ? readAssignments(booking) : {};
+                return booking ? <div className="rounded-[4px] bg-[#f7f7f7] px-3 py-2 text-[12px] text-[#555]">Assigned rooms: {assignedRoomCount(assignments)} · Guest: {booking.guest}</div> : null;
+              })()}
+              {saveError && <p className="text-[12px] font-medium text-[#b42318]" role="alert">{saveError}</p>}
+              <div className="flex justify-end gap-2 pt-1">
+                <button type="button" disabled={saving} onClick={() => setEditingRoom(null)} className="rounded-[4px] bg-[#ececec] px-4 py-2 text-[13px] font-semibold text-[#444] disabled:opacity-60">Cancel</button>
+                <button type="button" disabled={saving} onClick={() => void saveRoom()} className="rounded-[4px] bg-[#ff9400] px-4 py-2 text-[13px] font-semibold text-white shadow disabled:opacity-60">{saving ? 'Saving…' : 'Save'}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
