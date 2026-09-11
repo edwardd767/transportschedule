@@ -6,6 +6,14 @@ import type { TransportData } from '@/lib/use-transport-data';
 const INTERNAL_KEY = '__bookingInternalRemarks';
 const PAYMENT_1_KEY = '__bookingPaymentRemarks1';
 const PAYMENT_2_KEY = '__bookingPaymentRemarks2';
+const remarkInputStyle = {
+  outline: 'none',
+  boxShadow: 'none',
+  borderTop: 'none',
+  borderLeft: 'none',
+  borderRight: 'none',
+  borderBottom: '1px solid #999',
+} as const;
 
 function bookingReferenceFromScreen() {
   const text = document.querySelector<HTMLElement>('.booking-detail-bottom')?.textContent ?? '';
@@ -114,88 +122,34 @@ export function BookingRemarksBridge({ store }: { store: TransportData }) {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[80] flex items-center justify-center bg-black/45 p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Booking Remarks"
-    >
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true" aria-label="Booking Remarks">
       <div className="w-full max-w-[600px] overflow-hidden rounded-[3px] bg-white shadow-2xl">
         <div className="bg-[#fff6eb] px-3 pb-3 pt-3">
           <div className="text-[11px] font-medium text-[#f28b00]">Remarks</div>
-          <div className="mt-1 border-b border-[#e6ddd3] pb-2 text-[15px] font-semibold text-[#ff8a00]">
-            {booking.reference}
-          </div>
+          <div className="mt-1 border-b border-[#e6ddd3] pb-2 text-[15px] font-semibold text-[#ff8a00]">{booking.reference}</div>
         </div>
 
         <div className="px-3 pt-5">
           <div className="flex gap-7 border-b border-transparent text-[14px] font-semibold">
-            <button
-              type="button"
-              className={`border-b-[3px] px-0 pb-2 ${tab === 'internal' ? 'border-[#ff9000] text-[#ff9000]' : 'border-transparent text-[#999]'}`}
-              onClick={() => setTab('internal')}
-            >
-              INTERNAL REMARKS
-            </button>
-            <button
-              type="button"
-              className={`border-b-[3px] px-0 pb-2 ${tab === 'payment' ? 'border-[#ff9000] text-[#ff9000]' : 'border-transparent text-[#999]'}`}
-              onClick={() => setTab('payment')}
-            >
-              PAYMENT REMARKS
-            </button>
+            <button type="button" className={`border-b-[3px] px-0 pb-2 ${tab === 'internal' ? 'border-[#ff9000] text-[#ff9000]' : 'border-transparent text-[#999]'}`} onClick={() => setTab('internal')}>INTERNAL REMARKS</button>
+            <button type="button" className={`border-b-[3px] px-0 pb-2 ${tab === 'payment' ? 'border-[#ff9000] text-[#ff9000]' : 'border-transparent text-[#999]'}`} onClick={() => setTab('payment')}>PAYMENT REMARKS</button>
           </div>
 
           {tab === 'internal' ? (
             <div className="pb-5 pt-7">
               <label className="block text-[13px] text-[#949494]">Internal Remarks</label>
-              <input
-                autoFocus
-                value={internalRemarks}
-                onChange={(event) => setInternalRemarks(event.target.value)}
-                className="mt-1 w-full border-0 border-b border-[#999] bg-transparent px-0 pb-2 text-[17px] text-[#333] outline-none"
-                maxLength={2000}
-              />
+              <input autoFocus value={internalRemarks} onChange={(event) => setInternalRemarks(event.target.value)} className="mt-1 w-full bg-transparent px-0 pb-2 text-[17px] text-[#333]" style={remarkInputStyle} maxLength={2000} />
             </div>
           ) : (
             <div className="space-y-7 pb-5 pt-7">
-              <input
-                autoFocus
-                aria-label="Payment Remarks 1"
-                placeholder="Remarks 1"
-                value={paymentRemarks1}
-                onChange={(event) => setPaymentRemarks1(event.target.value)}
-                className="w-full border-0 border-b border-[#999] bg-transparent px-0 pb-2 text-[17px] text-[#333] outline-none placeholder:text-[#999]"
-                maxLength={2000}
-              />
-              <input
-                aria-label="Payment Remarks 2"
-                placeholder="Remarks 2"
-                value={paymentRemarks2}
-                onChange={(event) => setPaymentRemarks2(event.target.value)}
-                className="w-full border-0 border-b border-[#999] bg-transparent px-0 pb-2 text-[17px] text-[#333] outline-none placeholder:text-[#999]"
-                maxLength={2000}
-              />
+              <input autoFocus aria-label="Payment Remarks 1" placeholder="Remarks 1" value={paymentRemarks1} onChange={(event) => setPaymentRemarks1(event.target.value)} className="w-full bg-transparent px-0 pb-2 text-[17px] text-[#333] placeholder:text-[#999]" style={remarkInputStyle} maxLength={2000} />
+              <input aria-label="Payment Remarks 2" placeholder="Remarks 2" value={paymentRemarks2} onChange={(event) => setPaymentRemarks2(event.target.value)} className="w-full bg-transparent px-0 pb-2 text-[17px] text-[#333] placeholder:text-[#999]" style={remarkInputStyle} maxLength={2000} />
             </div>
           )}
 
           <div className="flex justify-end gap-2 pb-2 pt-1">
-            <button
-              type="button"
-              disabled={saving}
-              onClick={() => setReference(null)}
-              className="rounded-[4px] bg-[#ff9400] px-3 py-2 text-[13px] font-semibold text-white shadow disabled:opacity-60"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              disabled={saving}
-              onClick={() => void confirm()}
-              className="rounded-[4px] bg-[#ff9400] px-3 py-2 text-[13px] font-semibold text-white shadow disabled:opacity-60"
-            >
-              {saving ? 'Saving…' : 'Confirm'}
-            </button>
+            <button type="button" disabled={saving} onClick={() => setReference(null)} className="rounded-[4px] bg-[#ff9400] px-3 py-2 text-[13px] font-semibold text-white shadow disabled:opacity-60">Cancel</button>
+            <button type="button" disabled={saving} onClick={() => void confirm()} className="rounded-[4px] bg-[#ff9400] px-3 py-2 text-[13px] font-semibold text-white shadow disabled:opacity-60">{saving ? 'Saving…' : 'Confirm'}</button>
           </div>
         </div>
       </div>
