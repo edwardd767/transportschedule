@@ -11,6 +11,8 @@ import {
 import { InhouseGuestBridge } from '@/components/inhouse-guest-bridge';
 import { BookingRemarksBridge } from '@/components/booking-remarks-bridge';
 import { BookingRoomAssignmentBridge } from '@/components/booking-room-assignment-bridge';
+import { BookingHouseLimitBridge } from '@/components/booking-house-limit-bridge';
+import { ReasonMasterBridge } from '@/components/reason-master-bridge';
 import { HousekeepingBridge } from '@/components/housekeeping-bridge';
 import type { TransportData } from '@/lib/use-transport-data';
 
@@ -65,6 +67,8 @@ export function TransportConnection({ store }: { store: TransportData }) {
       <InhouseGuestBridge store={store} />
       <BookingRemarksBridge store={store} />
       <BookingRoomAssignmentBridge store={store} />
+      <BookingHouseLimitBridge store={store} />
+      <ReasonMasterBridge store={store} />
       <HousekeepingBridge store={store} />
       <button
         type="button"
