@@ -70,7 +70,7 @@ function readAssignments(booking: Booking): AssignmentMap {
                 roomNos
                   .filter(
                     (roomNo): roomNo is string =>
-                      typeof roomNo === 'string' && roomNo.trim(),
+                      typeof roomNo === 'string' && Boolean(roomNo.trim()),
                   )
                   .map((roomNo) => roomNo.trim()),
               ),
@@ -140,6 +140,7 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
   const [statusMenuRoomNo, setStatusMenuRoomNo] = useState<string | null>(null);
   const [savingRoomNo, setSavingRoomNo] = useState<string | null>(null);
   const [statusError, setStatusError] = useState('');
+  const [snackbar, setSnackbar] = useState<{ message: string } | null>(null);
 
   const statusLegend = useMemo<StatusLegendItem[]>(
     () =>
@@ -184,8 +185,19 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
   const statusColor = (code: string) =>
     statusLegend.find((item) => item.code === code)?.color ?? '#888';
 
+  const statusLabel = (code: string) =>
+    statusLegend.find((item) => item.code === code)?.label ?? code;
+
   const saveStatus = async (room: RoomRow, statusCode: string) => {
     if (savingRoomNo) return;
+    if (room.status === statusCode) {
+      setStatusMenuRoomNo(null);
+      setStatusError('');
+      return;
+    }
+
+    const previousLabel = statusLabel(room.status);
+    const nextLabel = statusLabel(statusCode);
     setSavingRoomNo(room.roomNo);
     setStatusError('');
     try {
@@ -205,6 +217,9 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
         },
       });
       setStatusMenuRoomNo(null);
+      setSnackbar({
+        message: `room ${room.roomNo} has been changed from ${previousLabel} to ${nextLabel}`,
+      });
     } catch (error) {
       setStatusError(
         error instanceof Error
@@ -239,6 +254,12 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
       document.removeEventListener('pointerdown', onPointerDown, true);
     };
   }, [savingRoomNo, statusMenuRoomNo]);
+
+  useEffect(() => {
+    if (!snackbar) return;
+    const timer = window.setTimeout(() => setSnackbar(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [snackbar]);
 
   const propertyName =
     store.state.hotelMasters.profile.hotelName || 'HOTEL PARADISE';
@@ -471,6 +492,27 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
           )}
         </div>
       </div>
+
+      {snackbar && (
+        <div className="pointer-events-none fixed bottom-6 left-6 z-[140] max-w-[calc(100vw-48px)]">
+          <div
+            className="pointer-events-auto flex min-h-[76px] w-[340px] max-w-full items-center justify-between gap-5 rounded-[3px] bg-[#303030] px-4 py-3 text-white shadow-2xl"
+            role="status"
+            aria-live="polite"
+          >
+            <div className="text-[14px] font-medium leading-5">
+              {snackbar.message}
+            </div>
+            <button
+              type="button"
+              onClick={() => setSnackbar(null)}
+              className="shrink-0 border-0 bg-transparent p-0 text-[13px] font-semibold uppercase tracking-wide text-[#8ab4f8]"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
