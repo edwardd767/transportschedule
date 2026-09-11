@@ -12,23 +12,27 @@ import {
   Search,
   SlidersHorizontal,
 } from 'lucide-react';
+import type { TransportData } from '@/lib/use-transport-data';
 
-type HousekeepingStatus = 'OC' | 'OD' | 'OOI' | 'OOO' | 'VC' | 'VD' | 'VI' | 'VR';
+type HousekeepingStatus = string;
+
+type StatusLegendItem = {
+  code: string;
+  label: string;
+  color: string;
+};
 
 type RoomRow = {
   roomNo: string;
   roomType: string;
   status: HousekeepingStatus;
   guest: string;
+  locationCode: string;
   location: string;
   checkout?: string;
 };
 
-const statusLegend: Array<{
-  code: HousekeepingStatus;
-  label: string;
-  color: string;
-}> = [
+const fallbackLegend: StatusLegendItem[] = [
   { code: 'OC', label: 'Occupied Clean', color: '#ec86c1' },
   { code: 'OD', label: 'Occupied Dirty', color: '#ff0051' },
   { code: 'OOI', label: 'Out of Inventory', color: '#c9c9c9' },
@@ -39,55 +43,125 @@ const statusLegend: Array<{
   { code: 'VR', label: 'Vacant Ready', color: '#24a9df' },
 ];
 
-const sampleRooms: RoomRow[] = [
-  { roomNo: '101', roomType: 'STD', status: 'OD', guest: 'TAN CHEE KIANG', location: 'N/A', checkout: 'C/O In -15 hrs' },
-  { roomNo: '102', roomType: 'STD', status: 'OD', guest: 'Jaslyn Tan', location: 'N/A', checkout: 'C/O In -15 hrs' },
-  { roomNo: '103', roomType: 'STD', status: 'OC', guest: 'LEANNE TAN', location: 'N/A', checkout: 'C/O In -15 hrs' },
-  { roomNo: '103A', roomType: 'DLX', status: 'OD', guest: 'The One Boutique', location: 'N/A', checkout: 'C/O In -15 hrs' },
-  { roomNo: '105', roomType: 'DLX', status: 'VC', guest: 'N/A', location: 'N/A' },
-  { roomNo: '106', roomType: 'DLX', status: 'OC', guest: 'N/A', location: 'N/A' },
-  { roomNo: '107', roomType: 'SPR', status: 'OD', guest: 'LEANNE TAN', location: 'N/A', checkout: 'C/O In -15 hrs' },
-  { roomNo: '108', roomType: 'SPR', status: 'OD', guest: 'LEANNE TAN', location: 'N/A', checkout: 'C/O In -15 hrs' },
-  { roomNo: '109', roomType: 'SPR', status: 'VD', guest: 'N/A', location: 'N/A' },
-  { roomNo: '110', roomType: 'STD', status: 'VR', guest: 'N/A', location: 'N/A' },
-  { roomNo: '111', roomType: 'STD', status: 'VI', guest: 'N/A', location: 'N/A' },
-  { roomNo: '112', roomType: 'DLX', status: 'OOO', guest: 'N/A', location: 'N/A' },
-];
-
-function statusColor(code: HousekeepingStatus) {
-  return statusLegend.find((item) => item.code === code)?.color ?? '#888';
+function checkoutText(departure: string, checkoutTime: string) {
+  const match = checkoutTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+  let hour = match ? Number(match[1]) : 12;
+  const minute = match ? Number(match[2]) : 0;
+  const meridiem = match?.[3]?.toUpperCase();
+  if (meridiem === 'PM' && hour < 12) hour += 12;
+  if (meridiem === 'AM' && hour === 12) hour = 0;
+  const target = new Date(`${departure}T00:00:00`);
+  target.setHours(hour, minute, 0, 0);
+  const hours = Math.round((target.getTime() - Date.now()) / 3600000);
+  return `C/O In ${hours} hrs`;
 }
 
-function HousekeepingScreen({ propertyName }: { propertyName: string }) {
+function buildRows(store: TransportData): RoomRow[] {
+  const { hotelMasters, bookings } = store.state;
+  const activeRooms = [...hotelMasters.rooms]
+    .filter((room) => room.active)
+    .sort((a, b) => a.displaySequence - b.displaySequence || a.roomNo.localeCompare(b.roomNo, undefined, { numeric: true }));
+  const locations = new Map(
+    hotelMasters.locations.map((item) => [item.code, item.description]),
+  );
+  const availableByType = new Map<string, typeof activeRooms>();
+  for (const room of activeRooms) {
+    const list = availableByType.get(room.roomTypeCode) ?? [];
+    list.push(room);
+    availableByType.set(room.roomTypeCode, list);
+  }
+
+  const occupiedByRoom = new Map<string, { guest: string; departure: string }>();
+  const used = new Set<string>();
+  const inhouseBookings = bookings.filter((booking) => booking.status === 'Inhouse');
+  for (const booking of inhouseBookings) {
+    let remaining = Math.max(0, booking.assignedRooms || 0);
+    for (const bookedRoom of booking.rooms) {
+      for (let index = 0; index < bookedRoom.count && remaining > 0; index += 1) {
+        const candidate = (availableByType.get(bookedRoom.code) ?? []).find(
+          (room) => !used.has(room.roomNo),
+        );
+        if (!candidate) break;
+        used.add(candidate.roomNo);
+        occupiedByRoom.set(candidate.roomNo, {
+          guest: booking.guest || booking.accountName || 'N/A',
+          departure: booking.departure,
+        });
+        remaining -= 1;
+      }
+      if (remaining <= 0) break;
+    }
+  }
+
+  const checkoutTime =
+    hotelMasters.profile.operationalPolicy.standardCheckOutTime || '12:00 PM';
+  return activeRooms.map((room) => {
+    const occupied = occupiedByRoom.get(room.roomNo);
+    return {
+      roomNo: room.roomNo,
+      roomType: room.roomTypeCode,
+      status: occupied ? 'OD' : 'VC',
+      guest: occupied?.guest ?? 'N/A',
+      locationCode: room.locationCode,
+      location: locations.get(room.locationCode) ?? room.locationCode ?? 'N/A',
+      checkout: occupied ? checkoutText(occupied.departure, checkoutTime) : undefined,
+    };
+  });
+}
+
+function HousekeepingScreen({ store }: { store: TransportData }) {
   const [query, setQuery] = useState('');
-  const [location, setLocation] = useState('Location');
+  const [location, setLocation] = useState('all');
   const [statusFilter, setStatusFilter] = useState<HousekeepingStatus | 'all'>('all');
-  const [roomStatuses, setRoomStatuses] = useState<Record<string, HousekeepingStatus>>(() =>
-    Object.fromEntries(sampleRooms.map((room) => [room.roomNo, room.status])),
+  const [roomStatuses, setRoomStatuses] = useState<Record<string, HousekeepingStatus>>({});
+
+  const statusLegend = useMemo<StatusLegendItem[]>(() => {
+    const fromDatabase = store.state.hotelMasters.roomStatuses
+      .filter((item) => item.active)
+      .map((item) => ({ code: item.code, label: item.description, color: item.color }));
+    return fromDatabase.length ? fromDatabase : fallbackLegend;
+  }, [store.state.hotelMasters.roomStatuses]);
+
+  const baseRows = useMemo(() => buildRows(store), [
+    store.state.hotelMasters.rooms,
+    store.state.hotelMasters.locations,
+    store.state.hotelMasters.profile.operationalPolicy.standardCheckOutTime,
+    store.state.bookings,
+  ]);
+
+  const activeLocations = useMemo(
+    () => store.state.hotelMasters.locations.filter((item) => item.active),
+    [store.state.hotelMasters.locations],
   );
 
   const rows = useMemo(
     () =>
-      sampleRooms
+      baseRows
         .map((room) => ({ ...room, status: roomStatuses[room.roomNo] ?? room.status }))
         .filter((room) => statusFilter === 'all' || room.status === statusFilter)
-        .filter((room) => location === 'Location' || room.roomNo.startsWith(location))
+        .filter((room) => location === 'all' || room.locationCode === location)
         .filter((room) =>
-          `${room.roomNo} ${room.roomType} ${room.guest} ${room.status}`
+          `${room.roomNo} ${room.roomType} ${room.guest} ${room.status} ${room.location}`
             .toLowerCase()
             .includes(query.toLowerCase().trim()),
         ),
-    [location, query, roomStatuses, statusFilter],
+    [baseRows, location, query, roomStatuses, statusFilter],
   );
+
+  const statusColor = (code: string) =>
+    statusLegend.find((item) => item.code === code)?.color ?? '#888';
 
   const cycleStatus = (roomNo: string) => {
     setRoomStatuses((current) => {
-      const currentCode = current[roomNo] ?? 'VC';
+      const row = baseRows.find((item) => item.roomNo === roomNo);
+      const currentCode = current[roomNo] ?? row?.status ?? statusLegend[0]?.code ?? 'VC';
       const index = statusLegend.findIndex((item) => item.code === currentCode);
-      const next = statusLegend[(index + 1) % statusLegend.length].code;
+      const next = statusLegend[(index + 1 + statusLegend.length) % statusLegend.length]?.code ?? currentCode;
       return { ...current, [roomNo]: next };
     });
   };
+
+  const propertyName = store.state.hotelMasters.profile.hotelName || 'HOTEL PARADISE';
 
   return (
     <section className="absolute inset-0 z-[30] flex min-h-0 flex-col bg-[#f4f4f4] px-4 pb-3 pt-3" aria-label="Housekeeping Room Management">
@@ -133,10 +207,10 @@ function HousekeepingScreen({ propertyName }: { propertyName: string }) {
             onChange={(event) => setLocation(event.target.value)}
             className="h-full w-full appearance-none border-0 bg-transparent px-4 pr-10 text-[13px] font-semibold outline-none focus:outline-none focus:ring-0"
           >
-            <option>Location</option>
-            <option value="1">Level 1</option>
-            <option value="2">Level 2</option>
-            <option value="3">Level 3</option>
+            <option value="all">Location</option>
+            {activeLocations.map((item) => (
+              <option value={item.code} key={item.code}>{item.description}</option>
+            ))}
           </select>
           <ChevronDown size={18} className="pointer-events-none absolute right-3 text-[#222]" />
         </label>
@@ -212,11 +286,10 @@ function HousekeepingScreen({ propertyName }: { propertyName: string }) {
   );
 }
 
-export function HousekeepingBridge() {
+export function HousekeepingBridge({ store }: { store: TransportData }) {
   const [navMount, setNavMount] = useState<HTMLButtonElement | null>(null);
   const [workspace, setWorkspace] = useState<HTMLElement | null>(null);
   const [active, setActive] = useState(false);
-  const [propertyName, setPropertyName] = useState('HOTEL PARADISE');
 
   useEffect(() => {
     let observer: MutationObserver | null = null;
@@ -268,8 +341,6 @@ export function HousekeepingBridge() {
     if (!navMount) return;
 
     const openHousekeeping = () => {
-      const name = document.querySelector<HTMLElement>('.property-identity strong')?.textContent?.trim();
-      if (name) setPropertyName(name);
       document.querySelectorAll<HTMLButtonElement>('.main-nav > button').forEach((button) => button.classList.remove('active'));
       navMount.classList.add('active');
       navMount.setAttribute('aria-current', 'page');
@@ -303,7 +374,7 @@ export function HousekeepingBridge() {
           </>,
           navMount,
         )}
-      {workspace && active && createPortal(<HousekeepingScreen propertyName={propertyName} />, workspace)}
+      {workspace && active && createPortal(<HousekeepingScreen store={store} />, workspace)}
     </>
   );
 }
