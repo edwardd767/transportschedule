@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Poppins } from 'next/font/google';
+import { HousekeepingBridge } from '@/components/housekeeping-bridge';
 import './globals.css';
 import './frontdesk-overrides.css';
 
@@ -21,7 +22,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${hotelFont.variable} antialiased`}>{children}</body>
+      <body className={`${hotelFont.variable} antialiased`}>
+        {children}
+        <HousekeepingBridge />
+      </body>
     </html>
   );
 }
