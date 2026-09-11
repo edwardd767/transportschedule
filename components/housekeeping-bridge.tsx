@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import {
   BedDouble,
   Building2,
+  Check,
   ChevronDown,
   DoorOpen,
   Grid2X2,
@@ -41,17 +42,6 @@ type RoomRow = {
 
 const assignmentKey = '_roomAssignments';
 
-const fallbackLegend: StatusLegendItem[] = [
-  { code: 'OC', label: 'Occupied Clean', color: '#ec86c1' },
-  { code: 'OD', label: 'Occupied Dirty', color: '#ff0051' },
-  { code: 'OOI', label: 'Out of Inventory', color: '#c9c9c9' },
-  { code: 'OOO', label: 'Out of Order', color: '#555555' },
-  { code: 'VC', label: 'Vacant Clean', color: '#49d5bb' },
-  { code: 'VD', label: 'Vacant Dirty', color: '#087d2c' },
-  { code: 'VI', label: 'Vacant Inspection', color: '#304fc4' },
-  { code: 'VR', label: 'Vacant Ready', color: '#24a9df' },
-];
-
 function checkoutText(departure: string, checkoutTime: string) {
   const match = checkoutTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
   let hour = match ? Number(match[1]) : 12;
@@ -75,7 +65,16 @@ function readAssignments(booking: Booking): AssignmentMap {
       Object.entries(value).map(([roomType, roomNos]) => [
         roomType,
         Array.isArray(roomNos)
-          ? Array.from(new Set(roomNos.filter((roomNo): roomNo is string => typeof roomNo === 'string' && roomNo.trim()).map((roomNo) => roomNo.trim())))
+          ? Array.from(
+              new Set(
+                roomNos
+                  .filter(
+                    (roomNo): roomNo is string =>
+                      typeof roomNo === 'string' && roomNo.trim(),
+                  )
+                  .map((roomNo) => roomNo.trim()),
+              ),
+            )
           : [],
       ]),
     );
@@ -84,30 +83,15 @@ function readAssignments(booking: Booking): AssignmentMap {
   }
 }
 
-function withAssignments(booking: Booking, assignments: AssignmentMap): Booking {
-  const cleaned = Object.fromEntries(
-    Object.entries(assignments)
-      .map(([roomType, roomNos]) => [roomType, Array.from(new Set(roomNos))] as const)
-      .filter(([, roomNos]) => roomNos.length),
-  );
-  return {
-    ...booking,
-    specialRequests: {
-      ...(booking.specialRequests ?? {}),
-      [assignmentKey]: JSON.stringify(cleaned),
-    },
-  };
-}
-
-function assignedRoomCount(assignments: AssignmentMap) {
-  return Object.values(assignments).reduce((total, roomNos) => total + roomNos.length, 0);
-}
-
 function buildRows(store: TransportData): RoomRow[] {
   const { hotelMasters, bookings } = store.state;
   const activeRooms = [...hotelMasters.rooms]
     .filter((room) => room.active)
-    .sort((a, b) => a.displaySequence - b.displaySequence || a.roomNo.localeCompare(b.roomNo, undefined, { numeric: true }));
+    .sort(
+      (a, b) =>
+        a.displaySequence - b.displaySequence ||
+        a.roomNo.localeCompare(b.roomNo, undefined, { numeric: true }),
+    );
   const locations = new Map(
     hotelMasters.locations.map((item) => [item.code, item.description]),
   );
@@ -115,6 +99,7 @@ function buildRows(store: TransportData): RoomRow[] {
     (hotelMasters.profile.operationalPolicy as OperationalPolicyWithHousekeeping)
       .housekeepingRoomStatuses ?? {};
 
+  // Room assignment is read-only in Housekeeping. Assignment is handled by Front Desk.
   const assignedByRoom = new Map<string, Booking>();
   for (const booking of bookings) {
     if (!['Booked', 'Inhouse'].includes(booking.status)) continue;
@@ -127,6 +112,7 @@ function buildRows(store: TransportData): RoomRow[] {
 
   const checkoutTime =
     hotelMasters.profile.operationalPolicy.standardCheckOutTime || '12:00 PM';
+
   return activeRooms.map((room) => {
     const assignedBooking = assignedByRoom.get(room.roomNo);
     const defaultStatus = assignedBooking?.status === 'Inhouse' ? 'OD' : 'VC';
@@ -151,25 +137,31 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
   const [query, setQuery] = useState('');
   const [location, setLocation] = useState('all');
   const [statusFilter, setStatusFilter] = useState<HousekeepingStatus | 'all'>('all');
-  const [editingRoom, setEditingRoom] = useState<RoomRow | null>(null);
-  const [statusDraft, setStatusDraft] = useState('VC');
-  const [bookingDraft, setBookingDraft] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState('');
+  const [statusMenuRoomNo, setStatusMenuRoomNo] = useState<string | null>(null);
+  const [savingRoomNo, setSavingRoomNo] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState('');
 
-  const statusLegend = useMemo<StatusLegendItem[]>(() => {
-    const fromDatabase = store.state.hotelMasters.roomStatuses
-      .filter((item) => item.active)
-      .map((item) => ({ code: item.code, label: item.description, color: item.color }));
-    return fromDatabase.length ? fromDatabase : fallbackLegend;
-  }, [store.state.hotelMasters.roomStatuses]);
+  const statusLegend = useMemo<StatusLegendItem[]>(
+    () =>
+      store.state.hotelMasters.roomStatuses
+        .filter((item) => item.active)
+        .map((item) => ({
+          code: item.code,
+          label: item.description,
+          color: item.color,
+        })),
+    [store.state.hotelMasters.roomStatuses],
+  );
 
-  const baseRows = useMemo(() => buildRows(store), [
-    store.state.hotelMasters.rooms,
-    store.state.hotelMasters.locations,
-    store.state.hotelMasters.profile.operationalPolicy,
-    store.state.bookings,
-  ]);
+  const baseRows = useMemo(
+    () => buildRows(store),
+    [
+      store.state.hotelMasters.rooms,
+      store.state.hotelMasters.locations,
+      store.state.hotelMasters.profile.operationalPolicy,
+      store.state.bookings,
+    ],
+  );
 
   const activeLocations = useMemo(
     () => store.state.hotelMasters.locations.filter((item) => item.active),
@@ -189,45 +181,17 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
     [baseRows, location, query, statusFilter],
   );
 
-  const assignmentCandidates = useMemo(() => {
-    if (!editingRoom) return [];
-    return store.state.bookings
-      .filter(
-        (booking) =>
-          ['Booked', 'Inhouse'].includes(booking.status) &&
-          booking.rooms.some((room) => room.code === editingRoom.roomType),
-      )
-      .map((booking) => {
-        const requested = booking.rooms.find((room) => room.code === editingRoom.roomType)?.count ?? 0;
-        const assigned = readAssignments(booking)[editingRoom.roomType] ?? [];
-        const alreadyAssigned = assigned.includes(editingRoom.roomNo);
-        return {
-          booking,
-          requested,
-          assigned: assigned.length,
-          disabled: !alreadyAssigned && assigned.length >= requested,
-        };
-      });
-  }, [editingRoom, store.state.bookings]);
-
   const statusColor = (code: string) =>
     statusLegend.find((item) => item.code === code)?.color ?? '#888';
 
-  const openEditor = (room: RoomRow) => {
-    setEditingRoom(room);
-    setStatusDraft(room.status);
-    setBookingDraft(room.bookingReference ?? '');
-    setSaveError('');
-  };
-
-  const saveRoom = async () => {
-    if (!editingRoom || saving) return;
-    setSaving(true);
-    setSaveError('');
+  const saveStatus = async (room: RoomRow, statusCode: string) => {
+    if (savingRoomNo) return;
+    setSavingRoomNo(room.roomNo);
+    setStatusError('');
     try {
       const profile = store.state.hotelMasters.profile;
       const policy = profile.operationalPolicy as OperationalPolicyWithHousekeeping;
-      let nextState = await store.run({
+      await store.run({
         type: 'hotelProfileSave',
         value: {
           ...profile,
@@ -235,78 +199,70 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
             ...policy,
             housekeepingRoomStatuses: {
               ...(policy.housekeepingRoomStatuses ?? {}),
-              [editingRoom.roomNo]: statusDraft,
+              [room.roomNo]: statusCode,
             },
           },
         },
       });
-
-      const desiredAssignments = new Map<string, AssignmentMap>();
-      for (const booking of nextState.bookings) {
-        const current = readAssignments(booking);
-        const cleaned = Object.fromEntries(
-          Object.entries(current).map(([roomType, roomNos]) => [
-            roomType,
-            roomNos.filter((roomNo) => roomNo !== editingRoom.roomNo),
-          ]),
-        );
-        desiredAssignments.set(booking.reference, cleaned);
-      }
-
-      if (bookingDraft) {
-        const target = nextState.bookings.find((booking) => booking.reference === bookingDraft);
-        if (!target || !['Booked', 'Inhouse'].includes(target.status))
-          throw new Error('Choose an active booking for this room.');
-        const requested = target.rooms.find((room) => room.code === editingRoom.roomType)?.count ?? 0;
-        if (!requested)
-          throw new Error(`Booking ${target.reference} does not contain room type ${editingRoom.roomType}.`);
-        const targetAssignments = desiredAssignments.get(target.reference) ?? {};
-        const assigned = targetAssignments[editingRoom.roomType] ?? [];
-        if (assigned.length >= requested)
-          throw new Error(`All ${editingRoom.roomType} rooms are already assigned for ${target.reference}.`);
-        targetAssignments[editingRoom.roomType] = [...assigned, editingRoom.roomNo];
-        desiredAssignments.set(target.reference, targetAssignments);
-      }
-
-      for (const booking of nextState.bookings) {
-        const desired = desiredAssignments.get(booking.reference) ?? {};
-        if (JSON.stringify(readAssignments(booking)) === JSON.stringify(desired)) continue;
-        nextState = await store.run({
-          type: 'bookingUpdate',
-          value: withAssignments(booking, desired),
-        });
-      }
-
-      setEditingRoom(null);
+      setStatusMenuRoomNo(null);
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : 'Unable to save room changes.');
+      setStatusError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to update housekeeping status.',
+      );
     } finally {
-      setSaving(false);
+      setSavingRoomNo(null);
     }
   };
 
   useEffect(() => {
-    if (!editingRoom) return;
+    if (!statusMenuRoomNo) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !saving) setEditingRoom(null);
+      if (event.key === 'Escape' && !savingRoomNo) {
+        setStatusMenuRoomNo(null);
+        setStatusError('');
+      }
+    };
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Element | null;
+      if (target?.closest('[data-housekeeping-status-ui="true"]')) return;
+      if (!savingRoomNo) {
+        setStatusMenuRoomNo(null);
+        setStatusError('');
+      }
     };
     document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [editingRoom, saving]);
+    document.addEventListener('pointerdown', onPointerDown, true);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('pointerdown', onPointerDown, true);
+    };
+  }, [savingRoomNo, statusMenuRoomNo]);
 
-  const propertyName = store.state.hotelMasters.profile.hotelName || 'HOTEL PARADISE';
+  const propertyName =
+    store.state.hotelMasters.profile.hotelName || 'HOTEL PARADISE';
 
   return (
-    <section className="absolute inset-0 z-[30] flex min-h-0 flex-col bg-[#f4f4f4] px-4 pb-3 pt-3" aria-label="Housekeeping Room Management">
+    <section
+      className="absolute inset-0 z-[30] flex min-h-0 flex-col bg-[#f4f4f4] px-4 pb-3 pt-3"
+      aria-label="Housekeeping Room Management"
+    >
       <div className="relative min-h-[72px] shrink-0 overflow-hidden bg-[radial-gradient(ellipse_at_82%_105%,#ffbd14_0_39%,transparent_39.5%),radial-gradient(ellipse_at_38%_-55%,#f57818_0_51%,transparent_51.5%),linear-gradient(110deg,#f89912,#ffa524_65%,#f67e1b)] px-3 pb-7 pt-2">
         <div className="flex items-start justify-between">
           <div>
             <small className="block text-[11px] font-semibold text-white">HMS</small>
-            <strong className="block text-[14px] font-semibold text-[#111]">{propertyName}</strong>
+            <strong className="block text-[14px] font-semibold text-[#111]">
+              {propertyName}
+            </strong>
           </div>
-          <span className="grid h-7 w-7 place-items-center rounded-full bg-white text-[#f79400] shadow">↔</span>
+          <span className="grid h-7 w-7 place-items-center rounded-full bg-white text-[#f79400] shadow">
+            ↔
+          </span>
         </div>
-        <div className="absolute inset-x-0 bottom-0 border-t border-white/40 bg-[#f08013]/10 px-3 py-1 text-[11px] text-[#151515]">... / Room Management</div>
+        <div className="absolute inset-x-0 bottom-0 border-t border-white/40 bg-[#f08013]/10 px-3 py-1 text-[11px] text-[#151515]">
+          ... / Room Management
+        </div>
       </div>
 
       <div className="grid shrink-0 grid-cols-4 gap-2 bg-white px-2 py-2">
@@ -316,7 +272,11 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
           ['🚫', 'Block Room'],
           ['⚙️', 'Services'],
         ].map(([icon, label]) => (
-          <button key={label} type="button" className="flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-[5px] border border-[#ddd] bg-white text-[11px] font-semibold shadow-sm hover:bg-[#fff8ef]">
+          <button
+            key={label}
+            type="button"
+            className="flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-[5px] border border-[#ddd] bg-white text-[11px] font-semibold shadow-sm hover:bg-[#fff8ef]"
+          >
             <span className="text-[20px] leading-none">{icon}</span>
             {label}
           </button>
@@ -342,12 +302,21 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
           >
             <option value="all">Location</option>
             {activeLocations.map((item) => (
-              <option value={item.code} key={item.code}>{item.description}</option>
+              <option value={item.code} key={item.code}>
+                {item.description}
+              </option>
             ))}
           </select>
-          <ChevronDown size={18} className="pointer-events-none absolute right-3 text-[#222]" />
+          <ChevronDown
+            size={18}
+            className="pointer-events-none absolute right-3 text-[#222]"
+          />
         </label>
-        <button type="button" aria-label="Grid view" className="grid min-w-[48px] place-items-center bg-white text-[#ff8a00] shadow-sm">
+        <button
+          type="button"
+          aria-label="Grid view"
+          className="grid min-w-[48px] place-items-center bg-white text-[#ff8a00] shadow-sm"
+        >
           <Grid2X2 size={22} />
         </button>
       </div>
@@ -357,11 +326,18 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
           <button
             type="button"
             key={item.code}
-            onClick={() => setStatusFilter((current) => (current === item.code ? 'all' : item.code))}
+            onClick={() =>
+              setStatusFilter((current) =>
+                current === item.code ? 'all' : item.code,
+              )
+            }
             className={`inline-flex items-center gap-1 border-0 bg-transparent p-0 ${statusFilter === item.code ? 'font-bold' : ''}`}
             title={`Filter ${item.label}`}
           >
-            <span className="h-[10px] w-[10px] rounded-full" style={{ backgroundColor: item.color }} />
+            <span
+              className="h-[10px] w-[10px] rounded-full"
+              style={{ backgroundColor: item.color }}
+            />
             {item.label}
           </button>
         ))}
@@ -371,8 +347,12 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
         <div className="space-y-[5px]">
           {rows.map((room) => {
             const occupied = room.status === 'OC' || room.status === 'OD';
+            const menuOpen = statusMenuRoomNo === room.roomNo;
             return (
-              <article key={room.roomNo} className="flex min-h-[78px] items-stretch overflow-hidden rounded-[4px] bg-white shadow-sm">
+              <article
+                key={room.roomNo}
+                className="relative flex min-h-[78px] items-stretch overflow-visible rounded-[4px] bg-white shadow-sm"
+              >
                 <div
                   className="m-2 flex w-[112px] shrink-0 flex-col justify-center rounded-[3px] px-2 text-white"
                   style={{ backgroundColor: statusColor(room.status) }}
@@ -392,72 +372,105 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
                     </div>
                     <div className="mt-1 flex items-center gap-2">
                       <DoorOpen size={17} className="text-[#444]" />
-                      <span>{room.bookingReference ? `${room.bookingReference} · ${room.location}` : room.location}</span>
+                      <span>
+                        {room.bookingReference
+                          ? `${room.bookingReference} · ${room.location}`
+                          : room.location}
+                      </span>
                     </div>
                   </div>
 
-                  <div className="flex shrink-0 items-center gap-4">
-                    {occupied && room.checkout ? <strong className="text-[11px]">{room.checkout}</strong> : <span />}
+                  <div
+                    className="relative flex shrink-0 items-center gap-4"
+                    data-housekeeping-status-ui="true"
+                  >
+                    {occupied && room.checkout ? (
+                      <strong className="text-[11px]">{room.checkout}</strong>
+                    ) : (
+                      <span />
+                    )}
                     <button
                       type="button"
-                      aria-label={`Edit room ${room.roomNo}`}
-                      title="Edit housekeeping status and room assignment"
-                      onClick={() => openEditor(room)}
+                      aria-label={`Change room ${room.roomNo} housekeeping status`}
+                      title="Change housekeeping status"
+                      aria-expanded={menuOpen}
+                      onClick={() => {
+                        setStatusError('');
+                        setStatusMenuRoomNo((current) =>
+                          current === room.roomNo ? null : room.roomNo,
+                        );
+                      }}
                       className="border-0 bg-transparent p-1 text-[#ff8a18]"
                     >
                       <Pencil size={21} fill="currentColor" />
                     </button>
+
+                    {menuOpen && (
+                      <div
+                        className="absolute right-0 top-[42px] z-[90] w-[205px] rounded-[3px] border border-[#e1e1e1] bg-white py-2 shadow-xl"
+                        role="menu"
+                        aria-label={`Room ${room.roomNo} housekeeping statuses`}
+                        data-housekeeping-status-ui="true"
+                      >
+                        {statusLegend.length ? (
+                          statusLegend.map((item) => {
+                            const selected = room.status === item.code;
+                            const saving = savingRoomNo === room.roomNo;
+                            return (
+                              <button
+                                key={item.code}
+                                type="button"
+                                role="menuitemradio"
+                                aria-checked={selected}
+                                disabled={saving}
+                                onClick={() => void saveStatus(room, item.code)}
+                                className="flex w-full items-center gap-2 border-0 bg-white px-3 py-2 text-left text-[14px] text-[#444] hover:bg-[#f7f7f7] disabled:opacity-60"
+                              >
+                                <span className="grid h-[18px] w-[18px] shrink-0 place-items-center">
+                                  {selected && (
+                                    <span className="grid h-[18px] w-[18px] place-items-center rounded-[2px] bg-[#ff9a2f] text-white">
+                                      <Check size={14} strokeWidth={3} />
+                                    </span>
+                                  )}
+                                </span>
+                                <span className="min-w-0 flex-1 truncate">
+                                  {item.label}
+                                </span>
+                                <span
+                                  className="h-[8px] w-[8px] shrink-0 rounded-full"
+                                  style={{ backgroundColor: item.color }}
+                                  aria-hidden="true"
+                                />
+                              </button>
+                            );
+                          })
+                        ) : (
+                          <div className="px-3 py-3 text-[12px] text-[#777]">
+                            No active Room Status is configured.
+                          </div>
+                        )}
+                        {statusError && (
+                          <p
+                            className="border-t border-[#eee] px-3 pb-1 pt-2 text-[11px] font-medium text-[#b42318]"
+                            role="alert"
+                          >
+                            {statusError}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </article>
             );
           })}
-          {!rows.length && <div className="rounded bg-white p-8 text-center text-sm text-[#777]">No rooms match the selected filters.</div>}
+          {!rows.length && (
+            <div className="rounded bg-white p-8 text-center text-sm text-[#777]">
+              No rooms match the selected filters.
+            </div>
+          )}
         </div>
       </div>
-
-      {editingRoom && (
-        <div className="absolute inset-0 z-[80] flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-label={`Edit room ${editingRoom.roomNo}`}>
-          <div className="w-full max-w-[480px] overflow-hidden rounded-[5px] border border-[#dedede] bg-white shadow-2xl">
-            <div className="bg-[#fff6eb] px-4 py-3">
-              <div className="text-[11px] font-medium text-[#f28b00]">Housekeeping</div>
-              <div className="mt-1 border-b border-[#e6ddd3] pb-2 text-[16px] font-semibold text-[#333]">
-                Room {editingRoom.roomNo} · {editingRoom.roomType}
-              </div>
-            </div>
-            <div className="space-y-4 px-4 py-5">
-              <label className="block">
-                <span className="mb-1 block text-[12px] text-[#777]">Current Housekeeping Status</span>
-                <select value={statusDraft} onChange={(event) => setStatusDraft(event.target.value)} className="h-10 w-full rounded-[4px] border border-[#ccc] bg-white px-3 text-[13px] outline-none focus:border-[#999]">
-                  {statusLegend.map((item) => <option key={item.code} value={item.code}>{item.code} - {item.label}</option>)}
-                </select>
-              </label>
-              <label className="block">
-                <span className="mb-1 block text-[12px] text-[#777]">Room Assignment</span>
-                <select value={bookingDraft} onChange={(event) => setBookingDraft(event.target.value)} className="h-10 w-full rounded-[4px] border border-[#ccc] bg-white px-3 text-[13px] outline-none focus:border-[#999]">
-                  <option value="">Not Assigned</option>
-                  {assignmentCandidates.map(({ booking, requested, assigned, disabled }) => (
-                    <option key={booking.reference} value={booking.reference} disabled={disabled}>
-                      {booking.reference} | {booking.guest} | {booking.status} ({assigned}/{requested})
-                    </option>
-                  ))}
-                </select>
-                <small className="mt-1 block text-[11px] text-[#888]">Only Booked/Inhouse bookings containing {editingRoom.roomType} are shown.</small>
-              </label>
-              {bookingDraft && (() => {
-                const booking = store.state.bookings.find((item) => item.reference === bookingDraft);
-                const assignments = booking ? readAssignments(booking) : {};
-                return booking ? <div className="rounded-[4px] bg-[#f7f7f7] px-3 py-2 text-[12px] text-[#555]">Assigned rooms: {assignedRoomCount(assignments)} · Guest: {booking.guest}</div> : null;
-              })()}
-              {saveError && <p className="text-[12px] font-medium text-[#b42318]" role="alert">{saveError}</p>}
-              <div className="flex justify-end gap-2 pt-1">
-                <button type="button" disabled={saving} onClick={() => setEditingRoom(null)} className="rounded-[4px] bg-[#ececec] px-4 py-2 text-[13px] font-semibold text-[#444] disabled:opacity-60">Cancel</button>
-                <button type="button" disabled={saving} onClick={() => void saveRoom()} className="rounded-[4px] bg-[#ff9400] px-4 py-2 text-[13px] font-semibold text-white shadow disabled:opacity-60">{saving ? 'Saving…' : 'Save'}</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </section>
   );
 }
@@ -478,7 +491,9 @@ export function HousekeepingBridge({ store }: { store: TransportData }) {
       targetWorkspace = document.querySelector<HTMLElement>('.workspace');
       if (!nav || !targetWorkspace) return false;
 
-      const existing = nav.querySelector<HTMLButtonElement>('[data-housekeeping-nav="true"]');
+      const existing = nav.querySelector<HTMLButtonElement>(
+        '[data-housekeeping-nav="true"]',
+      );
       if (existing) {
         mount = existing;
       } else {
@@ -486,7 +501,9 @@ export function HousekeepingBridge({ store }: { store: TransportData }) {
         mount.type = 'button';
         mount.dataset.housekeepingNav = 'true';
         const frontDesk = Array.from(nav.children).find(
-          (node) => node instanceof HTMLButtonElement && node.textContent?.trim().includes('Front Desk'),
+          (node) =>
+            node instanceof HTMLButtonElement &&
+            node.textContent?.trim().includes('Front Desk'),
         );
         if (frontDesk?.nextSibling) nav.insertBefore(mount, frontDesk.nextSibling);
         else nav.appendChild(mount);
@@ -517,7 +534,9 @@ export function HousekeepingBridge({ store }: { store: TransportData }) {
     if (!navMount) return;
 
     const openHousekeeping = () => {
-      document.querySelectorAll<HTMLButtonElement>('.main-nav > button').forEach((button) => button.classList.remove('active'));
+      document
+        .querySelectorAll<HTMLButtonElement>('.main-nav > button')
+        .forEach((button) => button.classList.remove('active'));
       navMount.classList.add('active');
       navMount.setAttribute('aria-current', 'page');
       setActive(true);
@@ -550,7 +569,8 @@ export function HousekeepingBridge({ store }: { store: TransportData }) {
           </>,
           navMount,
         )}
-      {workspace && active && createPortal(<HousekeepingScreen store={store} />, workspace)}
+      {workspace && active &&
+        createPortal(<HousekeepingScreen store={store} />, workspace)}
     </>
   );
 }
