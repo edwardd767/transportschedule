@@ -41,7 +41,7 @@ export function BookingRemarksBridge({ store }: { store: TransportData }) {
       if (!copy) return;
       let summary = copy.querySelector<HTMLElement>('[data-booking-remarks-summary]');
       if (!remark) {
-        summary?.remove();
+        if (summary) summary.remove();
         return;
       }
       if (!summary) {
@@ -49,7 +49,7 @@ export function BookingRemarksBridge({ store }: { store: TransportData }) {
         summary.dataset.bookingRemarksSummary = 'true';
         copy.appendChild(summary);
       }
-      summary.textContent = remark;
+      if (summary.textContent !== remark) summary.textContent = remark;
     };
 
     const onClick = (event: MouseEvent) => {
