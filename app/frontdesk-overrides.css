@@ -1,0 +1,4 @@
+/* Front Desk landing page cleanup */
+.frontdesk-scroll > .listing-title {
+  display: none;
+}
