@@ -20,6 +20,35 @@ function bookingReferenceFromScreen() {
   return text.match(/P\d{6}/)?.[0] ?? null;
 }
 
+function syncCardSummary(
+  cards: HTMLButtonElement[],
+  title: string,
+  value: string,
+  dataKey: string,
+) {
+  const card = cards.find(
+    (item) => item.querySelector('strong')?.textContent?.trim() === title,
+  );
+  if (!card) return;
+
+  const copy = card.querySelector<HTMLElement>(':scope > span');
+  if (!copy) return;
+
+  let summary = copy.querySelector<HTMLElement>(`[${dataKey}]`);
+  if (!value) {
+    if (summary) summary.remove();
+    return;
+  }
+
+  if (!summary) {
+    summary = document.createElement('small');
+    summary.setAttribute(dataKey, 'true');
+    copy.appendChild(summary);
+  }
+
+  if (summary.textContent !== value) summary.textContent = value;
+}
+
 export function BookingRemarksBridge({ store }: { store: TransportData }) {
   const [reference, setReference] = useState<string | null>(null);
   const [tab, setTab] = useState<'internal' | 'payment'>('internal');
@@ -37,37 +66,50 @@ export function BookingRemarksBridge({ store }: { store: TransportData }) {
     const syncSummary = () => {
       const activeReference = bookingReferenceFromScreen();
       if (!activeReference) return;
-      const activeBooking = store.state.bookings.find((item) => item.reference === activeReference);
-      if (!activeBooking) return;
-      const remark = activeBooking.specialRequests?.[INTERNAL_KEY]?.trim() ?? '';
-      const cards = Array.from(document.querySelectorAll<HTMLButtonElement>('.booking-section-card'));
-      const remarksCard = cards.find(
-        (card) => card.querySelector('strong')?.textContent?.trim() === 'Remarks',
+
+      const activeBooking = store.state.bookings.find(
+        (item) => item.reference === activeReference,
       );
-      if (!remarksCard) return;
-      const copy = remarksCard.querySelector<HTMLElement>(':scope > span');
-      if (!copy) return;
-      let summary = copy.querySelector<HTMLElement>('[data-booking-remarks-summary]');
-      if (!remark) {
-        if (summary) summary.remove();
-        return;
-      }
-      if (!summary) {
-        summary = document.createElement('small');
-        summary.dataset.bookingRemarksSummary = 'true';
-        copy.appendChild(summary);
-      }
-      if (summary.textContent !== remark) summary.textContent = remark;
+      if (!activeBooking) return;
+
+      const requests = activeBooking.specialRequests ?? {};
+      const internalRemark = requests[INTERNAL_KEY]?.trim() ?? '';
+      const specialRequest = Object.entries(requests)
+        .filter(([key, value]) => !key.startsWith('__booking') && value.trim())
+        .map(([, value]) => value.trim())
+        .join(' | ');
+
+      const cards = Array.from(
+        document.querySelectorAll<HTMLButtonElement>('.booking-section-card'),
+      );
+
+      syncCardSummary(
+        cards,
+        'Remarks',
+        internalRemark,
+        'data-booking-remarks-summary',
+      );
+      syncCardSummary(
+        cards,
+        'Special Request',
+        specialRequest,
+        'data-booking-special-request-summary',
+      );
     };
 
     const onClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null;
       const card = target?.closest<HTMLButtonElement>('.booking-section-card');
       if (!card || card.querySelector('strong')?.textContent?.trim() !== 'Remarks') return;
+
       const activeReference = bookingReferenceFromScreen();
       if (!activeReference) return;
-      const activeBooking = store.state.bookings.find((item) => item.reference === activeReference);
+
+      const activeBooking = store.state.bookings.find(
+        (item) => item.reference === activeReference,
+      );
       if (!activeBooking) return;
+
       event.preventDefault();
       event.stopPropagation();
       const requests = activeBooking.specialRequests ?? {};
@@ -83,6 +125,7 @@ export function BookingRemarksBridge({ store }: { store: TransportData }) {
     const workspace = document.querySelector('.workspace');
     if (workspace) observer.observe(workspace, { childList: true, subtree: true });
     syncSummary();
+
     return () => {
       document.removeEventListener('click', onClick, true);
       observer.disconnect();
