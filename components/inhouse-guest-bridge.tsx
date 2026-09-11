@@ -3,13 +3,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  ArrowDownUp,
+  ArrowRightLeft,
+  ArrowUpDown,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
-  Filter,
-  RefreshCw,
   Search,
+  SlidersHorizontal,
   UserRound,
 } from 'lucide-react';
 import type { TransportData } from '@/lib/use-transport-data';
@@ -160,14 +160,14 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
             aria-label="Back to Front Desk"
             onClick={() => setOpen(false)}
           >
-            <ChevronLeft size={22} />
+            <ChevronLeft size={20} />
           </button>
-          <div>
+          <div className="inhouse-property-copy">
             <small>HMS</small>
             <strong>{hotelMasters.profile.hotelName}</strong>
           </div>
           <span className="inhouse-switch" aria-hidden="true">
-            <RefreshCw size={15} />
+            <ArrowRightLeft size={14} />
           </span>
         </div>
         <div className="inhouse-crumb">
@@ -182,7 +182,7 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
         </strong>
         <div className="inhouse-tools">
           <label className="inhouse-search">
-            <Search size={21} />
+            <Search size={20} />
             <input
               aria-label="Search in-house guests"
               value={query}
@@ -198,7 +198,7 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
               className={roomType !== 'all' ? 'active' : ''}
               onClick={() => setFilterOpen((value) => !value)}
             >
-              <Filter size={21} />
+              <SlidersHorizontal size={20} />
             </button>
             {filterOpen && (
               <div className="inhouse-filter-menu">
@@ -233,7 +233,7 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
             aria-label={sortAsc ? 'Sort room descending' : 'Sort room ascending'}
             onClick={() => setSortAsc((value) => !value)}
           >
-            <ArrowDownUp size={21} />
+            <ArrowUpDown size={20} />
           </button>
         </div>
       </div>
@@ -247,18 +247,18 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
                   <b>{row.roomNo}</b>
                   <strong>{row.roomType}</strong>
                   <span className="inhouse-divider" />
-                  <CalendarDays size={13} />
+                  <CalendarDays size={12} />
                   <span>
                     {formatStayDate(row.arrival)} - {formatStayDate(row.departure)}
                   </span>
                 </div>
                 <div className="inhouse-guest-line">
-                  <UserRound size={13} />
+                  <UserRound size={12} />
                   <span>{row.accountName}</span>
                 </div>
               </div>
               <span className="inhouse-ref">{row.reference}</span>
-              <ChevronRight size={21} className="inhouse-chevron" />
+              <ChevronRight size={18} className="inhouse-chevron" />
             </button>
           ))
         ) : (
