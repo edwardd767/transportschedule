@@ -74,8 +74,11 @@ export function BookingRemarksBridge({ store }: { store: TransportData }) {
 
       const requests = activeBooking.specialRequests ?? {};
       const internalRemark = requests[INTERNAL_KEY]?.trim() ?? '';
+      const visibleSpecialRequestKeys = new Set(
+        activeBooking.rooms.map((room, index) => `${room.code}-${index}`),
+      );
       const specialRequest = Object.entries(requests)
-        .filter(([key, value]) => !key.startsWith('__booking') && value.trim())
+        .filter(([key, value]) => visibleSpecialRequestKeys.has(key) && value.trim())
         .map(([, value]) => value.trim())
         .join(' | ');
 
