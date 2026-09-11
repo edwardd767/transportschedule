@@ -56,7 +56,13 @@ export function SpecialRequest({
                     onChange={(event) =>
                       setRequests({ ...requests, [key]: event.target.value })
                     }
-                    className="mt-1 w-full border-0 border-b border-[#999] bg-transparent px-0 pb-2 text-[17px] text-[#333] outline-none focus:border-[#999] focus:outline-none focus:ring-0"
+                    className="mt-1 w-full bg-transparent px-0 pb-2 text-[17px] text-[#333] outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                    style={{
+                      border: 'none',
+                      borderBottom: '1px solid #999',
+                      outline: 'none',
+                      boxShadow: 'none',
+                    }}
                     maxLength={2000}
                   />
                 </label>
