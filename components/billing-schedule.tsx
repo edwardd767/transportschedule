@@ -11,7 +11,10 @@ import type { RateSetupData } from '@/lib/rate-setup-data';
 const money = (value: number) => value.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const dayLabel = (value: string) => new Date(`${value}T00:00:00Z`).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
 const stayLabel = (value: string) => new Date(`${value}T00:00:00Z`).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit', timeZone: 'UTC' });
-const inputDateLabel = (value: string) => new Date(`${value}T00:00:00Z`).toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
+const inputDateLabel = (value: string) => {
+  const [year, month, day] = value.split('-');
+  return `${day}/${month}/${year}`;
+};
 
 function addDays(value: string, days: number) {
   const date = new Date(`${value}T00:00:00Z`);
@@ -186,7 +189,7 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
         </article>;
       })}
     </div>
-    <div className="billing-schedule-actions"><button type="button" className="primary-button" disabled={!selectedLines.length} onClick={openAdjustment}>Rate Adjustment</button></div>
+    <div className="billing-schedule-actions max-[720px]:!left-0"><button type="button" className="primary-button" disabled={!selectedLines.length} onClick={openAdjustment}>Rate Adjustment</button></div>
     {adjustOpen && <div className="billing-instruction-overlay" role="dialog" aria-modal="true" aria-label="Rate Adjustment"><div className="billing-rate-dialog">
       <div className="billing-rate-dialog-title"><strong>Rate Adjustment</strong><button type="button">Edit</button></div>
       <div className="billing-rate-dialog-sub"><DoorClosed size={16} /> {selectedLines.length} | {Array.from(new Set(selectedLines.map((line) => line.roomTypeCode))).join(', ')}</div>
