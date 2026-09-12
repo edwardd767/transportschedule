@@ -1,0 +1,124 @@
+/* Transport Listing alignment and compact desktop density */
+.workspace:has(.transport-report) > .property-banner {
+  min-height: 64px;
+  padding: 6px 12px 24px;
+}
+
+.workspace:has(.transport-report) > .property-banner .property-identity {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.workspace:has(.transport-report) > .property-banner .breadcrumb {
+  min-height: 24px;
+  padding: 3px 12px;
+  display: flex;
+  align-items: center;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.workspace:has(.transport-report) > .property-banner .breadcrumb > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.workspace:has(.transport-report) > .property-banner .breadcrumb svg {
+  width: 12px;
+  height: 12px;
+}
+
+.transport-report {
+  font-size: 13px;
+}
+
+.transport-report .listing-title {
+  min-height: 40px;
+  padding: 6px 11px;
+}
+
+.transport-report .listing-title h1 {
+  font-size: 14px;
+}
+
+.transport-report .listing-title svg {
+  width: 17px;
+  height: 17px;
+}
+
+.transport-report .context-tag {
+  font-size: 11px;
+  padding: 4px 8px;
+}
+
+.transport-report .secondary-button {
+  min-height: 30px;
+  padding: 4px 9px;
+  font-size: 12px;
+}
+
+.transport-report-summary {
+  margin: 7px 0 6px;
+  min-height: 78px;
+}
+
+.transport-report-summary > div {
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+
+.transport-report-summary small {
+  font-size: 11px;
+}
+
+.transport-report-summary strong {
+  font-size: 18px;
+}
+
+.transport-report-summary .summary-icon {
+  width: 31px;
+  height: 31px;
+}
+
+.transport-report-filters {
+  gap: 6px;
+  margin-bottom: 6px;
+  padding: 7px 9px;
+}
+
+.transport-report-search,
+.transport-report-date {
+  min-height: 34px;
+}
+
+.transport-report-search input,
+.transport-report-date,
+.transport-report-date input,
+.transport-report .choice-trigger {
+  font-size: 12px;
+}
+
+.transport-report-table th {
+  font-size: 11px;
+  padding: 7px 9px;
+}
+
+.transport-report-table td {
+  font-size: 11px;
+  padding: 8px 9px;
+}
+
+.transport-report-service small,
+.transport-report-route small {
+  font-size: 10px;
+}
+
+@media (max-width: 900px) {
+  .transport-report {
+    font-size: 12px;
+  }
+}
