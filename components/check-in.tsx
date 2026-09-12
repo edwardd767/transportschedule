@@ -142,18 +142,18 @@ export function CheckIn({ bookings }: { bookings: Booking[] }) {
     setAdvancedOpen(false);
   }
 
-  return <section className="checkin-page" aria-label="Check In">
-    <div className="checkin-tabs">
-      <button type="button" className={tab === 'due' ? 'active' : ''} onClick={() => { setTab('due'); setActionKey(null); }}>Due In ({due.length})</button>
-      <button type="button" className={tab === 'checked' ? 'active' : ''} onClick={() => { setTab('checked'); setActionKey(null); }}>Checked In ({checked.length})</button>
+  return <section className="checkin-page" aria-label="Check In" style={{ fontSize: 12 }}>
+    <div className="checkin-tabs" style={{ minHeight: 48 }}>
+      <button type="button" className={tab === 'due' ? 'active' : ''} onClick={() => { setTab('due'); setActionKey(null); }} style={{ fontSize: 14, padding: '0 28px', minHeight: 48 }}>Due In ({due.length})</button>
+      <button type="button" className={tab === 'checked' ? 'active' : ''} onClick={() => { setTab('checked'); setActionKey(null); }} style={{ fontSize: 14, padding: '0 28px', minHeight: 48 }}>Checked In ({checked.length})</button>
     </div>
-    <div className="checkin-search">
-      <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search here..." aria-label="Search check in" />
-      <button type="button" aria-label="Search"><Search size={22} /></button>
-      <button type="button" aria-label="Expand"><Scan size={22} /></button>
-      <button type="button" aria-label="Advanced Search" onClick={openAdvancedSearch}><SlidersHorizontal size={22} /></button>
+    <div className="checkin-search" style={{ minHeight: 46, padding: '0 12px' }}>
+      <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search here..." aria-label="Search check in" style={{ fontSize: 13 }} />
+      <button type="button" aria-label="Search"><Search size={18} /></button>
+      <button type="button" aria-label="Expand"><Scan size={18} /></button>
+      <button type="button" aria-label="Advanced Search" onClick={openAdvancedSearch}><SlidersHorizontal size={18} /></button>
     </div>
-    <div className="checkin-body" style={{ padding: '14px 8px' }}>
+    <div className="checkin-body" style={{ padding: '9px 7px' }}>
       {rows.length
         ? rows.map((booking) => {
           const expanded = expandedReference === booking.reference;
@@ -163,10 +163,10 @@ export function CheckIn({ bookings }: { bookings: Booking[] }) {
             <article
               key={booking.reference}
               style={{
-                marginBottom: 10,
+                marginBottom: 7,
                 borderRadius: 4,
                 background: '#fff',
-                boxShadow: '0 2px 8px rgba(0,0,0,.14)',
+                boxShadow: '0 1px 5px rgba(0,0,0,.12)',
                 overflow: 'visible',
               }}
             >
@@ -178,12 +178,12 @@ export function CheckIn({ bookings }: { bookings: Booking[] }) {
                 }}
                 style={{
                   width: '100%',
-                  minHeight: 78,
+                  minHeight: 54,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  gap: 12,
-                  padding: '14px 16px',
+                  gap: 8,
+                  padding: '8px 12px',
                   border: 0,
                   background: '#fff',
                   color: '#111',
@@ -193,16 +193,16 @@ export function CheckIn({ bookings }: { bookings: Booking[] }) {
                 }}
               >
                 <span style={{ minWidth: 0 }}>
-                  <span style={{ display: 'block', fontSize: 14, fontWeight: 800, textDecoration: 'underline', lineHeight: 1.35 }}>
+                  <span style={{ display: 'block', fontSize: 12, fontWeight: 800, textDecoration: 'underline', lineHeight: 1.3 }}>
                     {booking.reference} <span style={{ textDecoration: 'none' }}>|</span> {booking.guest.toUpperCase()}
                   </span>
-                  <span style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 5, marginTop: 4, fontSize: 13, fontWeight: 600 }}>
+                  <span style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4, marginTop: 2, fontSize: 11, fontWeight: 600 }}>
                     {displayDate(booking.arrival)} - {displayDate(booking.departure)}
-                    <BedDouble size={15} color="#214a9c" />
+                    <BedDouble size={13} color="#214a9c" />
                     <span style={{ color: '#ef233c' }}>{booking.assignedRooms}</span>/{total}
                   </span>
                 </span>
-                {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                {expanded ? <ChevronUp size={17} /> : <ChevronDown size={17} />}
               </button>
 
               {expanded && (
@@ -214,27 +214,27 @@ export function CheckIn({ bookings }: { bookings: Booking[] }) {
                         key={room.key}
                         style={{
                           position: 'relative',
-                          minHeight: 70,
+                          minHeight: 48,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
-                          gap: 12,
-                          padding: '12px 14px',
+                          gap: 8,
+                          padding: '8px 10px',
                           borderTop: roomIndex ? '1px solid #eee' : 0,
                           background: '#fff',
                         }}
                       >
                         <div style={{ minWidth: 0 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, fontWeight: 800 }}>
-                            <UserRound size={15} fill="#111" />
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 800 }}>
+                            <UserRound size={12} fill="#111" />
                             {booking.guest.toUpperCase()}
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 5, marginTop: 3, fontSize: 13 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4, marginTop: 2, fontSize: 11 }}>
                             <span style={{ color: room.roomNo === 'N/A' ? '#ff234d' : '#111', fontWeight: 700 }}>{room.roomNo}</span>
                             <span>|</span>
                             <strong>{room.code}</strong>
                             <span>|</span>
-                            <BedDouble size={14} color="#214a9c" />
+                            <BedDouble size={12} color="#214a9c" />
                             <span>{displayDate(booking.arrival)} - {displayDate(booking.departure)}</span>
                           </div>
                         </div>
@@ -244,8 +244,8 @@ export function CheckIn({ bookings }: { bookings: Booking[] }) {
                             aria-label="Room actions"
                             onClick={() => setActionKey(actionKey === menuKey ? null : menuKey)}
                             style={{
-                              width: 34,
-                              height: 34,
+                              width: 28,
+                              height: 28,
                               display: 'grid',
                               placeItems: 'center',
                               border: 0,
@@ -256,17 +256,17 @@ export function CheckIn({ bookings }: { bookings: Booking[] }) {
                               boxShadow: 'none',
                             }}
                           >
-                            <MoreVertical size={22} />
+                            <MoreVertical size={18} />
                           </button>
                           {actionKey === menuKey && tab === 'due' && (
                             <div
                               style={{
                                 position: 'absolute',
                                 zIndex: 50,
-                                top: 38,
+                                top: 30,
                                 right: 0,
-                                width: 164,
-                                padding: '6px 0',
+                                width: 138,
+                                padding: '4px 0',
                                 borderRadius: 3,
                                 background: '#fff',
                                 boxShadow: '0 5px 18px rgba(0,0,0,.28)',
@@ -281,12 +281,12 @@ export function CheckIn({ bookings }: { bookings: Booking[] }) {
                                 }}
                                 style={{
                                   width: '100%',
-                                  padding: '12px 14px',
+                                  padding: '9px 11px',
                                   border: 0,
                                   background: '#fff',
                                   color: '#333',
                                   textAlign: 'left',
-                                  fontSize: 14,
+                                  fontSize: 12,
                                 }}
                               >
                                 Assign Room
