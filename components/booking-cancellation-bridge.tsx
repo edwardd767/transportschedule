@@ -173,6 +173,7 @@ export function BookingCancellationBridge({ store }: { store: TransportData }) {
   const [workspace, setWorkspace] = useState<HTMLElement | null>(null);
   const [reference, setReference] = useState<string | null>(null);
   const [reasonCode, setReasonCode] = useState('');
+  const [reasonOpen, setReasonOpen] = useState(false);
   const [remark, setRemark] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -209,6 +210,7 @@ export function BookingCancellationBridge({ store }: { store: TransportData }) {
       event.stopPropagation();
       setReference(activeReference);
       setReasonCode('');
+      setReasonOpen(false);
       setRemark('');
       setError('');
       setSuccess('');
@@ -231,13 +233,17 @@ export function BookingCancellationBridge({ store }: { store: TransportData }) {
     if (!reference) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && !saving) {
+        if (reasonOpen) {
+          setReasonOpen(false);
+          return;
+        }
         setReference(null);
         setSuccess('');
       }
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [reference, saving]);
+  }, [reference, saving, reasonOpen]);
 
   useEffect(() => {
     if (!success) return;
@@ -358,55 +364,89 @@ export function BookingCancellationBridge({ store }: { store: TransportData }) {
     <>
       {!success && (
         <div className="absolute inset-0 z-[90] flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true" aria-label={reinstating ? 'Reinstatement' : 'Cancel Booking'}>
-          <div className="w-full max-w-[600px] overflow-hidden rounded-[4px] bg-white shadow-2xl">
-            <div className="bg-[#fff6eb] px-4 pb-3 pt-4">
-              <div className="text-[12px] font-medium text-[#ff8a00]">{reinstating ? 'Reinstatement' : 'Cancel Booking'}</div>
-              <div className="mt-1 border-b border-white/80 pb-2 text-[17px] font-semibold text-[#ff8a00]">{booking.reference}</div>
+          <div className="w-full max-w-[480px] overflow-visible rounded-[4px] bg-white shadow-2xl">
+            <div className="rounded-t-[4px] bg-[#fff6eb] px-3 pb-2 pt-3">
+              <div className="text-[10px] font-medium text-[#ff8a00]">{reinstating ? 'Reinstatement' : 'Cancel Booking'}</div>
+              <div className="mt-0.5 border-b border-white/80 pb-1.5 text-[13px] font-semibold text-[#ff8a00]">{booking.reference}</div>
             </div>
 
-            <div className="px-4 pb-3 pt-8">
-              <label className="block text-[13px] text-[#777]">
-                Reason Code *
-                <select
+            <div className="px-3 pb-3 pt-5">
+              <div className="relative">
+                <div className="text-[11px] text-[#888]">Reason Code *</div>
+                <button
+                  type="button"
                   autoFocus
-                  value={reasonCode}
-                  onChange={(event) => setReasonCode(event.target.value)}
-                  className="mt-1 w-full bg-transparent px-0 pb-2 pt-1 text-[17px] text-[#777] outline-none ring-0 focus:outline-none focus:ring-0"
+                  aria-haspopup="listbox"
+                  aria-expanded={reasonOpen}
+                  onClick={() => setReasonOpen((open) => !open)}
+                  className="mt-0.5 flex w-full items-center justify-between bg-transparent px-0 pb-1.5 pt-1 text-left text-[13px] text-[#555] outline-none"
                   style={neutralField}
                 >
-                  <option value="">Select Reason Code</option>
-                  {reasons.map((reason) => (
-                    <option key={reason.code} value={reason.code}>{reason.code} - {reason.description}</option>
-                  ))}
-                </select>
-              </label>
+                  <span>{selectedReason ? `${selectedReason.code} - ${selectedReason.description}` : 'Select Reason Code'}</span>
+                  <span className="pl-3 text-[12px] text-[#777]">⌄</span>
+                </button>
 
-              <label className="mt-8 block text-[13px] text-[#777]">
+                {reasonOpen && (
+                  <div
+                    role="listbox"
+                    className="absolute left-0 right-0 top-full z-[140] mt-1 max-h-[210px] overflow-y-auto border border-[#d8d8d8] bg-white py-1 shadow-xl"
+                  >
+                    {reasons.map((reason) => {
+                      const selected = reason.code === reasonCode;
+                      return (
+                        <button
+                          key={reason.code}
+                          type="button"
+                          role="option"
+                          aria-selected={selected}
+                          onClick={() => {
+                            setReasonCode(reason.code);
+                            setReasonOpen(false);
+                            setError('');
+                          }}
+                          className={`block w-full px-3 py-2 text-left text-[13px] transition-colors ${
+                            selected
+                              ? 'bg-[#f1f1f1] font-medium text-[#444]'
+                              : 'bg-white text-[#555] hover:bg-[#f7f7f7]'
+                          }`}
+                        >
+                          {reason.code} - {reason.description}
+                        </button>
+                      );
+                    })}
+                    {!reasons.length && (
+                      <div className="px-3 py-2 text-[12px] text-[#888]">No Reason Code available</div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <label className="mt-5 block text-[11px] text-[#888]">
                 Remark
                 <input
                   value={remark}
                   maxLength={500}
                   onChange={(event) => setRemark(event.target.value)}
-                  className="mt-1 w-full bg-transparent px-0 pb-2 pt-1 text-[17px] text-[#555] outline-none ring-0 focus:outline-none focus:ring-0"
+                  className="mt-0.5 w-full bg-transparent px-0 pb-1.5 pt-1 text-[13px] text-[#555] outline-none ring-0 focus:outline-none focus:ring-0"
                   style={neutralField}
                 />
               </label>
 
               {pastArrival && (
-                <p className="mt-3 text-[12px] text-[#777]">
+                <p className="mt-2.5 text-[10px] text-[#777]">
                   Arrival date has passed. Reinstatement will change the stay to {today} - {addDays(today, 1)}.
                 </p>
               )}
-              {!reasons.length && <p className="mt-3 text-[12px] text-red-600" role="alert">No Reason Code is available. Set up a Reason under Hotel Settings → Department → Front Office → Reason.</p>}
-              {error && <p className="mt-3 text-[12px] text-red-600" role="alert">{error}</p>}
+              {!reasons.length && <p className="mt-2.5 text-[10px] text-red-600" role="alert">No Reason Code is available. Set up a Reason under Hotel Settings → Department → Front Office → Reason.</p>}
+              {error && <p className="mt-2.5 text-[10px] text-red-600" role="alert">{error}</p>}
 
-              <div className="mt-6 flex justify-end gap-2">
-                <button type="button" disabled={saving} onClick={() => setReference(null)} className="rounded-[4px] bg-[#ff9400] px-4 py-2 text-[13px] font-semibold text-white shadow disabled:opacity-60">Cancel</button>
+              <div className="mt-5 flex justify-end gap-2">
+                <button type="button" disabled={saving} onClick={() => setReference(null)} className="rounded-[4px] bg-[#ff9400] px-3 py-1.5 text-[11px] font-semibold text-white shadow disabled:opacity-60">Cancel</button>
                 <button
                   type="button"
                   disabled={saving || !selectedReason}
                   onClick={() => void (reinstating ? confirmReinstatement() : confirmCancellation())}
-                  className="rounded-[4px] bg-[#ff9400] px-4 py-2 text-[13px] font-semibold text-white shadow disabled:bg-[#ddd]"
+                  className="rounded-[4px] bg-[#ff9400] px-3 py-1.5 text-[11px] font-semibold text-white shadow disabled:bg-[#ddd]"
                 >
                   {saving ? (reinstating ? 'Reinstating…' : 'Cancelling…') : 'Confirm'}
                 </button>
