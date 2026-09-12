@@ -11,6 +11,16 @@ const CANCEL_DESCRIPTION = '_bookingCancellationReasonDescription';
 const CANCEL_REMARK = '_bookingCancellationRemark';
 const CANCEL_AT = '_bookingCancellationAt';
 
+const CANCELLED_DISABLED_SECTIONS = new Set([
+  'Room Assignment',
+  'Room Upgrade',
+  'Incidental Charges',
+  'Confirmation Letter',
+  'Proforma Invoice',
+  'House Limit',
+  'Room Cancellation | Reinstatement',
+]);
+
 type ReasonOption = { code: string; description: string };
 
 function bookingReferenceFromScreen() {
@@ -38,6 +48,50 @@ function departmentReasons(department: HotelDepartment | undefined) {
   return (department?.reasons ?? [])
     .map(decodeReason)
     .filter((item): item is ReasonOption => Boolean(item));
+}
+
+function applyCancelledSectionState(bookings: Booking[]) {
+  const activeReference = bookingReferenceFromScreen();
+  const activeBooking = activeReference
+    ? bookings.find((item) => item.reference === activeReference)
+    : undefined;
+  const cancelled = activeBooking?.status === 'Cancelled';
+
+  document.querySelectorAll<HTMLButtonElement>('.booking-section-card').forEach((card) => {
+    const title = card.querySelector('strong')?.textContent?.trim() ?? '';
+    const shouldDisable = Boolean(cancelled && CANCELLED_DISABLED_SECTIONS.has(title));
+
+    if (shouldDisable) {
+      card.disabled = true;
+      card.dataset.cancelledDisabled = 'true';
+      card.setAttribute('aria-disabled', 'true');
+      card.setAttribute('title', 'Unavailable for cancelled booking');
+      card.style.opacity = '0.48';
+      card.style.background = '#ededed';
+      card.style.color = '#8a8a8a';
+      card.style.cursor = 'default';
+      card.style.boxShadow = 'none';
+      card.style.borderColor = '#dddddd';
+      const icon = card.querySelector<SVGElement>('svg');
+      if (icon) icon.style.opacity = '0.35';
+      return;
+    }
+
+    if (card.dataset.cancelledDisabled === 'true') {
+      card.disabled = false;
+      delete card.dataset.cancelledDisabled;
+      card.removeAttribute('aria-disabled');
+      card.removeAttribute('title');
+      card.style.removeProperty('opacity');
+      card.style.removeProperty('background');
+      card.style.removeProperty('color');
+      card.style.removeProperty('cursor');
+      card.style.removeProperty('box-shadow');
+      card.style.removeProperty('border-color');
+      const icon = card.querySelector<SVGElement>('svg');
+      if (icon) icon.style.removeProperty('opacity');
+    }
+  });
 }
 
 export function BookingCancellationBridge({ store }: { store: TransportData }) {
@@ -87,6 +141,15 @@ export function BookingCancellationBridge({ store }: { store: TransportData }) {
 
     document.addEventListener('click', onClick, true);
     return () => document.removeEventListener('click', onClick, true);
+  }, [store.state.bookings]);
+
+  useEffect(() => {
+    const apply = () => applyCancelledSectionState(store.state.bookings);
+    apply();
+    const root = document.querySelector<HTMLElement>('.workspace') ?? document.body;
+    const observer = new MutationObserver(apply);
+    observer.observe(root, { childList: true, subtree: true });
+    return () => observer.disconnect();
   }, [store.state.bookings]);
 
   useEffect(() => {
