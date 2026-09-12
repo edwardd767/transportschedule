@@ -1,7 +1,17 @@
 'use client';
 
-import { useContext, useState } from 'react';
-import { RotateCcw, Scan, Search, SlidersHorizontal } from 'lucide-react';
+import { useContext, useEffect, useState } from 'react';
+import {
+  BedDouble,
+  ChevronDown,
+  ChevronUp,
+  MoreVertical,
+  RotateCcw,
+  Scan,
+  Search,
+  SlidersHorizontal,
+  UserRound,
+} from 'lucide-react';
 import type { Booking } from '@/lib/bookings';
 import { TransportDataContext } from '@/components/transport-connection';
 
@@ -53,6 +63,36 @@ function bookingRoomNumbers(booking: Booking) {
   return values.filter((value): value is string => Boolean(value));
 }
 
+function displayDate(value: string) {
+  const date = new Date(`${value}T00:00:00Z`);
+  return new Intl.DateTimeFormat('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(date);
+}
+
+function totalRooms(booking: Booking) {
+  return booking.rooms.reduce((sum, room) => sum + room.count, 0);
+}
+
+function bookingRoomEntries(booking: Booking) {
+  const roomNos = bookingRoomNumbers(booking);
+  let roomIndex = 0;
+  return booking.rooms.flatMap((room) =>
+    Array.from({ length: Math.max(1, room.count) }, (_, index) => {
+      const entry = {
+        key: `${room.code}-${index}`,
+        code: room.code,
+        roomNo: roomNos[roomIndex] ?? 'N/A',
+      };
+      roomIndex += 1;
+      return entry;
+    }),
+  );
+}
+
 export function CheckIn({ bookings }: { bookings: Booking[] }) {
   const store = useContext(TransportDataContext);
   const [tab, setTab] = useState<'due' | 'checked'>('due');
@@ -60,10 +100,23 @@ export function CheckIn({ bookings }: { bookings: Booking[] }) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [filters, setFilters] = useState<AdvancedFilters>(emptyFilters);
   const [draftFilters, setDraftFilters] = useState<AdvancedFilters>(emptyFilters);
+  const [expandedReference, setExpandedReference] = useState<string | null>(null);
+  const [actionKey, setActionKey] = useState<string | null>(null);
   const today = todayKey();
   const due = bookings.filter((booking) => booking.arrival === today && booking.status === 'Booked');
   const checked = bookings.filter((booking) => booking.arrival === today && booking.status === 'Inhouse');
   const activeRoomTypes = (store?.state.hotelMasters.roomTypes ?? []).filter((roomType) => roomType.active);
+
+  useEffect(() => {
+    const source = tab === 'due' ? due : checked;
+    if (!source.length) {
+      setExpandedReference(null);
+      return;
+    }
+    if (!expandedReference || !source.some((booking) => booking.reference === expandedReference)) {
+      setExpandedReference(source[0].reference);
+    }
+  }, [tab, due.length, checked.length, expandedReference]);
 
   const rows = (tab === 'due' ? due : checked).filter((booking) => {
     const searchText = `${booking.reference} ${booking.guest} ${booking.accountName ?? ''}`.toLowerCase();
@@ -91,8 +144,8 @@ export function CheckIn({ bookings }: { bookings: Booking[] }) {
 
   return <section className="checkin-page" aria-label="Check In">
     <div className="checkin-tabs">
-      <button type="button" className={tab === 'due' ? 'active' : ''} onClick={() => setTab('due')}>Due In ({due.length})</button>
-      <button type="button" className={tab === 'checked' ? 'active' : ''} onClick={() => setTab('checked')}>Checked In ({checked.length})</button>
+      <button type="button" className={tab === 'due' ? 'active' : ''} onClick={() => { setTab('due'); setActionKey(null); }}>Due In ({due.length})</button>
+      <button type="button" className={tab === 'checked' ? 'active' : ''} onClick={() => { setTab('checked'); setActionKey(null); }}>Checked In ({checked.length})</button>
     </div>
     <div className="checkin-search">
       <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search here..." aria-label="Search check in" />
@@ -100,9 +153,155 @@ export function CheckIn({ bookings }: { bookings: Booking[] }) {
       <button type="button" aria-label="Expand"><Scan size={22} /></button>
       <button type="button" aria-label="Advanced Search" onClick={openAdvancedSearch}><SlidersHorizontal size={22} /></button>
     </div>
-    <div className="checkin-body">
+    <div className="checkin-body" style={{ padding: '14px 8px' }}>
       {rows.length
-        ? rows.map((booking) => <div className="checkin-row" key={booking.reference}><span className="checkin-row-copy"><strong>{booking.guest}</strong><small>{booking.reference} · {booking.arrival} → {booking.departure}</small></span></div>)
+        ? rows.map((booking) => {
+          const expanded = expandedReference === booking.reference;
+          const rooms = bookingRoomEntries(booking);
+          const total = totalRooms(booking);
+          return (
+            <article
+              key={booking.reference}
+              style={{
+                marginBottom: 10,
+                borderRadius: 4,
+                background: '#fff',
+                boxShadow: '0 2px 8px rgba(0,0,0,.14)',
+                overflow: 'visible',
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setExpandedReference(expanded ? null : booking.reference);
+                  setActionKey(null);
+                }}
+                style={{
+                  width: '100%',
+                  minHeight: 78,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                  padding: '14px 16px',
+                  border: 0,
+                  background: '#fff',
+                  color: '#111',
+                  textAlign: 'left',
+                  outline: 'none',
+                  boxShadow: 'none',
+                }}
+              >
+                <span style={{ minWidth: 0 }}>
+                  <span style={{ display: 'block', fontSize: 14, fontWeight: 800, textDecoration: 'underline', lineHeight: 1.35 }}>
+                    {booking.reference} <span style={{ textDecoration: 'none' }}>|</span> {booking.guest.toUpperCase()}
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 5, marginTop: 4, fontSize: 13, fontWeight: 600 }}>
+                    {displayDate(booking.arrival)} - {displayDate(booking.departure)}
+                    <BedDouble size={15} color="#214a9c" />
+                    <span style={{ color: '#ef233c' }}>{booking.assignedRooms}</span>/{total}
+                  </span>
+                </span>
+                {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+              </button>
+
+              {expanded && (
+                <div style={{ borderTop: '1px solid #ddd' }}>
+                  {rooms.map((room, roomIndex) => {
+                    const menuKey = `${booking.reference}-${room.key}`;
+                    return (
+                      <div
+                        key={room.key}
+                        style={{
+                          position: 'relative',
+                          minHeight: 70,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: 12,
+                          padding: '12px 14px',
+                          borderTop: roomIndex ? '1px solid #eee' : 0,
+                          background: '#fff',
+                        }}
+                      >
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, fontWeight: 800 }}>
+                            <UserRound size={15} fill="#111" />
+                            {booking.guest.toUpperCase()}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 5, marginTop: 3, fontSize: 13 }}>
+                            <span style={{ color: room.roomNo === 'N/A' ? '#ff234d' : '#111', fontWeight: 700 }}>{room.roomNo}</span>
+                            <span>|</span>
+                            <strong>{room.code}</strong>
+                            <span>|</span>
+                            <BedDouble size={14} color="#214a9c" />
+                            <span>{displayDate(booking.arrival)} - {displayDate(booking.departure)}</span>
+                          </div>
+                        </div>
+                        <div style={{ position: 'relative', flex: '0 0 auto' }}>
+                          <button
+                            type="button"
+                            aria-label="Room actions"
+                            onClick={() => setActionKey(actionKey === menuKey ? null : menuKey)}
+                            style={{
+                              width: 34,
+                              height: 34,
+                              display: 'grid',
+                              placeItems: 'center',
+                              border: 0,
+                              borderRadius: 3,
+                              background: 'transparent',
+                              color: '#111',
+                              outline: 'none',
+                              boxShadow: 'none',
+                            }}
+                          >
+                            <MoreVertical size={22} />
+                          </button>
+                          {actionKey === menuKey && tab === 'due' && (
+                            <div
+                              style={{
+                                position: 'absolute',
+                                zIndex: 50,
+                                top: 38,
+                                right: 0,
+                                width: 164,
+                                padding: '6px 0',
+                                borderRadius: 3,
+                                background: '#fff',
+                                boxShadow: '0 5px 18px rgba(0,0,0,.28)',
+                              }}
+                            >
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  setActionKey(null);
+                                  await store?.run({ type: 'roomingEnsure', reference: booking.reference });
+                                  window.dispatchEvent(new CustomEvent('hotelx-checkin-assign-room', { detail: { reference: booking.reference } }));
+                                }}
+                                style={{
+                                  width: '100%',
+                                  padding: '12px 14px',
+                                  border: 0,
+                                  background: '#fff',
+                                  color: '#333',
+                                  textAlign: 'left',
+                                  fontSize: 14,
+                                }}
+                              >
+                                Assign Room
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </article>
+          );
+        })
         : <p className="checkin-empty">No Record Found</p>}
     </div>
 
