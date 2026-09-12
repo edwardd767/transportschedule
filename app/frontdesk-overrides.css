@@ -96,3 +96,141 @@
   font-size: 12px !important;
   line-height: 1.25 !important;
 }
+
+/* Guest Check-In must use the same compact visual scale as the other HotelX screens. */
+section.checkin-page[aria-label='Guest Check In'] {
+  height: calc(100vh - 118px) !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+section.checkin-page[aria-label='Guest Check In'] > div:first-child {
+  padding: 5px 8px 0 !important;
+}
+
+section.checkin-page[aria-label='Guest Check In'] > div:first-child > div:first-child {
+  padding-bottom: 4px !important;
+}
+
+section.checkin-page[aria-label='Guest Check In'] > div:first-child button {
+  width: 26px !important;
+  height: 26px !important;
+}
+
+section.checkin-page[aria-label='Guest Check In'] > div:first-child button svg {
+  width: 17px !important;
+  height: 17px !important;
+}
+
+section.checkin-page[aria-label='Guest Check In'] > div:first-child strong {
+  font-size: 11px !important;
+}
+
+section.checkin-page[aria-label='Guest Check In'] > div:first-child > div:last-child {
+  padding: 4px 2px 5px !important;
+  font-size: 10px !important;
+}
+
+section.checkin-page[aria-label='Guest Check In'] > div:nth-child(2) {
+  margin: 0 8px 48px !important;
+  padding: 7px 9px 12px !important;
+  max-height: calc(100vh - 230px) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  scrollbar-gutter: stable;
+}
+
+section.checkin-page[aria-label='Guest Check In'] > div:nth-child(2) > div:first-child {
+  padding-bottom: 8px !important;
+}
+
+section.checkin-page[aria-label='Guest Check In'] > div:nth-child(2) > div:first-child > div:first-child {
+  width: 138px !important;
+  height: 82px !important;
+  border-radius: 6px !important;
+}
+
+section.checkin-page[aria-label='Guest Check In'] > div:nth-child(2) > div:first-child > div:first-child svg {
+  width: 34px !important;
+  height: 34px !important;
+}
+
+section.checkin-page[aria-label='Guest Check In'] > div:nth-child(2) > div:first-child > button {
+  margin-top: 5px !important;
+  padding: 6px 12px !important;
+  gap: 5px !important;
+  font-size: 11px !important;
+}
+
+section.checkin-page[aria-label='Guest Check In'] > div:nth-child(2) > div:first-child > button svg {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+section.checkin-page[aria-label='Guest Check In'] > div:nth-child(2) > div:nth-child(2) {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 9px 16px !important;
+}
+
+section.checkin-page[aria-label='Guest Check In'] label {
+  gap: 2px !important;
+  min-width: 0;
+}
+
+section.checkin-page[aria-label='Guest Check In'] label > span {
+  font-size: 10.5px !important;
+  line-height: 1.2 !important;
+}
+
+section.checkin-page[aria-label='Guest Check In'] input:not([type='checkbox']),
+section.checkin-page[aria-label='Guest Check In'] select,
+section.checkin-page[aria-label='Guest Check In'] textarea {
+  min-height: 26px !important;
+  padding: 2px 0 4px !important;
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+}
+
+section.checkin-page[aria-label='Guest Check In'] input[type='checkbox'] {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+section.checkin-page[aria-label='Guest Check In'] > div:nth-child(2) > div:nth-child(2) + div {
+  margin-top: 8px !important;
+  font-size: 10px !important;
+}
+
+section.checkin-page[aria-label='Guest Check In'] > div:last-child {
+  padding: 6px 10px !important;
+  min-height: 44px !important;
+}
+
+section.checkin-page[aria-label='Guest Check In'] > div:last-child button {
+  min-width: 160px !important;
+  padding: 7px 14px !important;
+  font-size: 12px !important;
+}
+
+@media (max-width: 1180px) {
+  section.checkin-page[aria-label='Guest Check In'] > div:nth-child(2) > div:nth-child(2) {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 720px) {
+  section.checkin-page[aria-label='Guest Check In'] {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  section.checkin-page[aria-label='Guest Check In'] > div:nth-child(2) {
+    max-height: none !important;
+    overflow: visible !important;
+    margin-bottom: 58px !important;
+  }
+
+  section.checkin-page[aria-label='Guest Check In'] > div:nth-child(2) > div:nth-child(2) {
+    grid-template-columns: 1fr !important;
+  }
+}
