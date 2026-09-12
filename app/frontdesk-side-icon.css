@@ -1,5 +1,9 @@
 /* Use the original HotelX sidebar icons supplied by the HotelX application. */
+.main-nav .lucide-calendar-days,
 .main-nav .lucide-concierge-bell,
+.main-nav .lucide-bed,
+.main-nav .lucide-bed-double,
+.main-nav .lucide-bed-single,
 .main-nav .lucide-users,
 .main-nav .lucide-chart-no-axes-combined,
 .main-nav .lucide-settings,
@@ -13,9 +17,23 @@
   color: transparent !important;
 }
 
+/* Booking */
+.main-nav .lucide-calendar-days {
+  background: center / contain no-repeat url('https://hms1.hotelx.asia/static/media/booking.11fb8c49.svg');
+}
+
 /* Front Desk */
 .main-nav .lucide-concierge-bell {
-  background: center / contain no-repeat url('https://hms1.hotelx.asia/static/media/booking.11fb8c49.svg');
+  background: center / contain no-repeat url('https://hms1.hotelx.asia/static/media/front-desk.135aee65.svg');
+}
+
+/* Housekeeping */
+.main-nav .lucide-bed,
+.main-nav .lucide-bed-double,
+.main-nav .lucide-bed-single,
+.main-nav button[aria-label='Housekeeping'] > svg,
+.main-nav .housekeeping-icon {
+  background: center / contain no-repeat url('https://hms1.hotelx.asia/static/media/room-mgmt.eb0a5223.svg');
 }
 
 /* Guest Profile */
@@ -38,13 +56,11 @@
   background: center / contain no-repeat url('https://hms1.hotelx.asia/static/media/log-out.9b4be593.svg');
 }
 
-/* Housekeeping: applies to an existing Housekeeping nav item when it uses the standard aria-label/class hook. */
-.main-nav button[aria-label='Housekeeping'] > svg,
-.main-nav .housekeeping-icon {
-  background: center / contain no-repeat url('https://hms1.hotelx.asia/static/media/room-mgmt.eb0a5223.svg');
-}
-
+.main-nav .lucide-calendar-days > *,
 .main-nav .lucide-concierge-bell > *,
+.main-nav .lucide-bed > *,
+.main-nav .lucide-bed-double > *,
+.main-nav .lucide-bed-single > *,
 .main-nav .lucide-users > *,
 .main-nav .lucide-chart-no-axes-combined > *,
 .main-nav .lucide-settings > *,
