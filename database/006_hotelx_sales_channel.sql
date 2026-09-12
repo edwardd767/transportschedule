@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS public.hotelx_sales_channel (
   property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
-  department_id text NOT NULL,
+  department_id uuid NOT NULL,
   sales_channel_id text NOT NULL,
   sort_order integer NOT NULL,
   sales_channel_name text NOT NULL,
@@ -35,7 +35,7 @@ BEGIN
       SELECT
         department.property_id,
         department.department_id,
-        department.department_id || '-sales-channel-' || channel.ordinality::text,
+        department.department_id::text || '-sales-channel-' || channel.ordinality::text,
         channel.ordinality::integer,
         channel.value #>> '{}',
         true
