@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ArrowDownUp,
   CalendarDays,
+  ChevronDown,
   ChevronRight,
   ClipboardList,
   DoorClosed,
@@ -44,6 +45,116 @@ const advanceStatusOptions = [
   { value: 'Checkout', label: 'CheckOut' },
   { value: 'Waitlist', label: 'Waitlist' },
 ];
+
+type AdvanceSelectOption = { value: string; label: string };
+
+function AdvanceSelect({
+  label,
+  value,
+  placeholder,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  placeholder: string;
+  options: AdvanceSelectOption[];
+  onChange: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const selected = options.find((option) => option.value === value);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: MouseEvent) => {
+      if (!wrapperRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+
+  return (
+    <div className="advance-search-field" ref={wrapperRef} style={{ position: 'relative' }}>
+      <span>{label}</span>
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+        style={{
+          width: '100%',
+          minHeight: 38,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 10,
+          padding: '5px 0 7px',
+          border: 0,
+          borderBottom: '1px solid #aaa',
+          borderRadius: 0,
+          outline: 'none',
+          boxShadow: 'none',
+          background: 'transparent',
+          color: '#222',
+          textAlign: 'left',
+          font: 'inherit',
+        }}
+      >
+        <span style={{ color: selected ? '#222' : '#777' }}>{selected?.label ?? placeholder}</span>
+        <ChevronDown size={16} color="#666" />
+      </button>
+      {open && (
+        <div
+          role="listbox"
+          style={{
+            position: 'absolute',
+            zIndex: 120,
+            top: 'calc(100% + 2px)',
+            left: 0,
+            right: 0,
+            maxHeight: 230,
+            overflowY: 'auto',
+            border: '1px solid #ddd',
+            borderRadius: 3,
+            background: '#fff',
+            boxShadow: '0 5px 16px rgba(0,0,0,.18)',
+          }}
+        >
+          {[{ value: '', label: placeholder }, ...options].map((option) => {
+            const active = option.value === value;
+            return (
+              <button
+                key={option.value || '__empty'}
+                type="button"
+                role="option"
+                aria-selected={active}
+                onClick={() => {
+                  onChange(option.value);
+                  setOpen(false);
+                }}
+                style={{
+                  width: '100%',
+                  display: 'block',
+                  padding: '9px 11px',
+                  border: 0,
+                  outline: 'none',
+                  boxShadow: 'none',
+                  background: active ? '#f0f0f0' : '#fff',
+                  color: '#222',
+                  textAlign: 'left',
+                  font: 'inherit',
+                }}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function BookingOccupancy({ booking }: { booking: Booking }) {
   return (
@@ -309,14 +420,52 @@ export function Bookings({
         </div>
       )}
       {advanceOpen && (
-        <div className="advance-search-layer">
-          <button type="button" className="advance-search-scrim" aria-label="Close advance search" onClick={() => setAdvanceOpen(false)} />
-          <dialog open className="advance-search-panel" aria-label="Advance Search">
-            <div className="advance-search-head">
+        <div
+          className="advance-search-layer"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 100,
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'center',
+            padding: '72px 16px 24px',
+          }}
+        >
+          <button
+            type="button"
+            className="advance-search-scrim"
+            aria-label="Close advance search"
+            onClick={() => setAdvanceOpen(false)}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }}
+          />
+          <dialog
+            open
+            className="advance-search-panel"
+            aria-label="Advance Search"
+            style={{
+              position: 'relative',
+              inset: 'auto',
+              margin: 0,
+              width: 'min(520px, calc(100vw - 32px))',
+              maxWidth: 520,
+              maxHeight: 'calc(100dvh - 96px)',
+              padding: 0,
+              border: 0,
+              borderRadius: 4,
+              overflow: 'hidden',
+              background: '#fff',
+              boxShadow: '0 12px 38px rgba(0,0,0,.32)',
+              zIndex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <div className="advance-search-head" style={{ flex: '0 0 auto' }}>
               <strong>Advance Search</strong>
               <button type="button" className="advance-search-reset" onClick={resetFilters}><RotateCw size={15} /> Reset</button>
             </div>
-            <div className="advance-search-body">
+            <div className="advance-search-body" style={{ overflowY: 'auto', minHeight: 0, flex: '1 1 auto' }}>
               <div className="advance-search-group">
                 <span className="advance-search-group-label">Arrival Date</span>
                 <div className="advance-search-pair">
@@ -332,15 +481,15 @@ export function Bookings({
                 </div>
               </div>
               <div className="advance-search-field"><span>Booking Date</span><HotelDatePicker value={advance.bookingDate} onChange={(value) => setAdvance({ ...advance, bookingDate: value })} ariaLabel="Booking date" /></div>
-              <label className="advance-search-field"><span>Status</span><select value={advance.status} onChange={(event) => setAdvance({ ...advance, status: event.target.value })}><option value="">Select status</option>{advanceStatusOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
-              <label className="advance-search-field"><span>Room Type</span><select value={advance.roomType} onChange={(event) => setAdvance({ ...advance, roomType: event.target.value })}><option value="">Select room type</option>{roomTypes.map((room) => <option key={room.code} value={room.code}>{room.code} - {room.description}</option>)}</select></label>
+              <AdvanceSelect label="Status" value={advance.status} placeholder="Select status" options={advanceStatusOptions} onChange={(status) => setAdvance({ ...advance, status })} />
+              <AdvanceSelect label="Room Type" value={advance.roomType} placeholder="Select room type" options={roomTypes.map((room) => ({ value: room.code, label: `${room.code} - ${room.description}` }))} onChange={(roomType) => setAdvance({ ...advance, roomType })} />
               <label className="advance-search-field"><span>Booking No</span><input value={advance.bookingNo} onChange={(event) => setAdvance({ ...advance, bookingNo: event.target.value })} /></label>
               <label className="advance-search-field"><span>Guest Name</span><input value={advance.guestName} onChange={(event) => setAdvance({ ...advance, guestName: event.target.value })} /></label>
               <label className="advance-search-field"><span>Account Name</span><input value={advance.accountName} onChange={(event) => setAdvance({ ...advance, accountName: event.target.value })} /></label>
               <label className="advance-search-field"><span>Reference No</span><input value={advance.referenceNo} onChange={(event) => setAdvance({ ...advance, referenceNo: event.target.value })} /></label>
               <label className="advance-search-field"><span>Group Name</span><input value={advance.groupName} onChange={(event) => setAdvance({ ...advance, groupName: event.target.value })} /></label>
             </div>
-            <div className="advance-search-actions">
+            <div className="advance-search-actions" style={{ flex: '0 0 auto' }}>
               <button type="button" className="primary-button" onClick={() => setAdvanceOpen(false)}>Cancel</button>
               <button type="button" className="primary-button" onClick={() => setAdvanceOpen(false)}>Confirm</button>
             </div>
