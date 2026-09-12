@@ -20,6 +20,7 @@ import type { TransportData } from '@/lib/use-transport-data';
 const ASSIGNMENT_KEY = '_roomAssignments';
 
 type AssignmentMap = Record<string, string[]>;
+type AssignmentSource = 'booking' | 'checkin';
 type OperationalPolicyWithHousekeeping = TransportData['state']['hotelMasters']['profile']['operationalPolicy'] & {
   housekeepingRoomStatuses?: Record<string, string>;
 };
@@ -78,6 +79,7 @@ function roomTypeBookedCount(booking: Booking, roomTypeCode: string) {
 export function BookingRoomAssignmentBridge({ store }: { store: TransportData }) {
   const [workspace, setWorkspace] = useState<HTMLElement | null>(null);
   const [reference, setReference] = useState<string | null>(null);
+  const [source, setSource] = useState<AssignmentSource>('booking');
   const [roomTypeCode, setRoomTypeCode] = useState<string | null>(null);
   const [draftAssignments, setDraftAssignments] = useState<AssignmentMap>({});
   const [originalAssignments, setOriginalAssignments] = useState<AssignmentMap>({});
@@ -94,6 +96,25 @@ export function BookingRoomAssignmentBridge({ store }: { store: TransportData })
   useEffect(() => {
     setWorkspace(document.querySelector<HTMLElement>('.workspace'));
 
+    const openAssignment = (activeBooking: Booking, nextSource: AssignmentSource) => {
+      const assignments = readAssignments(activeBooking);
+      const roomTypes = Array.from(new Set(activeBooking.rooms.map((room) => room.code)));
+      const preferredRoomType = nextSource === 'checkin' && roomTypes.length === 1 ? roomTypes[0] : null;
+      const firstLocation = preferredRoomType
+        ? store.state.hotelMasters.rooms.find(
+            (room) => room.active && room.roomTypeCode === preferredRoomType,
+          )?.locationCode
+        : undefined;
+
+      setSource(nextSource);
+      setReference(activeBooking.reference);
+      setRoomTypeCode(preferredRoomType);
+      setDraftAssignments(assignments);
+      setOriginalAssignments(assignments);
+      setOpenLocations(firstLocation ? new Set([firstLocation]) : new Set());
+      setSaveError('');
+    };
+
     const onClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null;
       const card = target?.closest<HTMLButtonElement>('.booking-section-card');
@@ -106,34 +127,42 @@ export function BookingRoomAssignmentBridge({ store }: { store: TransportData })
 
       event.preventDefault();
       event.stopPropagation();
-      const assignments = readAssignments(activeBooking);
-      setReference(activeReference);
-      setRoomTypeCode(null);
-      setDraftAssignments(assignments);
-      setOriginalAssignments(assignments);
-      setOpenLocations(new Set());
-      setSaveError('');
+      openAssignment(activeBooking, 'booking');
+    };
+
+    const onCheckinAssignRoom = (event: Event) => {
+      const detail = (event as CustomEvent<{ reference?: string }>).detail;
+      const activeReference = detail?.reference?.trim();
+      if (!activeReference) return;
+      const activeBooking = store.state.bookings.find((item) => item.reference === activeReference);
+      if (!activeBooking) return;
+      openAssignment(activeBooking, 'checkin');
     };
 
     document.addEventListener('click', onClick, true);
-    return () => document.removeEventListener('click', onClick, true);
-  }, [store.state.bookings]);
+    window.addEventListener('hotelx-checkin-assign-room', onCheckinAssignRoom as EventListener);
+    return () => {
+      document.removeEventListener('click', onClick, true);
+      window.removeEventListener('hotelx-checkin-assign-room', onCheckinAssignRoom as EventListener);
+    };
+  }, [store.state.bookings, store.state.hotelMasters.rooms]);
 
   useEffect(() => {
     if (!reference) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || saving) return;
-      if (roomTypeCode) {
+      if (source === 'booking' && roomTypeCode) {
         setRoomTypeCode(null);
         setDraftAssignments(originalAssignments);
         setSaveError('');
       } else {
         setReference(null);
+        setRoomTypeCode(null);
       }
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [originalAssignments, reference, roomTypeCode, saving]);
+  }, [originalAssignments, reference, roomTypeCode, saving, source]);
 
   useEffect(() => {
     if (!snackbar) return;
@@ -174,7 +203,7 @@ export function BookingRoomAssignmentBridge({ store }: { store: TransportData })
 
   const back = () => {
     if (saving) return;
-    if (roomTypeCode) {
+    if (source === 'booking' && roomTypeCode) {
       setRoomTypeCode(null);
       setDraftAssignments(originalAssignments);
       setSaveError('');
@@ -311,8 +340,15 @@ export function BookingRoomAssignmentBridge({ store }: { store: TransportData })
       await store.run({ type: 'bookingUpdate', value: nextBooking });
       setOriginalAssignments(normalized);
       setDraftAssignments(normalized);
-      setRoomTypeCode(null);
       setSnackbar('Assign Room(s) Successfully!');
+      if (source === 'checkin') {
+        window.setTimeout(() => {
+          setReference(null);
+          setRoomTypeCode(null);
+        }, 450);
+      } else {
+        setRoomTypeCode(null);
+      }
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : 'Unable to assign room(s).');
     } finally {
@@ -337,15 +373,15 @@ export function BookingRoomAssignmentBridge({ store }: { store: TransportData })
               )?.locationCode;
               setOpenLocations(firstLocation ? new Set([firstLocation]) : new Set());
             }}
-            className="flex w-full items-center justify-between rounded-[4px] bg-white px-3 py-4 text-left shadow-sm"
+            className="flex w-full items-center justify-between rounded-[4px] bg-white px-3 py-3 text-left shadow-sm"
           >
             <span>
-              <strong className="block text-[14px] text-[#111]">{code} | {stayDates(booking).replace('–', '-')}</strong>
-              <small className="mt-1 flex items-center gap-1 text-[12px] text-[#333]">
-                <BedDouble size={16} /> {assigned} / {booked}
+              <strong className="block text-[12px] text-[#111]">{code} | {stayDates(booking).replace('–', '-')}</strong>
+              <small className="mt-1 flex items-center gap-1 text-[11px] text-[#333]">
+                <BedDouble size={14} /> {assigned} / {booked}
               </small>
             </span>
-            <ChevronRight size={23} />
+            <ChevronRight size={19} />
           </button>
         );
       })}
@@ -355,11 +391,11 @@ export function BookingRoomAssignmentBridge({ store }: { store: TransportData })
   const assignmentDetail = roomTypeCode && selectedRoomType ? (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="mx-3 mt-3 rounded-[3px] bg-white shadow-sm">
-        <div className="flex items-start justify-between border-b border-[#ddd] px-3 py-3">
+        <div className="flex items-start justify-between border-b border-[#ddd] px-3 py-2.5">
           <div>
-            <div className="text-[11px] font-semibold text-[#ff8700]">Stay Information</div>
-            <div className="mt-1 text-[13px] font-medium">{roomTypeCode}</div>
-            <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]">
+            <div className="text-[10px] font-semibold text-[#ff8700]">Stay Information</div>
+            <div className="mt-0.5 text-[12px] font-medium">{roomTypeCode}</div>
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px]">
               {statusCounts.map((item) => (
                 <span key={item.code} className="inline-flex items-center gap-1">
                   <span className="h-3 w-3 border border-[#999] bg-white" />
@@ -369,22 +405,22 @@ export function BookingRoomAssignmentBridge({ store }: { store: TransportData })
             </div>
           </div>
           <div className="text-right">
-            <div className="text-[11px] font-semibold text-[#ff8700]">Assigned Room</div>
-            <div className="mt-1 flex items-center justify-end gap-1 text-[13px]"><BedDouble size={17} /> {currentSelected.length} / {requiredCount}</div>
+            <div className="text-[10px] font-semibold text-[#ff8700]">Assigned Room</div>
+            <div className="mt-1 flex items-center justify-end gap-1 text-[12px]"><BedDouble size={15} /> {currentSelected.length} / {requiredCount}</div>
           </div>
         </div>
 
-        <div className="max-h-[calc(100vh-330px)] overflow-y-auto px-2 py-2">
+        <div className="max-h-[calc(100vh-315px)] overflow-y-auto px-2 py-2">
           {locationGroups.map(([locationCode, rooms]) => {
             const open = openLocations.has(locationCode);
             const selectedInGroup = rooms.filter((room) => currentSelected.includes(room.roomNo)).length;
             const locationName = rooms[0]?.locationName || locationCode;
             return (
               <div key={locationCode} className="mb-1">
-                <div className={`flex items-center justify-between px-2 py-2 ${open ? 'bg-[#fff5e8]' : 'bg-[#dedede]'}`}>
+                <div className={`flex items-center justify-between px-2 py-1.5 ${open ? 'bg-[#fff5e8]' : 'bg-[#dedede]'}`}>
                   <button
                     type="button"
-                    className="flex flex-1 items-center text-left text-[13px] font-semibold"
+                    className="flex flex-1 items-center text-left text-[12px] font-semibold"
                     onClick={() =>
                       setOpenLocations((current) => {
                         const next = new Set(current);
@@ -398,8 +434,8 @@ export function BookingRoomAssignmentBridge({ store }: { store: TransportData })
                   </button>
                   {open && (
                     <div className="mr-2 flex items-center gap-1">
-                      <button type="button" onClick={autoAssign} className="inline-flex items-center gap-1 rounded-[4px] border border-[#ff9000] bg-white px-2 py-1 text-[12px] text-[#777]"><Check size={14} /> Auto</button>
-                      <button type="button" onClick={reset} className="inline-flex items-center gap-1 rounded-[4px] border border-[#ff9000] bg-white px-2 py-1 text-[12px] text-[#ff9000]"><RotateCw size={14} /> Reset</button>
+                      <button type="button" onClick={autoAssign} className="inline-flex items-center gap-1 rounded-[4px] border border-[#ff9000] bg-white px-2 py-1 text-[11px] text-[#777]"><Check size={13} /> Auto</button>
+                      <button type="button" onClick={reset} className="inline-flex items-center gap-1 rounded-[4px] border border-[#ff9000] bg-white px-2 py-1 text-[11px] text-[#ff9000]"><RotateCw size={13} /> Reset</button>
                     </div>
                   )}
                   <button
@@ -415,7 +451,7 @@ export function BookingRoomAssignmentBridge({ store }: { store: TransportData })
                     }
                     className="p-1 text-[#666]"
                   >
-                    <ChevronDown size={18} className={open ? 'rotate-180' : ''} />
+                    <ChevronDown size={16} className={open ? 'rotate-180' : ''} />
                   </button>
                 </div>
 
@@ -430,17 +466,17 @@ export function BookingRoomAssignmentBridge({ store }: { store: TransportData })
                           type="button"
                           disabled={!eligible || saving}
                           onClick={() => toggleRoom(room)}
-                          className={`min-h-[58px] rounded-[3px] px-2 py-1 text-left text-white shadow-sm ${!eligible && !selected ? 'cursor-not-allowed opacity-45' : ''}`}
+                          className={`min-h-[48px] rounded-[3px] px-2 py-1 text-left text-white shadow-sm ${!eligible && !selected ? 'cursor-not-allowed opacity-45' : ''}`}
                           style={{ backgroundColor: selected ? '#3210c8' : room.statusColor }}
                           title={room.assignedToOther ? 'Assigned to another booking' : `${room.roomNo} - ${room.status}`}
                         >
-                          <div className="flex items-center justify-between text-[12px] font-bold">
+                          <div className="flex items-center justify-between text-[11px] font-bold">
                             <span>{room.roomNo}</span>
                             <span>{room.status}</span>
                           </div>
-                          <div className="mt-1 flex items-end justify-between text-[11px]">
+                          <div className="mt-0.5 flex items-end justify-between text-[10px]">
                             <strong>{room.roomTypeCode}</strong>
-                            <span className="inline-flex items-center gap-[2px]"><Users size={11} /> {room.maxGuest}</span>
+                            <span className="inline-flex items-center gap-[2px]"><Users size={10} /> {room.maxGuest}</span>
                           </div>
                         </button>
                       );
@@ -451,52 +487,65 @@ export function BookingRoomAssignmentBridge({ store }: { store: TransportData })
             );
           })}
           {!locationGroups.length && (
-            <div className="p-8 text-center text-[13px] text-[#777]">No active rooms are configured for {roomTypeCode}.</div>
+            <div className="p-8 text-center text-[12px] text-[#777]">No active rooms are configured for {roomTypeCode}.</div>
           )}
         </div>
       </div>
 
-      {saveError && <p className="mx-3 mt-2 text-[12px] font-medium text-[#b42318]" role="alert">{saveError}</p>}
-      <div className="mt-auto border-t border-[#ddd] bg-white px-3 py-3 text-center shadow-[0_-3px_10px_rgba(0,0,0,0.05)]">
+      {saveError && <p className="mx-3 mt-2 text-[11px] font-medium text-[#b42318]" role="alert">{saveError}</p>}
+      <div className="mt-auto border-t border-[#ddd] bg-white px-3 py-2.5 text-center shadow-[0_-3px_10px_rgba(0,0,0,0.05)]">
         <button
           type="button"
           onClick={() => void save()}
           disabled={!changed || saving}
-          className="min-w-[130px] rounded-[4px] bg-[#ff9428] px-8 py-2 text-[14px] font-semibold text-white shadow disabled:bg-[#d8d8d8] disabled:text-[#aaa]"
+          className="min-w-[130px] rounded-[4px] bg-[#ff9428] px-8 py-2 text-[13px] font-semibold text-white shadow disabled:bg-[#d8d8d8] disabled:text-[#aaa]"
         >
-          {saving ? 'Saving…' : 'Save'}
+          {saving ? 'Saving…' : source === 'checkin' ? 'Confirm' : 'Save'}
         </button>
       </div>
     </div>
   ) : null;
 
   return createPortal(
-    <section className="absolute inset-0 z-[75] flex min-h-0 flex-col bg-[#f5f5f5]" aria-label="Room Assignment">
+    <section className="absolute inset-0 z-[75] flex min-h-0 flex-col bg-[#f5f5f5] text-[12px]" aria-label="Room Assignment">
       <div className="shrink-0 px-3 pt-3">
-        <div className="relative min-h-[72px] overflow-hidden bg-[radial-gradient(ellipse_at_82%_105%,#ffbd14_0_39%,transparent_39.5%),radial-gradient(ellipse_at_38%_-55%,#f57818_0_51%,transparent_51.5%),linear-gradient(110deg,#f89912,#ffa524_65%,#f67e1b)] px-3 pb-7 pt-2">
+        <div className="relative min-h-[68px] overflow-hidden bg-[radial-gradient(ellipse_at_82%_105%,#ffbd14_0_39%,transparent_39.5%),radial-gradient(ellipse_at_38%_-55%,#f57818_0_51%,transparent_51.5%),linear-gradient(110deg,#f89912,#ffa524_65%,#f67e1b)] px-3 pb-6 pt-2">
           <div className="flex items-start gap-2">
             <button type="button" onClick={back} disabled={saving} className="grid h-8 w-8 place-items-center rounded-[3px] bg-white text-[#e78300] shadow disabled:opacity-60" aria-label="Back">
-              <ChevronLeft size={23} />
+              <ChevronLeft size={21} />
             </button>
             <div>
-              <small className="block text-[10px] font-semibold text-white">HMS</small>
-              <strong className="block text-[13px] text-[#111]">{store.state.hotelMasters.profile.hotelName || 'HOTEL PARADISE'}</strong>
+              <small className="block text-[9px] font-semibold text-white">HMS</small>
+              <strong className="block text-[12px] text-[#111]">{store.state.hotelMasters.profile.hotelName || 'HOTEL PARADISE'}</strong>
             </div>
           </div>
-          <div className="absolute inset-x-0 bottom-0 border-t border-white/50 px-3 py-1 text-[10px] text-[#151515]">... / ... / Room Assignment</div>
+          <div className="absolute inset-x-0 bottom-0 border-t border-white/50 px-3 py-1 text-[9px] text-[#151515]">... / ... / {source === 'checkin' ? 'Assign Room' : 'Room Assignment'}</div>
         </div>
 
-        <div className="bg-[#fff8ed] px-3 py-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <strong className="text-[13px]">{stayDates(booking).replace('–', '-')}</strong>
-              <span className="inline-flex items-center gap-1 text-[11px]"><DoorClosed size={15} /> <span className={booking.assignedRooms < roomCount(booking) ? 'text-[#d90029]' : ''}>{booking.assignedRooms}</span>/{roomCount(booking)}</span>
-              <span className="inline-flex items-center gap-1 text-[11px]"><UserRound size={15} /> <span className={booking.checkedInGuests < booking.guests ? 'text-[#d90029]' : ''}>{booking.checkedInGuests}</span>/{booking.guests}</span>
+        {source === 'checkin' ? (
+          <div className="bg-[#fff8ed] px-3 py-2 text-[11px]">
+            <div className="flex items-center justify-between gap-3">
+              <strong>{stayDates(booking).replace('–', '-')}</strong>
+              <strong className="font-medium">{store.state.hotelMasters.profile.hotelName || 'HOTEL PARADISE'}</strong>
             </div>
-            <strong className="text-[12px] text-[#ff174f]">{booking.amount.toFixed(2)}</strong>
+            <div className="mt-1 flex items-center justify-between gap-3">
+              <div>{booking.reference} &nbsp;|&nbsp; {booking.guest}</div>
+              <UserRound size={14} className="text-[#173b8c]" />
+            </div>
           </div>
-          <div className="mt-1 text-[11px]">{booking.reference} &nbsp;|&nbsp; {booking.guest}</div>
-        </div>
+        ) : (
+          <div className="bg-[#fff8ed] px-3 py-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <strong className="text-[12px]">{stayDates(booking).replace('–', '-')}</strong>
+                <span className="inline-flex items-center gap-1 text-[10px]"><DoorClosed size={14} /> <span className={booking.assignedRooms < roomCount(booking) ? 'text-[#d90029]' : ''}>{booking.assignedRooms}</span>/{roomCount(booking)}</span>
+                <span className="inline-flex items-center gap-1 text-[10px]"><UserRound size={14} /> <span className={booking.checkedInGuests < booking.guests ? 'text-[#d90029]' : ''}>{booking.checkedInGuests}</span>/{booking.guests}</span>
+              </div>
+              <strong className="text-[11px] text-[#ff174f]">{booking.amount.toFixed(2)}</strong>
+            </div>
+            <div className="mt-1 text-[10px]">{booking.reference} &nbsp;|&nbsp; {booking.guest}</div>
+          </div>
+        )}
       </div>
 
       <div className="min-h-0 flex flex-1 flex-col overflow-hidden">
@@ -505,9 +554,9 @@ export function BookingRoomAssignmentBridge({ store }: { store: TransportData })
 
       {snackbar && (
         <div className="pointer-events-none absolute bottom-4 left-1/2 z-[120] -translate-x-1/2">
-          <div className="pointer-events-auto flex items-center gap-7 whitespace-nowrap rounded-[4px] bg-[#303030] px-4 py-3 text-[13px] font-semibold text-white shadow-2xl" role="status" aria-live="polite">
+          <div className="pointer-events-auto flex items-center gap-7 whitespace-nowrap rounded-[4px] bg-[#303030] px-4 py-3 text-[12px] font-semibold text-white shadow-2xl" role="status" aria-live="polite">
             <span>{snackbar}</span>
-            <button type="button" onClick={() => setSnackbar(null)} className="border-0 bg-transparent p-0 text-[12px] font-semibold uppercase text-[#8ab4f8]">Dismiss</button>
+            <button type="button" onClick={() => setSnackbar(null)} className="border-0 bg-transparent p-0 text-[11px] font-semibold uppercase text-[#8ab4f8]">Dismiss</button>
           </div>
         </div>
       )}
