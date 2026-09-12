@@ -52,6 +52,13 @@ function prettyDate(value: string) {
   return `${day}/${month}/${year}`;
 }
 
+function localDateKey(offsetDays = 0) {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() + offsetDays);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
 export function BookingCreate({
   childRatesApplied = false,
   bookings,
@@ -82,8 +89,8 @@ export function BookingCreate({
     validity: Array.isArray(rateSetup?.validity) ? rateSetup.validity : initialRateSetupData.validity,
   };
   const activeRoomTypes = roomTypes.filter((item) => item.active);
-  const [arrival, setArrival] = useState('2026-09-05');
-  const [departure, setDeparture] = useState('2026-09-06');
+  const [arrival, setArrival] = useState(() => localDateKey(0));
+  const [departure, setDeparture] = useState(() => localDateKey(1));
   const [groupEnabled, setGroupEnabled] = useState(false);
   const [salesChannel, setSalesChannel] = useState('Direct');
   const [source, setSource] = useState('Booking');
