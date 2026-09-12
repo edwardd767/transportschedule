@@ -15,6 +15,8 @@ import {
 import type { Booking } from '@/lib/bookings';
 import { TransportDataContext } from '@/components/transport-connection';
 
+const ASSIGNMENT_KEY = '_roomAssignments';
+
 type AdvancedFilters = {
   accountName: string;
   guestName: string;
@@ -35,6 +37,24 @@ function todayKey() {
 }
 
 function bookingRoomNumbers(booking: Booking) {
+  const assignedFromMap: string[] = [];
+  const rawAssignments = booking.specialRequests?.[ASSIGNMENT_KEY];
+  if (rawAssignments) {
+    try {
+      const parsed = JSON.parse(rawAssignments) as Record<string, unknown>;
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        for (const roomNos of Object.values(parsed)) {
+          if (!Array.isArray(roomNos)) continue;
+          assignedFromMap.push(
+            ...roomNos.filter((roomNo): roomNo is string => typeof roomNo === 'string' && Boolean(roomNo.trim())),
+          );
+        }
+      }
+    } catch {
+      // Ignore malformed historical assignment payloads and fall back to legacy fields.
+    }
+  }
+
   const extended = booking as Booking & {
     roomNo?: string;
     roomNos?: string[];
@@ -42,6 +62,7 @@ function bookingRoomNumbers(booking: Booking) {
   };
 
   const values = [
+    ...assignedFromMap,
     extended.roomNo,
     ...(extended.roomNos ?? []),
     ...(extended.assignedRoomNos ?? []),
@@ -60,7 +81,14 @@ function bookingRoomNumbers(booking: Booking) {
     );
   }
 
-  return values.filter((value): value is string => Boolean(value));
+  return Array.from(
+    new Set(
+      values
+        .filter((value): value is string => Boolean(value))
+        .map((value) => value.trim())
+        .filter(Boolean),
+    ),
+  );
 }
 
 function displayDate(value: string) {
@@ -158,6 +186,7 @@ export function CheckIn({ bookings }: { bookings: Booking[] }) {
         ? rows.map((booking) => {
           const expanded = expandedReference === booking.reference;
           const rooms = bookingRoomEntries(booking);
+          const assignedRoomNos = bookingRoomNumbers(booking);
           const total = totalRooms(booking);
           return (
             <article
@@ -200,6 +229,11 @@ export function CheckIn({ bookings }: { bookings: Booking[] }) {
                     {displayDate(booking.arrival)} - {displayDate(booking.departure)}
                     <BedDouble size={13} color="#214a9c" />
                     <span style={{ color: '#ef233c' }}>{booking.assignedRooms}</span>/{total}
+                    {assignedRoomNos.length > 0 && (
+                      <span style={{ marginLeft: 5, color: '#444', fontWeight: 600 }}>
+                        {assignedRoomNos.join(', ')}
+                      </span>
+                    )}
                   </span>
                 </span>
                 {expanded ? <ChevronUp size={17} /> : <ChevronDown size={17} />}
@@ -230,7 +264,7 @@ export function CheckIn({ bookings }: { bookings: Booking[] }) {
                             {booking.guest.toUpperCase()}
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4, marginTop: 2, fontSize: 11 }}>
-                            <span style={{ color: room.roomNo === 'N/A' ? '#ff234d' : '#111', fontWeight: 700 }}>{room.roomNo}</span>
+                            <span style={{ color: room.roomNo === 'N/A' ? '#ff234d' : '#34cdb1', fontWeight: 700 }}>{room.roomNo}</span>
                             <span>|</span>
                             <strong>{room.code}</strong>
                             <span>|</span>
