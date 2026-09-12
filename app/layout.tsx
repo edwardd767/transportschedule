@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Poppins } from 'next/font/google';
 import './globals.css';
 import './frontdesk-overrides.css';
+import './frontdesk-side-icon.css';
 import './housekeeping-snackbar.css';
 import './transport-report-fix.css';
 
