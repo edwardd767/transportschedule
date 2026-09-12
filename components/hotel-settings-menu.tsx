@@ -68,7 +68,7 @@ export function HotelSettingsMenu({
   };
 
   return (
-    <div className="hotel-settings-menu" aria-label="Hotel Settings">
+    <div className="hotel-settings-menu" aria-label="Hotel Settings" style={{ gap: 5 }}>
       {items.map((item) => {
         const Icon = item.icon;
         const action = actions[item.key];
@@ -79,10 +79,25 @@ export function HotelSettingsMenu({
             className="hotel-settings-card transport-settings-card"
             onClick={action}
             aria-label={`Open ${item.label}`}
+            style={{
+              minHeight: 60,
+              gridTemplateColumns: '42px minmax(0, 1fr) 24px',
+              gap: 10,
+              padding: '8px 12px',
+            }}
           >
-            <span className="hotel-settings-card-icon" aria-hidden="true"><Icon size={28} /></span>
-            <span className="hotel-settings-card-copy"><strong>{item.label}</strong><span>{item.detail}</span></span>
-            <ChevronRight className="hotel-settings-card-arrow" size={28} />
+            <span
+              className="hotel-settings-card-icon"
+              aria-hidden="true"
+              style={{ width: 34, height: 34, borderRadius: 8 }}
+            >
+              <Icon size={22} />
+            </span>
+            <span className="hotel-settings-card-copy" style={{ gap: 1 }}>
+              <strong style={{ fontSize: 13, lineHeight: 1.2 }}>{item.label}</strong>
+              <span style={{ fontSize: 12, lineHeight: 1.25 }}>{item.detail}</span>
+            </span>
+            <ChevronRight className="hotel-settings-card-arrow" size={21} />
           </button>
         );
       })}
