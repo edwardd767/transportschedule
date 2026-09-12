@@ -125,7 +125,7 @@ export function HotelSettingsMenu({
             aria-label={`Open ${item.label}`}
             style={{
               minHeight: 60,
-              gridTemplateColumns: '42px minmax(0, 1fr) 24px',
+              gridTemplateColumns: '50px minmax(0, 1fr) 24px',
               gap: 10,
               padding: '8px 12px',
             }}
@@ -133,15 +133,22 @@ export function HotelSettingsMenu({
             <span
               className="hotel-settings-card-icon"
               aria-hidden="true"
-              style={{ width: 34, height: 34, borderRadius: 8 }}
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 0,
+                background: 'transparent',
+                boxShadow: 'none',
+                border: 'none',
+              }}
             >
               <img
                 src={item.iconSrc}
                 alt=""
-                width={24}
-                height={24}
+                width={32}
+                height={32}
                 loading="eager"
-                style={{ display: 'block', width: 24, height: 24, objectFit: 'contain' }}
+                style={{ display: 'block', width: 32, height: 32, objectFit: 'contain' }}
               />
             </span>
             <span className="hotel-settings-card-copy" style={{ gap: 1 }}>
