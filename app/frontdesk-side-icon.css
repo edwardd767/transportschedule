@@ -53,3 +53,29 @@
 .main-nav .housekeeping-icon > * {
   display: none !important;
 }
+
+/* Booking Listing occupancy icons: use the same HotelX room/person artwork shown in the production listing. */
+.booking-occupancy .lucide-door-closed,
+.booking-occupancy .lucide-user-round {
+  width: 18px !important;
+  height: 18px !important;
+  flex: 0 0 18px;
+  stroke: transparent !important;
+  color: transparent !important;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+.booking-occupancy .lucide-door-closed {
+  background-image: url('https://hms1.hotelx.asia/static/media/room.7cce94dd.svg');
+}
+
+.booking-occupancy .lucide-user-round {
+  background-image: url('https://hms1.hotelx.asia/static/media/person.eed5ce8b.svg');
+}
+
+.booking-occupancy .lucide-door-closed > *,
+.booking-occupancy .lucide-user-round > * {
+  display: none !important;
+}
