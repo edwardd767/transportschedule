@@ -1,12 +1,55 @@
-/* Use the original HotelX Front Desk icon in the sidebar. */
-.lucide-concierge-bell {
+/* Use the original HotelX sidebar icons supplied by the HotelX application. */
+.main-nav .lucide-concierge-bell,
+.main-nav .lucide-users,
+.main-nav .lucide-chart-no-axes-combined,
+.main-nav .lucide-settings,
+.main-nav .lucide-log-out,
+.main-nav button[aria-label='Housekeeping'] > svg,
+.main-nav .housekeeping-icon {
   width: 24px !important;
   height: 24px !important;
   flex: 0 0 24px;
-  background: center / contain no-repeat url('https://hms1.hotelx.asia/static/media/front-desk.135aee65.svg');
   stroke: transparent !important;
+  color: transparent !important;
 }
 
-.lucide-concierge-bell > * {
+/* Front Desk */
+.main-nav .lucide-concierge-bell {
+  background: center / contain no-repeat url('https://hms1.hotelx.asia/static/media/booking.11fb8c49.svg');
+}
+
+/* Guest Profile */
+.main-nav .lucide-users {
+  background: center / contain no-repeat url('https://hms1.hotelx.asia/static/media/guest.27359188.svg');
+}
+
+/* Digital Reporting */
+.main-nav .lucide-chart-no-axes-combined {
+  background: center / contain no-repeat url('https://hms1.hotelx.asia/static/media/business%20insight.2321199b.svg');
+}
+
+/* Hotel Settings */
+.main-nav .lucide-settings {
+  background: center / contain no-repeat url('https://hms1.hotelx.asia/static/media/hotel-settings.bcc5e69d.svg');
+}
+
+/* Sign Out */
+.main-nav .lucide-log-out {
+  background: center / contain no-repeat url('https://hms1.hotelx.asia/static/media/log-out.9b4be593.svg');
+}
+
+/* Housekeeping: applies to an existing Housekeeping nav item when it uses the standard aria-label/class hook. */
+.main-nav button[aria-label='Housekeeping'] > svg,
+.main-nav .housekeeping-icon {
+  background: center / contain no-repeat url('https://hms1.hotelx.asia/static/media/room-mgmt.eb0a5223.svg');
+}
+
+.main-nav .lucide-concierge-bell > *,
+.main-nav .lucide-users > *,
+.main-nav .lucide-chart-no-axes-combined > *,
+.main-nav .lucide-settings > *,
+.main-nav .lucide-log-out > *,
+.main-nav button[aria-label='Housekeeping'] > svg > *,
+.main-nav .housekeeping-icon > * {
   display: none !important;
 }
