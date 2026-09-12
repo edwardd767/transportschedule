@@ -3,6 +3,7 @@ import { Poppins } from 'next/font/google';
 import './globals.css';
 import './frontdesk-overrides.css';
 import './housekeeping-snackbar.css';
+import './transport-report-fix.css';
 
 const hotelFont = Poppins({
   variable: '--font-hotelx',
