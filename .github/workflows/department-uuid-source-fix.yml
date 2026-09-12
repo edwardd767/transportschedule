@@ -1,0 +1,82 @@
+name: Apply Department UUID Source Fix
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/department-uuid-source-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          token: ${{ github.token }}
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Patch UUID department persistence
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('worker/normalized-storage.ts')
+          text = path.read_text()
+          replacements = [
+              ("`CREATE TABLE IF NOT EXISTS public.hotelx_department (\n    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,\n    department_id text NOT NULL,",
+               "`CREATE TABLE IF NOT EXISTS public.hotelx_department (\n    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,\n    department_id uuid NOT NULL DEFAULT gen_random_uuid(),"),
+              ("`CREATE TABLE IF NOT EXISTS public.hotelx_sales_channel (\n    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,\n    department_id text NOT NULL,",
+               "`CREATE TABLE IF NOT EXISTS public.hotelx_sales_channel (\n    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,\n    department_id uuid NOT NULL,"),
+              ("`CREATE TABLE IF NOT EXISTS public.hotelx_incidentalcharges (\n    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,\n    charge_id text NOT NULL,\n    department_id text NOT NULL,",
+               "`CREATE TABLE IF NOT EXISTS public.hotelx_incidentalcharges (\n    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,\n    charge_id text NOT NULL,\n    department_id uuid NOT NULL,"),
+              ("department.department_id || '-sales-channel-' || channel.ordinality::text,",
+               "department.department_id::text || '-sales-channel-' || channel.ordinality::text,"),
+              ("SELECT p_property_id, item.value->>'id', item.ordinality::integer,\n      item.value->>'name', COALESCE(item.value->'incidentalCharges', '[]'::jsonb),",
+               "SELECT p_property_id, (item.value->>'id')::uuid, item.ordinality::integer,\n      item.value->>'name', COALESCE(item.value->'incidentalCharges', '[]'::jsonb),"),
+              ("SELECT p_property_id, department.value->>'id',\n      department.value->>'id' || '-sales-channel-' || channel.ordinality::text,",
+               "SELECT p_property_id, (department.value->>'id')::uuid,\n      department.value->>'id' || '-sales-channel-' || channel.ordinality::text,"),
+              ("SELECT p_property_id, charge.value->>'id', department.value->>'id', charge.value->>'title',",
+               "SELECT p_property_id, charge.value->>'id', (department.value->>'id')::uuid, charge.value->>'title',"),
+          ]
+          for old, new in replacements:
+              if old not in text:
+                  raise SystemExit(f'Missing expected normalized-storage pattern: {old[:80]}')
+              text = text.replace(old, new)
+          path.write_text(text)
+
+          masters = Path('lib/hotel-masters.ts')
+          text = masters.read_text()
+          id_map = {
+              "'banquet'": "'1729189f-2946-4170-b6de-cc4a89484e5a'",
+              "'breakfast-ta'": "'697adfa4-a4e9-4831-b980-f4bca77d57bf'",
+              "'city-ledger'": "'f221f1ff-bff6-40c1-a677-67e24f971437'",
+              "'food-beverages'": "'1eee68a6-aed6-4cc3-89f8-82be998ec3da'",
+              "'front-office'": "'16b0a98b-b323-46de-a031-d3de8fc75155'",
+              "'hotel-adjustment'": "'fe5d65a1-f583-40bb-9c70-76c543059193'",
+              "'housekeeping'": "'1ca146d9-56d3-4672-817d-eba70b8913bd'",
+              "'room-revenue'": "'6c5469d0-45ed-4071-bac7-1a5533f6bf2a'",
+              "'room-service'": "'3ea258c3-8b91-4ae5-b350-ee6b04a1f796'",
+              "'sales-marketing'": "'5495ef2b-63e9-49b1-a9c2-348e044d9c63'",
+          }
+          for old, new in id_map.items():
+              text = text.replace(old, new)
+          text = text.replace("String(id) === '5495ef2b-63e9-49b1-a9c2-348e044d9c63' ? defaultSalesChannels", "String(name) === 'Sales & Marketing' ? defaultSalesChannels")
+          masters.write_text(text)
+          PY
+      - name: Build worker bundle
+        run: |
+          npm ci
+          npm run build:worker
+      - name: Commit source fix
+        run: |
+          git config user.name "Edward Jacob"
+          git config user.email "56201541+edwardd767@users.noreply.github.com"
+          git rm .github/workflows/department-uuid-source-fix.yml
+          git add worker/normalized-storage.ts worker/hotelx-transport-api.deploy.js lib/hotel-masters.ts
+          git commit -m "Persist department UUID relationships"
+          git push
