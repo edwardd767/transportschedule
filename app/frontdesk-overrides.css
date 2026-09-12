@@ -25,3 +25,74 @@
 .booking-row.booking-status-cancelled .booking-stay strong {
   color: #8a8a8a !important;
 }
+
+/* Keep Booking Cancellation / Reinstatement compact, matching the HotelX reference UI. */
+[role='dialog'][aria-label='Cancel Booking'] > div,
+[role='dialog'][aria-label='Reinstatement'] > div {
+  max-width: 560px !important;
+}
+
+[role='dialog'][aria-label='Cancel Booking'] > div > div:first-child,
+[role='dialog'][aria-label='Reinstatement'] > div > div:first-child {
+  padding: 10px 14px 8px !important;
+}
+
+[role='dialog'][aria-label='Cancel Booking'] > div > div:first-child > div:first-child,
+[role='dialog'][aria-label='Reinstatement'] > div > div:first-child > div:first-child {
+  font-size: 11px !important;
+  line-height: 1.25 !important;
+}
+
+[role='dialog'][aria-label='Cancel Booking'] > div > div:first-child > div:last-child,
+[role='dialog'][aria-label='Reinstatement'] > div > div:first-child > div:last-child {
+  margin-top: 2px !important;
+  padding-bottom: 6px !important;
+  font-size: 14px !important;
+  line-height: 1.25 !important;
+}
+
+[role='dialog'][aria-label='Cancel Booking'] > div > div:nth-child(2),
+[role='dialog'][aria-label='Reinstatement'] > div > div:nth-child(2) {
+  padding: 22px 14px 10px !important;
+}
+
+[role='dialog'][aria-label='Cancel Booking'] label,
+[role='dialog'][aria-label='Reinstatement'] label {
+  font-size: 12px !important;
+  line-height: 1.3 !important;
+}
+
+[role='dialog'][aria-label='Cancel Booking'] label + label,
+[role='dialog'][aria-label='Reinstatement'] label + label {
+  margin-top: 14px !important;
+}
+
+[role='dialog'][aria-label='Cancel Booking'] select,
+[role='dialog'][aria-label='Cancel Booking'] input,
+[role='dialog'][aria-label='Reinstatement'] select,
+[role='dialog'][aria-label='Reinstatement'] input {
+  margin-top: 2px !important;
+  padding-top: 2px !important;
+  padding-bottom: 6px !important;
+  font-size: 14px !important;
+  line-height: 1.25 !important;
+}
+
+[role='dialog'][aria-label='Cancel Booking'] p,
+[role='dialog'][aria-label='Reinstatement'] p {
+  margin-top: 8px !important;
+  font-size: 11px !important;
+  line-height: 1.35 !important;
+}
+
+[role='dialog'][aria-label='Cancel Booking'] .mt-6,
+[role='dialog'][aria-label='Reinstatement'] .mt-6 {
+  margin-top: 14px !important;
+}
+
+[role='dialog'][aria-label='Cancel Booking'] button,
+[role='dialog'][aria-label='Reinstatement'] button {
+  padding: 6px 12px !important;
+  font-size: 12px !important;
+  line-height: 1.25 !important;
+}
