@@ -18,28 +18,53 @@ type ReasonDraft = {
   description: string;
 };
 
-function decodeReason(raw: string, index: number): ReasonView {
-  try {
-    const parsed = JSON.parse(raw) as Record<string, unknown>;
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      const code = typeof parsed.c === 'string' ? parsed.c : typeof parsed.code === 'string' ? parsed.code : '';
-      const description = typeof parsed.d === 'string' ? parsed.d : typeof parsed.description === 'string' ? parsed.description : '';
-      const modified = typeof parsed.t === 'string' ? parsed.t : '';
-      if (code.trim() && description.trim()) return { index, code: code.trim(), description: description.trim(), modified };
-    }
-  } catch {
-    // Legacy reasons are plain strings.
+function reasonFromObject(value: Record<string, unknown>, index: number): ReasonView | null {
+  const code = typeof value.c === 'string' ? value.c : typeof value.code === 'string' ? value.code : typeof value.Code === 'string' ? value.Code : '';
+  const description = typeof value.d === 'string' ? value.d : typeof value.description === 'string' ? value.description : typeof value.Description === 'string' ? value.Description : '';
+  const modified = typeof value.t === 'string' ? value.t : typeof value.modified === 'string' ? value.modified : '';
+  if (!code.trim() || !description.trim()) return null;
+  return { index, code: code.trim(), description: description.trim(), modified };
+}
+
+function decodeReason(raw: unknown, index: number): ReasonView {
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+    const decoded = reasonFromObject(raw as Record<string, unknown>, index);
+    if (decoded) return decoded;
   }
+
+  if (typeof raw === 'string') {
+    const value = raw.trim();
+    if (value) {
+      try {
+        const parsed = JSON.parse(value) as unknown;
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          const decoded = reasonFromObject(parsed as Record<string, unknown>, index);
+          if (decoded) return decoded;
+        }
+      } catch {
+        // Legacy reasons are plain strings.
+      }
+      return {
+        index,
+        code: `R${String(index + 1).padStart(3, '0')}`,
+        description: value,
+        modified: '',
+      };
+    }
+  }
+
   return {
     index,
     code: `R${String(index + 1).padStart(3, '0')}`,
-    description: raw.trim(),
+    description: '',
     modified: '',
   };
 }
 
-function encodeReason(code: string, description: string) {
-  return JSON.stringify({ c: code.trim().toUpperCase(), d: description.trim(), t: new Date().toISOString().slice(0, 10) });
+function encodeReason(code: string, description: string, modified = '') {
+  const value: Record<string, string> = { c: code.trim().toUpperCase(), d: description.trim() };
+  if (modified) value.t = modified;
+  return JSON.stringify(value);
 }
 
 function displayDate(value: string) {
@@ -67,7 +92,7 @@ export function ReasonMasterBridge({ store }: { store: TransportData }) {
   );
 
   const reasons = useMemo(
-    () => (department?.reasons ?? []).map(decodeReason),
+    () => ((department?.reasons ?? []) as unknown[]).map(decodeReason).filter((item) => item.description),
     [department?.reasons],
   );
 
@@ -153,15 +178,20 @@ export function ReasonMasterBridge({ store }: { store: TransportData }) {
       return;
     }
 
-    const encoded = encodeReason(code, description);
+    const currentDate = new Date().toISOString().slice(0, 10);
+    const nextReasons = reasons.map((item) => encodeReason(item.code, item.description, item.modified));
+    const encoded = encodeReason(code, description, editingIndex === null ? '' : currentDate);
     if (encoded.length > 100) {
       setError('Reason is too long. Please shorten the Description.');
       return;
     }
 
-    const nextReasons = [...department.reasons];
     if (editingIndex === null) nextReasons.push(encoded);
-    else nextReasons[editingIndex] = encoded;
+    else {
+      const position = reasons.findIndex((item) => item.index === editingIndex);
+      if (position >= 0) nextReasons[position] = encoded;
+      else nextReasons.push(encoded);
+    }
 
     const nextDepartments: HotelDepartment[] = store.state.hotelMasters.departments.map((item) =>
       item.id === department.id ? { ...item, reasons: nextReasons } : item,
