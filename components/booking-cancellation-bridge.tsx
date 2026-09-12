@@ -3,13 +3,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Booking } from '@/lib/bookings';
-import type { HotelDepartment } from '@/lib/hotel-masters';
+import type { HotelDepartment, HotelRoomType } from '@/lib/hotel-masters';
 import type { TransportData } from '@/lib/use-transport-data';
 
 const CANCEL_CODE = '_bookingCancellationReasonCode';
 const CANCEL_DESCRIPTION = '_bookingCancellationReasonDescription';
 const CANCEL_REMARK = '_bookingCancellationRemark';
 const CANCEL_AT = '_bookingCancellationAt';
+const REINSTATE_CODE = '_bookingReinstatementReasonCode';
+const REINSTATE_DESCRIPTION = '_bookingReinstatementReasonDescription';
+const REINSTATE_REMARK = '_bookingReinstatementRemark';
+const REINSTATE_AT = '_bookingReinstatementAt';
+const LAST_CANCELLATION = '_lastBookingCancellation';
+const ROOM_ASSIGNMENTS = '_roomAssignments';
 
 const CANCELLED_DISABLED_SECTIONS = new Set([
   'Room Assignment',
@@ -21,11 +27,26 @@ const CANCELLED_DISABLED_SECTIONS = new Set([
   'Room Cancellation | Reinstatement',
 ]);
 
+const OCCUPYING_STATUSES = new Set<Booking['status']>(['Booked', 'Inhouse']);
+
 type ReasonOption = { code: string; description: string };
 
 function bookingReferenceFromScreen() {
   const text = document.querySelector<HTMLElement>('.booking-detail-bottom')?.textContent ?? '';
   return text.match(/P\d{6}/)?.[0] ?? null;
+}
+
+function localDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function addDays(dateKey: string, days: number) {
+  const date = new Date(`${dateKey}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
 }
 
 function decodeReason(raw: string, index: number): ReasonOption | null {
@@ -48,6 +69,60 @@ function departmentReasons(department: HotelDepartment | undefined) {
   return (department?.reasons ?? [])
     .map(decodeReason)
     .filter((item): item is ReasonOption => Boolean(item));
+}
+
+function requiredRoomsByType(booking: Booking) {
+  const required = new Map<string, number>();
+  booking.rooms.forEach((room) => {
+    required.set(room.code, (required.get(room.code) ?? 0) + room.count);
+  });
+  return required;
+}
+
+function reinstatementAvailabilityError(
+  booking: Booking,
+  bookings: Booking[],
+  roomTypes: HotelRoomType[],
+  arrival: string,
+  departure: string,
+) {
+  const activeRoomTypes = new Map(
+    roomTypes.filter((room) => room.active).map((room) => [room.code, room]),
+  );
+  const required = requiredRoomsByType(booking);
+
+  for (let date = arrival; date < departure; date = addDays(date, 1)) {
+    for (const [roomCode, requiredCount] of required) {
+      const roomType = activeRoomTypes.get(roomCode);
+      if (!roomType) {
+        return `Unable to reinstate. Room Type ${roomCode} is not active.`;
+      }
+
+      const occupied = bookings
+        .filter(
+          (item) =>
+            item.reference !== booking.reference &&
+            OCCUPYING_STATUSES.has(item.status) &&
+            item.arrival <= date &&
+            date < item.departure,
+        )
+        .reduce(
+          (total, item) =>
+            total +
+            item.rooms
+              .filter((room) => room.code === roomCode)
+              .reduce((sum, room) => sum + room.count, 0),
+          0,
+        );
+
+      const available = Math.max(0, roomType.totalRoom - occupied);
+      if (available < requiredCount) {
+        return `Unable to reinstate. ${roomCode} requires ${requiredCount} room(s), but only ${available} room(s) are available on ${date}.`;
+      }
+    }
+  }
+
+  return '';
 }
 
 function applyCancelledSectionState(bookings: Booking[]) {
@@ -128,7 +203,7 @@ export function BookingCancellationBridge({ store }: { store: TransportData }) {
       const activeReference = bookingReferenceFromScreen();
       if (!activeReference) return;
       const activeBooking = store.state.bookings.find((item) => item.reference === activeReference);
-      if (!activeBooking || activeBooking.status === 'Cancelled') return;
+      if (!activeBooking) return;
 
       event.preventDefault();
       event.stopPropagation();
@@ -176,6 +251,9 @@ export function BookingCancellationBridge({ store }: { store: TransportData }) {
   if (!workspace || !reference || !booking) return null;
 
   const selectedReason = reasons.find((item) => item.code === reasonCode) ?? null;
+  const reinstating = booking.status === 'Cancelled';
+  const today = localDateKey();
+  const pastArrival = reinstating && booking.arrival < today;
 
   const confirmCancellation = async () => {
     if (saving || !selectedReason) return;
@@ -207,6 +285,67 @@ export function BookingCancellationBridge({ store }: { store: TransportData }) {
     }
   };
 
+  const confirmReinstatement = async () => {
+    if (saving || !selectedReason) return;
+    setSaving(true);
+    setError('');
+    try {
+      const arrival = booking.arrival < today ? today : booking.arrival;
+      const departure = booking.arrival < today ? addDays(today, 1) : booking.departure;
+      const availabilityError = reinstatementAvailabilityError(
+        booking,
+        store.state.bookings,
+        store.state.hotelMasters.roomTypes,
+        arrival,
+        departure,
+      );
+      if (availabilityError) {
+        setError(availabilityError);
+        return;
+      }
+
+      const now = new Date().toISOString();
+      const specialRequests: Record<string, string> = { ...(booking.specialRequests ?? {}) };
+      specialRequests[LAST_CANCELLATION] = JSON.stringify({
+        reasonCode: specialRequests[CANCEL_CODE] ?? '',
+        description: specialRequests[CANCEL_DESCRIPTION] ?? '',
+        remark: specialRequests[CANCEL_REMARK] ?? '',
+        at: specialRequests[CANCEL_AT] ?? '',
+      });
+      delete specialRequests[CANCEL_CODE];
+      delete specialRequests[CANCEL_DESCRIPTION];
+      delete specialRequests[CANCEL_REMARK];
+      delete specialRequests[CANCEL_AT];
+      delete specialRequests[ROOM_ASSIGNMENTS];
+      specialRequests[REINSTATE_CODE] = selectedReason.code;
+      specialRequests[REINSTATE_DESCRIPTION] = selectedReason.description;
+      specialRequests[REINSTATE_REMARK] = remark.trim();
+      specialRequests[REINSTATE_AT] = now;
+
+      const next: Booking = {
+        ...booking,
+        arrival,
+        departure,
+        status: 'Booked',
+        assignedRooms: 0,
+        checkedInGuests: 0,
+        specialRequests,
+      };
+
+      await store.run({ type: 'bookingUpdate', value: next });
+      if (store.mode === 'cloud') await store.reload();
+      setSuccess(
+        pastArrival
+          ? `Booking ${booking.reference} has been reinstated successfully. Stay changed to ${arrival} - ${departure}.`
+          : `Booking ${booking.reference} has been reinstated successfully.`,
+      );
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Unable to reinstate booking.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const neutralField = {
     border: 'none',
     borderBottom: '1px solid #999',
@@ -218,10 +357,10 @@ export function BookingCancellationBridge({ store }: { store: TransportData }) {
   return createPortal(
     <>
       {!success && (
-        <div className="absolute inset-0 z-[90] flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true" aria-label="Cancel Booking">
+        <div className="absolute inset-0 z-[90] flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true" aria-label={reinstating ? 'Reinstatement' : 'Cancel Booking'}>
           <div className="w-full max-w-[600px] overflow-hidden rounded-[4px] bg-white shadow-2xl">
             <div className="bg-[#fff6eb] px-4 pb-3 pt-4">
-              <div className="text-[12px] font-medium text-[#ff8a00]">Cancel Booking</div>
+              <div className="text-[12px] font-medium text-[#ff8a00]">{reinstating ? 'Reinstatement' : 'Cancel Booking'}</div>
               <div className="mt-1 border-b border-white/80 pb-2 text-[17px] font-semibold text-[#ff8a00]">{booking.reference}</div>
             </div>
 
@@ -253,12 +392,24 @@ export function BookingCancellationBridge({ store }: { store: TransportData }) {
                 />
               </label>
 
+              {pastArrival && (
+                <p className="mt-3 text-[12px] text-[#777]">
+                  Arrival date has passed. Reinstatement will change the stay to {today} - {addDays(today, 1)}.
+                </p>
+              )}
               {!reasons.length && <p className="mt-3 text-[12px] text-red-600" role="alert">No Reason Code is available. Set up a Reason under Hotel Settings → Department → Front Office → Reason.</p>}
               {error && <p className="mt-3 text-[12px] text-red-600" role="alert">{error}</p>}
 
               <div className="mt-6 flex justify-end gap-2">
                 <button type="button" disabled={saving} onClick={() => setReference(null)} className="rounded-[4px] bg-[#ff9400] px-4 py-2 text-[13px] font-semibold text-white shadow disabled:opacity-60">Cancel</button>
-                <button type="button" disabled={saving || !selectedReason} onClick={() => void confirmCancellation()} className="rounded-[4px] bg-[#ff9400] px-4 py-2 text-[13px] font-semibold text-white shadow disabled:bg-[#ddd]">{saving ? 'Cancelling…' : 'Confirm'}</button>
+                <button
+                  type="button"
+                  disabled={saving || !selectedReason}
+                  onClick={() => void (reinstating ? confirmReinstatement() : confirmCancellation())}
+                  className="rounded-[4px] bg-[#ff9400] px-4 py-2 text-[13px] font-semibold text-white shadow disabled:bg-[#ddd]"
+                >
+                  {saving ? (reinstating ? 'Reinstating…' : 'Cancelling…') : 'Confirm'}
+                </button>
               </div>
             </div>
           </div>
@@ -267,7 +418,7 @@ export function BookingCancellationBridge({ store }: { store: TransportData }) {
 
       {success && (
         <div className="pointer-events-none absolute inset-x-0 bottom-5 z-[120] flex justify-center px-4" aria-live="polite">
-          <div className="pointer-events-auto flex max-w-[720px] items-center gap-5 rounded-[4px] bg-[#333] px-5 py-4 text-[14px] font-medium text-white shadow-2xl">
+          <div className="pointer-events-auto flex max-w-[820px] items-center gap-5 rounded-[4px] bg-[#333] px-5 py-4 text-[14px] font-medium text-white shadow-2xl">
             <span className="whitespace-nowrap">{success}</span>
             <button type="button" onClick={() => { setSuccess(''); setReference(null); }} className="border-0 bg-transparent p-0 text-[13px] font-semibold uppercase text-[#8ab4ff]">Dismiss</button>
           </div>
