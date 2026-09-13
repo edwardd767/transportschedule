@@ -85,6 +85,32 @@ export function TransportConnection({ store }: { store: TransportData }) {
       document.removeEventListener('click', closeRoomCancellationBeforeNavigation, true);
   }, []);
 
+  useEffect(() => {
+    const applyRoomCancellationLayout = () => {
+      const page = document.querySelector<HTMLElement>(
+        '[aria-label="Room Cancellation - Reinstatement"]',
+      );
+      const container = page?.firstElementChild as HTMLElement | null;
+      if (!container) return;
+
+      container.style.width = '100%';
+      container.style.maxWidth = 'none';
+      container.style.marginLeft = '0';
+      container.style.marginRight = '0';
+      container.style.padding = window.innerWidth <= 640 ? '12px' : '14px 16px';
+    };
+
+    applyRoomCancellationLayout();
+    const observer = new MutationObserver(applyRoomCancellationLayout);
+    observer.observe(document.body, { childList: true, subtree: true });
+    window.addEventListener('resize', applyRoomCancellationLayout);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', applyRoomCancellationLayout);
+    };
+  }, []);
+
   return (
     <>
       <InhouseGuestBridge store={store} />
