@@ -231,6 +231,15 @@ export function BookingCancellationBridge({ store }: { store: TransportData }) {
 
   useEffect(() => {
     if (!reference) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [reference]);
+
+  useEffect(() => {
+    if (!reference) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && !saving) {
         if (reasonOpen) {
@@ -363,7 +372,7 @@ export function BookingCancellationBridge({ store }: { store: TransportData }) {
   return createPortal(
     <>
       {!success && (
-        <div className="absolute inset-0 z-[90] flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true" aria-label={reinstating ? 'Reinstatement' : 'Cancel Booking'}>
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true" aria-label={reinstating ? 'Reinstatement' : 'Cancel Booking'}>
           <div className="w-full max-w-[480px] overflow-visible rounded-[4px] bg-white shadow-2xl">
             <div className="rounded-t-[4px] bg-[#fff6eb] px-3 pb-2 pt-3">
               <div className="text-[10px] font-medium text-[#ff8a00]">{reinstating ? 'Reinstatement' : 'Cancel Booking'}</div>
@@ -457,7 +466,7 @@ export function BookingCancellationBridge({ store }: { store: TransportData }) {
       )}
 
       {success && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-5 z-[120] flex justify-center px-4" aria-live="polite">
+        <div className="pointer-events-none fixed inset-x-0 bottom-5 z-[10001] flex justify-center px-4" aria-live="polite">
           <div className="pointer-events-auto flex max-w-[820px] items-center gap-5 rounded-[4px] bg-[#333] px-5 py-4 text-[14px] font-medium text-white shadow-2xl">
             <span className="whitespace-nowrap">{success}</span>
             <button type="button" onClick={() => { setSuccess(''); setReference(null); }} className="border-0 bg-transparent p-0 text-[13px] font-semibold uppercase text-[#8ab4ff]">Dismiss</button>
@@ -465,6 +474,6 @@ export function BookingCancellationBridge({ store }: { store: TransportData }) {
         </div>
       )}
     </>,
-    workspace,
+    document.body,
   );
 }
