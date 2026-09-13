@@ -1,0 +1,36 @@
+name: Booking add-ons upgrade
+
+on:
+  push:
+    paths:
+      - '.github/workflows/booking-addons-upgrade.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: main
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Apply Booking add-on upgrade
+        run: python scripts/apply-booking-addons-upgrade.py
+      - run: npm ci
+      - name: Verify Pages build
+        run: npm run build:pages
+      - name: Verify transport tests
+        run: npm run test:transport
+      - name: Commit Booking add-on upgrade
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add components/booking-create.tsx components/booking-edit.tsx
+          git diff --cached --quiet && exit 0
+          git commit -m "Show configured add-ons in Booking"
+          git push origin main
