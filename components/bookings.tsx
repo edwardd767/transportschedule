@@ -12,7 +12,6 @@ import {
   RotateCw,
   Search,
   SlidersHorizontal,
-  UserRound,
   X,
 } from 'lucide-react';
 import { HotelDatePicker } from '@/components/hotel-date-picker';
@@ -52,6 +51,12 @@ const HOTELX_ROOM_ICON = 'https://hms1.hotelx.asia/static/media/door-subinfoline
 
 function RoomIcon({ size = 18 }: { size?: number }) {
   return <img src={HOTELX_ROOM_ICON} alt="" aria-hidden="true" width={size} height={size} style={{ width: size, height: size, display: 'inline-block', objectFit: 'contain', flex: '0 0 auto' }} />;
+}
+
+const HOTELX_PERSON_ICON = 'https://hms1.hotelx.asia/static/media/person.eed5ce8b.svg';
+
+function PersonIcon({ size = 18 }: { size?: number }) {
+  return <img src={HOTELX_PERSON_ICON} alt="" aria-hidden="true" width={size} height={size} style={{ width: size, height: size, display: 'inline-block', objectFit: 'contain', flex: '0 0 auto' }} />;
 }
 
 function AdvanceSelect({
@@ -178,7 +183,7 @@ function BookingOccupancy({ booking }: { booking: Booking }) {
         / {totalRooms}
       </span>
       <span aria-label={`${checkedInGuests} of ${booking.guests} guests checked in`}>
-        <UserRound size={18} aria-hidden="true" />
+        <PersonIcon size={18} />
         <span className={checkedInGuests < booking.guests ? 'booking-incomplete' : ''}>
           {checkedInGuests}
         </span>
