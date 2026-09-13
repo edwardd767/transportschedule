@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { User, Baby, CalendarDays, Plus, X } from 'lucide-react';
 import { BookingAvailability } from '@/components/booking-availability';
 import { bookingRate } from '@/lib/booking-rate';
+import { rateAddOnsForNight } from '@/lib/pax-billing';
 import { Choice } from '@/components/hotel-choice';
 import { HotelDatePicker } from '@/components/hotel-date-picker';
 import {
@@ -125,7 +126,21 @@ export function BookingCreate({
   const basePax = configuredPaxRate?.basePax ?? 2;
   const extraAdultCount = Math.max(0, adults - basePax);
   const childCharge = children * extraChildRate * nights * Math.max(1, roomQty);
-  const roomSubtotal = nights * Math.max(1, roomQty) * Math.max(0, roomRate + extraAdultCount * extraAdultRate + children * extraChildRate);
+  const applicableAddOns = useMemo(() => {
+    const room = { code: roomType, count: 1, adults, children, infants, rateCode, roomRate };
+    const totals = new Map<string, number>();
+    for (let cursor = arrival; cursor < departure;) {
+      rateAddOnsForNight(room, cursor, effectiveRateSetup, rateCode, { arrival, departure }).forEach((item) => {
+        totals.set(item.name, (totals.get(item.name) ?? 0) + item.amount);
+      });
+      const date = new Date(`${cursor}T00:00:00Z`);
+      date.setUTCDate(date.getUTCDate() + 1);
+      cursor = date.toISOString().slice(0, 10);
+    }
+    return Array.from(totals, ([name, amount]) => ({ name, amount }));
+  }, [arrival, departure, roomType, adults, children, infants, rateCode, roomRate, effectiveRateSetup]);
+  const addOnTotal = applicableAddOns.reduce((sum, item) => sum + item.amount, 0) * Math.max(1, roomQty);
+  const roomSubtotal = nights * Math.max(1, roomQty) * Math.max(0, roomRate + extraAdultCount * extraAdultRate + children * extraChildRate) + addOnTotal;
   const roomDiscount = nights * Math.max(1, roomQty) * Math.max(0, discountPerNight);
   const roomTax = 0;
   const roomTotal = Math.max(0, roomSubtotal - roomDiscount + roomTax);
@@ -406,6 +421,10 @@ export function BookingCreate({
             <label className="booking-line-field"><span>Room Rate</span><input type="number" min="0" step="0.01" value={roomRate} readOnly /></label>
             <label className="booking-line-field"><span>Extra Pax (MYR)</span><input value={money.format(extraAdultRate)} readOnly /></label>
             <label className="booking-line-field"><span>Child (MYR)</span><input value={money.format(extraChildRate)} readOnly disabled={!childRatesApplied} /></label>
+            {applicableAddOns.length > 0 && <div style={{ gridColumn: '1 / -1', borderTop: '1px solid #e5e5e5', paddingTop: 10, marginTop: 2 }}>
+              <strong style={{ display: 'block', marginBottom: 6 }}>Add On Item</strong>
+              {applicableAddOns.map((item) => <div key={item.name} style={{ display: 'flex', justifyContent: 'space-between', gap: 16, padding: '3px 0', fontSize: 13 }}><span>{item.name}</span><b>{money.format(item.amount * Math.max(1, roomQty))}</b></div>)}
+            </div>}
             <label className="booking-line-field booking-choice-field"><span>Promo Code</span><Choice label="Promo Code" value={promoCode} onChange={setPromoCode} items={[
               { value: 'NONE', label: 'No Promo Code' },
               { value: 'PROMO10', label: 'PROMO10' },
