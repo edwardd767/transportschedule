@@ -6016,3 +6016,12 @@ p {
 .rooming-profile-button{position:relative;width:64px;height:44px;padding:0;align-self:center}
 .guest-photo-placeholder{width:60px;height:36px;background:#aaa;display:block}
 .rooming-profile-button>svg{position:absolute;right:-3px;bottom:-4px;background:#ff174c;color:#fff;box-sizing:content-box;padding:5px;border-radius:50%}
+
+
+/* Billing Schedule HotelX standard date picker */
+.billing-date-range{display:grid!important;grid-template-columns:minmax(0,1fr) 28px minmax(0,1fr)!important;align-items:center!important;gap:6px!important}
+.billing-date-range>svg{justify-self:center}
+.billing-date-range .hotel-date-field{width:100%!important;min-width:0!important;min-height:40px!important;display:flex!important;align-items:center!important;justify-content:space-between!important;padding:0 12px!important;border:1px solid #cfd0d3!important;border-radius:5px!important;background:#fff!important;color:#242424!important;font-size:14px!important;line-height:1!important;box-shadow:none!important}
+.billing-date-range .hotel-date-field:hover{border-color:#f79400!important;background:#fffaf3!important}
+.billing-date-range .hotel-date-field>svg{width:18px!important;height:18px!important;color:#666!important}
+@media(max-width:720px){.billing-date-range{grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr)!important;gap:4px!important}.billing-date-range .hotel-date-field{min-height:40px!important;padding:0 10px!important;font-size:13px!important}}
