@@ -16,6 +16,12 @@ const inputDateLabel = (value: string) => {
   return `${day}/${month}/${year}`;
 };
 
+const HOTELX_ROOM_ICON = 'https://hms1.hotelx.asia/static/media/door-subinfoline.44af6263.svg';
+
+function RoomIcon({ size = 14 }: { size?: number }) {
+  return <img src={HOTELX_ROOM_ICON} alt="" aria-hidden="true" width={size} height={size} style={{ width: size, height: size, display: 'inline-block', objectFit: 'contain', flex: '0 0 auto' }} />;
+}
+
 function addDays(value: string, days: number) {
   const date = new Date(`${value}T00:00:00Z`);
   date.setUTCDate(date.getUTCDate() + days);
@@ -177,7 +183,7 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
   return <section className="booking-workspace billing-schedule billing-schedule-page" aria-label="Billing schedule">
     <div className="billing-schedule-breadcrumb"><button type="button" onClick={onBack} aria-label="Back to booking">‹</button><span>... / ... / Billing Schedule</span></div>
     <div className="booking-detail-summary billing-schedule-summary">
-      <div className="booking-detail-top"><div className="booking-stay"><strong>{stayLabel(booking.arrival)} - {stayLabel(booking.departure)}</strong><span><DoorClosed size={14} /> 0/1&nbsp;&nbsp; <UserRound size={14} /> 0/1</span></div><strong className="booking-amount">{money(roomTotal + transportTotal)}</strong></div>
+      <div className="booking-detail-top"><div className="booking-stay"><strong>{stayLabel(booking.arrival)} - {stayLabel(booking.departure)}</strong><span><RoomIcon size={14} /> 0/1&nbsp;&nbsp; <UserRound size={14} /> 0/1</span></div><strong className="booking-amount">{money(roomTotal + transportTotal)}</strong></div>
       <div className="booking-detail-bottom"><span>{booking.reference} <span className="booking-divider">|</span> {booking.guest}</span></div>
     </div>
     <div className="billing-schedule-scroll">
@@ -186,7 +192,7 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
         const isRoomTypeOpen = expandedRoomType === room.code;
         return <article className="billing-room-type-card" key={`${room.code}-${roomIndex}`}>
           <button className="billing-room-type-head" type="button" onClick={() => setExpandedRoomType(isRoomTypeOpen ? '' : room.code)}>
-            <span><strong>{room.code}</strong><small><DoorClosed size={14} /> {room.count} | {money(roomLines.reduce((total, line) => total + line.amount, 0))}</small></span>{isRoomTypeOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+            <span><strong>{room.code}</strong><small><RoomIcon size={14} /> {room.count} | {money(roomLines.reduce((total, line) => total + line.amount, 0))}</small></span>{isRoomTypeOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
           </button>
           {isRoomTypeOpen && Array.from({ length: room.count }, (_, copyIndex) => {
             const roomKey = `${roomIndex}-${copyIndex}`;
@@ -224,7 +230,7 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
     <div className="billing-schedule-actions max-[720px]:!left-0"><button type="button" className="primary-button" disabled={!selectedLines.length} onClick={openAdjustment}>Rate Adjustment</button></div>
     {adjustOpen && <div className="billing-instruction-overlay" role="dialog" aria-modal="true" aria-label="Rate Adjustment"><div className="billing-rate-dialog">
       <div className="billing-rate-dialog-title"><strong>Rate Adjustment</strong><button type="button">Edit</button></div>
-      <div className="billing-rate-dialog-sub"><DoorClosed size={16} /> {selectedLines.length} | {Array.from(new Set(selectedLines.map((line) => line.roomTypeCode))).join(', ')}</div>
+      <div className="billing-rate-dialog-sub"><RoomIcon size={16} /> {selectedLines.length} | {Array.from(new Set(selectedLines.map((line) => line.roomTypeCode))).join(', ')}</div>
       <div className="billing-rate-fields">
         <label>New Rate Code *<select value={rateCode} onChange={(event) => { const next = event.target.value; setRateCode(next); const first = selectedLines[0]; if (first) { const configured = bookingRate(rateSetup, next, first.roomTypeCode, first.date)?.amount; const nextNight = booking.rooms.find((room) => room.code === first.roomTypeCode); const addOnTotal = nextNight ? paxNight(nextNight, first.date, rateSetup, next, { arrival: booking.arrival, departure: booking.departure }).addOns.reduce((sum, item) => sum + item.amount, 0) : 0; if (configured !== undefined) setRoomRate(configured + first.extraPax); if (addOnTotal < 0) setRoomRate(configured ?? 0); } }}>{activeRateCodes.map((plan) => <option key={plan.id} value={plan.code}>{plan.code}</option>)}</select></label>
         <label>Room Rate<input type="number" min="0" step="0.01" value={roomRate} onChange={(event) => setRoomRate(Number(event.target.value))} /></label>

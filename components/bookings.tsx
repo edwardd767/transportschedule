@@ -48,6 +48,12 @@ const advanceStatusOptions = [
 
 type AdvanceSelectOption = { value: string; label: string };
 
+const HOTELX_ROOM_ICON = 'https://hms1.hotelx.asia/static/media/door-subinfoline.44af6263.svg';
+
+function RoomIcon({ size = 18 }: { size?: number }) {
+  return <img src={HOTELX_ROOM_ICON} alt="" aria-hidden="true" width={size} height={size} style={{ width: size, height: size, display: 'inline-block', objectFit: 'contain', flex: '0 0 auto' }} />;
+}
+
 function AdvanceSelect({
   label,
   value,
@@ -165,7 +171,7 @@ function BookingOccupancy({ booking }: { booking: Booking }) {
   return (
     <span className="booking-occupancy">
       <span aria-label={`${checkedInRooms} of ${totalRooms} rooms checked in`}>
-        <DoorClosed size={18} aria-hidden="true" />
+        <RoomIcon size={18} />
         <span className={checkedInRooms < totalRooms ? 'booking-incomplete' : ''}>
           {checkedInRooms}
         </span>
@@ -275,6 +281,37 @@ export function Bookings({
         ?.focus({ preventScroll: true });
     }
   }, [booking]);
+
+  useEffect(() => {
+    const handleBookingBack = (event: Event) => {
+      if (billingOpen) {
+        event.preventDefault();
+        setBillingOpen(false);
+        return;
+      }
+      if (billingInstructionOpen) {
+        event.preventDefault();
+        setBillingInstructionOpen(false);
+        return;
+      }
+      if (specialRequestOpen) {
+        event.preventDefault();
+        setSpecialRequestOpen(false);
+        return;
+      }
+      if (attachmentsOpen) {
+        event.preventDefault();
+        setAttachmentsOpen(false);
+        return;
+      }
+      if (roomingOpen) {
+        event.preventDefault();
+        setRoomingOpen(false);
+      }
+    };
+    window.addEventListener('hotelx-booking-back', handleBookingBack);
+    return () => window.removeEventListener('hotelx-booking-back', handleBookingBack);
+  }, [attachmentsOpen, billingInstructionOpen, billingOpen, roomingOpen, specialRequestOpen]);
 
 
   function openBooking(item: Booking) {

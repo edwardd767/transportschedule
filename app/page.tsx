@@ -680,7 +680,12 @@ function HomeContent({ store }: { store: TransportData }) {
               <button
                 className="booking-back"
                 aria-label="Back to booking listing"
-                onClick={() => bookingEditing ? setBookingEditing(false) : setBookingReference(null)}
+                onClick={() => {
+                  const bookingBackEvent = new Event('hotelx-booking-back', { cancelable: true });
+                  window.dispatchEvent(bookingBackEvent);
+                  if (bookingBackEvent.defaultPrevented) return;
+                  bookingEditing ? setBookingEditing(false) : setBookingReference(null);
+                }}
               >
                 <ChevronLeft size={24} />
               </button>
