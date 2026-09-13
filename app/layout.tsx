@@ -5,6 +5,7 @@ import './frontdesk-overrides.css';
 import './frontdesk-side-icon.css';
 import './housekeeping-snackbar.css';
 import './transport-report-fix.css';
+import './sidebar-hotelx.css';
 
 const hotelFont = Poppins({
   variable: '--font-hotelx',
