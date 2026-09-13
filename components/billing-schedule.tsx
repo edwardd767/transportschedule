@@ -28,11 +28,13 @@ function eachStayDate(arrival: string, departure: string) {
   return days;
 }
 
-function baseNightRate(room: BookingRoom, date: string, rateSetup: RateSetupData) {
-  const configured = bookingRate(rateSetup, room.rateCode || 'BAR', room.code, date)?.amount;
-  return (configured !== undefined ? paxNight(room, date, rateSetup).total : undefined) ?? room.roomRate ?? (room.total && room.count ? room.total / room.count : 0);
+function baseNightRate(room: BookingRoom, date: string, rateSetup: RateSetupData, booking: Booking, code?: string) {
+  const selectedCode = code || room.rateCode || 'BAR';
+  const configured = bookingRate(rateSetup, selectedCode, room.code, date)?.amount;
+  return (configured !== undefined
+    ? paxNight(room, date, rateSetup, selectedCode, { arrival: booking.arrival, departure: booking.departure }).total
+    : undefined) ?? room.roomRate ?? (room.total && room.count ? room.total / room.count : 0);
 }
-
 
 type BillingLine = {
   id: string;
@@ -46,6 +48,7 @@ type BillingLine = {
   baseAmount: number;
   extraPax: number;
   elements: { name: string; amount: number }[];
+  addOns: { name: string; amount: number }[];
 };
 
 function lineAdjustment(booking: Booking, line: BillingLine) {
@@ -75,20 +78,23 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
         stayDates.forEach((date) => {
           const id = `${roomKey}-${date}`;
           const adjustment = booking.billingSchedule?.find((item) => item.id === id);
-          const baseAmount = baseNightRate(room, date, rateSetup);
-          const elements = paxNight(room, date, rateSetup, adjustment?.rateCode || room.rateCode || 'BAR').elements.filter(e => e.rhythm === 'Daily' || (e.rhythm === 'First Night' ? date === booking.arrival : date === addDays(booking.departure, -1)));
+          const selectedCode = adjustment?.rateCode || room.rateCode || 'BAR';
+          const night = paxNight(room, date, rateSetup, selectedCode, { arrival: booking.arrival, departure: booking.departure });
+          const baseAmount = baseNightRate(room, date, rateSetup, booking, selectedCode);
+          const elements = night.elements.filter(e => e.rhythm === 'Daily' || (e.rhythm === 'First Night' ? date === booking.arrival : date === addDays(booking.departure, -1)));
           rows.push({
             id,
             roomKey,
             roomTypeCode: room.code,
             roomLabel,
             date,
-            rateCode: adjustment?.rateCode || room.rateCode || 'BAR',
+            rateCode: selectedCode,
             promoCode: adjustment?.promoCode || room.promoCode || '',
             amount: adjustment?.total ?? baseAmount,
             baseAmount,
             elements,
-            extraPax: paxNight(room, date, rateSetup, adjustment?.rateCode || room.rateCode || 'BAR').extraPax,
+            addOns: night.addOns,
+            extraPax: night.extraPax,
           });
         });
       });
@@ -114,8 +120,9 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
     const first = selectedLines[0];
     if (!first) return;
     const adjustment = lineAdjustment(booking, first);
+    const addOnTotal = first.addOns.reduce((sum, item) => sum + item.amount, 0);
     setRateCode(adjustment?.rateCode || first.rateCode);
-    setRoomRate(adjustment?.roomRate ?? first.baseAmount);
+    setRoomRate(Math.max(0, (adjustment?.roomRate ?? first.baseAmount) - addOnTotal));
     setPromoCode(adjustment?.promoCode || '');
     setDiscount(adjustment?.discount ?? 0);
     setAdjustOpen(true);
@@ -126,6 +133,7 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
     selectedLines.forEach((line) => {
       const nextRate = Math.max(0, roomRate);
       const nextDiscount = Math.max(0, discount);
+      const addOnTotal = line.addOns.reduce((sum, item) => sum + item.amount, 0);
       const row: BillingScheduleAdjustment = {
         id: line.id,
         roomKey: line.roomKey,
@@ -136,14 +144,15 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
         promoCode,
         roomRate: nextRate,
         discount: nextDiscount,
-        total: Math.max(0, nextRate - nextDiscount),
+        total: Math.max(0, nextRate - nextDiscount) + addOnTotal,
       };
       nextAdjustments.set(row.id, row);
     });
     const billingSchedule = Array.from(nextAdjustments.values());
     const adjustedTotal = lines.reduce((total, line) => {
+      const addOnTotal = line.addOns.reduce((sum, item) => sum + item.amount, 0);
       const adjusted = selected.includes(line.id)
-        ? Math.max(0, Math.max(0, roomRate) - Math.max(0, discount))
+        ? Math.max(0, Math.max(0, roomRate) - Math.max(0, discount)) + addOnTotal
         : billingSchedule.find((item) => item.id === line.id)?.total ?? line.baseAmount;
       return total + adjusted;
     }, 0);
@@ -182,7 +191,12 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
               {isRoomOpen && <div className="billing-room-detail">
                 <div className="billing-date-range"><label>{inputDateLabel(fromDate)}<CalendarDays size={18} /><input type="date" value={fromDate} min={booking.arrival} max={addDays(booking.departure, -1)} onChange={(event) => setFromDate(event.target.value)} /></label><ChevronRight size={20} /><label>{inputDateLabel(toDate)}<CalendarDays size={18} /><input type="date" value={toDate} min={booking.arrival} max={addDays(booking.departure, -1)} onChange={(event) => setToDate(event.target.value)} /></label></div>
                 <label className="billing-select-all"><input type="checkbox" checked={allSelected} onChange={() => setSelected(allSelected ? selected.filter((id) => !visibleIds.includes(id)) : Array.from(new Set([...selected, ...visibleIds])))} /> Select All</label>
-                {dailyLines.map((line) => <label className="billing-daily-line" key={line.id}><input type="checkbox" checked={selected.includes(line.id)} onChange={() => toggleLine(line.id)} /><span><strong>{dayLabel(line.date)} | {line.rateCode}</strong><span className="billing-breakdown-labels"><small>Room Charge</small>{line.elements.map((e,i) => <small key={i}>{e.name}</small>)}{line.extraPax > 0 && <small>Extra Pax</small>}</span></span><span><strong>{money(line.amount)}</strong><span className="billing-breakdown-values"><small>{money(Math.max(0, line.amount - line.extraPax - line.elements.reduce((sum,e) => sum + e.amount, 0)))}</small>{line.elements.map((e,i) => <small key={i}>{money(e.amount)}</small>)}{line.extraPax > 0 && <small>{money(line.extraPax)}</small>}</span></span></label>)}
+                {dailyLines.map((line) => {
+                  const elementTotal = line.elements.reduce((sum, item) => sum + item.amount, 0);
+                  const addOnTotal = line.addOns.reduce((sum, item) => sum + item.amount, 0);
+                  const roomCharge = Math.max(0, line.amount - line.extraPax - elementTotal - addOnTotal);
+                  return <label className="billing-daily-line" key={line.id}><input type="checkbox" checked={selected.includes(line.id)} onChange={() => toggleLine(line.id)} /><span><strong>{dayLabel(line.date)} | {line.rateCode}</strong><span className="billing-breakdown-labels"><small>Room Charge</small>{line.elements.map((e,i) => <small key={`element-${i}`}>{e.name}</small>)}{line.addOns.map((item, index) => <small key={`addon-${index}`}>Add On - {item.name}</small>)}{line.extraPax > 0 && <small>Extra Pax</small>}</span></span><span><strong>{money(line.amount)}</strong><span className="billing-breakdown-values"><small>{money(roomCharge)}</small>{line.elements.map((e,i) => <small key={`element-${i}`}>{money(e.amount)}</small>)}{line.addOns.map((item, index) => <small key={`addon-${index}`}>{money(item.amount)}</small>)}{line.extraPax > 0 && <small>{money(line.extraPax)}</small>}</span></span></label>;
+                })}
               </div>}
             </div>;
           })}
@@ -194,7 +208,7 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
       <div className="billing-rate-dialog-title"><strong>Rate Adjustment</strong><button type="button">Edit</button></div>
       <div className="billing-rate-dialog-sub"><DoorClosed size={16} /> {selectedLines.length} | {Array.from(new Set(selectedLines.map((line) => line.roomTypeCode))).join(', ')}</div>
       <div className="billing-rate-fields">
-        <label>New Rate Code *<select value={rateCode} onChange={(event) => { const next = event.target.value; setRateCode(next); const first = selectedLines[0]; const configured = first ? bookingRate(rateSetup, next, first.roomTypeCode, first.date)?.amount : undefined; if (configured !== undefined) setRoomRate(configured); }}>{activeRateCodes.map((plan) => <option key={plan.id} value={plan.code}>{plan.code}</option>)}</select></label>
+        <label>New Rate Code *<select value={rateCode} onChange={(event) => { const next = event.target.value; setRateCode(next); const first = selectedLines[0]; if (first) { const configured = bookingRate(rateSetup, next, first.roomTypeCode, first.date)?.amount; const nextNight = booking.rooms.find((room) => room.code === first.roomTypeCode); const addOnTotal = nextNight ? paxNight(nextNight, first.date, rateSetup, next, { arrival: booking.arrival, departure: booking.departure }).addOns.reduce((sum, item) => sum + item.amount, 0) : 0; if (configured !== undefined) setRoomRate(configured + first.extraPax); if (addOnTotal < 0) setRoomRate(configured ?? 0); } }}>{activeRateCodes.map((plan) => <option key={plan.id} value={plan.code}>{plan.code}</option>)}</select></label>
         <label>Room Rate<input type="number" min="0" step="0.01" value={roomRate} onChange={(event) => setRoomRate(Number(event.target.value))} /></label>
         <label>Promo Code<select value={promoCode} onChange={(event) => setPromoCode(event.target.value)}><option value=""></option><option value="PROMO10">PROMO10</option><option value="CNY20">CNY20</option></select></label>
         <label>Discount<input type="number" min="0" step="0.01" value={discount} onChange={(event) => setDiscount(Number(event.target.value))} /></label>
