@@ -22,26 +22,25 @@ jobs:
 
           path = Path('components/check-in.tsx')
           text = path.read_text()
-
           text = text.replace('  BedDouble,\n', '')
 
           marker = "const ASSIGNMENT_KEY = '_roomAssignments';\n"
-          block = """const ASSIGNMENT_KEY = '_roomAssignments';
-const HOTELX_CHECKIN_ROOM_ICON = 'https://hms1.hotelx.asia/static/media/room.7cce94dd.svg';
-
-function CheckInRoomIcon({ size = 13 }: { size?: number }) {
-  return (
-    <img
-      src={HOTELX_CHECKIN_ROOM_ICON}
-      alt=""
-      aria-hidden="true"
-      width={size}
-      height={size}
-      style={{ width: size, height: size, display: 'inline-block', objectFit: 'contain', flex: '0 0 auto' }}
-    />
-  );
-}
-"""
+          block = (
+              "const ASSIGNMENT_KEY = '_roomAssignments';\n"
+              "const HOTELX_CHECKIN_ROOM_ICON = 'https://hms1.hotelx.asia/static/media/room.7cce94dd.svg';\n\n"
+              "function CheckInRoomIcon({ size = 13 }: { size?: number }) {\n"
+              "  return (\n"
+              "    <img\n"
+              "      src={HOTELX_CHECKIN_ROOM_ICON}\n"
+              "      alt=\"\"\n"
+              "      aria-hidden=\"true\"\n"
+              "      width={size}\n"
+              "      height={size}\n"
+              "      style={{ width: size, height: size, display: 'inline-block', objectFit: 'contain', flex: '0 0 auto' }}\n"
+              "    />\n"
+              "  );\n"
+              "}\n"
+          )
           if 'HOTELX_CHECKIN_ROOM_ICON' not in text:
               if marker not in text:
                   raise SystemExit('Assignment marker not found')
