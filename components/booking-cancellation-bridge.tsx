@@ -2,20 +2,12 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { ChevronLeft, DoorClosed, RotateCcw, X } from 'lucide-react';
 import type { Booking } from '@/lib/bookings';
-import type { HotelDepartment, HotelRoomType } from '@/lib/hotel-masters';
+import type { HotelDepartment } from '@/lib/hotel-masters';
 import type { TransportData } from '@/lib/use-transport-data';
 
-const CANCEL_CODE = '_bookingCancellationReasonCode';
-const CANCEL_DESCRIPTION = '_bookingCancellationReasonDescription';
-const CANCEL_REMARK = '_bookingCancellationRemark';
-const CANCEL_AT = '_bookingCancellationAt';
-const REINSTATE_CODE = '_bookingReinstatementReasonCode';
-const REINSTATE_DESCRIPTION = '_bookingReinstatementReasonDescription';
-const REINSTATE_REMARK = '_bookingReinstatementRemark';
-const REINSTATE_AT = '_bookingReinstatementAt';
-const LAST_CANCELLATION = '_lastBookingCancellation';
-const ROOM_ASSIGNMENTS = '_roomAssignments';
+const ROOM_CANCELLATIONS = '_roomCancellations';
 
 const CANCELLED_DISABLED_SECTIONS = new Set([
   'Room Assignment',
@@ -24,29 +16,30 @@ const CANCELLED_DISABLED_SECTIONS = new Set([
   'Confirmation Letter',
   'Proforma Invoice',
   'House Limit',
-  'Room Cancellation | Reinstatement',
 ]);
 
-const OCCUPYING_STATUSES = new Set<Booking['status']>(['Booked', 'Inhouse']);
-
 type ReasonOption = { code: string; description: string };
+type RoomCancellation = {
+  roomKey: string;
+  roomCode: string;
+  roomNumber: number;
+  reasonCode: string;
+  reasonDescription: string;
+  remark: string;
+  at: string;
+  amountShare: number;
+};
+type RoomRow = {
+  key: string;
+  roomCode: string;
+  roomNumber: number;
+  guest: string;
+  amountShare: number;
+};
 
 function bookingReferenceFromScreen() {
   const text = document.querySelector<HTMLElement>('.booking-detail-bottom')?.textContent ?? '';
   return text.match(/P\d{6}/)?.[0] ?? null;
-}
-
-function localDateKey(date = new Date()) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function addDays(dateKey: string, days: number) {
-  const date = new Date(`${dateKey}T00:00:00Z`);
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
 }
 
 function decodeReason(raw: string, index: number): ReasonOption | null {
@@ -71,65 +64,54 @@ function departmentReasons(department: HotelDepartment | undefined) {
     .filter((item): item is ReasonOption => Boolean(item));
 }
 
-function requiredRoomsByType(booking: Booking) {
-  const required = new Map<string, number>();
-  booking.rooms.forEach((room) => {
-    required.set(room.code, (required.get(room.code) ?? 0) + room.count);
-  });
-  return required;
+function cancellationMap(booking: Booking | null) {
+  if (!booking?.specialRequests?.[ROOM_CANCELLATIONS]) return {} as Record<string, RoomCancellation>;
+  try {
+    const parsed = JSON.parse(booking.specialRequests[ROOM_CANCELLATIONS]) as Record<string, RoomCancellation>;
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
 }
 
-function reinstatementAvailabilityError(
-  booking: Booking,
-  bookings: Booking[],
-  roomTypes: HotelRoomType[],
-  arrival: string,
-  departure: string,
-) {
-  const activeRoomTypes = new Map(
-    roomTypes.filter((room) => room.active).map((room) => [room.code, room]),
-  );
-  const required = requiredRoomsByType(booking);
+function roomRows(booking: Booking) {
+  const totalRooms = Math.max(1, booking.rooms.reduce((sum, room) => sum + room.count, 0));
+  const fallbackShare = booking.amount / totalRooms;
+  const rows: RoomRow[] = [];
+  let displayNo = 0;
 
-  for (let date = arrival; date < departure; date = addDays(date, 1)) {
-    for (const [roomCode, requiredCount] of required) {
-      const roomType = activeRoomTypes.get(roomCode);
-      if (!roomType) {
-        return `Unable to reinstate. Room Type ${roomCode} is not active.`;
-      }
+  booking.rooms.forEach((room, roomIndex) => {
+    Array.from({ length: room.count }, (_, copyIndex) => {
+      displayNo += 1;
+      rows.push({
+        key: `${roomIndex}-${copyIndex}`,
+        roomCode: room.code,
+        roomNumber: displayNo,
+        guest: booking.guest,
+        amountShare: room.total && room.count ? room.total / room.count : fallbackShare,
+      });
+    });
+  });
 
-      const occupied = bookings
-        .filter(
-          (item) =>
-            item.reference !== booking.reference &&
-            OCCUPYING_STATUSES.has(item.status) &&
-            item.arrival <= date &&
-            date < item.departure,
-        )
-        .reduce(
-          (total, item) =>
-            total +
-            item.rooms
-              .filter((room) => room.code === roomCode)
-              .reduce((sum, room) => sum + room.count, 0),
-          0,
-        );
+  return rows;
+}
 
-      const available = Math.max(0, roomType.totalRoom - occupied);
-      if (available < requiredCount) {
-        return `Unable to reinstate. ${roomCode} requires ${requiredCount} room(s), but only ${available} room(s) are available on ${date}.`;
-      }
-    }
-  }
+function formatStay(value: string) {
+  return new Date(`${value}T00:00:00Z`).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: '2-digit',
+    timeZone: 'UTC',
+  });
+}
 
-  return '';
+function money(value: number) {
+  return value.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function applyCancelledSectionState(bookings: Booking[]) {
   const activeReference = bookingReferenceFromScreen();
-  const activeBooking = activeReference
-    ? bookings.find((item) => item.reference === activeReference)
-    : undefined;
+  const activeBooking = activeReference ? bookings.find((item) => item.reference === activeReference) : undefined;
   const cancelled = activeBooking?.status === 'Cancelled';
 
   document.querySelectorAll<HTMLButtonElement>('.booking-section-card').forEach((card) => {
@@ -140,15 +122,10 @@ function applyCancelledSectionState(bookings: Booking[]) {
       card.disabled = true;
       card.dataset.cancelledDisabled = 'true';
       card.setAttribute('aria-disabled', 'true');
-      card.setAttribute('title', 'Unavailable for cancelled booking');
       card.style.opacity = '0.48';
       card.style.background = '#ededed';
       card.style.color = '#8a8a8a';
       card.style.cursor = 'default';
-      card.style.boxShadow = 'none';
-      card.style.borderColor = '#dddddd';
-      const icon = card.querySelector<SVGElement>('svg');
-      if (icon) icon.style.opacity = '0.35';
       return;
     }
 
@@ -156,15 +133,10 @@ function applyCancelledSectionState(bookings: Booking[]) {
       card.disabled = false;
       delete card.dataset.cancelledDisabled;
       card.removeAttribute('aria-disabled');
-      card.removeAttribute('title');
       card.style.removeProperty('opacity');
       card.style.removeProperty('background');
       card.style.removeProperty('color');
       card.style.removeProperty('cursor');
-      card.style.removeProperty('box-shadow');
-      card.style.removeProperty('border-color');
-      const icon = card.querySelector<SVGElement>('svg');
-      if (icon) icon.style.removeProperty('opacity');
     }
   });
 }
@@ -172,8 +144,9 @@ function applyCancelledSectionState(bookings: Booking[]) {
 export function BookingCancellationBridge({ store }: { store: TransportData }) {
   const [workspace, setWorkspace] = useState<HTMLElement | null>(null);
   const [reference, setReference] = useState<string | null>(null);
+  const [selectedRoomKey, setSelectedRoomKey] = useState<string | null>(null);
+  const [mode, setMode] = useState<'cancel' | 'reinstate'>('cancel');
   const [reasonCode, setReasonCode] = useState('');
-  const [reasonOpen, setReasonOpen] = useState(false);
   const [remark, setRemark] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -188,29 +161,32 @@ export function BookingCancellationBridge({ store }: { store: TransportData }) {
     const departments = store.state.hotelMasters.departments;
     const frontOffice = departments.find((item) => item.id === 'front-office')
       ?? departments.find((item) => item.name.toLowerCase() === 'front office');
-    const preferred = departmentReasons(frontOffice);
-    if (preferred.length) return preferred;
-    return departments.flatMap((department) => departmentReasons(department));
+    const configured = departmentReasons(frontOffice);
+    if (configured.length) return configured;
+    const all = departments.flatMap((department) => departmentReasons(department));
+    if (all.length) return all;
+    return [
+      { code: 'R001', description: 'Guest Request' },
+      { code: 'R002', description: 'Change of Plan' },
+      { code: 'R003', description: 'Booking Error' },
+    ];
   }, [store.state.hotelMasters.departments]);
 
   useEffect(() => {
     setWorkspace(document.querySelector<HTMLElement>('.workspace'));
 
     const onClick = (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null;
-      const card = target?.closest<HTMLButtonElement>('.booking-section-card');
+      const card = (event.target as HTMLElement | null)?.closest<HTMLButtonElement>('.booking-section-card');
       if (!card || card.querySelector('strong')?.textContent?.trim() !== 'Booking Cancellation | Reinstatement') return;
 
       const activeReference = bookingReferenceFromScreen();
-      if (!activeReference) return;
-      const activeBooking = store.state.bookings.find((item) => item.reference === activeReference);
-      if (!activeBooking) return;
+      if (!activeReference || !store.state.bookings.some((item) => item.reference === activeReference)) return;
 
       event.preventDefault();
       event.stopPropagation();
       setReference(activeReference);
+      setSelectedRoomKey(null);
       setReasonCode('');
-      setReasonOpen(false);
       setRemark('');
       setError('');
       setSuccess('');
@@ -232,239 +208,223 @@ export function BookingCancellationBridge({ store }: { store: TransportData }) {
   useEffect(() => {
     if (!reference) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !saving) {
-        if (reasonOpen) {
-          setReasonOpen(false);
-          return;
-        }
-        setReference(null);
-        setSuccess('');
+      if (event.key !== 'Escape' || saving) return;
+      if (selectedRoomKey) {
+        setSelectedRoomKey(null);
+        setReasonCode('');
+        setRemark('');
+        setError('');
+        return;
       }
+      setReference(null);
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [reference, saving, reasonOpen]);
-
-  useEffect(() => {
-    if (!success) return;
-    const timer = window.setTimeout(() => {
-      setSuccess('');
-      setReference(null);
-    }, 4000);
-    return () => window.clearTimeout(timer);
-  }, [success]);
+  }, [reference, saving, selectedRoomKey]);
 
   if (!workspace || !reference || !booking) return null;
 
-  const selectedReason = reasons.find((item) => item.code === reasonCode) ?? null;
-  const reinstating = booking.status === 'Cancelled';
-  const today = localDateKey();
-  const pastArrival = reinstating && booking.arrival < today;
+  const rows = roomRows(booking);
+  const cancellations = cancellationMap(booking);
+  const selectedRoom = rows.find((row) => row.key === selectedRoomKey) ?? null;
+  const selectedReason = reasons.find((reason) => reason.code === reasonCode) ?? null;
+  const activeRows = rows.filter((row) => !cancellations[row.key]);
 
-  const confirmCancellation = async () => {
-    if (saving || !selectedReason) return;
-    setSaving(true);
+  const openAction = (row: RoomRow, action: 'cancel' | 'reinstate') => {
+    setSelectedRoomKey(row.key);
+    setMode(action);
+    setReasonCode('');
+    setRemark('');
     setError('');
-    try {
-      const now = new Date().toISOString();
-      const specialRequests = {
-        ...(booking.specialRequests ?? {}),
-        [CANCEL_CODE]: selectedReason.code,
-        [CANCEL_DESCRIPTION]: selectedReason.description,
-        [CANCEL_REMARK]: remark.trim(),
-        [CANCEL_AT]: now,
-      };
-      const next: Booking = {
-        ...booking,
-        status: 'Cancelled',
-        assignedRooms: 0,
-        checkedInGuests: 0,
-        specialRequests,
-      };
-      await store.run({ type: 'bookingUpdate', value: next });
-      if (store.mode === 'cloud') await store.reload();
-      setSuccess(`Booking ${booking.reference} has been cancelled successfully.`);
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Unable to cancel booking.');
-    } finally {
-      setSaving(false);
-    }
+    setSuccess('');
   };
 
-  const confirmReinstatement = async () => {
-    if (saving || !selectedReason) return;
+  const confirm = async () => {
+    if (!selectedRoom || !selectedReason || saving) return;
     setSaving(true);
     setError('');
     try {
-      const arrival = booking.arrival < today ? today : booking.arrival;
-      const departure = booking.arrival < today ? addDays(today, 1) : booking.departure;
-      const availabilityError = reinstatementAvailabilityError(
-        booking,
-        store.state.bookings,
-        store.state.hotelMasters.roomTypes,
-        arrival,
-        departure,
-      );
-      if (availabilityError) {
-        setError(availabilityError);
-        return;
+      const nextCancellations = { ...cancellations };
+      let nextAmount = booking.amount;
+
+      if (mode === 'cancel') {
+        nextCancellations[selectedRoom.key] = {
+          roomKey: selectedRoom.key,
+          roomCode: selectedRoom.roomCode,
+          roomNumber: selectedRoom.roomNumber,
+          reasonCode: selectedReason.code,
+          reasonDescription: selectedReason.description,
+          remark: remark.trim(),
+          at: new Date().toISOString(),
+          amountShare: selectedRoom.amountShare,
+        };
+        nextAmount = Math.max(0, booking.amount - selectedRoom.amountShare);
+      } else {
+        const previous = nextCancellations[selectedRoom.key];
+        nextAmount = booking.amount + (previous?.amountShare ?? selectedRoom.amountShare);
+        delete nextCancellations[selectedRoom.key];
       }
 
-      const now = new Date().toISOString();
-      const specialRequests: Record<string, string> = { ...(booking.specialRequests ?? {}) };
-      specialRequests[LAST_CANCELLATION] = JSON.stringify({
-        reasonCode: specialRequests[CANCEL_CODE] ?? '',
-        description: specialRequests[CANCEL_DESCRIPTION] ?? '',
-        remark: specialRequests[CANCEL_REMARK] ?? '',
-        at: specialRequests[CANCEL_AT] ?? '',
-      });
-      delete specialRequests[CANCEL_CODE];
-      delete specialRequests[CANCEL_DESCRIPTION];
-      delete specialRequests[CANCEL_REMARK];
-      delete specialRequests[CANCEL_AT];
-      delete specialRequests[ROOM_ASSIGNMENTS];
-      specialRequests[REINSTATE_CODE] = selectedReason.code;
-      specialRequests[REINSTATE_DESCRIPTION] = selectedReason.description;
-      specialRequests[REINSTATE_REMARK] = remark.trim();
-      specialRequests[REINSTATE_AT] = now;
+      const cancelledCount = Object.keys(nextCancellations).length;
+      const activeCount = Math.max(0, rows.length - cancelledCount);
+      const specialRequests = {
+        ...(booking.specialRequests ?? {}),
+        [ROOM_CANCELLATIONS]: JSON.stringify(nextCancellations),
+      };
 
       const next: Booking = {
         ...booking,
-        arrival,
-        departure,
-        status: 'Booked',
-        assignedRooms: 0,
-        checkedInGuests: 0,
+        status: activeCount === 0 ? 'Cancelled' : booking.status === 'Cancelled' ? 'Booked' : booking.status,
+        assignedRooms: Math.min(booking.assignedRooms, activeCount),
+        checkedInGuests: activeCount === 0 ? 0 : booking.checkedInGuests,
+        amount: nextAmount,
         specialRequests,
       };
 
       await store.run({ type: 'bookingUpdate', value: next });
       if (store.mode === 'cloud') await store.reload();
-      setSuccess(
-        pastArrival
-          ? `Booking ${booking.reference} has been reinstated successfully. Stay changed to ${arrival} - ${departure}.`
-          : `Booking ${booking.reference} has been reinstated successfully.`,
-      );
+      setSuccess(mode === 'cancel'
+        ? `${selectedRoom.roomCode} Room ${selectedRoom.roomNumber} cancelled successfully.`
+        : `${selectedRoom.roomCode} Room ${selectedRoom.roomNumber} reinstated successfully.`);
+      setSelectedRoomKey(null);
+      setReasonCode('');
+      setRemark('');
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Unable to reinstate booking.');
+      setError(reason instanceof Error ? reason.message : 'Unable to update room cancellation.');
     } finally {
       setSaving(false);
     }
   };
 
-  const neutralField = {
-    border: 'none',
-    borderBottom: '1px solid #999',
-    borderRadius: 0,
-    outline: 'none',
-    boxShadow: 'none',
-  } as const;
-
   return createPortal(
-    <>
-      {!success && (
-        <div className="absolute inset-0 z-[90] flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true" aria-label={reinstating ? 'Reinstatement' : 'Cancel Booking'}>
-          <div className="w-full max-w-[480px] overflow-visible rounded-[4px] bg-white shadow-2xl">
-            <div className="rounded-t-[4px] bg-[#fff6eb] px-3 pb-2 pt-3">
-              <div className="text-[10px] font-medium text-[#ff8a00]">{reinstating ? 'Reinstatement' : 'Cancel Booking'}</div>
-              <div className="mt-0.5 border-b border-white/80 pb-1.5 text-[13px] font-semibold text-[#ff8a00]">{booking.reference}</div>
+    <div className="absolute inset-0 z-[80] overflow-auto bg-[#f6f6f6]" aria-label="Room Cancellation - Reinstatement">
+      <div className="mx-auto max-w-[1180px] p-3 sm:p-4">
+        <div className="overflow-hidden bg-gradient-to-r from-[#ff8b28] via-[#ffb52f] to-[#ff762d] text-[#222] shadow-sm">
+          <div className="flex items-center gap-3 px-3 py-2">
+            <button
+              type="button"
+              aria-label="Back to booking"
+              onClick={() => setReference(null)}
+              className="flex h-9 w-9 items-center justify-center rounded bg-white text-[#ef821d] shadow"
+            >
+              <ChevronLeft size={22} />
+            </button>
+            <div>
+              <small className="block text-[11px] font-semibold text-white">HMS</small>
+              <strong className="block text-[15px]">HOTEL PARADISE</strong>
             </div>
+          </div>
+          <div className="border-t border-white/70 px-4 py-1.5 text-[12px]">... / ... / Room Cancellation - Reinstatement</div>
+        </div>
 
-            <div className="px-3 pb-3 pt-5">
-              <div className="relative">
-                <div className="text-[11px] text-[#888]">Reason Code *</div>
-                <button
-                  type="button"
-                  autoFocus
-                  aria-haspopup="listbox"
-                  aria-expanded={reasonOpen}
-                  onClick={() => setReasonOpen((open) => !open)}
-                  className="mt-0.5 flex w-full items-center justify-between bg-transparent px-0 pb-1.5 pt-1 text-left text-[13px] text-[#555] outline-none"
-                  style={neutralField}
-                >
-                  <span>{selectedReason ? `${selectedReason.code} - ${selectedReason.description}` : 'Select Reason Code'}</span>
-                  <span className="pl-3 text-[12px] text-[#777]">⌄</span>
-                </button>
+        <div className="bg-[#fff8ef] px-4 py-3 shadow-sm">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-3 text-[14px]">
+              <strong>{formatStay(booking.arrival)} - {formatStay(booking.departure)}</strong>
+              <span className="flex items-center gap-1"><DoorClosed size={15} /> {activeRows.length}/{rows.length}</span>
+              <span>♟ {Math.max(0, booking.guests)}/{Math.max(1, booking.guests)}</span>
+            </div>
+            <strong className="text-[#ff2f58]">{money(booking.amount)}</strong>
+          </div>
+          <div className="mt-1 border-t border-white pt-1 text-[12px]">{booking.reference} &nbsp;|&nbsp; {booking.guest}</div>
+        </div>
 
-                {reasonOpen && (
-                  <div
-                    role="listbox"
-                    className="absolute left-0 right-0 top-full z-[140] mt-1 max-h-[210px] overflow-y-auto border border-[#d8d8d8] bg-white py-1 shadow-xl"
-                  >
-                    {reasons.map((reason) => {
-                      const selected = reason.code === reasonCode;
-                      return (
-                        <button
-                          key={reason.code}
-                          type="button"
-                          role="option"
-                          aria-selected={selected}
-                          onClick={() => {
-                            setReasonCode(reason.code);
-                            setReasonOpen(false);
-                            setError('');
-                          }}
-                          className={`block w-full px-3 py-2 text-left text-[13px] transition-colors ${
-                            selected
-                              ? 'bg-[#f1f1f1] font-medium text-[#444]'
-                              : 'bg-white text-[#555] hover:bg-[#f7f7f7]'
-                          }`}
-                        >
-                          {reason.code} - {reason.description}
-                        </button>
-                      );
-                    })}
-                    {!reasons.length && (
-                      <div className="px-3 py-2 text-[12px] text-[#888]">No Reason Code available</div>
-                    )}
+        <div className="mt-5 grid grid-cols-[1fr_auto] px-4 text-[12px] font-medium sm:text-[13px]">
+          <span>Room Details</span>
+          <span>Cancellation / Reinstatement</span>
+        </div>
+
+        <div className="mt-1 space-y-2 px-2 sm:px-3">
+          {rows.map((row) => {
+            const cancelled = Boolean(cancellations[row.key]);
+            return (
+              <div key={row.key} className="flex min-h-[72px] items-center justify-between gap-4 rounded-md bg-white px-4 py-3 shadow-md">
+                <div>
+                  <div className="flex items-center gap-2 text-[14px] font-semibold">
+                    <span>{row.roomNumber}. {row.roomCode}</span>
+                    <DoorClosed size={16} />
+                    {cancelled && <span className="rounded bg-[#fff1e2] px-2 py-0.5 text-[10px] font-semibold text-[#f28a22]">Cancelled</span>}
                   </div>
-                )}
-              </div>
+                  <div className="mt-1 text-[12px]">{row.guest}</div>
+                  {cancelled && (
+                    <div className="mt-1 text-[10px] text-[#8b8b8b]">
+                      {cancellations[row.key].reasonCode} - {cancellations[row.key].reasonDescription}
+                    </div>
+                  )}
+                </div>
 
-              <label className="mt-5 block text-[11px] text-[#888]">
-                Remark
-                <input
-                  value={remark}
-                  maxLength={500}
-                  onChange={(event) => setRemark(event.target.value)}
-                  className="mt-0.5 w-full bg-transparent px-0 pb-1.5 pt-1 text-[13px] text-[#555] outline-none ring-0 focus:outline-none focus:ring-0"
-                  style={neutralField}
-                />
-              </label>
-
-              {pastArrival && (
-                <p className="mt-2.5 text-[10px] text-[#777]">
-                  Arrival date has passed. Reinstatement will change the stay to {today} - {addDays(today, 1)}.
-                </p>
-              )}
-              {!reasons.length && <p className="mt-2.5 text-[10px] text-red-600" role="alert">No Reason Code is available. Set up a Reason under Hotel Settings → Department → Front Office → Reason.</p>}
-              {error && <p className="mt-2.5 text-[10px] text-red-600" role="alert">{error}</p>}
-
-              <div className="mt-5 flex justify-end gap-2">
-                <button type="button" disabled={saving} onClick={() => setReference(null)} className="rounded-[4px] bg-[#ff9400] px-3 py-1.5 text-[11px] font-semibold text-white shadow disabled:opacity-60">Cancel</button>
                 <button
                   type="button"
-                  disabled={saving || !selectedReason}
-                  onClick={() => void (reinstating ? confirmReinstatement() : confirmCancellation())}
-                  className="rounded-[4px] bg-[#ff9400] px-3 py-1.5 text-[11px] font-semibold text-white shadow disabled:bg-[#ddd]"
+                  aria-label={cancelled ? `Reinstate ${row.roomCode} Room ${row.roomNumber}` : `Cancel ${row.roomCode} Room ${row.roomNumber}`}
+                  onClick={() => openAction(row, cancelled ? 'reinstate' : 'cancel')}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#ff9138] text-white shadow-sm"
                 >
-                  {saving ? (reinstating ? 'Reinstating…' : 'Cancelling…') : 'Confirm'}
+                  {cancelled ? <RotateCcw size={17} /> : <X size={19} strokeWidth={3} />}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        {success && <div className="mx-3 mt-4 rounded border border-[#b9dfbd] bg-[#effbef] px-3 py-2 text-[12px] text-[#2c7334]">{success}</div>}
+      </div>
+
+      {selectedRoom && (
+        <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true" aria-label={mode === 'cancel' ? 'Room Cancellation' : 'Room Reinstatement'}>
+          <div className="w-full max-w-[520px] overflow-hidden rounded-[5px] bg-white shadow-2xl">
+            <div className="bg-[#fff6eb] px-4 pb-3 pt-4 text-[#ff8a22]">
+              <div className="text-[11px] font-medium">{mode === 'cancel' ? 'Cancellation' : 'Reinstatement'}</div>
+              <div className="mt-1 border-b border-white pb-2 text-[14px] font-semibold">
+                {selectedRoom.roomCode} <DoorClosed className="inline-block" size={16} /> &nbsp;|&nbsp; Room {selectedRoom.roomNumber} | {selectedRoom.guest}
+              </div>
+            </div>
+
+            <div className="px-4 pb-4 pt-7">
+              <label className="block text-[12px] text-[#777]">Reason Code *</label>
+              <select
+                value={reasonCode}
+                onChange={(event) => setReasonCode(event.target.value)}
+                className="mt-1 w-full border-0 border-b border-[#aaa] bg-transparent px-0 py-2 text-[13px] outline-none"
+              >
+                <option value="">Select Reason Code</option>
+                {reasons.map((reason) => (
+                  <option key={reason.code} value={reason.code}>{reason.code} - {reason.description}</option>
+                ))}
+              </select>
+
+              <label className="mt-7 block text-[12px] text-[#777]">Remark</label>
+              <input
+                value={remark}
+                onChange={(event) => setRemark(event.target.value)}
+                className="mt-1 w-full border-0 border-b border-[#aaa] bg-transparent px-0 py-2 text-[13px] outline-none"
+                placeholder=""
+              />
+
+              {error && <div className="mt-3 rounded bg-[#fff1f1] px-3 py-2 text-[11px] text-[#b42318]">{error}</div>}
+
+              <div className="mt-7 flex justify-end gap-2">
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => { setSelectedRoomKey(null); setReasonCode(''); setRemark(''); setError(''); }}
+                  className="rounded bg-[#ff962f] px-4 py-2 text-[12px] font-semibold text-white shadow"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={!selectedReason || saving}
+                  onClick={() => void confirm()}
+                  className="rounded bg-[#ff962f] px-4 py-2 text-[12px] font-semibold text-white shadow disabled:bg-[#ddd] disabled:text-white"
+                >
+                  {saving ? 'Saving...' : 'Confirm'}
                 </button>
               </div>
             </div>
           </div>
         </div>
       )}
-
-      {success && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-5 z-[120] flex justify-center px-4" aria-live="polite">
-          <div className="pointer-events-auto flex max-w-[820px] items-center gap-5 rounded-[4px] bg-[#333] px-5 py-4 text-[14px] font-medium text-white shadow-2xl">
-            <span className="whitespace-nowrap">{success}</span>
-            <button type="button" onClick={() => { setSuccess(''); setReference(null); }} className="border-0 bg-transparent p-0 text-[13px] font-semibold uppercase text-[#8ab4ff]">Dismiss</button>
-          </div>
-        </div>
-      )}
-    </>,
+    </div>,
     workspace,
   );
 }
