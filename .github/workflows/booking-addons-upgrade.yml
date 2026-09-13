@@ -34,3 +34,5 @@ jobs:
           git diff --cached --quiet && exit 0
           git commit -m "Show configured add-ons in Booking"
           git push origin main
+
+# Retry after making the Booking Edit matcher less strict.
