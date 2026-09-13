@@ -1,0 +1,126 @@
+name: Fix Billing Schedule calendar
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-billing-calendar.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: main
+      - name: Use HotelX standard calendar in Billing Schedule
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('components/billing-schedule.tsx')
+          s = p.read_text()
+
+          s = s.replace(
+              "import { CalendarDays, ChevronDown, ChevronRight, ChevronUp, DoorClosed } from 'lucide-react';",
+              "import { ChevronDown, ChevronRight, ChevronUp } from 'lucide-react';"
+          )
+          import_marker = "import type { RateSetupData } from '@/lib/rate-setup-data';\n"
+          picker_import = "import { HotelDatePicker } from '@/components/hotel-date-picker';\n"
+          if picker_import not in s:
+              if import_marker not in s:
+                  raise SystemExit('RateSetupData import marker not found')
+              s = s.replace(import_marker, import_marker + picker_import, 1)
+
+          old = '''                <div className="billing-date-range"><label>{inputDateLabel(fromDate)}<CalendarDays size={18} /><input type="date" value={fromDate} min={booking.arrival} max={addDays(booking.departure, -1)} onChange={(event) => setFromDate(event.target.value)} /></label><ChevronRight size={20} /><label>{inputDateLabel(toDate)}<CalendarDays size={18} /><input type="date" value={toDate} min={booking.arrival} max={addDays(booking.departure, -1)} onChange={(event) => setToDate(event.target.value)} /></label></div>'''
+          new = '''                <div className="billing-date-range">
+                  <HotelDatePicker
+                    value={fromDate}
+                    min={booking.arrival}
+                    max={toDate || addDays(booking.departure, -1)}
+                    onChange={setFromDate}
+                    ariaLabel="Select billing schedule start date"
+                    className="billing-date-field"
+                  />
+                  <ChevronRight size={20} />
+                  <HotelDatePicker
+                    value={toDate}
+                    min={fromDate || booking.arrival}
+                    max={addDays(booking.departure, -1)}
+                    onChange={setToDate}
+                    ariaLabel="Select billing schedule end date"
+                    className="billing-date-field"
+                  />
+                </div>'''
+          if old not in s:
+              raise SystemExit('Billing native date range markup not found')
+          s = s.replace(old, new, 1)
+          p.write_text(s)
+
+          p = Path('app/globals.css')
+          css = p.read_text()
+          marker = '/* Billing Schedule HotelX standard date picker */'
+          if marker not in css:
+              css += '''\n\n/* Billing Schedule HotelX standard date picker */
+.billing-date-range {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+.billing-date-range > svg {
+  justify-self: center;
+}
+.billing-date-range .hotel-date-field {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0 12px !important;
+  border: 1px solid #cfd0d3 !important;
+  border-radius: 5px !important;
+  background: #fff !important;
+  color: #242424 !important;
+  font-size: 14px !important;
+  line-height: 1 !important;
+  box-shadow: none !important;
+}
+.billing-date-range .hotel-date-field:hover {
+  border-color: #f79400 !important;
+  background: #fffaf3 !important;
+}
+.billing-date-range .hotel-date-field > svg {
+  width: 18px !important;
+  height: 18px !important;
+  color: #666 !important;
+}
+@media (max-width: 720px) {
+  .billing-date-range {
+    grid-template-columns: minmax(0, 1fr) 24px minmax(0, 1fr) !important;
+    gap: 4px !important;
+  }
+  .billing-date-range .hotel-date-field {
+    min-height: 40px !important;
+    padding: 0 10px !important;
+    font-size: 13px !important;
+  }
+}
+'''
+          p.write_text(css)
+          PY
+      - name: Verify build
+        run: |
+          npm ci
+          npm run build:pages
+      - name: Commit Billing Schedule calendar fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add components/billing-schedule.tsx app/globals.css
+          git diff --cached --quiet && exit 0
+          git commit -m "Use HotelX standard calendar in Billing Schedule"
+          git push origin main
