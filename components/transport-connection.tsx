@@ -64,6 +64,27 @@ export function TransportConnection({ store }: { store: TransportData }) {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    const closeRoomCancellationBeforeNavigation = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      const navButton = target?.closest<HTMLButtonElement>('.main-nav button');
+      if (!navButton) return;
+
+      const roomCancellationPage = document.querySelector<HTMLElement>(
+        '[aria-label="Room Cancellation - Reinstatement"]',
+      );
+      if (!roomCancellationPage) return;
+
+      roomCancellationPage
+        .querySelector<HTMLButtonElement>('button[aria-label="Back to booking"]')
+        ?.click();
+    };
+
+    document.addEventListener('click', closeRoomCancellationBeforeNavigation, true);
+    return () =>
+      document.removeEventListener('click', closeRoomCancellationBeforeNavigation, true);
+  }, []);
+
   return (
     <>
       <InhouseGuestBridge store={store} />
