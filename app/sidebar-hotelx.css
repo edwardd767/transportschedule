@@ -1,27 +1,25 @@
 /* HotelX-style application drawer.
-   This file intentionally overrides the generic shadcn sidebar treatment so the
-   navigation matches the compact production HotelX menu more closely. */
+   Keep the real app topbar visible so its hamburger remains clickable, and make
+   the drawer dimensions/selection treatment follow production HotelX. */
 
 .hotel-shell {
-  --sidebar-width: 180px !important;
+  --sidebar-width: 224px !important;
 }
 
-/* Desktop drawer should occupy the whole application height, including the
-   HotelX title row, just like the production menu. */
+/* Production HotelX keeps one full-width topbar. The sidebar begins below it. */
 .hotel-sidebar[data-slot='sidebar-container'] {
-  top: 0 !important;
-  height: 100dvh !important;
-  z-index: 65 !important;
+  top: var(--topbar-height) !important;
+  height: calc(100dvh - var(--topbar-height)) !important;
+  z-index: 45 !important;
   border-right: 1px solid #e4e4e4 !important;
   box-shadow: 2px 0 7px rgba(0, 0, 0, 0.08);
 }
 
-/* When a split-screen desktop window falls into the mobile sidebar mode, keep
-   the drawer compact instead of using the generic 18rem sheet width. */
+/* In split-screen/tablet mode keep the drawer close to HotelX proportions. */
 [data-slot='sidebar'][data-mobile='true'] {
-  --sidebar-width: 180px !important;
-  width: 180px !important;
-  max-width: 180px !important;
+  --sidebar-width: 224px !important;
+  width: 224px !important;
+  max-width: 224px !important;
 }
 
 .hotel-shell [data-sidebar='content'] {
@@ -47,32 +45,30 @@
   border-radius: 10px;
 }
 
-/* Production-style title strip inside the drawer. */
+/* Remove the previous fake non-clickable drawer header. The real topbar below
+   contains the actual SidebarTrigger and therefore opens/closes correctly. */
 .hotel-shell [data-sidebar='content']::before {
-  content: '☰   HotelX';
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  flex: 0 0 58px;
-  min-height: 58px;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  padding: 0 15px;
-  box-sizing: border-box;
-  background: #fff;
-  border-bottom: 1px solid #e9e9e9;
-  color: #1f1f1f;
-  font-size: 15px;
+  display: none !important;
+  content: none !important;
+}
+
+/* Match HotelX wording in the real topbar and remove the prototype wording. */
+.topbar .brand > span {
+  font-size: 0 !important;
+}
+
+.topbar .brand > span::after {
+  content: 'HotelX';
+  font-size: 18px;
   font-weight: 700;
-  letter-spacing: -0.15px;
-  white-space: pre;
+  letter-spacing: -0.25px;
+  color: #1f1f1f;
 }
 
 .profile {
   position: relative !important;
-  flex: 0 0 172px !important;
-  min-height: 172px !important;
+  flex: 0 0 145px !important;
+  min-height: 145px !important;
   padding: 12px !important;
   overflow: hidden;
   background:
@@ -86,7 +82,7 @@
   content: '' !important;
   position: absolute !important;
   inset: auto 0 0 !important;
-  height: 58px !important;
+  height: 54px !important;
   background: rgba(97, 53, 24, 0.62) !important;
 }
 
@@ -94,7 +90,7 @@
   content: '⌄';
   position: absolute;
   right: 12px;
-  bottom: 25px;
+  bottom: 23px;
   z-index: 2;
   color: #fff;
   font-size: 19px;
@@ -110,20 +106,19 @@
   border: 2px solid rgba(255, 255, 255, 0.92) !important;
   border-radius: 50% !important;
   background-color: rgba(255, 255, 255, 0.84) !important;
-  background-image: url('https://avatars.githubusercontent.com/u/56201541?v=4') !important;
-  background-position: center !important;
-  background-repeat: no-repeat !important;
-  background-size: cover !important;
   color: transparent !important;
   font-size: 0 !important;
-  font-weight: 700 !important;
+  background-image: url('https://avatars.githubusercontent.com/u/56201541?v=4') !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
 }
 
 .profile-name {
   position: absolute !important;
-  left: 10px;
-  right: 30px;
-  bottom: 29px;
+  left: 12px;
+  right: 32px;
+  bottom: 27px;
   z-index: 2;
   color: #fff !important;
   font-size: 13px !important;
@@ -136,9 +131,9 @@
 
 .profile-role {
   position: absolute !important;
-  left: 10px;
-  right: 30px;
-  bottom: 11px;
+  left: 12px;
+  right: 32px;
+  bottom: 10px;
   z-index: 2;
   color: #fff !important;
   font-size: 9.5px !important;
@@ -153,7 +148,7 @@
   display: flex !important;
   flex-direction: column;
   gap: 0 !important;
-  padding: 7px 3px 18px !important;
+  padding: 8px 10px 18px !important;
   background: #fff;
 }
 
@@ -162,10 +157,10 @@
   width: 100%;
   display: flex !important;
   align-items: center !important;
-  gap: 9px !important;
+  gap: 10px !important;
   padding: 7px 9px !important;
-  border: 0 !important;
-  border-radius: 0 !important;
+  border: 1px solid transparent !important;
+  border-radius: 4px !important;
   background: #fff !important;
   color: #202020 !important;
   font-size: 13px !important;
@@ -180,20 +175,17 @@
   background: #fff7ee !important;
 }
 
+/* Production HotelX marks the current module with the orange outlined row. */
 .main-nav > button.active {
-  background: #fff !important;
-  color: #171717 !important;
+  border-color: #f79400 !important;
+  background: #fff7ed !important;
+  color: #f47f13 !important;
   font-weight: 600 !important;
 }
 
 .main-nav > button.active::after {
-  content: '';
-  width: 3px;
-  height: 22px;
-  margin-left: auto;
-  border-radius: 4px;
-  background: #f79400;
-  opacity: 0.8;
+  display: none !important;
+  content: none !important;
 }
 
 .main-nav > button > svg,
@@ -226,15 +218,28 @@
   height: 4px !important;
 }
 
-/* The production HotelX drawer does not use the large property footer shown in
-   the earlier prototype. */
 .sidebar-foot {
   display: none !important;
 }
 
-/* Keep the application topbar above page content but beneath the opened drawer. */
+/* Real topbar must stay above the drawer and remain interactive. */
 .topbar {
-  z-index: 50 !important;
+  z-index: 60 !important;
+}
+
+.breadcrumb button {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.breadcrumb button:hover {
+  text-decoration: underline;
 }
 
 @media (max-width: 639px) {
@@ -244,13 +249,8 @@
     max-width: 280px !important;
   }
 
-  .hotel-shell [data-sidebar='content']::before {
-    min-height: 56px;
-    flex-basis: 56px;
-  }
-
   .profile {
-    min-height: 158px !important;
-    flex-basis: 158px !important;
+    min-height: 145px !important;
+    flex-basis: 145px !important;
   }
 }
