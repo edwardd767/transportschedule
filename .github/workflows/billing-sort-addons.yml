@@ -21,24 +21,18 @@ jobs:
           from pathlib import Path
           p = Path('components/billing-schedule.tsx')
           s = p.read_text()
-          old = '''                  const standardBreakdown = [
-                    { key: 'room-charge', name: 'Room Charge', amount: roomCharge },
-                    ...line.elements.map((item, index) => ({ key: `element-${index}`, name: item.name, amount: item.amount })),
-                    ...(line.extraPax > 0 ? [{ key: 'extra-pax', name: 'Extra Pax', amount: line.extraPax }] : []),
-                  ];'''
-          new = '''                  const standardBreakdown = [
-                    { key: 'room-charge', name: 'Room Charge', amount: roomCharge },
-                    ...line.elements.map((item, index) => ({ key: `element-${index}`, name: item.name, amount: item.amount })),
-                    ...(line.extraPax > 0 ? [{ key: 'extra-pax', name: 'Extra Pax', amount: line.extraPax }] : []),
-                    ...line.addOns.map((item, index) => ({ key: `addon-${index}`, name: `Add On - ${item.name}`, amount: item.amount })),
-                  ];'''
-          old_render = '''<span className="billing-breakdown-labels">{sortedBreakdown.map((item) => <small key={item.key}>{item.name}</small>)}{line.addOns.map((item, index) => <small key={`addon-${index}`}>Add On - {item.name}</small>)}</span></span><span><strong>{money(line.amount)}</strong><span className="billing-breakdown-values">{sortedBreakdown.map((item) => <small key={item.key}>{money(item.amount)}</small>)}{line.addOns.map((item, index) => <small key={`addon-${index}`}>{money(item.amount)}</small>)}</span></span>'''
-          new_render = '''<span className="billing-breakdown-labels">{sortedBreakdown.map((item) => <small key={item.key}>{item.name}</small>)}</span></span><span><strong>{money(line.amount)}</strong><span className="billing-breakdown-values">{sortedBreakdown.map((item) => <small key={item.key}>{money(item.amount)}</small>)}</span></span>'''
-          if old not in s:
-              raise SystemExit('standardBreakdown pattern not found')
-          if old_render not in s:
-              raise SystemExit('breakdown render pattern not found')
-          s = s.replace(old, new, 1).replace(old_render, new_render, 1)
+          needle = "...(line.extraPax > 0 ? [{ key: 'extra-pax', name: 'Extra Pax', amount: line.extraPax }] : []),\n"
+          insert = needle + "                    ...line.addOns.map((item, index) => ({ key: `addon-${index}`, name: `Add On - ${item.name}`, amount: item.amount })),\n"
+          if needle not in s:
+              raise SystemExit('Extra Pax breakdown line not found')
+          s = s.replace(needle, insert, 1)
+          old_labels = "{sortedBreakdown.map((item) => <small key={item.key}>{item.name}</small>)}{line.addOns.map((item, index) => <small key={`addon-${index}`}>Add On - {item.name}</small>)}"
+          old_values = "{sortedBreakdown.map((item) => <small key={item.key}>{money(item.amount)}</small>)}{line.addOns.map((item, index) => <small key={`addon-${index}`}>{money(item.amount)}</small>)}"
+          new_labels = "{sortedBreakdown.map((item) => <small key={item.key}>{item.name}</small>)}"
+          new_values = "{sortedBreakdown.map((item) => <small key={item.key}>{money(item.amount)}</small>)}"
+          if old_labels not in s or old_values not in s:
+              raise SystemExit('Add-on render pattern not found')
+          s = s.replace(old_labels, new_labels, 1).replace(old_values, new_values, 1)
           p.write_text(s)
           PY
       - name: Verify build
