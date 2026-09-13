@@ -1,0 +1,55 @@
+name: Billing sort includes add-ons
+
+on:
+  push:
+    paths:
+      - '.github/workflows/billing-sort-addons.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: main
+      - name: Include add-ons in per-date amount sorting
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('components/billing-schedule.tsx')
+          s = p.read_text()
+          old = '''                  const standardBreakdown = [
+                    { key: 'room-charge', name: 'Room Charge', amount: roomCharge },
+                    ...line.elements.map((item, index) => ({ key: `element-${index}`, name: item.name, amount: item.amount })),
+                    ...(line.extraPax > 0 ? [{ key: 'extra-pax', name: 'Extra Pax', amount: line.extraPax }] : []),
+                  ];'''
+          new = '''                  const standardBreakdown = [
+                    { key: 'room-charge', name: 'Room Charge', amount: roomCharge },
+                    ...line.elements.map((item, index) => ({ key: `element-${index}`, name: item.name, amount: item.amount })),
+                    ...(line.extraPax > 0 ? [{ key: 'extra-pax', name: 'Extra Pax', amount: line.extraPax }] : []),
+                    ...line.addOns.map((item, index) => ({ key: `addon-${index}`, name: `Add On - ${item.name}`, amount: item.amount })),
+                  ];'''
+          old_render = '''<span className="billing-breakdown-labels">{sortedBreakdown.map((item) => <small key={item.key}>{item.name}</small>)}{line.addOns.map((item, index) => <small key={`addon-${index}`}>Add On - {item.name}</small>)}</span></span><span><strong>{money(line.amount)}</strong><span className="billing-breakdown-values">{sortedBreakdown.map((item) => <small key={item.key}>{money(item.amount)}</small>)}{line.addOns.map((item, index) => <small key={`addon-${index}`}>{money(item.amount)}</small>)}</span></span>'''
+          new_render = '''<span className="billing-breakdown-labels">{sortedBreakdown.map((item) => <small key={item.key}>{item.name}</small>)}</span></span><span><strong>{money(line.amount)}</strong><span className="billing-breakdown-values">{sortedBreakdown.map((item) => <small key={item.key}>{money(item.amount)}</small>)}</span></span>'''
+          if old not in s:
+              raise SystemExit('standardBreakdown pattern not found')
+          if old_render not in s:
+              raise SystemExit('breakdown render pattern not found')
+          s = s.replace(old, new, 1).replace(old_render, new_render, 1)
+          p.write_text(s)
+          PY
+      - name: Verify build
+        run: |
+          npm ci
+          npm run build:pages
+      - name: Commit Billing Schedule add-on sort
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add components/billing-schedule.tsx
+          git diff --cached --quiet && exit 0
+          git commit -m "Include add-ons in Billing Schedule amount sort"
+          git push origin main
