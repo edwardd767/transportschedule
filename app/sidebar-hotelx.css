@@ -109,9 +109,13 @@
   margin: 5px 0 0 !important;
   border: 2px solid rgba(255, 255, 255, 0.92) !important;
   border-radius: 50% !important;
-  background: rgba(255, 255, 255, 0.84) !important;
-  color: #815030 !important;
-  font-size: 13px !important;
+  background-color: rgba(255, 255, 255, 0.84) !important;
+  background-image: url('https://avatars.githubusercontent.com/u/56201541?v=4') !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: cover !important;
+  color: transparent !important;
+  font-size: 0 !important;
   font-weight: 700 !important;
 }
 
