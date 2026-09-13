@@ -157,19 +157,24 @@ function AdvanceSelect({
 }
 
 function BookingOccupancy({ booking }: { booking: Booking }) {
+  const totalRooms = roomCount(booking);
+  const inhouse = booking.status === 'Inhouse';
+  const checkedInRooms = inhouse ? Math.min(booking.assignedRooms, totalRooms) : 0;
+  const checkedInGuests = inhouse ? Math.min(booking.checkedInGuests, booking.guests) : 0;
+
   return (
     <span className="booking-occupancy">
-      <span aria-label={`${booking.assignedRooms} of ${roomCount(booking)} rooms assigned`}>
+      <span aria-label={`${checkedInRooms} of ${totalRooms} rooms checked in`}>
         <DoorClosed size={18} aria-hidden="true" />
-        <span className={booking.assignedRooms < roomCount(booking) ? 'booking-incomplete' : ''}>
-          {booking.assignedRooms}
+        <span className={checkedInRooms < totalRooms ? 'booking-incomplete' : ''}>
+          {checkedInRooms}
         </span>
-        / {roomCount(booking)}
+        / {totalRooms}
       </span>
-      <span aria-label={`${booking.checkedInGuests} of ${booking.guests} guests checked in`}>
+      <span aria-label={`${checkedInGuests} of ${booking.guests} guests checked in`}>
         <UserRound size={18} aria-hidden="true" />
-        <span className={booking.checkedInGuests < booking.guests ? 'booking-incomplete' : ''}>
-          {booking.checkedInGuests}
+        <span className={checkedInGuests < booking.guests ? 'booking-incomplete' : ''}>
+          {checkedInGuests}
         </span>
         / {booking.guests}
       </span>
