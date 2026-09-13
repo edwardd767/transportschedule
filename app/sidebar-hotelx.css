@@ -1,0 +1,252 @@
+/* HotelX-style application drawer.
+   This file intentionally overrides the generic shadcn sidebar treatment so the
+   navigation matches the compact production HotelX menu more closely. */
+
+.hotel-shell {
+  --sidebar-width: 180px !important;
+}
+
+/* Desktop drawer should occupy the whole application height, including the
+   HotelX title row, just like the production menu. */
+.hotel-sidebar[data-slot='sidebar-container'] {
+  top: 0 !important;
+  height: 100dvh !important;
+  z-index: 65 !important;
+  border-right: 1px solid #e4e4e4 !important;
+  box-shadow: 2px 0 7px rgba(0, 0, 0, 0.08);
+}
+
+/* When a split-screen desktop window falls into the mobile sidebar mode, keep
+   the drawer compact instead of using the generic 18rem sheet width. */
+[data-slot='sidebar'][data-mobile='true'] {
+  --sidebar-width: 180px !important;
+  width: 180px !important;
+  max-width: 180px !important;
+}
+
+.hotel-shell [data-sidebar='content'] {
+  position: relative;
+  background: #fff;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  scrollbar-width: thin;
+  scrollbar-color: #7d7d7d transparent;
+}
+
+.hotel-shell [data-sidebar='content']::-webkit-scrollbar {
+  display: block !important;
+  width: 5px;
+}
+
+.hotel-shell [data-sidebar='content']::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.hotel-shell [data-sidebar='content']::-webkit-scrollbar-thumb {
+  background: #7d7d7d;
+  border-radius: 10px;
+}
+
+/* Production-style title strip inside the drawer. */
+.hotel-shell [data-sidebar='content']::before {
+  content: '☰   HotelX';
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  flex: 0 0 58px;
+  min-height: 58px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 15px;
+  box-sizing: border-box;
+  background: #fff;
+  border-bottom: 1px solid #e9e9e9;
+  color: #1f1f1f;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.15px;
+  white-space: pre;
+}
+
+.profile {
+  position: relative !important;
+  flex: 0 0 172px !important;
+  min-height: 172px !important;
+  padding: 12px !important;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 14% 3%, #ffd963 0 22%, transparent 22.5%),
+    radial-gradient(ellipse at 90% 23%, #f47b67 0 24%, transparent 24.5%),
+    radial-gradient(ellipse at 76% 68%, #f39b51 0 29%, transparent 29.5%),
+    linear-gradient(132deg, #f7b64c 0%, #ff9b66 56%, #e66e63 100%) !important;
+}
+
+.profile::before {
+  content: '' !important;
+  position: absolute !important;
+  inset: auto 0 0 !important;
+  height: 58px !important;
+  background: rgba(97, 53, 24, 0.62) !important;
+}
+
+.profile::after {
+  content: '⌄';
+  position: absolute;
+  right: 12px;
+  bottom: 25px;
+  z-index: 2;
+  color: #fff;
+  font-size: 19px;
+  line-height: 1;
+}
+
+.avatar {
+  position: relative !important;
+  z-index: 2;
+  width: 44px !important;
+  height: 44px !important;
+  margin: 5px 0 0 !important;
+  border: 2px solid rgba(255, 255, 255, 0.92) !important;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.84) !important;
+  color: #815030 !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+
+.profile-name {
+  position: absolute !important;
+  left: 10px;
+  right: 30px;
+  bottom: 29px;
+  z-index: 2;
+  color: #fff !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  line-height: 1.05 !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-role {
+  position: absolute !important;
+  left: 10px;
+  right: 30px;
+  bottom: 11px;
+  z-index: 2;
+  color: #fff !important;
+  font-size: 9.5px !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.main-nav {
+  display: flex !important;
+  flex-direction: column;
+  gap: 0 !important;
+  padding: 7px 3px 18px !important;
+  background: #fff;
+}
+
+.main-nav > button {
+  min-height: 44px !important;
+  width: 100%;
+  display: flex !important;
+  align-items: center !important;
+  gap: 9px !important;
+  padding: 7px 9px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  color: #202020 !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  line-height: 1.2;
+  text-align: left;
+  box-shadow: none !important;
+}
+
+.main-nav > button:hover,
+.main-nav > button:focus-visible {
+  background: #fff7ee !important;
+}
+
+.main-nav > button.active {
+  background: #fff !important;
+  color: #171717 !important;
+  font-weight: 600 !important;
+}
+
+.main-nav > button.active::after {
+  content: '';
+  width: 3px;
+  height: 22px;
+  margin-left: auto;
+  border-radius: 4px;
+  background: #f79400;
+  opacity: 0.8;
+}
+
+.main-nav > button > svg,
+.main-nav > button > img {
+  width: 23px !important;
+  height: 23px !important;
+  flex: 0 0 23px !important;
+}
+
+.main-nav > button:disabled {
+  opacity: 1 !important;
+  color: #202020 !important;
+}
+
+.subnav {
+  padding: 0 0 2px 41px !important;
+  gap: 2px !important;
+  color: #9a620b !important;
+  font-size: 11px !important;
+}
+
+.subnav button {
+  min-height: 25px;
+  padding: 2px 0 !important;
+}
+
+.subnav button::before,
+.subnav span::before {
+  width: 4px !important;
+  height: 4px !important;
+}
+
+/* The production HotelX drawer does not use the large property footer shown in
+   the earlier prototype. */
+.sidebar-foot {
+  display: none !important;
+}
+
+/* Keep the application topbar above page content but beneath the opened drawer. */
+.topbar {
+  z-index: 50 !important;
+}
+
+@media (max-width: 639px) {
+  [data-slot='sidebar'][data-mobile='true'] {
+    --sidebar-width: 78vw !important;
+    width: min(78vw, 280px) !important;
+    max-width: 280px !important;
+  }
+
+  .hotel-shell [data-sidebar='content']::before {
+    min-height: 56px;
+    flex-basis: 56px;
+  }
+
+  .profile {
+    min-height: 158px !important;
+    flex-basis: 158px !important;
+  }
+}
