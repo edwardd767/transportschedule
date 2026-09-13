@@ -38,6 +38,22 @@ export function HotelXBreadcrumbNavigation() {
       }
     };
 
+    const onHeaderBackClickCapture = (event: MouseEvent) => {
+      const headerBack = (event.target as HTMLElement | null)?.closest<HTMLButtonElement>('.booking-back');
+      if (!headerBack) return;
+
+      const rateSetupPage = document.querySelector<HTMLElement>('.rate-setup-master-page');
+      if (!rateSetupPage) return;
+
+      const internalBack = rateSetupPage.querySelector<HTMLButtonElement>('.rate-subpage-backline button');
+      if (!internalBack) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      internalBack.click();
+    };
+
     const onClick = (event: MouseEvent) => {
       const breadcrumb = (event.target as HTMLElement | null)?.closest<HTMLElement>('.breadcrumb');
       if (!breadcrumb || breadcrumb.dataset.clickable !== 'true') return;
@@ -75,11 +91,13 @@ export function HotelXBreadcrumbNavigation() {
     prepare();
     const observer = new MutationObserver(prepare);
     observer.observe(document.body, { subtree: true, childList: true, characterData: true });
+    document.addEventListener('click', onHeaderBackClickCapture, true);
     document.addEventListener('click', onClick);
     document.addEventListener('keydown', onKeyDown);
 
     return () => {
       observer.disconnect();
+      document.removeEventListener('click', onHeaderBackClickCapture, true);
       document.removeEventListener('click', onClick);
       document.removeEventListener('keydown', onKeyDown);
     };
