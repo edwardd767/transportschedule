@@ -52,17 +52,30 @@
   content: none !important;
 }
 
-/* Match HotelX wording in the real topbar and remove the prototype wording. */
+/* Keep HotelX as the main header title and show the development marker in a
+   deliberately smaller font beside it. */
 .topbar .brand > span {
+  display: inline-flex !important;
+  align-items: baseline;
+  gap: 7px;
+  white-space: nowrap;
   font-size: 0 !important;
 }
 
-.topbar .brand > span::after {
+.topbar .brand > span::before {
   content: 'HotelX';
   font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.25px;
   color: #1f1f1f;
+}
+
+.topbar .brand > span::after {
+  content: '(For Development Use)';
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: #6f6f6f;
 }
 
 .profile {
