@@ -67,6 +67,7 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
   const [promoCode, setPromoCode] = useState('');
   const [discount, setDiscount] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [breakdownSort, setBreakdownSort] = useState<Record<string, 'asc' | 'desc'>>({});
 
   const lines = useMemo(() => {
     const stayDates = eachStayDate(booking.arrival, booking.departure).filter((date) => date >= fromDate && date <= toDate);
@@ -114,6 +115,13 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
 
   function toggleLine(id: string) {
     setSelected((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+  }
+
+  function toggleBreakdownSort(id: string) {
+    setBreakdownSort((current) => ({
+      ...current,
+      [id]: current[id] === 'asc' ? 'desc' : 'asc',
+    }));
   }
 
   function openAdjustment() {
@@ -195,7 +203,16 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
                   const elementTotal = line.elements.reduce((sum, item) => sum + item.amount, 0);
                   const addOnTotal = line.addOns.reduce((sum, item) => sum + item.amount, 0);
                   const roomCharge = Math.max(0, line.amount - line.extraPax - elementTotal - addOnTotal);
-                  return <label className="billing-daily-line" key={line.id}><input type="checkbox" checked={selected.includes(line.id)} onChange={() => toggleLine(line.id)} /><span><strong>{dayLabel(line.date)} | {line.rateCode}</strong><span className="billing-breakdown-labels"><small>Room Charge</small>{line.elements.map((e,i) => <small key={`element-${i}`}>{e.name}</small>)}{line.extraPax > 0 && <small>Extra Pax</small>}{line.addOns.map((item, index) => <small key={`addon-${index}`}>Add On - {item.name}</small>)}</span></span><span><strong>{money(line.amount)}</strong><span className="billing-breakdown-values"><small>{money(roomCharge)}</small>{line.elements.map((e,i) => <small key={`element-${i}`}>{money(e.amount)}</small>)}{line.extraPax > 0 && <small>{money(line.extraPax)}</small>}{line.addOns.map((item, index) => <small key={`addon-${index}`}>{money(item.amount)}</small>)}</span></span></label>;
+                  const sortDirection = breakdownSort[line.id];
+                  const standardBreakdown = [
+                    { key: 'room-charge', name: 'Room Charge', amount: roomCharge },
+                    ...line.elements.map((item, index) => ({ key: `element-${index}`, name: item.name, amount: item.amount })),
+                    ...(line.extraPax > 0 ? [{ key: 'extra-pax', name: 'Extra Pax', amount: line.extraPax }] : []),
+                  ];
+                  const sortedBreakdown = sortDirection
+                    ? [...standardBreakdown].sort((a, b) => sortDirection === 'asc' ? a.amount - b.amount : b.amount - a.amount)
+                    : standardBreakdown;
+                  return <label className="billing-daily-line" key={line.id}><input type="checkbox" checked={selected.includes(line.id)} onChange={() => toggleLine(line.id)} /><span><strong>{dayLabel(line.date)} | <button type="button" title="Sort breakdown by amount" aria-label={`Sort ${line.date} ${line.rateCode} breakdown by amount ${sortDirection === 'asc' ? 'descending' : 'ascending'}`} onClick={(event) => { event.preventDefault(); event.stopPropagation(); toggleBreakdownSort(line.id); }} style={{ border: 0, padding: 0, background: 'transparent', font: 'inherit', fontWeight: 'inherit', cursor: 'pointer', color: 'inherit' }}>{line.rateCode}{sortDirection ? ` ${sortDirection === 'asc' ? '↑' : '↓'}` : ''}</button></strong><span className="billing-breakdown-labels">{sortedBreakdown.map((item) => <small key={item.key}>{item.name}</small>)}{line.addOns.map((item, index) => <small key={`addon-${index}`}>Add On - {item.name}</small>)}</span></span><span><strong>{money(line.amount)}</strong><span className="billing-breakdown-values">{sortedBreakdown.map((item) => <small key={item.key}>{money(item.amount)}</small>)}{line.addOns.map((item, index) => <small key={`addon-${index}`}>{money(item.amount)}</small>)}</span></span></label>;
                 })}
               </div>}
             </div>;
