@@ -359,7 +359,7 @@ export function CheckIn({ bookings }: { bookings: Booking[] }) {
                     <div style={{ minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 800 }}><UserRound size={12} fill="#111" />{booking.guest.toUpperCase()}</div>
                       <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4, marginTop: 2, fontSize: 11 }}>
-                        <span style={{ color: assigned ? '#34cdb1' : '#ff234d', fontWeight: 700 }}>{room.roomNo}</span><span>|</span><strong>{room.code}</strong><span>|</span><CheckInRoomIcon size={12} /><span>{displayDate(booking.arrival)} - {displayDate(booking.departure)}</span>
+                        <span style={{ color: assigned ? '#34cdb1' : '#ff234d', fontWeight: 700 }}>{room.roomNo}</span><span>|</span><strong>{room.code}</strong><span>|</span><img src="https://hms1.hotelx.asia/static/media/checkin-frontdesk.e607e9bc.svg" alt="" aria-hidden="true" width={12} height={12} style={{ width: 12, height: 12, display: 'inline-block', objectFit: 'contain', flex: '0 0 auto' }} /><span>{displayDate(booking.arrival)} - {displayDate(booking.departure)}</span>
                       </div>
                     </div>
                     <div style={{ position: 'relative', flex: '0 0 auto' }}>
