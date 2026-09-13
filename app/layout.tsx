@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Poppins } from 'next/font/google';
+import { HotelXBreadcrumbNavigation } from '@/components/hotelx-breadcrumb-navigation';
 import './globals.css';
 import './frontdesk-overrides.css';
 import './frontdesk-side-icon.css';
@@ -14,7 +15,7 @@ const hotelFont = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: 'HotelX | Development Use',
+  title: 'HotelX',
   description: 'HotelX speedboat schedule and passenger management prototype.',
 };
 
@@ -25,7 +26,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${hotelFont.variable} antialiased`}>{children}</body>
+      <body className={`${hotelFont.variable} antialiased`}>
+        <HotelXBreadcrumbNavigation />
+        {children}
+      </body>
     </html>
   );
 }
