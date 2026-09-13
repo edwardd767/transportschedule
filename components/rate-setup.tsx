@@ -16,6 +16,7 @@ import {
   X,
 } from 'lucide-react';
 import { HotelDatePicker } from '@/components/hotel-date-picker';
+import { TransportDataContext } from '@/components/transport-connection';
 import type { AddOnItem, RateSetupData, RateValidityItem } from '@/lib/rate-setup-data';
 
 export type RateSetupSection =
@@ -468,10 +469,38 @@ function RateElementPage({ items, onChange }: { items: RateElementItem[]; onChan
 }
 
 function AddOnPage({ items, onChange }: { items: AddOnItem[]; onChange: (value: AddOnItem[]) => void | Promise<void> }) {
+  const store = useContext(TransportDataContext);
   const [menuId, setMenuId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [draft, setDraft] = useState<AddOnItem | null>(null);
+  const [selectedChargeKey, setSelectedChargeKey] = useState('');
   const filtered = useMemo(() => items.filter((item) => item.name.toLowerCase().includes(query.toLowerCase())), [items, query]);
+  const incidentalCharges = useMemo(
+    () => (store?.state.hotelMasters.departments ?? []).flatMap((department) =>
+      department.incidentalCharges.map((charge) => ({
+        key: `${department.id}:${charge.id}`,
+        title: charge.title,
+        amount: charge.amount,
+        department: department.name,
+      })),
+    ),
+    [store?.state.hotelMasters.departments],
+  );
+
+  const beginDraft = (item?: AddOnItem) => {
+    const next = item
+      ? { ...item }
+      : { id: crypto.randomUUID(), name: '', basis: 'Flat Rate', postingRhythm: 'Daily' as const, min: 1, max: 1, amount: 0, active: true };
+    const matchedCharge = incidentalCharges.find((charge) => charge.title === next.name);
+    setSelectedChargeKey(matchedCharge?.key ?? (next.name ? `legacy:${next.name}` : ''));
+    setDraft(next);
+  };
+
+  const selectIncidentalCharge = (key: string) => {
+    setSelectedChargeKey(key);
+    const charge = incidentalCharges.find((item) => item.key === key);
+    if (charge && draft) setDraft({ ...draft, name: charge.title, amount: charge.amount });
+  };
 
   const save = () => {
     if (!draft || !draft.name.trim()) return;
@@ -479,6 +508,7 @@ function AddOnPage({ items, onChange }: { items: AddOnItem[]; onChange: (value: 
       ? items.map((item) => item.id === draft.id ? { ...draft, name: draft.name.trim() } : item)
       : [...items, { ...draft, name: draft.name.trim() }]);
     setDraft(null);
+    setSelectedChargeKey('');
   };
 
   return (
@@ -493,7 +523,7 @@ function AddOnPage({ items, onChange }: { items: AddOnItem[]; onChange: (value: 
               <button type="button" aria-label={`Options for ${item.name}`} onClick={() => setMenuId(menuId === item.id ? null : item.id)}><MoreVertical size={24} /></button>
               {menuId === item.id && (
                 <PopupMenu onClose={() => setMenuId(null)} items={[
-                  { label: 'Edit', onClick: () => setDraft({ ...item }) },
+                  { label: 'Edit', onClick: () => beginDraft(item) },
                   { label: item.active ? 'Inactive' : 'Active', onClick: () => { void onChange(items.map((row) => row.id === item.id ? { ...row, active: !row.active } : row)); } },
                 ]} />
               )}
@@ -501,10 +531,19 @@ function AddOnPage({ items, onChange }: { items: AddOnItem[]; onChange: (value: 
           </div>
         ))}
       </div>
-      <FloatingAdd label="Add add on item" onClick={() => setDraft({ id: crypto.randomUUID(), name: '', basis: 'Flat Rate', postingRhythm: 'Daily', min: 1, max: 1, amount: 0, active: true })} />
+      <FloatingAdd label="Add add on item" onClick={() => beginDraft()} />
       {draft && (
-        <EditorModal title={items.some((item) => item.id === draft.id) ? 'Edit Add On Setup' : 'New Add On Setup'} onCancel={() => setDraft(null)} onSave={save}>
-          <label className="rate-editor-field">Add On Setup<input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /></label>
+        <EditorModal title={items.some((item) => item.id === draft.id) ? 'Edit Add On Setup' : 'New Add On Setup'} onCancel={() => { setDraft(null); setSelectedChargeKey(''); }} onSave={save}>
+          <label className="rate-editor-field">Add On Setup
+            <select value={selectedChargeKey} onChange={(event) => selectIncidentalCharge(event.target.value)}>
+              <option value="">Select Incidental Charge</option>
+              {selectedChargeKey.startsWith('legacy:') && <option value={selectedChargeKey}>{draft.name}</option>}
+              {(store?.state.hotelMasters.departments ?? []).map((department) => {
+                const charges = department.incidentalCharges.filter((charge) => incidentalCharges.some((item) => item.key === `${department.id}:${charge.id}`));
+                return charges.length ? <optgroup key={department.id} label={department.name}>{charges.map((charge) => <option key={`${department.id}:${charge.id}`} value={`${department.id}:${charge.id}`}>{charge.title}</option>)}</optgroup> : null;
+              })}
+            </select>
+          </label>
           <label className="rate-editor-field">Charge Basis<select value={draft.basis} onChange={(event) => setDraft({ ...draft, basis: event.target.value })}><option>Flat Rate</option><option>Per Person</option><option>Per Adult</option><option>Per Child</option><option>Per Infant</option></select></label>
           <label className="rate-editor-field">Posting Rhythm<select value={draft.postingRhythm} onChange={(event) => setDraft({ ...draft, postingRhythm: event.target.value as AddOnItem['postingRhythm'] })}><option>Daily</option><option>First Night</option><option>Last Night</option></select></label>
           <div className="rate-editor-grid"><label className="rate-editor-field">Minimum<input type="number" min="0" value={draft.min} onChange={(event) => setDraft({ ...draft, min: Number(event.target.value) })} /></label><label className="rate-editor-field">Maximum<input type="number" min="0" value={draft.max} onChange={(event) => setDraft({ ...draft, max: Number(event.target.value) })} /></label></div>
