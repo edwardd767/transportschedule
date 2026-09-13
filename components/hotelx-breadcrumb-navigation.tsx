@@ -23,6 +23,11 @@ export function HotelXBreadcrumbNavigation() {
         return;
       }
 
+      if (/check in/i.test(text) && text.includes('...')) {
+        clickMainNav('Front Desk');
+        return;
+      }
+
       if (/booking/i.test(text) && !/^booking$/i.test(text)) {
         clickMainNav('Booking');
         return;
@@ -35,14 +40,14 @@ export function HotelXBreadcrumbNavigation() {
 
     const onClick = (event: MouseEvent) => {
       const breadcrumb = (event.target as HTMLElement | null)?.closest<HTMLElement>('.breadcrumb');
-      if (!breadcrumb) return;
+      if (!breadcrumb || breadcrumb.dataset.clickable !== 'true') return;
       navigate(breadcrumb);
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Enter' && event.key !== ' ') return;
       const breadcrumb = (event.target as HTMLElement | null)?.closest<HTMLElement>('.breadcrumb');
-      if (!breadcrumb) return;
+      if (!breadcrumb || breadcrumb.dataset.clickable !== 'true') return;
       event.preventDefault();
       navigate(breadcrumb);
     };
@@ -54,6 +59,7 @@ export function HotelXBreadcrumbNavigation() {
         if (hasParent) {
           breadcrumb.dataset.clickable = 'true';
           breadcrumb.tabIndex = 0;
+          breadcrumb.style.cursor = 'pointer';
           breadcrumb.setAttribute('role', 'button');
           breadcrumb.setAttribute('aria-label', `Go back from ${text}`);
         } else {
@@ -61,6 +67,7 @@ export function HotelXBreadcrumbNavigation() {
           breadcrumb.removeAttribute('tabindex');
           breadcrumb.removeAttribute('role');
           breadcrumb.removeAttribute('aria-label');
+          breadcrumb.style.cursor = '';
         }
       });
     };
