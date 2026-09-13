@@ -2,7 +2,6 @@
 
 import { useContext, useEffect, useState } from 'react';
 import {
-  BedDouble,
   ChevronDown,
   ChevronLeft,
   ChevronUp,
@@ -18,6 +17,20 @@ import type { GuestProfile } from '@/lib/transport-state';
 import { TransportDataContext } from '@/components/transport-connection';
 
 const ASSIGNMENT_KEY = '_roomAssignments';
+const HOTELX_CHECKIN_ROOM_ICON = 'https://hms1.hotelx.asia/static/media/room.7cce94dd.svg';
+
+function CheckInRoomIcon({ size = 13 }: { size?: number }) {
+  return (
+    <img
+      src={HOTELX_CHECKIN_ROOM_ICON}
+      alt=""
+      aria-hidden="true"
+      width={size}
+      height={size}
+      style={{ width: size, height: size, display: 'inline-block', objectFit: 'contain', flex: '0 0 auto' }}
+    />
+  );
+}
 
 type AdvancedFilters = {
   accountName: string;
@@ -330,7 +343,7 @@ export function CheckIn({ bookings }: { bookings: Booking[] }) {
               <span style={{ minWidth: 0 }}>
                 <span style={{ display: 'block', fontSize: 12, fontWeight: 800, textDecoration: 'underline', lineHeight: 1.3 }}>{booking.reference} <span style={{ textDecoration: 'none' }}>|</span> {booking.guest.toUpperCase()}</span>
                 <span style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4, marginTop: 2, fontSize: 11, fontWeight: 600 }}>
-                  {displayDate(booking.arrival)} - {displayDate(booking.departure)} <BedDouble size={13} color="#214a9c" /> <span style={{ color: '#ef233c' }}>{booking.assignedRooms}</span>/{total}
+                  {displayDate(booking.arrival)} - {displayDate(booking.departure)} <CheckInRoomIcon size={13} /> <span style={{ color: '#ef233c' }}>{booking.assignedRooms}</span>/{total}
                   {assignedRoomNos.length > 0 && <span style={{ marginLeft: 5, color: '#444', fontWeight: 600 }}>{assignedRoomNos.join(', ')}</span>}
                 </span>
               </span>
@@ -346,7 +359,7 @@ export function CheckIn({ bookings }: { bookings: Booking[] }) {
                     <div style={{ minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 800 }}><UserRound size={12} fill="#111" />{booking.guest.toUpperCase()}</div>
                       <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4, marginTop: 2, fontSize: 11 }}>
-                        <span style={{ color: assigned ? '#34cdb1' : '#ff234d', fontWeight: 700 }}>{room.roomNo}</span><span>|</span><strong>{room.code}</strong><span>|</span><BedDouble size={12} color="#214a9c" /><span>{displayDate(booking.arrival)} - {displayDate(booking.departure)}</span>
+                        <span style={{ color: assigned ? '#34cdb1' : '#ff234d', fontWeight: 700 }}>{room.roomNo}</span><span>|</span><strong>{room.code}</strong><span>|</span><CheckInRoomIcon size={12} /><span>{displayDate(booking.arrival)} - {displayDate(booking.departure)}</span>
                       </div>
                     </div>
                     <div style={{ position: 'relative', flex: '0 0 auto' }}>
