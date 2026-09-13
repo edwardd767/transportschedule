@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronLeft, DoorClosed, RotateCcw, X } from 'lucide-react';
+import { ChevronDown, ChevronLeft, DoorClosed, RotateCcw, X } from 'lucide-react';
 import type { Booking } from '@/lib/bookings';
 import type { HotelDepartment } from '@/lib/hotel-masters';
 import type { TransportData } from '@/lib/use-transport-data';
@@ -106,6 +106,7 @@ export function BookingRoomCancellationBridge({ store }: { store: TransportData 
   const [selectedRoomKey, setSelectedRoomKey] = useState<string | null>(null);
   const [mode, setMode] = useState<'cancel' | 'reinstate'>('cancel');
   const [reasonCode, setReasonCode] = useState('');
+  const [reasonOpen, setReasonOpen] = useState(false);
   const [remark, setRemark] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -140,6 +141,7 @@ export function BookingRoomCancellationBridge({ store }: { store: TransportData 
       setReference(activeReference);
       setSelectedRoomKey(null);
       setReasonCode('');
+      setReasonOpen(false);
       setRemark('');
       setError('');
       setSuccess('');
@@ -153,6 +155,10 @@ export function BookingRoomCancellationBridge({ store }: { store: TransportData 
     if (!reference) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || saving) return;
+      if (reasonOpen) {
+        setReasonOpen(false);
+        return;
+      }
       if (selectedRoomKey) {
         setSelectedRoomKey(null);
         setReasonCode('');
@@ -164,7 +170,7 @@ export function BookingRoomCancellationBridge({ store }: { store: TransportData 
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [reference, saving, selectedRoomKey]);
+  }, [reference, saving, selectedRoomKey, reasonOpen]);
 
   if (!workspace || !reference || !booking) return null;
 
@@ -178,6 +184,7 @@ export function BookingRoomCancellationBridge({ store }: { store: TransportData 
     setSelectedRoomKey(row.key);
     setMode(action);
     setReasonCode('');
+    setReasonOpen(false);
     setRemark('');
     setError('');
     setSuccess('');
@@ -229,6 +236,7 @@ export function BookingRoomCancellationBridge({ store }: { store: TransportData 
       );
       setSelectedRoomKey(null);
       setReasonCode('');
+      setReasonOpen(false);
       setRemark('');
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Unable to update room cancellation.');
@@ -312,8 +320,8 @@ export function BookingRoomCancellationBridge({ store }: { store: TransportData 
 
       {selectedRoom && (
         <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true" aria-label={mode === 'cancel' ? 'Room Cancellation' : 'Room Reinstatement'}>
-          <div className="w-full max-w-[520px] overflow-hidden rounded-[5px] bg-white shadow-2xl">
-            <div className="bg-[#fff6eb] px-4 pb-3 pt-4 text-[#ff8a22]">
+          <div className="w-full max-w-[520px] overflow-visible rounded-[5px] bg-white shadow-2xl">
+            <div className="rounded-t-[5px] bg-[#fff6eb] px-4 pb-3 pt-4 text-[#ff8a22]">
               <div className="text-[11px] font-medium">{mode === 'cancel' ? 'Cancellation' : 'Reinstatement'}</div>
               <div className="mt-1 border-b border-white pb-2 text-[14px] font-semibold">
                 {selectedRoom.roomCode} <DoorClosed className="inline-block" size={16} /> &nbsp;|&nbsp; Room {selectedRoom.roomNumber} | {selectedRoom.guest}
@@ -321,17 +329,57 @@ export function BookingRoomCancellationBridge({ store }: { store: TransportData 
             </div>
 
             <div className="px-4 pb-4 pt-7">
-              <label className="block text-[12px] text-[#777]">Reason Code *</label>
-              <select
-                value={reasonCode}
-                onChange={(event) => { setReasonCode(event.target.value); setError(''); }}
-                className="mt-1 w-full border-0 border-b border-[#aaa] bg-transparent px-0 py-2 text-[13px] outline-none"
-              >
-                <option value="">Select Reason Code</option>
-                {reasons.map((reason) => (
-                  <option key={reason.code} value={reason.code}>{reason.code} - {reason.description}</option>
-                ))}
-              </select>
+              <div className="relative">
+                <label className="block text-[12px] text-[#777]">Reason Code *</label>
+                <button
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded={reasonOpen}
+                  onClick={() => setReasonOpen((open) => !open)}
+                  className="mt-1 flex w-full items-center justify-between border-0 border-b border-[#aaa] bg-white px-0 py-2 text-left text-[13px] text-[#333] outline-none"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                >
+                  <span className={selectedReason ? 'text-[#333]' : 'text-[#777]'}>
+                    {selectedReason ? `${selectedReason.code} - ${selectedReason.description}` : 'Select Reason Code'}
+                  </span>
+                  <ChevronDown size={17} className={`shrink-0 text-[#777] transition-transform ${reasonOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {reasonOpen && (
+                  <div
+                    role="listbox"
+                    className="absolute left-0 right-0 top-full z-[180] mt-1 max-h-[210px] overflow-y-auto rounded-[3px] border border-[#ddd] bg-white py-1 shadow-xl"
+                  >
+                    {reasons.map((reason) => {
+                      const selected = reason.code === reasonCode;
+                      return (
+                        <button
+                          key={reason.code}
+                          type="button"
+                          role="option"
+                          aria-selected={selected}
+                          onClick={() => {
+                            setReasonCode(reason.code);
+                            setReasonOpen(false);
+                            setError('');
+                          }}
+                          className={`block w-full border-0 px-3 py-2.5 text-left text-[13px] outline-none ${
+                            selected
+                              ? 'bg-[#fff4e8] font-medium text-[#ef861d]'
+                              : 'bg-white text-[#333] hover:bg-[#fff9f2] focus:bg-[#fff9f2]'
+                          }`}
+                          style={{ WebkitTapHighlightColor: 'transparent' }}
+                        >
+                          {reason.code} - {reason.description}
+                        </button>
+                      );
+                    })}
+                    {!reasons.length && (
+                      <div className="px-3 py-2.5 text-[12px] text-[#888]">No Reason Code available</div>
+                    )}
+                  </div>
+                )}
+              </div>
 
               {!reasons.length && (
                 <div className="mt-2 text-[11px] text-red-600">No Reason Code is available. Set one under Hotel Settings → Department → Front Office → Reason.</div>
@@ -351,7 +399,7 @@ export function BookingRoomCancellationBridge({ store }: { store: TransportData 
                 <button
                   type="button"
                   disabled={saving}
-                  onClick={() => { setSelectedRoomKey(null); setReasonCode(''); setRemark(''); setError(''); }}
+                  onClick={() => { setSelectedRoomKey(null); setReasonCode(''); setReasonOpen(false); setRemark(''); setError(''); }}
                   className="rounded bg-[#ff962f] px-4 py-2 text-[12px] font-semibold text-white shadow"
                 >
                   Cancel
