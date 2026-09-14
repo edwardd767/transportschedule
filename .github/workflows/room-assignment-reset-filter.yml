@@ -1,0 +1,96 @@
+name: Room Assignment reset and status filter
+
+on:
+  push:
+    paths:
+      - '.github/workflows/room-assignment-reset-filter.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: main
+
+      - name: Update Room Assignment behavior
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('components/booking-room-assignment-bridge.tsx')
+          text = path.read_text()
+
+          old = "  const [openLocations, setOpenLocations] = useState<Set<string>>(new Set());\n  const [saving, setSaving] = useState(false);"
+          new = "  const [openLocations, setOpenLocations] = useState<Set<string>>(new Set());\n  const [statusFilters, setStatusFilters] = useState<Set<string>>(new Set());\n  const [saving, setSaving] = useState(false);"
+          if old not in text:
+              raise SystemExit('state marker not found')
+          text = text.replace(old, new, 1)
+
+          old = "      setOpenLocations(firstLocation ? new Set([firstLocation]) : new Set());\n      setSaveError('');"
+          new = "      setOpenLocations(firstLocation ? new Set([firstLocation]) : new Set());\n      setStatusFilters(new Set());\n      setSaveError('');"
+          if old not in text:
+              raise SystemExit('open assignment marker not found')
+          text = text.replace(old, new, 1)
+
+          old = "  const reset = () => {\n    if (!roomTypeCode || saving) return;\n    setDraftAssignments((current) => ({ ...current, [roomTypeCode]: [...originalSelected] }));\n    setSaveError('');\n  };"
+          new = "  const reset = (locationCode: string) => {\n    if (!roomTypeCode || saving) return;\n    const roomNosInLevel = new Set(\n      matchingRooms.filter((room) => room.locationCode === locationCode).map((room) => room.roomNo),\n    );\n    setDraftAssignments((current) => ({\n      ...current,\n      [roomTypeCode]: (current[roomTypeCode] ?? []).filter((roomNo) => !roomNosInLevel.has(roomNo)),\n    }));\n    setSaveError('');\n  };"
+          if old not in text:
+              raise SystemExit('reset function marker not found')
+          text = text.replace(old, new, 1)
+
+          old = """              {statusCounts.map((item) => (\n                <span key={item.code} className=\"inline-flex items-center gap-1\">\n                  <span className=\"h-3 w-3 border border-[#999] bg-white\" />\n                  {item.code}: {item.count}\n                </span>\n              ))}"""
+          new = """              {statusCounts.map((item) => (\n                <label key={item.code} className=\"inline-flex cursor-pointer items-center gap-1\">\n                  <input\n                    type=\"checkbox\"\n                    checked={statusFilters.has(item.code)}\n                    onChange={() =>\n                      setStatusFilters((current) => {\n                        const next = new Set(current);\n                        if (next.has(item.code)) next.delete(item.code);\n                        else next.add(item.code);\n                        return next;\n                      })\n                    }\n                    className=\"h-3 w-3 accent-[#ff9000]\"\n                  />\n                  {item.code}: {item.count}\n                </label>\n              ))}"""
+          if old not in text:
+              raise SystemExit('status checkbox marker not found')
+          text = text.replace(old, new, 1)
+
+          old = """          {locationGroups.map(([locationCode, rooms]) => {\n            const open = openLocations.has(locationCode);\n            const selectedInGroup = rooms.filter((room) => currentSelected.includes(room.roomNo)).length;\n            const locationName = rooms[0]?.locationName || locationCode;"""
+          new = """          {locationGroups.map(([locationCode, rooms]) => {\n            const open = openLocations.has(locationCode);\n            const visibleRooms = statusFilters.size\n              ? rooms.filter((room) => statusFilters.has(room.status))\n              : rooms;\n            const selectedInGroup = rooms.filter((room) => currentSelected.includes(room.roomNo)).length;\n            const locationName = rooms[0]?.locationName || locationCode;"""
+          if old not in text:
+              raise SystemExit('location group marker not found')
+          text = text.replace(old, new, 1)
+
+          old = "{locationName} <span className=\"ml-1 text-[#e30023]\">({selectedInGroup}/{rooms.length})</span>"
+          new = "{locationName} <span className=\"ml-1 text-[#e30023]\">({selectedInGroup}/{statusFilters.size ? visibleRooms.length : rooms.length})</span>"
+          if old not in text:
+              raise SystemExit('location count marker not found')
+          text = text.replace(old, new, 1)
+
+          old = "<button type=\"button\" onClick={reset} className=\"inline-flex items-center gap-1 rounded-[4px] border border-[#ff9000] bg-white px-2 py-1 text-[11px] text-[#ff9000]\"><RotateCw size={13} /> Reset</button>"
+          new = "<button type=\"button\" onClick={() => reset(locationCode)} className=\"inline-flex items-center gap-1 rounded-[4px] border border-[#ff9000] bg-white px-2 py-1 text-[11px] text-[#ff9000]\"><RotateCw size={13} /> Reset</button>"
+          if old not in text:
+              raise SystemExit('reset button marker not found')
+          text = text.replace(old, new, 1)
+
+          old = """                    {rooms.map((room) => {"""
+          new = """                    {visibleRooms.map((room) => {"""
+          if old not in text:
+              raise SystemExit('room map marker not found')
+          text = text.replace(old, new, 1)
+
+          old = """              setOpenLocations(firstLocation ? new Set([firstLocation]) : new Set());\n            }}"""
+          new = """              setOpenLocations(firstLocation ? new Set([firstLocation]) : new Set());\n              setStatusFilters(new Set());\n            }}"""
+          if old not in text:
+              raise SystemExit('room type selection marker not found')
+          text = text.replace(old, new, 1)
+
+          path.write_text(text)
+          PY
+
+      - name: Verify build
+        run: |
+          npm ci
+          npm run build:pages
+
+      - name: Commit Room Assignment update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add components/booking-room-assignment-bridge.tsx
+          git diff --cached --quiet && exit 0
+          git commit -m "Add Room Assignment reset and status filters"
+          git push origin main
