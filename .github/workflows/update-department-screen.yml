@@ -1,0 +1,227 @@
+name: Update Department screen
+
+on:
+  push:
+    paths:
+      - '.github/workflows/update-department-screen.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: main
+
+      - name: Update Department screen
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          type_path = Path('lib/hotel-masters.ts')
+          type_text = type_path.read_text()
+          old_type = """export type HotelDepartment = {
+            id: string;
+            name: string;
+            incidentalCharges: IncidentalCharge[];
+            reasons: string[];
+            salesChannels: string[];
+          };"""
+          new_type = """export type HotelDepartment = {
+            id: string;
+            name: string;
+            incidentalCharges: IncidentalCharge[];
+            reasons: string[];
+            salesChannels: string[];
+            allowReason?: boolean;
+            allowSalesChannel?: boolean;
+            allowIncidentalCharges?: boolean;
+            serviceRequest?: boolean;
+          };"""
+          if old_type not in type_text:
+              raise SystemExit('HotelDepartment type block not found')
+          type_path.write_text(type_text.replace(old_type, new_type, 1))
+
+          path = Path('components/department-module-polished.tsx')
+          text = path.read_text()
+
+          state_anchor = "  useEffect(() => setDraft(departments), [departments]);\n"
+          state_addition = """  const [departmentDialog, setDepartmentDialog] = useState(false);
+          const [departmentDraft, setDepartmentDraft] = useState({
+            name: '',
+            allowReason: false,
+            allowSalesChannel: false,
+            allowIncidentalCharges: false,
+            serviceRequest: false,
+          });
+"""
+          if 'const [departmentDialog' not in text:
+              if state_anchor not in text:
+                  raise SystemExit('Department state anchor not found')
+              text = text.replace(state_anchor, state_addition + state_anchor, 1)
+
+          function_anchor = "  const save = async () => { if (!department || !charge) return; const next = draft.map((d) => d.id !== department.id ? d : { ...d, incidentalCharges: d.incidentalCharges.some((c) => c.id === charge.id) ? d.incidentalCharges.map((c) => c.id === charge.id ? charge : c) : [...d.incidentalCharges, charge] }); setSaving(true); try { await onChange(next); setDraft(next); close(); } finally { setSaving(false); } };\n"
+          function_addition = """  const openDepartmentDialog = () => {
+            setDepartmentDraft({ name: '', allowReason: false, allowSalesChannel: false, allowIncidentalCharges: false, serviceRequest: false });
+            setDepartmentDialog(true);
+          };
+          const closeDepartmentDialog = () => {
+            setDepartmentDialog(false);
+            setDepartmentDraft({ name: '', allowReason: false, allowSalesChannel: false, allowIncidentalCharges: false, serviceRequest: false });
+          };
+          const saveDepartment = async () => {
+            const name = departmentDraft.name.trim();
+            if (!name || saving) return;
+            const newDepartment: HotelDepartment = {
+              id: crypto.randomUUID(),
+              name,
+              incidentalCharges: [],
+              reasons: [],
+              salesChannels: [],
+              allowReason: departmentDraft.allowReason,
+              allowSalesChannel: departmentDraft.allowSalesChannel,
+              allowIncidentalCharges: departmentDraft.allowIncidentalCharges,
+              serviceRequest: departmentDraft.serviceRequest,
+            };
+            const next = [...draft, newDepartment];
+            setSaving(true);
+            try {
+              await onChange(next);
+              setDraft(next);
+              closeDepartmentDialog();
+            } finally {
+              setSaving(false);
+            }
+          };
+"""
+          if 'const saveDepartment = async' not in text:
+              if function_anchor not in text:
+                  raise SystemExit('Department save anchor not found')
+              text = text.replace(function_anchor, function_anchor + function_addition, 1)
+
+          replacement = """  return (
+            <section className=\"master-page department-page\">
+              <div className=\"master-list-head department-list-head\">
+                <div><h1>Department <em>({draft.length})</em></h1></div>
+                <button className=\"department-search-button\" aria-label=\"Search departments\" onClick={() => setSearchOpen(!searchOpen)}><Search size={21} /></button>
+              </div>
+              {searchOpen && (
+                <div className=\"department-search-field\">
+                  <Search size={16} />
+                  <input autoFocus placeholder=\"Search department\" value={query} onChange={(e) => setQuery(e.target.value)} />
+                </div>
+              )}
+              <div className=\"department-list\">
+                {visible.map((d) => (
+                  <article className=\"department-row\" key={d.id}>
+                    <div>
+                      <strong>{d.name}</strong>
+                      <small>Incidental Charges : <b>{d.incidentalCharges.length}</b> | Reason : <b>{d.reasons.length}</b> | Sales Channel : <b>{cleanSalesChannels(d.salesChannels).length}</b></small>
+                    </div>
+                    <button className=\"department-menu-trigger\" onClick={() => setMenu(menu === d.id ? null : d.id)}><MoreVertical size={21} /></button>
+                    {menu === d.id && (
+                      <div className=\"department-menu\">
+                        <button onClick={() => open(d)}>Edit</button>
+                        <button onClick={() => showCharges(d)}>Incidental Charges</button>
+                        <button>Reason</button>
+                        <button onClick={() => showSalesChannels(d)}>Sales Channel</button>
+                        <button>Inactive</button>
+                      </div>
+                    )}
+                  </article>
+                ))}
+              </div>
+              <button className=\"incidental-add-button department-add-button\" type=\"button\" aria-label=\"Add department\" onClick={openDepartmentDialog}><span>+</span></button>
+              <button className=\"secondary-button master-page-back\" onClick={onBack}><ArrowLeft size={16} /> Back to Hotel Settings</button>
+              {departmentDialog && (
+                <div className=\"billing-instruction-overlay department-create-overlay\" role=\"dialog\" aria-modal=\"true\" aria-label=\"New Department\">
+                  <div className=\"department-create-dialog\">
+                    <h2>New Department</h2>
+                    <div className=\"department-create-body\">
+                      <label className=\"department-create-description\">
+                        <span>Description *</span>
+                        <input autoFocus value={departmentDraft.name} onChange={(event) => setDepartmentDraft({ ...departmentDraft, name: event.target.value })} />
+                      </label>
+                      <div className=\"department-create-options\">
+                        <label className=\"department-create-toggle\"><input type=\"checkbox\" checked={departmentDraft.allowReason} onChange={(event) => setDepartmentDraft({ ...departmentDraft, allowReason: event.target.checked })} /><i /><span>Allow Reason</span></label>
+                        <label className=\"department-create-toggle\"><input type=\"checkbox\" checked={departmentDraft.allowSalesChannel} onChange={(event) => setDepartmentDraft({ ...departmentDraft, allowSalesChannel: event.target.checked })} /><i /><span>Allow Sales Channel</span></label>
+                        <label className=\"department-create-toggle\"><input type=\"checkbox\" checked={departmentDraft.allowIncidentalCharges} onChange={(event) => setDepartmentDraft({ ...departmentDraft, allowIncidentalCharges: event.target.checked })} /><i /><span>Allow Incidental Charges</span></label>
+                        <label className=\"department-create-toggle\"><input type=\"checkbox\" checked={departmentDraft.serviceRequest} onChange={(event) => setDepartmentDraft({ ...departmentDraft, serviceRequest: event.target.checked })} /><i /><span>Service Request</span></label>
+                      </div>
+                      <div className=\"department-create-actions\">
+                        <button type=\"button\" className=\"secondary-button\" onClick={closeDepartmentDialog}>Cancel</button>
+                        <button type=\"button\" className=\"primary-button\" disabled={!departmentDraft.name.trim() || saving} onClick={saveDepartment}>{saving ? 'Saving…' : 'Confirm'}</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </section>
+          );
+          }
+"""
+          pattern = r'  return <section className="master-page department-page"><div className="master-list-head department-list-head">.*?</section>;\n}'
+          text, count = re.subn(pattern, replacement, text, count=1, flags=re.S)
+          if count != 1:
+              raise SystemExit(f'Final Department listing block replacement count={count}')
+          path.write_text(text)
+
+          css_path = Path('app/globals.css')
+          css = css_path.read_text()
+          marker = '/* Department HotelX reference styling */'
+          if marker not in css:
+              css += """
+
+/* Department HotelX reference styling */
+.department-page>.department-list-head{min-height:46px!important;padding:9px 12px!important;border-radius:0!important;border:0!important;border-bottom:1px solid #e6e6e6!important;background:#fff!important;box-shadow:0 2px 5px #00000012!important}
+.department-page>.department-list-head h1{margin:0!important;font-size:14px!important;line-height:1.25!important;font-weight:700!important;letter-spacing:0!important;color:#191919!important}
+.department-page>.department-list-head h1 em{font-size:14px!important;font-weight:500!important;color:#f58200!important}
+.department-page>.department-list-head .department-search-button{display:grid;place-items:center;width:34px;height:34px;padding:0!important;color:#151515!important}
+.department-page>.department-list-head .department-search-button svg{width:20px!important;height:20px!important;stroke-width:2.4!important}
+.department-page>.department-search-field{min-height:42px;margin:6px 0!important;padding:8px 11px!important;border:0!important;border-bottom:1px solid #ddd!important;border-radius:0!important;box-shadow:none!important}
+.department-page>.department-search-field input{font-size:13px!important;color:#222!important}
+.department-page>.department-list{gap:4px!important;padding-top:4px}
+.department-page>.department-list .department-row{min-height:57px!important;padding:8px 12px!important;border-radius:5px!important}
+.department-page>.department-list .department-row strong{font-size:13px!important;line-height:1.25!important;font-weight:700!important;color:#171717!important}
+.department-page>.department-list .department-row small{margin-top:3px!important;font-size:11.5px!important;line-height:1.25!important;color:#333!important}
+.department-add-button{z-index:25}
+.department-create-overlay{z-index:1150!important}
+.department-create-dialog{width:min(600px,calc(100vw - 32px));overflow:hidden;border-radius:4px;background:#fff;box-shadow:0 12px 36px #0006}
+.department-create-dialog h2{margin:0;padding:10px 12px;background:#fff5e8;color:#f78b00;font-size:17px;font-weight:700}
+.department-create-body{padding:26px 12px 8px}
+.department-create-description{display:block;color:#8a8a8a;font-size:16px}
+.department-create-description span{display:block;margin-bottom:2px}
+.department-create-description input{width:100%;height:34px;border:0;border-bottom:1px solid #999;border-radius:0;outline:0;background:transparent;color:#222;font-size:16px}
+.department-create-options{display:grid;grid-template-columns:1fr 1fr;gap:16px 34px;margin-top:25px;padding:0 8px}
+.department-create-toggle{display:flex;align-items:center;gap:12px;min-width:0;color:#333;font-size:16px;cursor:pointer}
+.department-create-toggle input{position:absolute;opacity:0;pointer-events:none}
+.department-create-toggle i{position:relative;width:38px;height:20px;flex:0 0 38px;border-radius:12px;background:#9f9f9f;transition:.15s}
+.department-create-toggle i:after{content:'';position:absolute;top:-1px;left:-1px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 4px #0004;transition:.15s}
+.department-create-toggle input:checked+i{background:#ff9a35}
+.department-create-toggle input:checked+i:after{left:17px}
+.department-create-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:24px}
+.department-create-actions button{min-height:36px;padding:7px 12px;border-radius:4px;font-size:14px;font-weight:600}
+.department-create-actions .secondary-button{background:#ff9400;color:#fff;border-color:#ff9400}
+.department-create-actions .primary-button:disabled{background:#dedede!important;color:#aaa!important;border-color:#dedede!important}
+@media(max-width:600px){.department-create-dialog{width:calc(100vw - 24px)}.department-create-options{grid-template-columns:1fr;gap:14px}.department-create-body{padding-top:20px}}
+"""
+          css_path.write_text(css)
+          PY
+
+      - name: Verify build
+        run: |
+          npm ci
+          npm run build:pages
+
+      - name: Commit Department screen changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add components/department-module-polished.tsx lib/hotel-masters.ts app/globals.css
+          git diff --cached --quiet && exit 0
+          git commit -m "Match HotelX Department listing and add department creation"
+          git push origin main
