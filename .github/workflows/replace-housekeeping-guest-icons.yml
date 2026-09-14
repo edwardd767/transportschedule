@@ -1,0 +1,53 @@
+name: Replace Housekeeping guest icons
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/replace-housekeeping-guest-icons.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7.0.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Node.js
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Replace Housekeeping guest icons
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('components/housekeeping-bridge.tsx')
+          s = p.read_text()
+          s = s.replace('  Building2,\n', '')
+          s = s.replace('  DoorOpen,\n', '')
+          s = s.replace('<Building2 size={17} className="text-[#444]" />', '<img src="https://hms1.hotelx.asia/static/media/inhouse-guest.50226ca6.svg" alt="" aria-hidden="true" className="h-[17px] w-[17px] shrink-0 object-contain" />')
+          s = s.replace('<DoorOpen size={17} className="text-[#444]" />', '<img src="https://hms1.hotelx.asia/static/media/incoming-guest.28b53df6.svg" alt="" aria-hidden="true" className="h-[17px] w-[17px] shrink-0 object-contain" />')
+          s = s.replace('<Building2 size={14} className="shrink-0" />', '<img src="https://hms1.hotelx.asia/static/media/inhouse-guest.50226ca6.svg" alt="" aria-hidden="true" className="h-[14px] w-[14px] shrink-0 object-contain" />')
+          s = s.replace('<DoorOpen size={14} className="shrink-0" />', '<img src="https://hms1.hotelx.asia/static/media/incoming-guest.28b53df6.svg" alt="" aria-hidden="true" className="h-[14px] w-[14px] shrink-0 object-contain" />')
+          p.write_text(s)
+          PY
+      - name: Install dependencies
+        run: npm ci
+      - name: Build and verify
+        run: |
+          npm run build:pages
+          npm run test:transport
+      - name: Commit Housekeeping guest icons
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add components/housekeeping-bridge.tsx
+          git commit -m 'Use HotelX guest icons in Room Management' || exit 0
+          git push
