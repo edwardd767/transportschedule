@@ -4,11 +4,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   BedDouble,
-  Building2,
   Check,
   ChevronDown,
   ChevronUp,
-  DoorOpen,
   Grid2X2,
   List,
   Pencil,
@@ -534,11 +532,11 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
                   <div className="flex min-w-0 flex-1 items-center justify-between gap-4 px-2 py-2">
                     <div className="min-w-0 text-[12px] text-[#151515]">
                       <div className="flex items-center gap-2 font-semibold">
-                        <Building2 size={17} className="text-[#444]" />
+                        <img src="https://hms1.hotelx.asia/static/media/inhouse-guest.50226ca6.svg" alt="" aria-hidden="true" className="h-[17px] w-[17px] shrink-0 object-contain" />
                         <span className="truncate">{room.guest}</span>
                       </div>
                       <div className="mt-1 flex items-center gap-2">
-                        <DoorOpen size={17} className="text-[#444]" />
+                        <img src="https://hms1.hotelx.asia/static/media/incoming-guest.28b53df6.svg" alt="" aria-hidden="true" className="h-[17px] w-[17px] shrink-0 object-contain" />
                         <span>
                           {room.bookingReference
                             ? `${room.bookingReference} · ${room.location}`
@@ -693,12 +691,12 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
                                 <span>{room.status}</span>
                               </div>
                               <div className="mt-2 flex min-w-0 items-center gap-1.5 text-[12px] font-semibold">
-                                <Building2 size={14} className="shrink-0" />
+                                <img src="https://hms1.hotelx.asia/static/media/inhouse-guest.50226ca6.svg" alt="" aria-hidden="true" className="h-[14px] w-[14px] shrink-0 object-contain" />
                                 <span className="truncate">{room.guest}</span>
                               </div>
                               <div className="mt-1 flex min-w-0 items-center justify-between gap-2 text-[11px] font-medium">
                                 <span className="flex min-w-0 items-center gap-1.5">
-                                  <DoorOpen size={14} className="shrink-0" />
+                                  <img src="https://hms1.hotelx.asia/static/media/incoming-guest.28b53df6.svg" alt="" aria-hidden="true" className="h-[14px] w-[14px] shrink-0 object-contain" />
                                   <span className="truncate">{room.bookingReference ?? 'N/A'}</span>
                                 </span>
                                 {room.checkout && <span className="shrink-0">{room.checkout}</span>}
