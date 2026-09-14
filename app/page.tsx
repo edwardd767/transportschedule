@@ -708,8 +708,17 @@ function HomeContent({ store }: { store: TransportData }) {
                 <ChevronLeft size={24} />
               </button>
             )}
+            {view === 'segment' && (
+              <button
+                className="booking-back"
+                aria-label="Back to Hotel Settings"
+                onClick={() => setView('hotelsettings')}
+              >
+                <ChevronLeft size={24} />
+              </button>
+            )}
             <div>
-              <small>{['setup', 'hotelsettings', 'hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy', 'standardpolicy'].includes(view) ? 'HMS' : 'PMS'}</small>
+              <small>{['setup', 'hotelsettings', 'hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy', 'standardpolicy', 'segment'].includes(view) ? 'HMS' : 'PMS'}</small>
               <strong>HOTEL PARADISE</strong>
             </div>
           </div>
@@ -754,6 +763,8 @@ function HomeContent({ store }: { store: TransportData }) {
                                 ? <>Rate Setup <ChevronRight size={14} /> {rateSetupSection === 'season-setup' ? 'Season Setup' : rateSetupSection === 'season-calendar' ? 'Season Calendar' : rateSetupSection === 'rate-element' ? 'Rate Element' : rateSetupSection === 'rate-type' ? 'Rate Type' : 'Rate Setup'}</>
                                 : 'Rate Setup'}
               </>
+            ) : view === 'segment' ? (
+              <>Segment</>
             ) : (
               <>
                 {view === 'setup' ? 'Hotel Settings' : 'Transport'}{' '}
