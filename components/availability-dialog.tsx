@@ -25,6 +25,7 @@ export function AvailabilityDialog({ bookings, roomTypes, onClose }: { bookings:
             value={start}
             min={today}
             onChange={setStart}
+            showTodayButton
             ariaLabel="Select availability date"
             className="!h-8 !w-8 !min-h-0 !border-0 !bg-transparent !p-0 !shadow-none [&>span]:!hidden [&>svg]:!h-[18px] [&>svg]:!w-[18px]"
           />
