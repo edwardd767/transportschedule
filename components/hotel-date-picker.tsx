@@ -18,6 +18,7 @@ type HotelDatePickerProps = {
   ariaLabel?: string;
   className?: string;
   mode?: PickerMode;
+  showTodayButton?: boolean;
 };
 
 function pad(value: number) {
@@ -28,14 +29,18 @@ function dateKey(year: number, month: number, day: number) {
   return `${year}-${pad(month + 1)}-${pad(day)}`;
 }
 
+function todayKey() {
+  const today = new Date();
+  return dateKey(today.getFullYear(), today.getMonth(), today.getDate());
+}
+
 function normaliseDate(value: string, mode: PickerMode) {
   if (mode === 'month') {
     if (/^\d{4}-\d{2}$/.test(value)) return `${value}-01`;
   } else if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     return value;
   }
-  const today = new Date();
-  return dateKey(today.getFullYear(), today.getMonth(), today.getDate());
+  return todayKey();
 }
 
 function parseKey(value: string) {
@@ -72,6 +77,7 @@ export function HotelDatePicker({
   ariaLabel = 'Select date',
   className = '',
   mode = 'date',
+  showTodayButton = false,
 }: HotelDatePickerProps) {
   const controlled = value !== undefined;
   const [internalValue, setInternalValue] = useState(defaultValue);
@@ -113,11 +119,26 @@ export function HotelDatePicker({
     setDraft(next);
   }
 
-  function commit() {
-    const next = mode === 'month' ? draft.slice(0, 7) : draft;
+  function applyValue(next: string) {
     if (!controlled) setInternalValue(next);
     onChange?.(next);
     setOpen(false);
+  }
+
+  function commit() {
+    const next = mode === 'month' ? draft.slice(0, 7) : draft;
+    applyValue(next);
+  }
+
+  function selectToday() {
+    if (mode !== 'date') return;
+    const next = todayKey();
+    if (min && next < min) return;
+    if (max && next > max) return;
+    const today = parseKey(next);
+    setDraft(next);
+    setCursor({ year: today.getFullYear(), month: today.getMonth() });
+    applyValue(next);
   }
 
   const header = selected.toLocaleDateString('en-US', {
@@ -201,6 +222,11 @@ export function HotelDatePicker({
           </div>
 
           <div className="hotel-calendar-actions">
+            {showTodayButton && mode === 'date' && (
+              <button type="button" onClick={selectToday} style={{ marginRight: 'auto' }}>
+                Today
+              </button>
+            )}
             <button type="button" onClick={() => setOpen(false)}>
               Cancel
             </button>
