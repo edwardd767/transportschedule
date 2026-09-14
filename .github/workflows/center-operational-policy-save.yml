@@ -1,0 +1,52 @@
+name: Center Operational Policy Save
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/center-operational-policy-save.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7.0.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Node.js
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Center Hotel Operational Policy Save button
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('components/hotel-settings-detail.tsx')
+          s = p.read_text()
+          old = '<div className="master-page-actions"><button className="secondary-button" type="button" onClick={onBack}>Cancel</button><button className="primary-button" type="button" onClick={async () => { await onProfileChange({ ...profile, operationalPolicy: draft }); }}>Save</button></div>'
+          new = '<div className="master-page-actions" style={{ justifyContent: \'center\' }}><button className="primary-button" type="button" onClick={async () => { await onProfileChange({ ...profile, operationalPolicy: draft }); }}>Save</button></div>'
+          if old not in s:
+              raise SystemExit('Hotel Operational Policy action row not found')
+          s = s.replace(old, new, 1)
+          p.write_text(s)
+          PY
+      - name: Install dependencies
+        run: npm ci
+      - name: Build and verify
+        run: |
+          npm run build:pages
+          npm run test:transport
+      - name: Commit Operational Policy footer change
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add components/hotel-settings-detail.tsx
+          git commit -m 'Center Operational Policy Save button' || exit 0
+          git push
