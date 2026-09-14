@@ -75,6 +75,30 @@ function AvailabilityIcon({ size = 23 }: { size?: number }) {
   );
 }
 
+function HotelXSearchIcon({ size = 23 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false" style={{ display: 'block', fill: 'currentColor', flex: '0 0 auto' }}>
+      <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+    </svg>
+  );
+}
+
+function HotelXAdvanceSearchIcon({ size = 23 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false" style={{ display: 'block', fill: 'currentColor', flex: '0 0 auto' }}>
+      <path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z" />
+    </svg>
+  );
+}
+
+function HotelXSortIcon({ size = 23 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false" style={{ display: 'block', fill: 'currentColor', flex: '0 0 auto' }}>
+      <path d="M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3L5 6.99h3V14h2V6.99h3L9 3z" />
+    </svg>
+  );
+}
+
 function AdvanceSelect({
   label,
   value,
@@ -468,9 +492,9 @@ export function Bookings({
       <div className="listing-title booking-listing-title">
         <h1>Booking Listing <span>({shown.length})</span></h1>
         <div className="booking-toolbar">
-          <button className="icon-button" aria-label="Search bookings" title="Search bookings" aria-pressed={searchOpen} onClick={() => setSearchOpen(!searchOpen)}><Search size={23} /></button>
-          <button className="icon-button" aria-label="Advance search" title="Advance search" aria-pressed={advanceOpen} onClick={() => setAdvanceOpen(true)}><SlidersHorizontal size={23} /></button>
-          <button className="icon-button" aria-label={oldestFirst ? 'Sort newest bookings first' : 'Sort oldest bookings first'} title={oldestFirst ? 'Oldest bookings first' : 'Newest bookings first'} aria-pressed={oldestFirst} onClick={() => setOldestFirst(!oldestFirst)}><ArrowDownUp size={23} /></button>
+          <button className="icon-button" aria-label="Search bookings" title="Search bookings" aria-pressed={searchOpen} onClick={() => setSearchOpen(!searchOpen)}><HotelXSearchIcon size={23} /></button>
+          <button className="icon-button" aria-label="Advance search" title="Advance search" aria-pressed={advanceOpen} onClick={() => setAdvanceOpen(true)}><HotelXAdvanceSearchIcon size={23} /></button>
+          <button className="icon-button" aria-label={oldestFirst ? 'Sort newest bookings first' : 'Sort oldest bookings first'} title={oldestFirst ? 'Oldest bookings first' : 'Newest bookings first'} aria-pressed={oldestFirst} onClick={() => setOldestFirst(!oldestFirst)}><HotelXSortIcon size={23} /></button>
           <button className="icon-button" aria-label="View availability" title="View availability" onClick={() => setAvailabilityOpen(true)}><AvailabilityIcon size={23} /></button>
         </div>
       </div>
