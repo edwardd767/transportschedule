@@ -1,0 +1,34 @@
+name: Department listing toggle labels
+
+on:
+  push:
+    paths:
+      - '.github/workflows/department-list-toggle-labels.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: main
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Apply Department listing patch
+        run: python scripts/patch-department-list-toggle-labels.py
+      - name: Verify build
+        run: |
+          npm ci
+          npm run build:pages
+      - name: Commit Department listing behavior
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add components/department-module-polished.tsx
+          git commit -m "Show Department listing fields by access toggles"
+          git push origin main
