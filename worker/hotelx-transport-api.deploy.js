@@ -1356,7 +1356,7 @@ function applyTransportAction(state, input) {
         return { id: text(row.id, "department ID", true, 60), name: text(row.name, "department name", true, 100), incidentalCharges: list(row.incidentalCharges).map((v) => {
           const charge = object(v);
           return { id: text(charge.id, "charge ID", true, 100), title: text(charge.title, "charge title", true, 100), amount: number(charge.amount, "amount", 0, 999999), taxScheme: text(charge.taxScheme, "tax scheme", true, 40), outletCode: text(charge.outletCode, "outlet code", false, 40), rateElement: boolean(charge.rateElement), guestAppFb: boolean(charge.guestAppFb), guestAppOnlineShop: boolean(charge.guestAppOnlineShop), posInterface: boolean(charge.posInterface), eventInterface: boolean(charge.eventInterface), allowNegative: boolean(charge.allowNegative), packageRedemption: boolean(charge.packageRedemption), kiosk: boolean(charge.kiosk), thirdPartyPos: boolean(charge.thirdPartyPos), eInvoice: boolean(charge.eInvoice), msicCode: text(charge.msicCode, "MSIC code", false, 40), classification: text(charge.classification, "classification", false, 40) };
-        }), reasons: list(row.reasons).map((v) => text(v, "reason", true, 100)), salesChannels: list(row.salesChannels).map((v) => text(v, "sales channel", true, 100)) };
+        }), reasons: list(row.reasons).map((v) => text(v, "reason", true, 100)), salesChannels: list(row.salesChannels).map((v) => text(v, "sales channel", true, 100)), allowReason: typeof row.allowReason === "boolean" ? row.allowReason : list(row.reasons).length > 0, allowSalesChannel: typeof row.allowSalesChannel === "boolean" ? row.allowSalesChannel : list(row.salesChannels).length > 0, allowIncidentalCharges: typeof row.allowIncidentalCharges === "boolean" ? row.allowIncidentalCharges : list(row.incidentalCharges).length > 0, serviceRequest: typeof row.serviceRequest === "boolean" ? row.serviceRequest : false };
       });
       if (new Set(value.map((item) => item.id)).size !== value.length) throw new Error("Duplicate department IDs.");
       return { ...state, hotelMasters: { ...state.hotelMasters, departments: value } };
@@ -2208,8 +2208,20 @@ var schemaStatements = [
     department_name text NOT NULL,
     incidental_charges jsonb NOT NULL DEFAULT '[]'::jsonb,
     reasons jsonb NOT NULL DEFAULT '[]'::jsonb,
+    is_allow_reason boolean NOT NULL DEFAULT false,
+    is_allow_sales_channel boolean NOT NULL DEFAULT false,
+    is_allow_incidental_charges boolean NOT NULL DEFAULT false,
+    is_allow_service_request boolean NOT NULL DEFAULT false,
     PRIMARY KEY (property_id, department_id)
   )`,
+  `ALTER TABLE public.hotelx_department
+    ADD COLUMN IF NOT EXISTS is_allow_reason boolean NOT NULL DEFAULT false`,
+  `ALTER TABLE public.hotelx_department
+    ADD COLUMN IF NOT EXISTS is_allow_sales_channel boolean NOT NULL DEFAULT false`,
+  `ALTER TABLE public.hotelx_department
+    ADD COLUMN IF NOT EXISTS is_allow_incidental_charges boolean NOT NULL DEFAULT false`,
+  `ALTER TABLE public.hotelx_department
+    ADD COLUMN IF NOT EXISTS is_allow_service_request boolean NOT NULL DEFAULT false`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_sales_channel (
     property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
     department_id uuid NOT NULL,
@@ -2583,11 +2595,25 @@ var schemaStatements = [
       WITH ORDINALITY AS item(value, ordinality);
 
     INSERT INTO public.hotelx_department (
-      property_id, department_id, sort_order, department_name, incidental_charges, reasons
+      property_id, department_id, sort_order, department_name, incidental_charges, reasons,
+      is_allow_reason, is_allow_sales_channel, is_allow_incidental_charges, is_allow_service_request
     )
     SELECT p_property_id, (item.value->>'id')::uuid, item.ordinality::integer,
       item.value->>'name', COALESCE(item.value->'incidentalCharges', '[]'::jsonb),
-      COALESCE(item.value->'reasons', '[]'::jsonb)
+      COALESCE(item.value->'reasons', '[]'::jsonb),
+      COALESCE(
+        (item.value->>'allowReason')::boolean,
+        jsonb_array_length(COALESCE(item.value->'reasons', '[]'::jsonb)) > 0
+      ),
+      COALESCE(
+        (item.value->>'allowSalesChannel')::boolean,
+        jsonb_array_length(COALESCE(item.value->'salesChannels', '[]'::jsonb)) > 0
+      ),
+      COALESCE(
+        (item.value->>'allowIncidentalCharges')::boolean,
+        jsonb_array_length(COALESCE(item.value->'incidentalCharges', '[]'::jsonb)) > 0
+      ),
+      COALESCE((item.value->>'serviceRequest')::boolean, false)
     FROM jsonb_array_elements(COALESCE(p_state #> '{hotelMasters,departments}', '[]'::jsonb))
       WITH ORDINALITY AS item(value, ordinality);
 
@@ -3067,6 +3093,10 @@ var schemaStatements = [
                 AND charge.department_id = department.department_id
             ), '[]'::jsonb),
             'reasons', department.reasons,
+            'allowReason', department.is_allow_reason,
+            'allowSalesChannel', department.is_allow_sales_channel,
+            'allowIncidentalCharges', department.is_allow_incidental_charges,
+            'serviceRequest', department.is_allow_service_request,
             'salesChannels', COALESCE((
               SELECT jsonb_agg(channel.sales_channel_name ORDER BY channel.sort_order)
               FROM public.hotelx_sales_channel AS channel
