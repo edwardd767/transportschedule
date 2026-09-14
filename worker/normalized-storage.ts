@@ -236,8 +236,20 @@ const schemaStatements = [
     department_name text NOT NULL,
     incidental_charges jsonb NOT NULL DEFAULT '[]'::jsonb,
     reasons jsonb NOT NULL DEFAULT '[]'::jsonb,
+    is_allow_reason boolean NOT NULL DEFAULT false,
+    is_allow_sales_channel boolean NOT NULL DEFAULT false,
+    is_allow_incidental_charges boolean NOT NULL DEFAULT false,
+    is_allow_service_request boolean NOT NULL DEFAULT false,
     PRIMARY KEY (property_id, department_id)
   )`,
+  `ALTER TABLE public.hotelx_department
+    ADD COLUMN IF NOT EXISTS is_allow_reason boolean NOT NULL DEFAULT false`,
+  `ALTER TABLE public.hotelx_department
+    ADD COLUMN IF NOT EXISTS is_allow_sales_channel boolean NOT NULL DEFAULT false`,
+  `ALTER TABLE public.hotelx_department
+    ADD COLUMN IF NOT EXISTS is_allow_incidental_charges boolean NOT NULL DEFAULT false`,
+  `ALTER TABLE public.hotelx_department
+    ADD COLUMN IF NOT EXISTS is_allow_service_request boolean NOT NULL DEFAULT false`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_sales_channel (
     property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
     department_id uuid NOT NULL,
@@ -611,11 +623,25 @@ const schemaStatements = [
       WITH ORDINALITY AS item(value, ordinality);
 
     INSERT INTO public.hotelx_department (
-      property_id, department_id, sort_order, department_name, incidental_charges, reasons
+      property_id, department_id, sort_order, department_name, incidental_charges, reasons,
+      is_allow_reason, is_allow_sales_channel, is_allow_incidental_charges, is_allow_service_request
     )
     SELECT p_property_id, (item.value->>'id')::uuid, item.ordinality::integer,
       item.value->>'name', COALESCE(item.value->'incidentalCharges', '[]'::jsonb),
-      COALESCE(item.value->'reasons', '[]'::jsonb)
+      COALESCE(item.value->'reasons', '[]'::jsonb),
+      COALESCE(
+        (item.value->>'allowReason')::boolean,
+        jsonb_array_length(COALESCE(item.value->'reasons', '[]'::jsonb)) > 0
+      ),
+      COALESCE(
+        (item.value->>'allowSalesChannel')::boolean,
+        jsonb_array_length(COALESCE(item.value->'salesChannels', '[]'::jsonb)) > 0
+      ),
+      COALESCE(
+        (item.value->>'allowIncidentalCharges')::boolean,
+        jsonb_array_length(COALESCE(item.value->'incidentalCharges', '[]'::jsonb)) > 0
+      ),
+      COALESCE((item.value->>'serviceRequest')::boolean, false)
     FROM jsonb_array_elements(COALESCE(p_state #> '{hotelMasters,departments}', '[]'::jsonb))
       WITH ORDINALITY AS item(value, ordinality);
 
@@ -1095,6 +1121,10 @@ const schemaStatements = [
                 AND charge.department_id = department.department_id
             ), '[]'::jsonb),
             'reasons', department.reasons,
+            'allowReason', department.is_allow_reason,
+            'allowSalesChannel', department.is_allow_sales_channel,
+            'allowIncidentalCharges', department.is_allow_incidental_charges,
+            'serviceRequest', department.is_allow_service_request,
             'salesChannels', COALESCE((
               SELECT jsonb_agg(channel.sales_channel_name ORDER BY channel.sort_order)
               FROM public.hotelx_sales_channel AS channel
