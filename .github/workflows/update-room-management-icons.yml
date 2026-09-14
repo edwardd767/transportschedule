@@ -24,48 +24,7 @@ jobs:
           node-version: '22'
           cache: npm
       - name: Patch Room Management icons
-        shell: bash
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          p = Path('components/housekeeping-bridge.tsx')
-          s = p.read_text()
-          old = """        {[
-          ['🧹', 'Room Status'],
-          ['🧾', 'Misc Charges'],
-          ['🚫', 'Block Room'],
-          ['⚙️', 'Services'],
-        ].map(([icon, label]) => (
-          <button
-            key={label}
-            type=\"button\"
-            className=\"flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-[5px] border border-[#ddd] bg-white text-[11px] font-semibold shadow-sm hover:bg-[#fff8ef]\"
-          >
-            <span className=\"text-[20px] leading-none\">{icon}</span>
-            {label}
-          </button>
-        ))}
-"""
-          new = """        {[
-          ['https://hms1.hotelx.asia/static/media/roomstatus.76f49413.svg', 'Room Status'],
-          ['https://hms1.hotelx.asia/static/media/misc.3e6de67d.svg', 'Misc Charges'],
-          ['https://hms1.hotelx.asia/static/media/block.e3cb156a.svg', 'Block Room'],
-          ['https://hms1.hotelx.asia/static/media/services.875b8a9c.svg', 'Services'],
-        ].map(([icon, label]) => (
-          <button
-            key={label}
-            type=\"button\"
-            className=\"flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-[5px] border border-[#ddd] bg-white text-[11px] font-bold shadow-sm hover:bg-[#fff8ef]\"
-          >
-            <img src={icon} alt=\"\" aria-hidden=\"true\" className=\"h-[22px] w-[22px] object-contain\" />
-            <strong className=\"font-bold\">{label}</strong>
-          </button>
-        ))}
-"""
-          if old not in s:
-              raise SystemExit('Room Management button block not found')
-          p.write_text(s.replace(old, new, 1))
-          PY
+        run: echo 'CmZyb20gcGF0aGxpYiBpbXBvcnQgUGF0aApwID0gUGF0aCgiY29tcG9uZW50cy9ob3VzZWtlZXBpbmctYnJpZGdlLnRzeCIpCnMgPSBwLnJlYWRfdGV4dCgpCm9sZCA9ICIiIiAgICAgICAge1sKICAgICAgICAgIFsn8J+ngScsICdSb29tIFN0YXR1cyddLAogICAgICAgICAgWfCfqK4nLCAnTWlzYyBDaGFyZ2VzJ10sCiAgICAgICAgICBbJ/CfmoUnLCAnQmxvY2sgUm9vbSddLAogICAgICAgICAgWfCfjId+77iPJyw gJ1NlcnZpY2VzJ10sCiAgICAgICAgXS5tYXAoKFtpY29uLCBsYWJlbF0pID0+ICgKICAgICAgICAgIDxidXR0b24KICAgICAgICAgICAga2V5PXtsYWJlbH0KICAgICAgICAgICAgdHlwZT0iYnV0dG9uIgogICAgICAgICAgICBjbGFzc05hbWU9ImZsZXggbWluLWgtWzU4cHhdIGZsZXgtY29sIGl0ZW1zLWNlbnRlciBqdXN0aWZ5LWNlbnRlciBnYXAtMSByb3VuZGVkLVs1cHhdIGJvcmRlciBib3JkZXItWyNkZGRdIGJnLXdoaXRlIHRleHQtWzExcHhdIGZvbnQtc2VtaWJvbGQgc2hhZG93LXNtIGhvdmVyOmJnLVsjZmZmOGVmXSIKICAgICAgICAgID4KICAgICAgICAgICAgPHNwYW4gY2xhc3NOYW1lPSJ0ZXh0LVsyMHB4XSBsZWFkaW5nLW5vbmUiPntpY29ufTwvc3Bhbj4KICAgICAgICAgICAge2xhYmVsfQogICAgICAgICAgPC9idXR0b24+CiAgICAgICAgKSl9CiIiIgpuZXcgPSAiIiIgICAgICAgIHtbCiAgICAgICAgICBbJ2h0dHBzOi8vaG1zMS5ob3RlbHguYXNpYS9zdGF0aWMvbWVkaWEvcm9vbXN0YXR1cy43NmY0OTQxMy5zdmcnLCAnUm9vbSBTdGF0dXMnXSwKICAgICAgICAgIFsnaHR0cHM6Ly9obXMxLmhvdGVseC5hc2lhL3N0YXRpYy9tZWRpYS9taXNjLjNlNmRlNjdkLnN2ZycsICdNaXNjIENoYXJnZXMnXSwKICAgICAgICAgIFsnaHR0cHM6Ly9obXMxLmhvdGVseC5hc2lhL3N0YXRpYy9tZWRpYS9ibG9jay5lM2NiMTU2YS5zdmcnLCAnQmxvY2sgUm9vbSddLAogICAgICAgICAgWydodHRwczovL2htczEuaG90ZWx4LmFzaWEvc3RhdGljL21lZGlhL3NlcnZpY2VzLjg3NWI4YTljLnN2ZycsICdTZXJ2aWNlcyddLAogICAgICAgIF0ubWFwKChbaWNvbiwgbGFiZWxdKSA9PiAoCiAgICAgICAgICA8YnV0dG9uCiAgICAgICAgICAgIGtleT17bGFiZWx9CiAgICAgICAgICAgIHR5cGU9ImJ1dHRvbiIKICAgICAgICAgICAgY2xhc3NOYW1lPSJmbGV4IG1pbi1oLVs1OHB4XSBmbGV4LWNvbCBpdGVtcy1jZW50ZXIganVzdGlmeS1jZW50ZXIgZ2FwLTEgcm91bmRlZC1bNXB4XSBib3JkZXIgYm9yZGVyLVsjZGRkXSBiZy13aGl0ZSB0ZXh0LVsxMXB4XSBmb250LWJvbGQgc2hhZG93LXNtIGhvdmVyOmJnLVsjZmZmOGVmXSIKICAgICAgICAgID4KICAgICAgICAgICAgPGltZyBzcmM9e2ljb259IGFsdD0iIiBhcmlhLWhpZGRlbj0idHJ1ZSIgY2xhc3NOYW1lPSJoLVsyMnB4XSB3LVsyMnB4XSBvYmplY3QtY29udGFpbiIgLz4KICAgICAgICAgICAgPHN0cm9uZyBjbGFzc05hbWU9ImZvbnQtYm9sZCI+e2xhYmVsfTwvc3Ryb25nPgogICAgICAgICAgPC9idXR0b24+CiAgICAgICAgKSl9CiIiIgppZiBvbGQgbm90IGluIHM6CiAgICByYWlzZSBTeXN0ZW1FeGl0KCJSb29tIE1hbmFnZW1lbnQgYnV0dG9uIGJsb2NrIG5vdCBmb3VuZCIpCnAud3JpdGVfdGV4dChzLnJlcGxhY2Uob2xkLCBuZXcsIDEpKQo=' | tr -d ' ' | base64 -d | python
       - name: Install dependencies
         run: npm ci
       - name: Build and verify
