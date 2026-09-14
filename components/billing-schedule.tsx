@@ -64,6 +64,25 @@ type BillingLine = {
   addOns: { name: string; amount: number }[];
 };
 
+function billingRoomAssignments(booking: Booking): Record<string, string[]> {
+  const raw = booking.specialRequests?._roomAssignments;
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    return Object.fromEntries(
+      Object.entries(parsed).map(([roomType, roomNos]) => [
+        roomType,
+        Array.isArray(roomNos)
+          ? roomNos.filter((roomNo): roomNo is string => typeof roomNo === 'string' && Boolean(roomNo.trim())).map((roomNo) => roomNo.trim())
+          : [],
+      ]),
+    );
+  } catch {
+    return {};
+  }
+}
+
 function lineAdjustment(booking: Booking, line: BillingLine) {
   return booking.billingSchedule?.find((item) => item.id === line.id);
 }
@@ -116,6 +135,7 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
     return rows;
   }, [booking, fromDate, rateSetup, toDate]);
 
+  const assignedRoomNumbers = useMemo(() => billingRoomAssignments(booking), [booking]);
   const activeRateCodes = rateSetup.ratePlans.filter((plan) => plan.active);
   const selectedLines = lines.filter((line) => selected.includes(line.id));
   const transportTotal = bookingLegs.filter((leg) => leg.bookingReference === booking.reference && leg.incidentalCharge?.chargeId).reduce((total, leg) => {
@@ -205,9 +225,11 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
             const roomKey = `${roomIndex}-${copyIndex}`;
             const isRoomOpen = expandedRoom === roomKey;
             const dailyLines = roomLines.filter((line) => line.roomKey === roomKey);
+            const sameTypeOffset = booking.rooms.slice(0, roomIndex).filter((item) => item.code === room.code).reduce((total, item) => total + item.count, 0);
+            const assignedRoomNo = assignedRoomNumbers[room.code]?.[sameTypeOffset + copyIndex];
             return <div className="billing-room-block" key={roomKey}>
               <button className="billing-room-head" type="button" onClick={() => setExpandedRoom(isRoomOpen ? '' : roomKey)}>
-                <span><strong>Room {copyIndex + 1}</strong><small>{booking.guest} | {money(dailyLines.reduce((total, line) => total + line.amount, 0))}</small></span>{isRoomOpen ? <ChevronUp size={17} /> : <ChevronDown size={17} />}
+                <span><strong>Room {copyIndex + 1}</strong><small>{booking.guest}{assignedRoomNo ? ` | ${assignedRoomNo}` : ''} | {money(dailyLines.reduce((total, line) => total + line.amount, 0))}</small></span>{isRoomOpen ? <ChevronUp size={17} /> : <ChevronDown size={17} />}
               </button>
               {isRoomOpen && <div className="billing-room-detail">
                 <div className="billing-date-range"><HotelDatePicker value={fromDate} min={booking.arrival} max={toDate || addDays(booking.departure, -1)} onChange={setFromDate} ariaLabel="Select billing schedule start date" className="billing-date-field" /><ChevronRight size={20} /><HotelDatePicker value={toDate} min={fromDate || booking.arrival} max={addDays(booking.departure, -1)} onChange={setToDate} ariaLabel="Select billing schedule end date" className="billing-date-field" /></div>
