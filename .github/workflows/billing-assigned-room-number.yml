@@ -18,53 +18,7 @@ jobs:
 
       - name: Update Billing Schedule room display
         run: |
-          python - <<'PY'
-          from pathlib import Path
-
-          path = Path('components/billing-schedule.tsx')
-          text = path.read_text()
-
-          marker = "function lineAdjustment(booking: Booking, line: BillingLine) {\n"
-          if 'function billingRoomAssignments' not in text:
-              helper = '''function billingRoomAssignments(booking: Booking): Record<string, string[]> {
-  const raw = booking.specialRequests?._roomAssignments;
-  if (!raw) return {};
-  try {
-    const parsed = JSON.parse(raw) as Record<string, unknown>;
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
-    return Object.fromEntries(
-      Object.entries(parsed).map(([roomType, roomNos]) => [
-        roomType,
-        Array.isArray(roomNos)
-          ? roomNos.filter((roomNo): roomNo is string => typeof roomNo === 'string' && Boolean(roomNo.trim())).map((roomNo) => roomNo.trim())
-          : [],
-      ]),
-    );
-  } catch {
-    return {};
-  }
-}
-
-'''
-              if marker not in text:
-                  raise SystemExit('lineAdjustment marker not found')
-              text = text.replace(marker, helper + marker, 1)
-
-          old = """  const activeRateCodes = rateSetup.ratePlans.filter((plan) => plan.active);\n"""
-          new = """  const assignedRoomNumbers = useMemo(() => billingRoomAssignments(booking), [booking]);\n  const activeRateCodes = rateSetup.ratePlans.filter((plan) => plan.active);\n"""
-          if old in text and 'const assignedRoomNumbers = useMemo' not in text:
-              text = text.replace(old, new, 1)
-
-          old_block = """          {isRoomTypeOpen && Array.from({ length: room.count }, (_, copyIndex) => {\n            const roomKey = `${roomIndex}-${copyIndex}`;\n            const isRoomOpen = expandedRoom === roomKey;\n            const dailyLines = roomLines.filter((line) => line.roomKey === roomKey);\n            return <div className=\"billing-room-block\" key={roomKey}>\n              <button className=\"billing-room-head\" type=\"button\" onClick={() => setExpandedRoom(isRoomOpen ? '' : roomKey)}>\n                <span><strong>Room {copyIndex + 1}</strong><small>{booking.guest} | {money(dailyLines.reduce((total, line) => total + line.amount, 0))}</small></span>{isRoomOpen ? <ChevronUp size={17} /> : <ChevronDown size={17} />}\n              </button>\n"""
-          new_block = """          {isRoomTypeOpen && Array.from({ length: room.count }, (_, copyIndex) => {\n            const roomKey = `${roomIndex}-${copyIndex}`;\n            const isRoomOpen = expandedRoom === roomKey;\n            const dailyLines = roomLines.filter((line) => line.roomKey === roomKey);\n            const sameTypeOffset = booking.rooms.slice(0, roomIndex).filter((item) => item.code === room.code).reduce((total, item) => total + item.count, 0);\n            const assignedRoomNo = assignedRoomNumbers[room.code]?.[sameTypeOffset + copyIndex];\n            return <div className=\"billing-room-block\" key={roomKey}>\n              <button className=\"billing-room-head\" type=\"button\" onClick={() => setExpandedRoom(isRoomOpen ? '' : roomKey)}>\n                <span><strong>Room {copyIndex + 1}</strong><small>{booking.guest}{assignedRoomNo ? ` | ${assignedRoomNo}` : ''} | {money(dailyLines.reduce((total, line) => total + line.amount, 0))}</small></span>{isRoomOpen ? <ChevronUp size={17} /> : <ChevronDown size={17} />}\n              </button>\n"""
-          if old_block not in text:
-              if 'const assignedRoomNo = assignedRoomNumbers[room.code]' not in text:
-                  raise SystemExit('Billing room block marker not found')
-          else:
-              text = text.replace(old_block, new_block, 1)
-
-          path.write_text(text)
-          PY
+          echo 'ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCnBhdGggPSBQYXRoKCJjb21wb25lbnRzL2JpbGxpbmctc2NoZWR1bGUudHN4IikKdGV4dCA9IHBhdGgucmVhZF90ZXh0KCkKCm1hcmtlciA9ICJmdW5jdGlvbiBsaW5lQWRqdXN0bWVudChib29raW5nOiBCb29raW5nLCBsaW5lOiBCaWxsaW5nTGluZSkge1xuIgppZiAiZnVuY3Rpb24gYmlsbGluZ1Jvb21Bc3NpZ25tZW50cyIgbm90IGluIHRleHQ6CiAgICBoZWxwZXIgPSAnJydmdW5jdGlvbiBiaWxsaW5nUm9vbUFzc2lnbm1lbnRzKGJvb2tpbmc6IEJvb2tpbmcpOiBSZWNvcmQ8c3RyaW5nLCBzdHJpbmdbXT4gewogIGNvbnN0IHJhdyA9IGJvb2tpbmcuc3BlY2lhbFJlcXVlc3RzPy5fcm9vbUFzc2lnbm1lbnRzOwogIGlmICghcmF3KSByZXR1cm4ge307CiAgdHJ5IHsKICAgIGNvbnN0IHBhcnNlZCA9IEpTT04ucGFyc2UocmF3KSBhcyBSZWNvcmQ8c3RyaW5nLCB1bmtub3duPjsKICAgIGlmICghcGFyc2VkIHx8IHR5cGVvZiBwYXJzZWQgIT09ICdvYmplY3QnIHx8IEFycmF5LmlzQXJyYXkocGFyc2VkKSkgcmV0dXJuIHt9OwogICAgcmV0dXJuIE9iamVjdC5mcm9tRW50cmllcygKICAgICAgT2JqZWN0LmVudHJpZXMocGFyc2VkKS5tYXAoKFtyb29tVHlwZSwgcm9vbU5vc10pID0+IFsKICAgICAgICByb29tVHlwZSwKICAgICAgICBBcnJheS5pc0FycmF5KHJvb21Ob3MpCiAgICAgICAgICA/IHJvb21Ob3MuZmlsdGVyKChyb29tTm8pOiByb29tTm8gaXMgc3RyaW5nID0+IHR5cGVvZiByb29tTm8gPT09ICdzdHJpbmcnICYmIEJvb2xlYW4ocm9vbU5vLnRyaW0oKSkpLm1hcCgocm9vbU5vKSA9PiByb29tTm8udHJpbSgpKQogICAgICAgICAgOiBbXSwKICAgICAgXSksCiAgICApOwogIH0gY2F0Y2ggewogICAgcmV0dXJuIHt9OwogIH0KfQoKJycnCiAgICBpZiBtYXJrZXIgbm90IGluIHRleHQ6CiAgICAgICAgcmFpc2UgU3lzdGVtRXhpdCgibGluZUFkanVzdG1lbnQgbWFya2VyIG5vdCBmb3VuZCIpCiAgICB0ZXh0ID0gdGV4dC5yZXBsYWNlKG1hcmtlciwgaGVscGVyICsgbWFya2VyLCAxKQoKb2xkID0gIiAgY29uc3QgYWN0aXZlUmF0ZUNvZGVzID0gcmF0ZVNldHVwLnJhdGVQbGFucy5maWx0ZXIoKHBsYW4pID0+IHBsYW4uYWN0aXZlKTtcbiIKbmV3ID0gIiAgY29uc3QgYXNzaWduZWRSb29tTnVtYmVycyA9IHVzZU1lbW8oKCkgPT4gYmlsbGluZ1Jvb21Bc3NpZ25tZW50cyhib29raW5nKSwgW2Jvb2tpbmddKTtcbiAgY29uc3QgYWN0aXZlUmF0ZUNvZGVzID0gcmF0ZVNldHVwLnJhdGVQbGFucy5maWx0ZXIoKHBsYW4pID0+IHBsYW4uYWN0aXZlKTtcbiIKaWYgb2xkIGluIHRleHQgYW5kICJjb25zdCBhc3NpZ25lZFJvb21OdW1iZXJzID0gdXNlTWVtbyIgbm90IGluIHRleHQ6CiAgICB0ZXh0ID0gdGV4dC5yZXBsYWNlKG9sZCwgbmV3LCAxKQoKb2xkX2Jsb2NrID0gJycnICAgICAgICAgIHtpc1Jvb21UeXBlT3BlbiAmJiBBcnJheS5mcm9tKHsgbGVuZ3RoOiByb29tLmNvdW50IH0sIChfLCBjb3B5SW5kZXgpID0+IHsKICAgICAgICAgICAgY29uc3Qgcm9vbUtleSA9IGAke3Jvb21JbmRleH0tJHtjb3B5SW5kZXh9YDsKICAgICAgICAgICAgY29uc3QgaXNSb29tT3BlbiA9IGV4cGFuZGVkUm9vbSA9PT0gcm9vbUtleTsKICAgICAgICAgICAgY29uc3QgZGFpbHlMaW5lcyA9IHJvb21MaW5lcy5maWx0ZXIoKGxpbmUpID0+IGxpbmUucm9vbUtleSA9PT0gcm9vbUtleSk7CiAgICAgICAgICAgIHJldHVybiA8ZGl2IGNsYXNzTmFtZT0iYmlsbGluZy1yb29tLWJsb2NrIiBrZXk9e3Jvb21LZXl9PgogICAgICAgICAgICAgIDxidXR0b24gY2xhc3NOYW1lPSJiaWxsaW5nLXJvb20taGVhZCIgdHlwZT0iYnV0dG9uIiBvbkNsaWNrPXsoKSA9PiBzZXRFeHBhbmRlZFJvb20oaXNSb29tT3BlbiA/ICcnIDogcm9vbUtleSl9PgogICAgICAgICAgICAgICAgPHNwYW4+PHN0cm9uZz5Sb29tIHtjb3B5SW5kZXggKyAxfTwvc3Ryb25nPjxzbWFsbD57Ym9va2luZy5ndWVzdH0gfCB7bW9uZXkoZGFpbHlMaW5lcy5yZWR1Y2UoKHRvdGFsLCBsaW5lKSA9PiB0b3RhbCArIGxpbmUuYW1vdW50LCAwKSl9PC9zbWFsbD48L3NwYW4+e2lzUm9vbU9wZW4gPyA8Q2hldnJvblVwIHNpemU9ezE3fSAvPiA6IDxDaGV2cm9uRG93biBzaXplPXsxN30gLz59CiAgICAgICAgICAgICAgPC9idXR0b24+CicnJwpuZXdfYmxvY2sgPSAnJycgICAgICAgICAge2lzUm9vbVR5cGVPcGVuICYmIEFycmF5LmZyb20oeyBsZW5ndGg6IHJvb20uY291bnQgfSwgKF8sIGNvcHlJbmRleCkgPT4gewogICAgICAgICAgICBjb25zdCByb29tS2V5ID0gYCR7cm9vbUluZGV4fS0ke2NvcHlJbmRleH1gOwogICAgICAgICAgICBjb25zdCBpc1Jvb21PcGVuID0gZXhwYW5kZWRSb29tID09PSByb29tS2V5OwogICAgICAgICAgICBjb25zdCBkYWlseUxpbmVzID0gcm9vbUxpbmVzLmZpbHRlcigobGluZSkgPT4gbGluZS5yb29tS2V5ID09PSByb29tS2V5KTsKICAgICAgICAgICAgY29uc3Qgc2FtZVR5cGVPZmZzZXQgPSBib29raW5nLnJvb21zLnNsaWNlKDAsIHJvb21JbmRleCkuZmlsdGVyKChpdGVtKSA9PiBpdGVtLmNvZGUgPT09IHJvb20uY29kZSkucmVkdWNlKCh0b3RhbCwgaXRlbSkgPT4gdG90YWwgKyBpdGVtLmNvdW50LCAwKTsKICAgICAgICAgICAgY29uc3QgYXNzaWduZWRSb29tTm8gPSBhc3NpZ25lZFJvb21OdW1iZXJzW3Jvb20uY29kZV0/LltzYW1lVHlwZU9mZnNldCArIGNvcHlJbmRleF07CiAgICAgICAgICAgIHJldHVybiA8ZGl2IGNsYXNzTmFtZT0iYmlsbGluZy1yb29tLWJsb2NrIiBrZXk9e3Jvb21LZXl9PgogICAgICAgICAgICAgIDxidXR0b24gY2xhc3NOYW1lPSJiaWxsaW5nLXJvb20taGVhZCIgdHlwZT0iYnV0dG9uIiBvbkNsaWNrPXsoKSA9PiBzZXRFeHBhbmRlZFJvb20oaXNSb29tT3BlbiA/ICcnIDogcm9vbUtleSl9PgogICAgICAgICAgICAgICAgPHNwYW4+PHN0cm9uZz5Sb29tIHtjb3B5SW5kZXggKyAxfTwvc3Ryb25nPjxzbWFsbD57Ym9va2luZy5ndWVzdH17YXNzaWduZWRSb29tTm8gPyBgIHwgJHthc3NpZ25lZFJvb21Ob31gIDogJyd9IHwge21vbmV5KGRhaWx5TGluZXMucmVkdWNlKCh0b3RhbCwgbGluZSkgPT4gdG90YWwgKyBsaW5lLmFtb3VudCwgMCkpfTwvc21hbGw+PC9zcGFuPntpc1Jvb21PcGVuID8gPENoZXZyb25VcCBzaXplPXsxN30gLz4gOiA8Q2hldnJvbkRvd24gc2l6ZT17MTd9IC8+fQogICAgICAgICAgICAgIDwvYnV0dG9uPgonJycKaWYgb2xkX2Jsb2NrIGluIHRleHQ6CiAgICB0ZXh0ID0gdGV4dC5yZXBsYWNlKG9sZF9ibG9jaywgbmV3X2Jsb2NrLCAxKQplbGlmICJjb25zdCBhc3NpZ25lZFJvb21ObyA9IGFzc2lnbmVkUm9vbU51bWJlcnNbcm9vbS5jb2RlXSIgbm90IGluIHRleHQ6CiAgICByYWlzZSBTeXN0ZW1FeGl0KCJCaWxsaW5nIHJvb20gYmxvY2sgbWFya2VyIG5vdCBmb3VuZCIpCgpwYXRoLndyaXRlX3RleHQodGV4dCkK' | base64 -d | python
 
       - name: Verify build
         run: |
