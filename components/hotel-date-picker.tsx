@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 type PickerMode = 'date' | 'month';
@@ -20,6 +20,21 @@ type HotelDatePickerProps = {
   mode?: PickerMode;
   showTodayButton?: boolean;
 };
+
+function HotelCalendarIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      focusable="false"
+      style={{ display: 'inline-block', fill: 'currentColor', flex: '0 0 auto' }}
+    >
+      <path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.11.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z" />
+    </svg>
+  );
+}
 
 function pad(value: number) {
   return String(value).padStart(2, '0');
@@ -163,7 +178,7 @@ export function HotelDatePicker({
         onClick={openPicker}
       >
         <span>{displayValue(currentValue, mode)}</span>
-        <CalendarDays size={18} />
+        <HotelCalendarIcon size={18} />
       </button>
       {required && !currentValue && <span className="sr-only">A date is required.</span>}
 
