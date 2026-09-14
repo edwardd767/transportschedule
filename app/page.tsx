@@ -693,8 +693,15 @@ function HomeContent({ store }: { store: TransportData }) {
             {['hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy', 'standardpolicy', 'setup'].includes(view) && (
               <button
                 className="booking-back"
-                aria-label={view === 'ratepolicy' && rateSetupSection ? 'Back to Rate Setup' : 'Back to Hotel Settings'}
-                onClick={() => view === 'ratepolicy' && rateSetupSection ? setRateSetupSection(null) : setView('hotelsettings')}
+                aria-label={view === 'ratepolicy' && rateSetupSection ? 'Back to Rate Setup' : view === 'standardpolicy' ? 'Back' : 'Back to Hotel Settings'}
+                onClick={() => {
+                  if (view === 'standardpolicy') {
+                    const standardPolicyBackEvent = new Event('hotelx-standard-policy-back', { cancelable: true });
+                    window.dispatchEvent(standardPolicyBackEvent);
+                    if (standardPolicyBackEvent.defaultPrevented) return;
+                  }
+                  view === 'ratepolicy' && rateSetupSection ? setRateSetupSection(null) : setView('hotelsettings');
+                }}
               >
                 <ChevronLeft size={24} />
               </button>

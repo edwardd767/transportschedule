@@ -23,6 +23,15 @@ import { TimePicker } from '@/components/time-picker';
 
 function StandardPolicyModule({ onBack, profile, onProfileChange }: { onBack: () => void; profile: HotelProfile; onProfileChange: (value: HotelProfile) => void | Promise<void> }) {
   const [policy, setPolicy] = useState<string | null>(null);
+  useEffect(() => {
+    const handleStandardPolicyBack = (event: Event) => {
+      if (!policy) return;
+      event.preventDefault();
+      setPolicy(null);
+    };
+    window.addEventListener('hotelx-standard-policy-back', handleStandardPolicyBack);
+    return () => window.removeEventListener('hotelx-standard-policy-back', handleStandardPolicyBack);
+  }, [policy]);
   if (policy === 'Hotel Operational Policy') return <HotelOperationalPolicyModule profile={profile} onProfileChange={onProfileChange} onBack={() => setPolicy(null)} />;
   if (policy === 'Security Deposit Policy') return <SecurityDepositPolicyModule profile={profile} onProfileChange={onProfileChange} />;
   if (policy === 'General Policy') return <GeneralPolicyModule profile={profile} onProfileChange={onProfileChange} onBack={() => setPolicy(null)} />;
