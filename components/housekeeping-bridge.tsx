@@ -442,7 +442,7 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
             className="flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-[5px] border border-[#ddd] bg-white text-[9px] leading-[10px] font-bold shadow-sm hover:bg-[#fff8ef]"
           >
             <img src={icon} alt="" aria-hidden="true" className="h-[22px] w-[22px] object-contain" />
-            <strong className="font-bold">{label}</strong>
+            <strong className="font-bold" style={{ fontSize: 10, lineHeight: '11px' }}>{label}</strong>
           </button>
         ))}
       </div>
