@@ -39,6 +39,10 @@ export type HotelDepartment = {
   incidentalCharges: IncidentalCharge[];
   reasons: string[];
   salesChannels: string[];
+  allowReason?: boolean;
+  allowSalesChannel?: boolean;
+  allowIncidentalCharges?: boolean;
+  serviceRequest?: boolean;
 };
 export type HotelOperationalPolicy = { standardCheckInTime: string; standardCheckOutTime: string; nightAuditCutOffTime: string; postpaid: boolean; floorPlan: boolean; cashierClosure: boolean; occupancy: { houseUse: boolean; dayUse: boolean; complimentary: boolean; ooo: boolean; ooi: boolean } };
 export type HotelProfile = { hotelName: string; address: string; postcode: string; country: string; city: string; state: string; hotelType: string; companyName: string; companyRegNo: string; sstRegNo: string; ttxRegNo: string; onlineBookingUrl: string; liveRunDate: string; contactPerson: string; phoneNo: string; mobileNo: string; reservationEmail: string; businessEmail: string; bookingCancellationDays: number; currencyCode: string; floatAmount: number; paxCount: string; childRatesApplied: boolean; operationalPolicy: HotelOperationalPolicy };

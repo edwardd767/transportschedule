@@ -6025,3 +6025,37 @@ p {
 .billing-date-range .hotel-date-field:hover{border-color:#f79400!important;background:#fffaf3!important}
 .billing-date-range .hotel-date-field>svg{width:18px!important;height:18px!important;color:#666!important}
 @media(max-width:720px){.billing-date-range{grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr)!important;gap:4px!important}.billing-date-range .hotel-date-field{min-height:40px!important;padding:0 10px!important;font-size:13px!important}}
+
+
+/* Department HotelX reference styling */
+.department-page>.department-list-head{min-height:46px!important;padding:9px 12px!important;border-radius:0!important;border:0!important;border-bottom:1px solid #e6e6e6!important;background:#fff!important;box-shadow:0 2px 5px #00000012!important}
+.department-page>.department-list-head h1{margin:0!important;font-size:14px!important;line-height:1.25!important;font-weight:700!important;letter-spacing:0!important;color:#191919!important}
+.department-page>.department-list-head h1 em{font-size:14px!important;font-weight:500!important;color:#f58200!important}
+.department-page>.department-list-head .department-search-button{display:grid;place-items:center;width:34px;height:34px;padding:0!important;color:#151515!important}
+.department-page>.department-list-head .department-search-button svg{width:20px!important;height:20px!important;stroke-width:2.4!important}
+.department-page>.department-search-field{min-height:42px;margin:6px 0!import;padding:8px 11px!import;border:0!important;border-bottom:1px solid #ddd!important;border-radius:0!important;box-shadow:none!important}
+.department-page>.department-search-field input{font-size:13px!important;color:#222!important}
+.department-page>.department-list{gap:4px!important;padding-top:4px}
+.department-page>.department-list .department-row{min-height:57px!important;padding:8px 12px!important;border-radius:5px!important}
+.department-page>.department-list .department-row strong{font-size:13px!important;line-height:1.25!important;font-weight:700!important;color:#171717!important}
+.department-page>.department-list .department-row small{margin-top:3px!important;font-size:11.5px!important;line-height:1.25!important;color:#333!important}
+.department-add-button{z-index:25}
+.department-create-overlay{z-index:1150!important}
+.department-create-dialog{width:min(600px,calc(100vw - 32px));overflow:hidden;border-radius:4px;background:#fff;box-shadow:0 12px 36px #0006}
+.department-create-dialog h2{margin:0;padding:10px 12px;background:#fff5e8;color:#f78b00;font-size:17px;font-weight:700}
+.department-create-body{padding:26px 12px 8px}
+.department-create-description{display:block;color:#8a8a8a;font-size:16px}
+.department-create-description span{display:block;margin-bottom:2px}
+.department-create-description input{width:100%;height:34px;border:0;border-bottom:1px solid #999;border-radius:0;outline:0;background:transparent;color:#222;font-size:16px}
+.department-create-options{display:grid;grid-template-columns:1fr 1fr;gap:16px 34px;margin-top:25px;padding:0 8px}
+.department-create-toggle{display:flex;align-items:center;gap:12px;min-width:0;color:#333;font-size:16px;cursor:pointer}
+.department-create-toggle input{position:absolute;opacity:0;pointer-events:none}
+.department-create-toggle i{position:relative;width:38px;height:20px;flex:0 0 38px;border-radius:12px;background:#9f9f9f;transition:.15s}
+.department-create-toggle i:after{content:'';position:absolute;top:-1px;left:-1px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 4px #0004;transition:.15s}
+.department-create-toggle input:checked+i{background:#ff9a35}
+.department-create-toggle input:checked+i:after{left:17px}
+.department-create-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:24px}
+.department-create-actions button{min-height:36px;padding:7px 12px;border-radius:4px;font-size:14px;font-weight:600}
+.department-create-actions .secondary-button{background:#ff9400;color:#fff;border-color:#ff9400}
+.department-create-actions .primary-button:disabled{background:#dedede!important;color:#aaa!important;border-color:#dedede!important}
+@media(max-width:600px){.department-create-dialog{width:calc(100vw - 24px)}.department-create-options{grid-template-columns:1fr;gap:14px}.department-create-body{padding-top:20px}}
