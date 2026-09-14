@@ -6073,3 +6073,8 @@ p {
 .segment-page>.segment-list .segment-row{min-height:57px!important;padding:8px 12px!important}
 .segment-page>.segment-list .segment-row strong{font-size:13px!important;line-height:1.25!important;font-weight:700!important;color:#171717!important}
 .segment-page>.segment-list .segment-row small{margin-top:3px!important;font-size:11.5px!important;line-height:1.25!important;color:#333!important}
+/* Fixed Hotel Operational Policy footer */
+.operational-policy-page{padding-bottom:92px}
+.operational-policy-page>.operational-policy-actions{position:fixed;left:197px;right:0;bottom:0;height:74px;min-height:74px;margin:0;padding:10px 20px;background:#fff;box-shadow:0 -2px 7px #0002;z-index:20;display:flex;align-items:center;justify-content:center}
+.operational-policy-actions .primary-button{min-width:126px;height:40px;border-radius:4px;font-size:13px}
+@media(max-width:700px){.operational-policy-page{padding-bottom:84px}.operational-policy-page>.operational-policy-actions{left:0;height:68px;min-height:68px;padding:10px 12px}}
