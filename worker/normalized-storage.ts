@@ -567,7 +567,6 @@ const schemaStatements = [
             prompt_during_pre_checkin = COALESCE((operational_policy #>> '{securityDepositPolicy,promptDuringPreCheckin}')::boolean, prompt_during_pre_checkin);
       END IF;
     END $$`,
-  `ALTER TABLE public.hotelx_hotel_setup DROP COLUMN IF EXISTS operational_policy`,
   `ALTER TABLE public.hotelx_hotel_setup DROP COLUMN IF EXISTS profile`,
   `CREATE INDEX IF NOT EXISTS hotelx_season_calendar_season_idx
     ON public.hotelx_season_calendar(property_id, season_id, calendar_date)`,

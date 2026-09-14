@@ -17,5 +17,5 @@ ALTER TABLE public.hotelx_hotel_setup
   ADD COLUMN IF NOT EXISTS prompt_during_walk_in boolean NOT NULL DEFAULT true,
   ADD COLUMN IF NOT EXISTS prompt_during_pre_checkin boolean NOT NULL DEFAULT false;
 
--- Existing JSON values are migrated by worker/normalized-storage.ts before the legacy column is dropped.
-ALTER TABLE public.hotelx_hotel_setup DROP COLUMN IF EXISTS operational_policy;
+-- Existing JSON values are migrated by worker/normalized-storage.ts.
+-- The legacy operational_policy JSONB column is intentionally retained but no longer read or written.
