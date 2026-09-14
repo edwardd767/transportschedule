@@ -1,0 +1,81 @@
+name: Show assigned room number in Billing Schedule
+
+on:
+  push:
+    paths:
+      - '.github/workflows/billing-assigned-room-number.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: main
+
+      - name: Update Billing Schedule room display
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('components/billing-schedule.tsx')
+          text = path.read_text()
+
+          marker = "function lineAdjustment(booking: Booking, line: BillingLine) {\n"
+          if 'function billingRoomAssignments' not in text:
+              helper = '''function billingRoomAssignments(booking: Booking): Record<string, string[]> {
+  const raw = booking.specialRequests?._roomAssignments;
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    return Object.fromEntries(
+      Object.entries(parsed).map(([roomType, roomNos]) => [
+        roomType,
+        Array.isArray(roomNos)
+          ? roomNos.filter((roomNo): roomNo is string => typeof roomNo === 'string' && Boolean(roomNo.trim())).map((roomNo) => roomNo.trim())
+          : [],
+      ]),
+    );
+  } catch {
+    return {};
+  }
+}
+
+'''
+              if marker not in text:
+                  raise SystemExit('lineAdjustment marker not found')
+              text = text.replace(marker, helper + marker, 1)
+
+          old = """  const activeRateCodes = rateSetup.ratePlans.filter((plan) => plan.active);\n"""
+          new = """  const assignedRoomNumbers = useMemo(() => billingRoomAssignments(booking), [booking]);\n  const activeRateCodes = rateSetup.ratePlans.filter((plan) => plan.active);\n"""
+          if old in text and 'const assignedRoomNumbers = useMemo' not in text:
+              text = text.replace(old, new, 1)
+
+          old_block = """          {isRoomTypeOpen && Array.from({ length: room.count }, (_, copyIndex) => {\n            const roomKey = `${roomIndex}-${copyIndex}`;\n            const isRoomOpen = expandedRoom === roomKey;\n            const dailyLines = roomLines.filter((line) => line.roomKey === roomKey);\n            return <div className=\"billing-room-block\" key={roomKey}>\n              <button className=\"billing-room-head\" type=\"button\" onClick={() => setExpandedRoom(isRoomOpen ? '' : roomKey)}>\n                <span><strong>Room {copyIndex + 1}</strong><small>{booking.guest} | {money(dailyLines.reduce((total, line) => total + line.amount, 0))}</small></span>{isRoomOpen ? <ChevronUp size={17} /> : <ChevronDown size={17} />}\n              </button>\n"""
+          new_block = """          {isRoomTypeOpen && Array.from({ length: room.count }, (_, copyIndex) => {\n            const roomKey = `${roomIndex}-${copyIndex}`;\n            const isRoomOpen = expandedRoom === roomKey;\n            const dailyLines = roomLines.filter((line) => line.roomKey === roomKey);\n            const sameTypeOffset = booking.rooms.slice(0, roomIndex).filter((item) => item.code === room.code).reduce((total, item) => total + item.count, 0);\n            const assignedRoomNo = assignedRoomNumbers[room.code]?.[sameTypeOffset + copyIndex];\n            return <div className=\"billing-room-block\" key={roomKey}>\n              <button className=\"billing-room-head\" type=\"button\" onClick={() => setExpandedRoom(isRoomOpen ? '' : roomKey)}>\n                <span><strong>Room {copyIndex + 1}</strong><small>{booking.guest}{assignedRoomNo ? ` | ${assignedRoomNo}` : ''} | {money(dailyLines.reduce((total, line) => total + line.amount, 0))}</small></span>{isRoomOpen ? <ChevronUp size={17} /> : <ChevronDown size={17} />}\n              </button>\n"""
+          if old_block not in text:
+              if 'const assignedRoomNo = assignedRoomNumbers[room.code]' not in text:
+                  raise SystemExit('Billing room block marker not found')
+          else:
+              text = text.replace(old_block, new_block, 1)
+
+          path.write_text(text)
+          PY
+
+      - name: Verify build
+        run: |
+          npm ci
+          npm run build:pages
+
+      - name: Commit Billing Schedule room number
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add components/billing-schedule.tsx
+          git diff --cached --quiet && exit 0
+          git commit -m "Show assigned room number in Billing Schedule"
+          git push origin main
