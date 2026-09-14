@@ -1,11 +1,15 @@
 'use client';
-import { CalendarDays, X } from 'lucide-react';
+
+import { useState } from 'react';
+import { X } from 'lucide-react';
 import type { HotelRoomType } from '@/lib/hotel-masters';
 import type { Booking } from '@/lib/bookings';
 import { availabilityDays, occupiedRoomCount, roomAvailability } from '@/lib/booking-availability';
+import { HotelDatePicker } from '@/components/hotel-date-picker';
 
 export function AvailabilityDialog({ bookings, roomTypes, onClose }: { bookings: Booking[]; roomTypes: HotelRoomType[]; onClose: () => void }) {
-  const start = new Date().toISOString().slice(0, 10);
+  const today = new Date().toISOString().slice(0, 10);
+  const [start, setStart] = useState(today);
   const days = availabilityDays(start);
   const active = roomTypes.filter(x => x.active);
   const total = active.reduce((sum, x) => sum + x.totalRoom, 0);
@@ -16,7 +20,16 @@ export function AvailabilityDialog({ bookings, roomTypes, onClose }: { bookings:
     <div className="availability-card">
       <div className="availability-head">
         <strong>Availability</strong>
-        <span><CalendarDays size={18} /> {displayDate}</span>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <HotelDatePicker
+            value={start}
+            min={today}
+            onChange={setStart}
+            ariaLabel="Select availability date"
+            className="!h-8 !w-8 !min-h-0 !border-0 !bg-transparent !p-0 !shadow-none [&>span]:!hidden [&>svg]:!h-[18px] [&>svg]:!w-[18px]"
+          />
+          <span style={{ marginLeft: 0 }}>{displayDate}</span>
+        </div>
         <button onClick={onClose} aria-label="Close"><X size={18} /></button>
       </div>
       <div className="availability-scroll">
