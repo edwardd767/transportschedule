@@ -485,6 +485,22 @@ const schemaStatements = [
   `CREATE TABLE IF NOT EXISTS public.hotelx_hotel_setup (
     property_id text PRIMARY KEY REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
     hotel_name text NOT NULL DEFAULT '', address text NOT NULL DEFAULT '', postcode text NOT NULL DEFAULT '', country text NOT NULL DEFAULT '', city text NOT NULL DEFAULT '', state text NOT NULL DEFAULT '', hotel_type text NOT NULL DEFAULT '', company_name text NOT NULL DEFAULT '', company_reg_no text NOT NULL DEFAULT '', sst_reg_no text NOT NULL DEFAULT '', ttx_reg_no text NOT NULL DEFAULT '', online_booking_url text NOT NULL DEFAULT '', live_run_date text NOT NULL DEFAULT '', contact_person text NOT NULL DEFAULT '', phone_no text NOT NULL DEFAULT '', mobile_no text NOT NULL DEFAULT '', reservation_email text NOT NULL DEFAULT '', business_email text NOT NULL DEFAULT '', booking_cancellation_days integer NOT NULL DEFAULT 3, currency_code text NOT NULL DEFAULT 'MYR', float_amount numeric(12,2) NOT NULL DEFAULT 0, pax_count text NOT NULL DEFAULT 'No. of Pax Manual Updated', child_rates_applied boolean NOT NULL DEFAULT false,
+    standard_check_in_time text NOT NULL DEFAULT '01:00 PM',
+    standard_check_out_time text NOT NULL DEFAULT '12:00 PM',
+    night_audit_cut_off_time text NOT NULL DEFAULT '10:00 AM',
+    postpaid boolean NOT NULL DEFAULT false,
+    floor_plan boolean NOT NULL DEFAULT false,
+    cashier_closure boolean NOT NULL DEFAULT false,
+    occupancy_house_use boolean NOT NULL DEFAULT true,
+    occupancy_day_use boolean NOT NULL DEFAULT true,
+    occupancy_complimentary boolean NOT NULL DEFAULT true,
+    occupancy_ooo boolean NOT NULL DEFAULT false,
+    occupancy_ooi boolean NOT NULL DEFAULT false,
+    security_deposit_amount numeric(12,2) NOT NULL DEFAULT 0,
+    key_card_deposit_amount numeric(12,2) NOT NULL DEFAULT 0,
+    tax_scheme_forfeited_revenue text NOT NULL DEFAULT 'SST',
+    prompt_during_walk_in boolean NOT NULL DEFAULT true,
+    prompt_during_pre_checkin boolean NOT NULL DEFAULT false,
     updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS hotel_name text NOT NULL DEFAULT ''`,
@@ -510,7 +526,48 @@ const schemaStatements = [
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS float_amount numeric(12,2) NOT NULL DEFAULT 0`,
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS pax_count text NOT NULL DEFAULT 'No. of Pax Manual Updated'`,
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS child_rates_applied boolean NOT NULL DEFAULT false`,
-  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS operational_policy jsonb NOT NULL DEFAULT '{}'::jsonb`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS standard_check_in_time text NOT NULL DEFAULT '01:00 PM'`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS standard_check_out_time text NOT NULL DEFAULT '12:00 PM'`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS night_audit_cut_off_time text NOT NULL DEFAULT '10:00 AM'`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS postpaid boolean NOT NULL DEFAULT false`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS floor_plan boolean NOT NULL DEFAULT false`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS cashier_closure boolean NOT NULL DEFAULT false`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS occupancy_house_use boolean NOT NULL DEFAULT true`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS occupancy_day_use boolean NOT NULL DEFAULT true`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS occupancy_complimentary boolean NOT NULL DEFAULT true`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS occupancy_ooo boolean NOT NULL DEFAULT false`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS occupancy_ooi boolean NOT NULL DEFAULT false`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS security_deposit_amount numeric(12,2) NOT NULL DEFAULT 0`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS key_card_deposit_amount numeric(12,2) NOT NULL DEFAULT 0`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS tax_scheme_forfeited_revenue text NOT NULL DEFAULT 'SST'`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS prompt_during_walk_in boolean NOT NULL DEFAULT true`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS prompt_during_pre_checkin boolean NOT NULL DEFAULT false`,
+  `DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'hotelx_hotel_setup' AND column_name = 'operational_policy'
+      ) THEN
+        UPDATE public.hotelx_hotel_setup
+        SET standard_check_in_time = COALESCE(NULLIF(operational_policy->>'standardCheckInTime', ''), standard_check_in_time),
+            standard_check_out_time = COALESCE(NULLIF(operational_policy->>'standardCheckOutTime', ''), standard_check_out_time),
+            night_audit_cut_off_time = COALESCE(NULLIF(operational_policy->>'nightAuditCutOffTime', ''), night_audit_cut_off_time),
+            postpaid = COALESCE((operational_policy->>'postpaid')::boolean, postpaid),
+            floor_plan = COALESCE((operational_policy->>'floorPlan')::boolean, floor_plan),
+            cashier_closure = COALESCE((operational_policy->>'cashierClosure')::boolean, cashier_closure),
+            occupancy_house_use = COALESCE((operational_policy #>> '{occupancy,houseUse}')::boolean, occupancy_house_use),
+            occupancy_day_use = COALESCE((operational_policy #>> '{occupancy,dayUse}')::boolean, occupancy_day_use),
+            occupancy_complimentary = COALESCE((operational_policy #>> '{occupancy,complimentary}')::boolean, occupancy_complimentary),
+            occupancy_ooo = COALESCE((operational_policy #>> '{occupancy,ooo}')::boolean, occupancy_ooo),
+            occupancy_ooi = COALESCE((operational_policy #>> '{occupancy,ooi}')::boolean, occupancy_ooi),
+            security_deposit_amount = COALESCE(NULLIF(operational_policy #>> '{securityDepositPolicy,securityDepositAmount}', '')::numeric, security_deposit_amount),
+            key_card_deposit_amount = COALESCE(NULLIF(operational_policy #>> '{securityDepositPolicy,keyCardDepositAmount}', '')::numeric, key_card_deposit_amount),
+            tax_scheme_forfeited_revenue = COALESCE(NULLIF(operational_policy #>> '{securityDepositPolicy,taxSchemeForfeitedRevenue}', ''), tax_scheme_forfeited_revenue),
+            prompt_during_walk_in = COALESCE((operational_policy #>> '{securityDepositPolicy,promptDuringWalkIn}')::boolean, prompt_during_walk_in),
+            prompt_during_pre_checkin = COALESCE((operational_policy #>> '{securityDepositPolicy,promptDuringPreCheckin}')::boolean, prompt_during_pre_checkin);
+      END IF;
+    END $$`,
+  `ALTER TABLE public.hotelx_hotel_setup DROP COLUMN IF EXISTS operational_policy`,
   `ALTER TABLE public.hotelx_hotel_setup DROP COLUMN IF EXISTS profile`,
   `CREATE INDEX IF NOT EXISTS hotelx_season_calendar_season_idx
     ON public.hotelx_season_calendar(property_id, season_id, calendar_date)`,
@@ -791,8 +848,41 @@ const schemaStatements = [
     SELECT p_property_id, (item.value->>'rateSetupId')::uuid, (item.value->>'id')::uuid, item.ordinality::integer, (item.value->>'from')::date, (item.value->>'to')::date, COALESCE((item.value->>'active')::boolean, true), COALESCE(item.value->'seasonalRates', '{}'::jsonb), COALESCE(item.value->'inclusiveElements', '[]'::jsonb), COALESCE(item.value->'addOnElements', '[]'::jsonb)
     FROM jsonb_array_elements(COALESCE(p_state #> '{rateSetup,validity}', '[]'::jsonb)) WITH ORDINALITY AS item(value, ordinality);
 
-    INSERT INTO public.hotelx_hotel_setup (property_id, hotel_name, address, postcode, country, city, state, hotel_type, company_name, company_reg_no, sst_reg_no, ttx_reg_no, online_booking_url, live_run_date, contact_person, phone_no, mobile_no, reservation_email, business_email, booking_cancellation_days, currency_code, float_amount, pax_count, child_rates_applied, operational_policy)
-    VALUES (p_property_id, p_state #>> '{hotelMasters,profile,hotelName}', p_state #>> '{hotelMasters,profile,address}', p_state #>> '{hotelMasters,profile,postcode}', p_state #>> '{hotelMasters,profile,country}', p_state #>> '{hotelMasters,profile,city}', p_state #>> '{hotelMasters,profile,state}', p_state #>> '{hotelMasters,profile,hotelType}', p_state #>> '{hotelMasters,profile,companyName}', p_state #>> '{hotelMasters,profile,companyRegNo}', p_state #>> '{hotelMasters,profile,sstRegNo}', p_state #>> '{hotelMasters,profile,ttxRegNo}', p_state #>> '{hotelMasters,profile,onlineBookingUrl}', p_state #>> '{hotelMasters,profile,liveRunDate}', p_state #>> '{hotelMasters,profile,contactPerson}', p_state #>> '{hotelMasters,profile,phoneNo}', p_state #>> '{hotelMasters,profile,mobileNo}', p_state #>> '{hotelMasters,profile,reservationEmail}', p_state #>> '{hotelMasters,profile,businessEmail}', COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,bookingCancellationDays}', '')::integer, 3), COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,currencyCode}', ''), 'MYR'), COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,floatAmount}', '')::numeric, 0), COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,paxCount}', ''), 'No. of Pax Manual Updated'), COALESCE((p_state #>> '{hotelMasters,profile,childRatesApplied}')::boolean, false), COALESCE(p_state #> '{hotelMasters,profile,operationalPolicy}', '{}'::jsonb));
+    INSERT INTO public.hotelx_hotel_setup (
+      property_id, hotel_name, address, postcode, country, city, state, hotel_type, company_name, company_reg_no,
+      sst_reg_no, ttx_reg_no, online_booking_url, live_run_date, contact_person, phone_no, mobile_no, reservation_email,
+      business_email, booking_cancellation_days, currency_code, float_amount, pax_count, child_rates_applied,
+      standard_check_in_time, standard_check_out_time, night_audit_cut_off_time, postpaid, floor_plan, cashier_closure,
+      occupancy_house_use, occupancy_day_use, occupancy_complimentary, occupancy_ooo, occupancy_ooi,
+      security_deposit_amount, key_card_deposit_amount, tax_scheme_forfeited_revenue, prompt_during_walk_in, prompt_during_pre_checkin
+    )
+    VALUES (
+      p_property_id, p_state #>> '{hotelMasters,profile,hotelName}', p_state #>> '{hotelMasters,profile,address}',
+      p_state #>> '{hotelMasters,profile,postcode}', p_state #>> '{hotelMasters,profile,country}', p_state #>> '{hotelMasters,profile,city}',
+      p_state #>> '{hotelMasters,profile,state}', p_state #>> '{hotelMasters,profile,hotelType}', p_state #>> '{hotelMasters,profile,companyName}',
+      p_state #>> '{hotelMasters,profile,companyRegNo}', p_state #>> '{hotelMasters,profile,sstRegNo}', p_state #>> '{hotelMasters,profile,ttxRegNo}',
+      p_state #>> '{hotelMasters,profile,onlineBookingUrl}', p_state #>> '{hotelMasters,profile,liveRunDate}', p_state #>> '{hotelMasters,profile,contactPerson}',
+      p_state #>> '{hotelMasters,profile,phoneNo}', p_state #>> '{hotelMasters,profile,mobileNo}', p_state #>> '{hotelMasters,profile,reservationEmail}',
+      p_state #>> '{hotelMasters,profile,businessEmail}', COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,bookingCancellationDays}', '')::integer, 3),
+      COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,currencyCode}', ''), 'MYR'), COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,floatAmount}', '')::numeric, 0),
+      COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,paxCount}', ''), 'No. of Pax Manual Updated'), COALESCE((p_state #>> '{hotelMasters,profile,childRatesApplied}')::boolean, false),
+      COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,operationalPolicy,standardCheckInTime}', ''), '01:00 PM'),
+      COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,operationalPolicy,standardCheckOutTime}', ''), '12:00 PM'),
+      COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,operationalPolicy,nightAuditCutOffTime}', ''), '10:00 AM'),
+      COALESCE((p_state #>> '{hotelMasters,profile,operationalPolicy,postpaid}')::boolean, false),
+      COALESCE((p_state #>> '{hotelMasters,profile,operationalPolicy,floorPlan}')::boolean, false),
+      COALESCE((p_state #>> '{hotelMasters,profile,operationalPolicy,cashierClosure}')::boolean, false),
+      COALESCE((p_state #>> '{hotelMasters,profile,operationalPolicy,occupancy,houseUse}')::boolean, true),
+      COALESCE((p_state #>> '{hotelMasters,profile,operationalPolicy,occupancy,dayUse}')::boolean, true),
+      COALESCE((p_state #>> '{hotelMasters,profile,operationalPolicy,occupancy,complimentary}')::boolean, true),
+      COALESCE((p_state #>> '{hotelMasters,profile,operationalPolicy,occupancy,ooo}')::boolean, false),
+      COALESCE((p_state #>> '{hotelMasters,profile,operationalPolicy,occupancy,ooi}')::boolean, false),
+      COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,operationalPolicy,securityDepositPolicy,securityDepositAmount}', '')::numeric, 0),
+      COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,operationalPolicy,securityDepositPolicy,keyCardDepositAmount}', '')::numeric, 0),
+      COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,operationalPolicy,securityDepositPolicy,taxSchemeForfeitedRevenue}', ''), 'SST'),
+      COALESCE((p_state #>> '{hotelMasters,profile,operationalPolicy,securityDepositPolicy,promptDuringWalkIn}')::boolean, true),
+      COALESCE((p_state #>> '{hotelMasters,profile,operationalPolicy,securityDepositPolicy,promptDuringPreCheckin}')::boolean, false)
+    );
 
     INSERT INTO public.hotelx_transport_rules (
       property_id, start_time, end_time, turnaround_minutes,
@@ -1047,7 +1137,28 @@ const schemaStatements = [
     meta.revision,
     jsonb_build_object(
       'hotelMasters', jsonb_build_object(
-        'profile', COALESCE((SELECT jsonb_build_object('hotelName', hotel_name, 'address', address, 'postcode', postcode, 'country', country, 'city', city, 'state', state, 'hotelType', hotel_type, 'companyName', company_name, 'companyRegNo', company_reg_no, 'sstRegNo', sst_reg_no, 'ttxRegNo', ttx_reg_no, 'onlineBookingUrl', online_booking_url, 'liveRunDate', live_run_date, 'contactPerson', contact_person, 'phoneNo', phone_no, 'mobileNo', mobile_no, 'reservationEmail', reservation_email, 'businessEmail', business_email, 'bookingCancellationDays', booking_cancellation_days, 'currencyCode', currency_code, 'floatAmount', float_amount, 'paxCount', pax_count, 'childRatesApplied', child_rates_applied, 'operationalPolicy', operational_policy) FROM public.hotelx_hotel_setup WHERE property_id = meta.id), '{}'::jsonb),
+        'profile', COALESCE((SELECT jsonb_build_object(
+          'hotelName', hotel_name, 'address', address, 'postcode', postcode, 'country', country, 'city', city, 'state', state,
+          'hotelType', hotel_type, 'companyName', company_name, 'companyRegNo', company_reg_no, 'sstRegNo', sst_reg_no,
+          'ttxRegNo', ttx_reg_no, 'onlineBookingUrl', online_booking_url, 'liveRunDate', live_run_date,
+          'contactPerson', contact_person, 'phoneNo', phone_no, 'mobileNo', mobile_no, 'reservationEmail', reservation_email,
+          'businessEmail', business_email, 'bookingCancellationDays', booking_cancellation_days, 'currencyCode', currency_code,
+          'floatAmount', float_amount, 'paxCount', pax_count, 'childRatesApplied', child_rates_applied,
+          'operationalPolicy', jsonb_build_object(
+            'standardCheckInTime', standard_check_in_time,
+            'standardCheckOutTime', standard_check_out_time,
+            'nightAuditCutOffTime', night_audit_cut_off_time,
+            'postpaid', postpaid, 'floorPlan', floor_plan, 'cashierClosure', cashier_closure,
+            'occupancy', jsonb_build_object('houseUse', occupancy_house_use, 'dayUse', occupancy_day_use, 'complimentary', occupancy_complimentary, 'ooo', occupancy_ooo, 'ooi', occupancy_ooi),
+            'securityDepositPolicy', jsonb_build_object(
+              'securityDepositAmount', security_deposit_amount::double precision,
+              'keyCardDepositAmount', key_card_deposit_amount::double precision,
+              'taxSchemeForfeitedRevenue', tax_scheme_forfeited_revenue,
+              'promptDuringWalkIn', prompt_during_walk_in,
+              'promptDuringPreCheckin', prompt_during_pre_checkin
+            )
+          )
+        ) FROM public.hotelx_hotel_setup WHERE property_id = meta.id), '{}'::jsonb),
         'locations', COALESCE((
           SELECT jsonb_agg(jsonb_build_object(
             'code', location.code,
