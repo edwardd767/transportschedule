@@ -439,7 +439,7 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
           <button
             key={label}
             type="button"
-            className="flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-[5px] border border-[#ddd] bg-white text-[10px] font-bold shadow-sm hover:bg-[#fff8ef]"
+            className="flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-[5px] border border-[#ddd] bg-white text-[9px] leading-[10px] font-bold shadow-sm hover:bg-[#fff8ef]"
           >
             <img src={icon} alt="" aria-hidden="true" className="h-[22px] w-[22px] object-contain" />
             <strong className="font-bold">{label}</strong>
