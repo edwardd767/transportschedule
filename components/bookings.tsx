@@ -47,7 +47,7 @@ const advanceStatusOptions = [
 
 type AdvanceSelectOption = { value: string; label: string };
 
-const HOTELX_ROOM_ICON = 'https://hms1.hotelx.asia/static/media/door-subinfoline.44af6263.svg';
+const HOTELX_ROOM_ICON = 'https://hms1.hotelx.asia/static/media/room.7cce94dd.svg';
 
 function RoomIcon({ size = 18 }: { size?: number }) {
   return <img src={HOTELX_ROOM_ICON} alt="" aria-hidden="true" width={size} height={size} style={{ width: size, height: size, display: 'inline-block', objectFit: 'contain', flex: '0 0 auto' }} />;
