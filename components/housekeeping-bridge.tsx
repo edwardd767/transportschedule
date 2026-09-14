@@ -431,18 +431,18 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
 
       <div className="grid shrink-0 grid-cols-4 gap-2 bg-white px-2 py-2">
         {[
-          ['🧹', 'Room Status'],
-          ['🧾', 'Misc Charges'],
-          ['🚫', 'Block Room'],
-          ['⚙️', 'Services'],
+          ['https://hms1.hotelx.asia/static/media/roomstatus.76f49413.svg', 'Room Status'],
+          ['https://hms1.hotelx.asia/static/media/misc.3e6de67d.svg', 'Misc Charges'],
+          ['https://hms1.hotelx.asia/static/media/block.e3cb156a.svg', 'Block Room'],
+          ['https://hms1.hotelx.asia/static/media/services.875b8a9c.svg', 'Services'],
         ].map(([icon, label]) => (
           <button
             key={label}
             type="button"
-            className="flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-[5px] border border-[#ddd] bg-white text-[11px] font-semibold shadow-sm hover:bg-[#fff8ef]"
+            className="flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-[5px] border border-[#ddd] bg-white text-[11px] font-bold shadow-sm hover:bg-[#fff8ef]"
           >
-            <span className="text-[20px] leading-none">{icon}</span>
-            {label}
+            <img src={icon} alt="" aria-hidden="true" className="h-[22px] w-[22px] object-contain" />
+            <strong className="font-bold">{label}</strong>
           </button>
         ))}
       </div>
