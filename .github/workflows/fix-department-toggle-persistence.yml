@@ -1,0 +1,57 @@
+name: Fix Department toggle persistence
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/fix-department-toggle-persistence.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7.0.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Node.js
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Patch Department save validation
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('lib/transport-state.ts')
+          s = p.read_text()
+          old = "salesChannels: list(row.salesChannels).map((v) => text(v, 'sales channel', true, 100)) }; });"
+          new = "salesChannels: list(row.salesChannels).map((v) => text(v, 'sales channel', true, 100)), allowReason: typeof row.allowReason === 'boolean' ? row.allowReason : list(row.reasons).length > 0, allowSalesChannel: typeof row.allowSalesChannel === 'boolean' ? row.allowSalesChannel : list(row.salesChannels).length > 0, allowIncidentalCharges: typeof row.allowIncidentalCharges === 'boolean' ? row.allowIncidentalCharges : list(row.incidentalCharges).length > 0, serviceRequest: typeof row.serviceRequest === 'boolean' ? row.serviceRequest : false }; });"
+          if old not in s:
+              raise SystemExit('Department save pattern not found')
+          p.write_text(s.replace(old, new, 1))
+          PY
+      - name: Install dependencies
+        run: npm ci
+      - name: Verify builds and tests
+        run: |
+          npm run test:transport
+          npm run build:pages
+          npm run build:worker
+      - name: Deploy Cloudflare Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler deploy --config worker/wrangler.jsonc
+      - name: Commit persistence fix
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add lib/transport-state.ts worker/hotelx-transport-api.deploy.js
+          git commit -m 'Persist Department access toggles' || exit 0
+          git push
