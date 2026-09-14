@@ -9,6 +9,7 @@ const flags: Array<[keyof IncidentalCharge, string]> = [['rateElement', 'Rate El
 export function DepartmentModule({ departments, onChange, onBack }: { departments: HotelDepartment[]; onChange: (v: HotelDepartment[]) => void | Promise<void>; onBack: () => void }) {
   const [draft, setDraft] = useState(departments), [menu, setMenu] = useState<string | null>(null), [dept, setDept] = useState<string | null>(null), [charge, setCharge] = useState<IncidentalCharge | null>(null), [chargeList, setChargeList] = useState(false), [chargeMenu, setChargeMenu] = useState<string | null>(null), [salesChannelList, setSalesChannelList] = useState(false), [salesChannelMenu, setSalesChannelMenu] = useState<string | null>(null), [salesChannelDraft, setSalesChannelDraft] = useState(''), [salesChannelEditing, setSalesChannelEditing] = useState<string | null>(null), [salesChannelDialog, setSalesChannelDialog] = useState(false), [saving, setSaving] = useState(false), [query, setQuery] = useState(''), [searchOpen, setSearchOpen] = useState(false);
   const [departmentDialog, setDepartmentDialog] = useState(false);
+  const [departmentEditingId, setDepartmentEditingId] = useState<string | null>(null);
   const [departmentDraft, setDepartmentDraft] = useState({
     name: '',
     allowReason: false,
@@ -43,29 +44,52 @@ export function DepartmentModule({ departments, onChange, onBack }: { department
     }
   };
   const save = async () => { if (!department || !charge) return; const next = draft.map((d) => d.id !== department.id ? d : { ...d, incidentalCharges: d.incidentalCharges.some((c) => c.id === charge.id) ? d.incidentalCharges.map((c) => c.id === charge.id ? charge : c) : [...d.incidentalCharges, charge] }); setSaving(true); try { await onChange(next); setDraft(next); close(); } finally { setSaving(false); } };
+  const departmentValues = (d: HotelDepartment) => ({
+    name: d.name,
+    allowReason: d.allowReason ?? d.reasons.length > 0,
+    allowSalesChannel: d.allowSalesChannel ?? cleanSalesChannels(d.salesChannels).length > 0,
+    allowIncidentalCharges: d.allowIncidentalCharges ?? d.incidentalCharges.length > 0,
+    serviceRequest: d.serviceRequest ?? false,
+  });
   const openDepartmentDialog = () => {
+    setDepartmentEditingId(null);
     setDepartmentDraft({ name: '', allowReason: false, allowSalesChannel: false, allowIncidentalCharges: false, serviceRequest: false });
+    setDepartmentDialog(true);
+  };
+  const openDepartmentEdit = (d: HotelDepartment) => {
+    setMenu(null);
+    setDepartmentEditingId(d.id);
+    setDepartmentDraft(departmentValues(d));
     setDepartmentDialog(true);
   };
   const closeDepartmentDialog = () => {
     setDepartmentDialog(false);
+    setDepartmentEditingId(null);
     setDepartmentDraft({ name: '', allowReason: false, allowSalesChannel: false, allowIncidentalCharges: false, serviceRequest: false });
   };
   const saveDepartment = async () => {
     const name = departmentDraft.name.trim();
     if (!name || saving) return;
-    const newDepartment: HotelDepartment = {
-      id: crypto.randomUUID(),
-      name,
-      incidentalCharges: [],
-      reasons: [],
-      salesChannels: [],
-      allowReason: departmentDraft.allowReason,
-      allowSalesChannel: departmentDraft.allowSalesChannel,
-      allowIncidentalCharges: departmentDraft.allowIncidentalCharges,
-      serviceRequest: departmentDraft.serviceRequest,
-    };
-    const next = [...draft, newDepartment];
+    const next = departmentEditingId
+      ? draft.map((d) => d.id !== departmentEditingId ? d : {
+          ...d,
+          name,
+          allowReason: departmentDraft.allowReason,
+          allowSalesChannel: departmentDraft.allowSalesChannel,
+          allowIncidentalCharges: departmentDraft.allowIncidentalCharges,
+          serviceRequest: departmentDraft.serviceRequest,
+        })
+      : [...draft, {
+          id: crypto.randomUUID(),
+          name,
+          incidentalCharges: [],
+          reasons: [],
+          salesChannels: [],
+          allowReason: departmentDraft.allowReason,
+          allowSalesChannel: departmentDraft.allowSalesChannel,
+          allowIncidentalCharges: departmentDraft.allowIncidentalCharges,
+          serviceRequest: departmentDraft.serviceRequest,
+        } satisfies HotelDepartment];
     setSaving(true);
     try {
       await onChange(next);
@@ -75,6 +99,8 @@ export function DepartmentModule({ departments, onChange, onBack }: { department
       setSaving(false);
     }
   };
+  const departmentEditingTarget = departmentEditingId ? draft.find((d) => d.id === departmentEditingId) : undefined;
+  const departmentEditChanged = !departmentEditingTarget || JSON.stringify(departmentDraft) !== JSON.stringify(departmentValues(departmentEditingTarget));
   if (department && chargeList) return <section className="master-page incidental-list-page"><div className="department-editor-head"><button className="master-back" onClick={close}><ArrowLeft size={18} /> Back</button><strong>Incidental Charges</strong></div><div className="master-list-head incidental-list-head"><h1>Incidental Charges Listing <em>({department.incidentalCharges.length})</em></h1><Search size={21} /></div><div className="incidental-list">{department.incidentalCharges.map((item) => <article className="incidental-row" key={item.id}><div className="incidental-thumb" /><div className="incidental-copy"><strong>{item.title}</strong><small>MYR {Number(item.amount).toFixed(2)}</small></div><button className="department-menu-trigger" onClick={() => setChargeMenu(chargeMenu === item.id ? null : item.id)}><MoreVertical size={21} /></button>{chargeMenu === item.id && <div className="department-menu incidental-row-menu"><button onClick={() => open(department, item)}>Edit</button><button>QR Code</button></div>}</article>)}</div><button className="incidental-add-button" aria-label="Add incidental charge" onClick={() => open(department)}><span>+</span></button></section>;
   if (department && salesChannelList) {
     const displayDepartment = departmentWithCleanSalesChannels ?? department;
@@ -104,7 +130,7 @@ export function DepartmentModule({ departments, onChange, onBack }: { department
             <button className="department-menu-trigger" onClick={() => setMenu(menu === d.id ? null : d.id)}><MoreVertical size={21} /></button>
             {menu === d.id && (
               <div className="department-menu">
-                <button onClick={() => open(d)}>Edit</button>
+                <button onClick={() => openDepartmentEdit(d)}>Edit</button>
                 <button onClick={() => showCharges(d)}>Incidental Charges</button>
                 <button>Reason</button>
                 <button onClick={() => showSalesChannels(d)}>Sales Channel</button>
@@ -119,7 +145,7 @@ export function DepartmentModule({ departments, onChange, onBack }: { department
       {departmentDialog && (
         <div className="billing-instruction-overlay department-create-overlay" role="dialog" aria-modal="true" aria-label="New Department">
           <div className="department-create-dialog">
-            <h2>New Department</h2>
+            <h2>{departmentEditingId ? 'Edit Department' : 'New Department'}</h2>
             <div className="department-create-body">
               <label className="department-create-description">
                 <span>Description *</span>
@@ -133,7 +159,7 @@ export function DepartmentModule({ departments, onChange, onBack }: { department
               </div>
               <div className="department-create-actions">
                 <button type="button" className="secondary-button" onClick={closeDepartmentDialog}>Cancel</button>
-                <button type="button" className="primary-button" disabled={!departmentDraft.name.trim() || saving} onClick={saveDepartment}>{saving ? 'Saving…' : 'Confirm'}</button>
+                <button type="button" className="primary-button" disabled={!departmentDraft.name.trim() || saving || (Boolean(departmentEditingId) && !departmentEditChanged)} onClick={saveDepartment}>{saving ? 'Saving…' : 'Confirm'}</button>
               </div>
             </div>
           </div>
