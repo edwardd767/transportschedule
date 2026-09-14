@@ -90,6 +90,60 @@ async function privateAccess(request: Request, verifier: string) {
   ).join('');
   return hash === verifier;
 }
+function ipv4PtrName(ip: string) {
+  const parts = ip.split('.');
+  if (
+    parts.length !== 4 ||
+    parts.some((part) => !/^\d{1,3}$/.test(part) || Number(part) > 255)
+  )
+    return null;
+  return `${parts.reverse().join('.')}.in-addr.arpa`;
+}
+
+async function resolveAccessHostname(ip: string) {
+  const ptrName = ipv4PtrName(ip);
+  if (!ptrName) return null;
+  try {
+    const response = await fetch(
+      `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(ptrName)}&type=PTR`,
+      { headers: { Accept: 'application/dns-json' } },
+    );
+    if (!response.ok) return null;
+    const data = (await response.json()) as {
+      Answer?: Array<{ type?: number; data?: string }>;
+    };
+    const hostname = data.Answer?.find(
+      (answer) => answer.type === 12 && typeof answer.data === 'string',
+    )?.data;
+    return hostname ? hostname.replace(/\.$/, '').slice(0, 255) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function logPrivateLinkAccess(
+  query: Query,
+  connection: string,
+  request: Request,
+) {
+  const ip = request.headers.get('CF-Connecting-IP')?.trim();
+  if (!ip) return;
+  const hostname = await resolveAccessHostname(ip);
+  try {
+    await query(
+      connection,
+      `INSERT INTO public.hotelx_link_access_log (ip_address, hostname)
+       VALUES ($1::inet, NULLIF($2, ''))`,
+      [ip, hostname ?? ''],
+    );
+  } catch (error) {
+    console.warn(
+      'HotelX access log failed',
+      error instanceof Error ? error.message : error,
+    );
+  }
+}
+
 async function jsonBody(
   request: Request,
   limit: number,
@@ -266,6 +320,8 @@ export function createWorker(
           );
         const connection = env.DATABASE_URL.trim();
         if (path === '/state' && request.method === 'GET') {
+          if (hasPrivateAccess)
+            await logPrivateLinkAccess(query, connection, request);
           const row = await storage.readOrInitialize(
             connection,
             recordId,

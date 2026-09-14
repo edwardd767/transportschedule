@@ -3554,6 +3554,48 @@ async function privateAccess(request, verifier) {
   ).join("");
   return hash === verifier;
 }
+function ipv4PtrName(ip) {
+  const parts = ip.split(".");
+  if (parts.length !== 4 || parts.some((part) => !/^\d{1,3}$/.test(part) || Number(part) > 255))
+    return null;
+  return `${parts.reverse().join(".")}.in-addr.arpa`;
+}
+async function resolveAccessHostname(ip) {
+  const ptrName = ipv4PtrName(ip);
+  if (!ptrName) return null;
+  try {
+    const response = await fetch(
+      `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(ptrName)}&type=PTR`,
+      { headers: { Accept: "application/dns-json" } }
+    );
+    if (!response.ok) return null;
+    const data = await response.json();
+    const hostname = data.Answer?.find(
+      (answer) => answer.type === 12 && typeof answer.data === "string"
+    )?.data;
+    return hostname ? hostname.replace(/\.$/, "").slice(0, 255) : null;
+  } catch {
+    return null;
+  }
+}
+async function logPrivateLinkAccess(query, connection, request) {
+  const ip = request.headers.get("CF-Connecting-IP")?.trim();
+  if (!ip) return;
+  const hostname = await resolveAccessHostname(ip);
+  try {
+    await query(
+      connection,
+      `INSERT INTO public.hotelx_link_access_log (ip_address, hostname)
+       VALUES ($1::inet, NULLIF($2, ''))`,
+      [ip, hostname ?? ""]
+    );
+  } catch (error) {
+    console.warn(
+      "HotelX access log failed",
+      error instanceof Error ? error.message : error
+    );
+  }
+}
 async function jsonBody(request, limit) {
   if (!request.headers.get("Content-Type")?.toLowerCase().startsWith("application/json"))
     throw new ApiError("CONTENT_TYPE", "Send JSON form data.", 415);
@@ -3698,6 +3740,8 @@ function createWorker(query = queryNeon, verifier = privateLinkSha256) {
           );
         const connection = env.DATABASE_URL.trim();
         if (path === "/state" && request.method === "GET") {
+          if (hasPrivateAccess)
+            await logPrivateLinkAccess(query, connection, request);
           const row = await storage.readOrInitialize(
             connection,
             recordId,
