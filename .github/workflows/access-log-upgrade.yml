@@ -1,0 +1,124 @@
+name: Add private link access logging
+
+on:
+  push:
+    paths:
+      - '.github/workflows/access-log-upgrade.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: main
+
+      - name: Add access logging to Worker
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('worker/index.ts')
+          text = path.read_text()
+
+          if 'async function logPrivateLinkAccess' not in text:
+              marker = 'async function jsonBody(\n'
+              if marker not in text:
+                  raise SystemExit('jsonBody marker not found')
+              block = r'''function ipv4PtrName(ip: string) {
+  const parts = ip.split('.');
+  if (
+    parts.length !== 4 ||
+    parts.some((part) => !/^\d{1,3}$/.test(part) || Number(part) > 255)
+  )
+    return null;
+  return `${parts.reverse().join('.')}.in-addr.arpa`;
+}
+
+async function resolveAccessHostname(ip: string) {
+  const ptrName = ipv4PtrName(ip);
+  if (!ptrName) return null;
+  try {
+    const response = await fetch(
+      `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(ptrName)}&type=PTR`,
+      { headers: { Accept: 'application/dns-json' } },
+    );
+    if (!response.ok) return null;
+    const data = (await response.json()) as {
+      Answer?: Array<{ type?: number; data?: string }>;
+    };
+    const hostname = data.Answer?.find(
+      (answer) => answer.type === 12 && typeof answer.data === 'string',
+    )?.data;
+    return hostname ? hostname.replace(/\.$/, '').slice(0, 255) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function logPrivateLinkAccess(
+  query: Query,
+  connection: string,
+  request: Request,
+) {
+  const ip = request.headers.get('CF-Connecting-IP')?.trim();
+  if (!ip) return;
+  const hostname = await resolveAccessHostname(ip);
+  try {
+    await query(
+      connection,
+      `INSERT INTO public.hotelx_link_access_log (ip_address, hostname)
+       VALUES ($1::inet, NULLIF($2, ''))`,
+      [ip, hostname ?? ''],
+    );
+  } catch (error) {
+    console.warn(
+      'HotelX access log failed',
+      error instanceof Error ? error.message : error,
+    );
+  }
+}
+
+'''
+              text = text.replace(marker, block + marker, 1)
+
+          old = """        if (path === '/state' && request.method === 'GET') {\n          const row = await storage.readOrInitialize(\n"""
+          new = """        if (path === '/state' && request.method === 'GET') {\n          if (hasPrivateAccess)\n            await logPrivateLinkAccess(query, connection, request);\n          const row = await storage.readOrInitialize(\n"""
+          if old not in text:
+              if 'await logPrivateLinkAccess(query, connection, request);' not in text:
+                  raise SystemExit('state GET marker not found')
+          else:
+              text = text.replace(old, new, 1)
+
+          path.write_text(text)
+          PY
+
+      - name: Verify application and Worker
+        run: |
+          npm ci
+          npm run test:transport
+          npm run build:pages
+          npm run build:worker
+
+      - name: Commit access logging
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add worker/index.ts worker/hotelx-transport-api.deploy.js
+          git diff --cached --quiet && exit 0
+          git commit -m "Log private link IP access"
+          git push origin main
+
+      - name: Deploy Cloudflare Worker when credentials are available
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            npx wrangler deploy --config worker/wrangler.jsonc
+          else
+            echo "Cloudflare deploy skipped because GitHub Cloudflare secrets are not configured."
+          fi
