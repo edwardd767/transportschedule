@@ -24,9 +24,44 @@ import { TimePicker } from '@/components/time-picker';
 function StandardPolicyModule({ onBack, profile, onProfileChange }: { onBack: () => void; profile: HotelProfile; onProfileChange: (value: HotelProfile) => void | Promise<void> }) {
   const [policy, setPolicy] = useState<string | null>(null);
   if (policy === 'Hotel Operational Policy') return <HotelOperationalPolicyModule profile={profile} onProfileChange={onProfileChange} onBack={() => setPolicy(null)} />;
+  if (policy === 'Security Deposit Policy') return <SecurityDepositPolicyModule profile={profile} onProfileChange={onProfileChange} />;
   if (policy === 'General Policy') return <GeneralPolicyModule profile={profile} onProfileChange={onProfileChange} onBack={() => setPolicy(null)} />;
   const policies = ['Hotel Operational Policy', 'Security Deposit Policy', 'State & Tourism Tax', 'Room Status Policy', 'General Policy', 'Terms & Conditions', 'Advance Payment Policy', 'e-Invoice Policy'];
-  return <section className="master-page standard-policy-page" aria-label="Standard Policy & Guidelines"><div className="standard-policy-list">{policies.map((item) => <button className="standard-policy-row" type="button" key={item} onClick={() => (item === 'General Policy' || item === 'Hotel Operational Policy') && setPolicy(item)}><strong>{item}</strong>{item === 'State & Tourism Tax' ? <MoreVertical size={22} /> : <ChevronRight size={24} />}</button>)}</div><button className="secondary-button master-page-back" type="button" onClick={onBack}><ArrowLeft size={16} /> Back to Hotel Settings</button></section>;
+  return <section className="master-page standard-policy-page" aria-label="Standard Policy & Guidelines"><div className="standard-policy-list">{policies.map((item) => <button className="standard-policy-row" type="button" key={item} onClick={() => (item === 'General Policy' || item === 'Hotel Operational Policy' || item === 'Security Deposit Policy') && setPolicy(item)}><strong>{item}</strong>{item === 'State & Tourism Tax' ? <MoreVertical size={22} /> : <ChevronRight size={24} />}</button>)}</div><button className="secondary-button master-page-back" type="button" onClick={onBack}><ArrowLeft size={16} /> Back to Hotel Settings</button></section>;
+}
+
+type SecurityDepositPolicyState = {
+  securityDepositAmount: number;
+  keyCardDepositAmount: number;
+  taxSchemeForfeitedRevenue: string;
+  promptDuringWalkIn: boolean;
+  promptDuringPreCheckin: boolean;
+};
+
+function SecurityDepositPolicyModule({ profile, onProfileChange }: { profile: HotelProfile; onProfileChange: (value: HotelProfile) => void | Promise<void> }) {
+  const defaults: SecurityDepositPolicyState = { securityDepositAmount: 0, keyCardDepositAmount: 0, taxSchemeForfeitedRevenue: 'SST', promptDuringWalkIn: true, promptDuringPreCheckin: false };
+  const stored = (profile.operationalPolicy as HotelOperationalPolicy & { securityDepositPolicy?: SecurityDepositPolicyState }).securityDepositPolicy;
+  const saved = { ...defaults, ...(stored || {}) };
+  const [securityDepositAmount, setSecurityDepositAmount] = useState(saved.securityDepositAmount.toFixed(2));
+  const [keyCardDepositAmount, setKeyCardDepositAmount] = useState(saved.keyCardDepositAmount.toFixed(2));
+  const [taxSchemeForfeitedRevenue, setTaxSchemeForfeitedRevenue] = useState(saved.taxSchemeForfeitedRevenue);
+  const [promptDuringWalkIn, setPromptDuringWalkIn] = useState(saved.promptDuringWalkIn);
+  const [promptDuringPreCheckin, setPromptDuringPreCheckin] = useState(saved.promptDuringPreCheckin);
+  const dirty = securityDepositAmount !== saved.securityDepositAmount.toFixed(2) || keyCardDepositAmount !== saved.keyCardDepositAmount.toFixed(2) || taxSchemeForfeitedRevenue !== saved.taxSchemeForfeitedRevenue || promptDuringWalkIn !== saved.promptDuringWalkIn || promptDuringPreCheckin !== saved.promptDuringPreCheckin;
+  const money = (value: string) => { const cleaned = value.replace(/[^0-9.]/g, ''); const dot = cleaned.indexOf('.'); return dot < 0 ? cleaned : cleaned.slice(0, dot + 1) + cleaned.slice(dot + 1).replace(/\./g, ''); };
+  const amountField = (label: string, value: string, setValue: (next: string) => void) => <label className="security-deposit-field"><span>{label} *</span><input inputMode="decimal" value={value} onChange={(event) => setValue(money(event.target.value))} onBlur={() => setValue((Number.parseFloat(value || '0') || 0).toFixed(2))} /></label>;
+  const toggle = (label: string, checked: boolean, onClick: () => void) => <button type="button" className={`security-deposit-switch ${checked ? 'is-on' : ''}`} onClick={onClick}><span>{label}</span><i aria-hidden="true" /></button>;
+  return <section className="master-page security-deposit-page" aria-label="Security Deposit Policy">
+    <div className="operational-policy-head"><strong>Security Deposit Policy</strong><button type="button">Edit</button></div>
+    <div className="security-deposit-card">
+      {amountField('Security Deposit Amt', securityDepositAmount, setSecurityDepositAmount)}
+      {amountField('Key Card Deposit Amt', keyCardDepositAmount, setKeyCardDepositAmount)}
+      <label className="security-deposit-field"><span>Tax Scheme Forfeited Revenue</span><select value={taxSchemeForfeitedRevenue} onChange={(event) => setTaxSchemeForfeitedRevenue(event.target.value)}><option value="SST">SST</option><option value="No Tax">No Tax</option></select></label>
+      {toggle('Prompt during Walk-in', promptDuringWalkIn, () => setPromptDuringWalkIn((value) => !value))}
+      {toggle('Prompt during Pre Checkin', promptDuringPreCheckin, () => setPromptDuringPreCheckin((value) => !value))}
+    </div>
+    <div className="master-page-actions security-deposit-actions"><button className="primary-button" type="button" disabled={!dirty} onClick={async () => { const securityDepositPolicy: SecurityDepositPolicyState = { securityDepositAmount: Number.parseFloat(securityDepositAmount || '0') || 0, keyCardDepositAmount: Number.parseFloat(keyCardDepositAmount || '0') || 0, taxSchemeForfeitedRevenue, promptDuringWalkIn, promptDuringPreCheckin }; await onProfileChange({ ...profile, operationalPolicy: { ...profile.operationalPolicy, securityDepositPolicy } }); }}>Save</button></div>
+  </section>;
 }
 
 function HotelOperationalPolicyModule({ onBack, profile, onProfileChange }: { onBack: () => void; profile: HotelProfile; onProfileChange: (value: HotelProfile) => void | Promise<void> }) {
