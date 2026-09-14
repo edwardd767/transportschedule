@@ -7,8 +7,12 @@ BEGIN;
 
 CREATE TABLE IF NOT EXISTS public.hotelx_link_access_log (
   ip_address inet NOT NULL,
-  hostname text
+  hostname text,
+  accessed_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE public.hotelx_link_access_log
+  ADD COLUMN IF NOT EXISTS accessed_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP;
 
 REVOKE ALL ON TABLE public.hotelx_link_access_log FROM PUBLIC;
 
