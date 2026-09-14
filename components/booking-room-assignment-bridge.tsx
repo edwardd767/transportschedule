@@ -84,6 +84,7 @@ export function BookingRoomAssignmentBridge({ store }: { store: TransportData })
   const [draftAssignments, setDraftAssignments] = useState<AssignmentMap>({});
   const [originalAssignments, setOriginalAssignments] = useState<AssignmentMap>({});
   const [openLocations, setOpenLocations] = useState<Set<string>>(new Set());
+  const [statusFilters, setStatusFilters] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [snackbar, setSnackbar] = useState<string | null>(null);
@@ -112,6 +113,7 @@ export function BookingRoomAssignmentBridge({ store }: { store: TransportData })
       setDraftAssignments(assignments);
       setOriginalAssignments(assignments);
       setOpenLocations(firstLocation ? new Set([firstLocation]) : new Set());
+      setStatusFilters(new Set());
       setSaveError('');
     };
 
@@ -314,9 +316,15 @@ export function BookingRoomAssignmentBridge({ store }: { store: TransportData })
     );
   };
 
-  const reset = () => {
+  const reset = (locationCode: string) => {
     if (!roomTypeCode || saving) return;
-    setDraftAssignments((current) => ({ ...current, [roomTypeCode]: [...originalSelected] }));
+    const roomNosInLevel = new Set(
+      matchingRooms.filter((room) => room.locationCode === locationCode).map((room) => room.roomNo),
+    );
+    setDraftAssignments((current) => ({
+      ...current,
+      [roomTypeCode]: (current[roomTypeCode] ?? []).filter((roomNo) => !roomNosInLevel.has(roomNo)),
+    }));
     setSaveError('');
   };
 
@@ -372,6 +380,7 @@ export function BookingRoomAssignmentBridge({ store }: { store: TransportData })
                 (room) => room.active && room.roomTypeCode === code,
               )?.locationCode;
               setOpenLocations(firstLocation ? new Set([firstLocation]) : new Set());
+              setStatusFilters(new Set());
             }}
             className="flex w-full items-center justify-between rounded-[4px] bg-white px-3 py-3 text-left shadow-sm"
           >
@@ -397,10 +406,22 @@ export function BookingRoomAssignmentBridge({ store }: { store: TransportData })
             <div className="mt-0.5 text-[12px] font-medium">{roomTypeCode}</div>
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px]">
               {statusCounts.map((item) => (
-                <span key={item.code} className="inline-flex items-center gap-1">
-                  <span className="h-3 w-3 border border-[#999] bg-white" />
+                <label key={item.code} className="inline-flex cursor-pointer items-center gap-1">
+                  <input
+                    type="checkbox"
+                    checked={statusFilters.has(item.code)}
+                    onChange={() =>
+                      setStatusFilters((current) => {
+                        const next = new Set(current);
+                        if (next.has(item.code)) next.delete(item.code);
+                        else next.add(item.code);
+                        return next;
+                      })
+                    }
+                    className="h-3 w-3 accent-[#ff9000]"
+                  />
                   {item.code}: {item.count}
-                </span>
+                </label>
               ))}
             </div>
           </div>
@@ -413,6 +434,9 @@ export function BookingRoomAssignmentBridge({ store }: { store: TransportData })
         <div className="max-h-[calc(100vh-315px)] overflow-y-auto px-2 py-2">
           {locationGroups.map(([locationCode, rooms]) => {
             const open = openLocations.has(locationCode);
+            const visibleRooms = statusFilters.size
+              ? rooms.filter((room) => statusFilters.has(room.status))
+              : rooms;
             const selectedInGroup = rooms.filter((room) => currentSelected.includes(room.roomNo)).length;
             const locationName = rooms[0]?.locationName || locationCode;
             return (
@@ -430,12 +454,12 @@ export function BookingRoomAssignmentBridge({ store }: { store: TransportData })
                       })
                     }
                   >
-                    {locationName} <span className="ml-1 text-[#e30023]">({selectedInGroup}/{rooms.length})</span>
+                    {locationName} <span className="ml-1 text-[#e30023]">({selectedInGroup}/{statusFilters.size ? visibleRooms.length : rooms.length})</span>
                   </button>
                   {open && (
                     <div className="mr-2 flex items-center gap-1">
                       <button type="button" onClick={autoAssign} className="inline-flex items-center gap-1 rounded-[4px] border border-[#ff9000] bg-white px-2 py-1 text-[11px] text-[#777]"><Check size={13} /> Auto</button>
-                      <button type="button" onClick={reset} className="inline-flex items-center gap-1 rounded-[4px] border border-[#ff9000] bg-white px-2 py-1 text-[11px] text-[#ff9000]"><RotateCw size={13} /> Reset</button>
+                      <button type="button" onClick={() => reset(locationCode)} className="inline-flex items-center gap-1 rounded-[4px] border border-[#ff9000] bg-white px-2 py-1 text-[11px] text-[#ff9000]"><RotateCw size={13} /> Reset</button>
                     </div>
                   )}
                   <button
@@ -457,7 +481,7 @@ export function BookingRoomAssignmentBridge({ store }: { store: TransportData })
 
                 {open && (
                   <div className="grid grid-cols-4 gap-2 bg-[#efefef] p-2 max-[900px]:grid-cols-3 max-[700px]:grid-cols-2">
-                    {rooms.map((room) => {
+                    {visibleRooms.map((room) => {
                       const selected = currentSelected.includes(room.roomNo);
                       const eligible = selectableRoom(room);
                       return (
