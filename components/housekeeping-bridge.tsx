@@ -34,6 +34,7 @@ type RoomRow = {
   roomType: string;
   status: HousekeepingStatus;
   guest: string;
+  incomingGuest: string;
   bookingReference?: string;
   bookingStatus?: Booking['status'];
   locationCode: string;
@@ -101,12 +102,26 @@ function buildRows(store: TransportData): RoomRow[] {
       .housekeepingRoomStatuses ?? {};
 
   // Housekeeping only reads room assignment. Front Desk owns assignment changes.
-  const assignedByRoom = new Map<string, Booking>();
+  // Keep the current in-house guest and today's incoming guest separately.
+  const inhouseByRoom = new Map<string, Booking>();
+  const incomingByRoom = new Map<string, Booking>();
+  const now = new Date();
+  const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
   for (const booking of bookings) {
     if (!['Booked', 'Inhouse'].includes(booking.status)) continue;
     for (const roomNos of Object.values(readAssignments(booking))) {
       for (const roomNo of roomNos) {
-        if (!assignedByRoom.has(roomNo)) assignedByRoom.set(roomNo, booking);
+        if (booking.status === 'Inhouse' && !inhouseByRoom.has(roomNo)) {
+          inhouseByRoom.set(roomNo, booking);
+        }
+        if (
+          booking.status === 'Booked' &&
+          booking.arrival === todayKey &&
+          !incomingByRoom.has(roomNo)
+        ) {
+          incomingByRoom.set(roomNo, booking);
+        }
       }
     }
   }
@@ -115,21 +130,22 @@ function buildRows(store: TransportData): RoomRow[] {
     hotelMasters.profile.operationalPolicy.standardCheckOutTime || '12:00 PM';
 
   return activeRooms.map((room) => {
-    const assignedBooking = assignedByRoom.get(room.roomNo);
-    const defaultStatus = assignedBooking?.status === 'Inhouse' ? 'OD' : 'VC';
+    const inhouseBooking = inhouseByRoom.get(room.roomNo);
+    const incomingBooking = incomingByRoom.get(room.roomNo);
+    const defaultStatus = inhouseBooking ? 'OD' : 'VC';
     return {
       roomNo: room.roomNo,
       roomType: room.roomTypeCode,
       status: persistedStatuses[room.roomNo] || defaultStatus,
-      guest: assignedBooking?.guest || assignedBooking?.accountName || 'N/A',
-      bookingReference: assignedBooking?.reference,
-      bookingStatus: assignedBooking?.status,
+      guest: inhouseBooking?.guest || inhouseBooking?.accountName || 'N/A',
+      incomingGuest: incomingBooking?.guest || incomingBooking?.accountName || 'N/A',
+      bookingReference: inhouseBooking?.reference,
+      bookingStatus: inhouseBooking?.status,
       locationCode: room.locationCode,
       location: locations.get(room.locationCode) ?? room.locationCode ?? 'N/A',
-      checkout:
-        assignedBooking?.status === 'Inhouse'
-          ? checkoutText(assignedBooking.departure, checkoutTime)
-          : undefined,
+      checkout: inhouseBooking
+        ? checkoutText(inhouseBooking.departure, checkoutTime)
+        : undefined,
     };
   });
 }
@@ -190,7 +206,7 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
         .filter((room) => statusFilter === 'all' || room.status === statusFilter)
         .filter((room) => location === 'all' || room.locationCode === location)
         .filter((room) =>
-          `${room.roomNo} ${room.roomType} ${room.guest} ${room.bookingReference ?? ''} ${room.status} ${room.location}`
+          `${room.roomNo} ${room.roomType} ${room.guest} ${room.incomingGuest} ${room.bookingReference ?? ''} ${room.status} ${room.location}`
             .toLowerCase()
             .includes(query.toLowerCase().trim()),
         ),
@@ -537,11 +553,7 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
                       </div>
                       <div className="mt-1 flex items-center gap-2">
                         <img src="https://hms1.hotelx.asia/static/media/incoming-guest.28b53df6.svg" alt="" aria-hidden="true" className="h-[17px] w-[17px] shrink-0 object-contain" />
-                        <span>
-                          {room.bookingReference
-                            ? `${room.bookingReference} · ${room.location}`
-                            : room.location}
-                        </span>
+                        <span className="truncate">{room.incomingGuest}</span>
                       </div>
                     </div>
 
@@ -697,7 +709,7 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
                               <div className="mt-1 flex min-w-0 items-center justify-between gap-2 text-[11px] font-medium">
                                 <span className="flex min-w-0 items-center gap-1.5">
                                   <img src="https://hms1.hotelx.asia/static/media/incoming-guest.28b53df6.svg" alt="" aria-hidden="true" className="h-[14px] w-[14px] shrink-0 object-contain" />
-                                  <span className="truncate">{room.bookingReference ?? 'N/A'}</span>
+                                  <span className="truncate">{room.incomingGuest}</span>
                                 </span>
                                 {room.checkout && <span className="shrink-0">{room.checkout}</span>}
                               </div>
