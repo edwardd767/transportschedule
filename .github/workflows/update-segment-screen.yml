@@ -1,0 +1,21 @@
+name: Update Segment screen
+
+on:
+  push:
+    paths:
+      - '.github/workflows/update-segment-screen.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: main
+
+      - name: Apply Segment screen patch
+        run: |
+          echo 'CmZyb20gcGF0aGxpYiBpbXBvcnQgUGF0aAoKcGFnZSA9IFBhdGgoImFwcC9wYWdlLnRzeCIpCnRleHQgPSBwYWdlLnJlYWRfdGV4dCgpCgpvbGQgPSAnJycgICAgICAgICAgICA8ZGl2PgogICAgICAgICAgICAgIDxzbWFsbD57WydzZXR1cCcsICdob3RlbHNldHRpbmdzJywgJ2hvdGVsc2V0dXAnLCAnZGVwYXJ0bWVudCcsICdsb2NhdGlvbicsICdmbG9vcnBsYW4nLCAncm9vbXR5cGUnLCAncm9vbScsICdyb29tc3RhdHVzJywgJ3JhdGVwb2xpY3knLCAnc3RhbmRhcmRwb2xpY3knXS5pbmNsdWRlcyh2aWV3KSA/ICdITVMnIDogJ1BNUyd9PC9zbWFsbD4nJycKbmV3ID0gJycnICAgICAgICAgICAge3ZpZXcgPT09ICdzZWdtZW50JyAmJiAoCiAgICAgICAgICAgICAgPGJ1dHRvbgogICAgICAgICAgICAgICAgY2xhc3NOYW1lPSJib29raW5nLWJhY2siCiAgICAgICAgICAgICAgICBhcmlhLWxhYmVsPSJCYWNrIHRvIEhvdGVsIFNldHRpbmdzIgogICAgICAgICAgICAgICAgb25DbGljaz17KCkgPT4gc2V0Vmlldygn... omitted for brevity ...
