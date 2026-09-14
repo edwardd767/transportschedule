@@ -1,0 +1,81 @@
+name: Update Room Management icons
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/update-room-management-icons.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7.0.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Node.js
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Patch Room Management icons
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('components/housekeeping-bridge.tsx')
+          s = p.read_text()
+          old = """        {[
+          ['🧹', 'Room Status'],
+          ['🧾', 'Misc Charges'],
+          ['🚫', 'Block Room'],
+          ['⚙️', 'Services'],
+        ].map(([icon, label]) => (
+          <button
+            key={label}
+            type=\"button\"
+            className=\"flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-[5px] border border-[#ddd] bg-white text-[11px] font-semibold shadow-sm hover:bg-[#fff8ef]\"
+          >
+            <span className=\"text-[20px] leading-none\">{icon}</span>
+            {label}
+          </button>
+        ))}
+"""
+          new = """        {[
+          ['https://hms1.hotelx.asia/static/media/roomstatus.76f49413.svg', 'Room Status'],
+          ['https://hms1.hotelx.asia/static/media/misc.3e6de67d.svg', 'Misc Charges'],
+          ['https://hms1.hotelx.asia/static/media/block.e3cb156a.svg', 'Block Room'],
+          ['https://hms1.hotelx.asia/static/media/services.875b8a9c.svg', 'Services'],
+        ].map(([icon, label]) => (
+          <button
+            key={label}
+            type=\"button\"
+            className=\"flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-[5px] border border-[#ddd] bg-white text-[11px] font-bold shadow-sm hover:bg-[#fff8ef]\"
+          >
+            <img src={icon} alt=\"\" aria-hidden=\"true\" className=\"h-[22px] w-[22px] object-contain\" />
+            <strong className=\"font-bold\">{label}</strong>
+          </button>
+        ))}
+"""
+          if old not in s:
+              raise SystemExit('Room Management button block not found')
+          p.write_text(s.replace(old, new, 1))
+          PY
+      - name: Install dependencies
+        run: npm ci
+      - name: Build and verify
+        run: |
+          npm run build:pages
+          npm run test:transport
+      - name: Commit Room Management icon update
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add components/housekeeping-bridge.tsx
+          git commit -m 'Use HotelX Room Management icons' || exit 0
+          git push
