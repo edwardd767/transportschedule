@@ -44,7 +44,6 @@ import {
   Trash2,
   Waves,
 } from 'lucide-react';
-import hamburgerIcon from './Hamburger.png';
 import {
   checkinSvg,
   groupCheckinSvg,
@@ -567,11 +566,9 @@ function HomeContent({ store }: { store: TransportData }) {
       <header className="topbar">
         <div className="brand">
           <SidebarTrigger className="menu-button">
-            <img
-              src={hamburgerIcon.src}
-              alt="Menu"
-              className="hamburger-icon"
-            />
+            <svg viewBox="0 0 24 24" width={30} height={30} fill="currentColor" aria-hidden="true" focusable="false" className="hamburger-icon">
+              <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+            </svg>
           </SidebarTrigger>
           <span>HotelX (For Development Use)</span>
         </div>
