@@ -217,7 +217,7 @@ export function HotelDatePicker({
                 commitTyped();
               }
             }}
-            placeholder="dd/mm/yyyy"
+            placeholder=" "
             aria-label={ariaLabel}
             disabled={disabled}
           />

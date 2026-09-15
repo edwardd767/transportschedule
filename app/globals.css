@@ -2886,6 +2886,34 @@ p {
   font-size: 11px;
   color: #f58220;
 }
+.advance-search-field:has(> input):focus-within {
+  border-bottom-color: #f58220;
+}
+.advance-search-field:has(.hotel-date-field) {
+  position: relative;
+  display: block;
+  padding: 16px 0 7px;
+}
+.advance-search-field:has(.hotel-date-field) > span {
+  position: absolute;
+  left: 0;
+  top: 24px;
+  transform: translateY(-50%);
+  font-size: 15px;
+  color: #9aa0a6;
+  transition: top .15s ease, font-size .15s ease, color .15s ease;
+  pointer-events: none;
+}
+.advance-search-field:has(.hotel-date-field):has(.hotel-date-field input:not(:placeholder-shown)) > span,
+.advance-search-field:has(.hotel-date-field):focus-within > span {
+  top: 2px;
+  transform: none;
+  font-size: 11px;
+  color: #f58220;
+}
+.advance-search-field:has(.hotel-date-field):focus-within {
+  border-bottom-color: #f58220;
+}
 .advance-search-field input:focus,
 .advance-search-field input:focus-visible,
 .advance-search-field .hotel-date-field input:focus,
