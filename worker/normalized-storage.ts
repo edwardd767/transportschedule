@@ -2,12 +2,12 @@ import type { TransportState } from '../lib/transport-state';
 import { ApiError, type Query } from './neon';
 
 const schemaStatements = [
-  `CREATE TABLE IF NOT EXISTS public.hotelx_country (code text PRIMARY KEY, name text NOT NULL UNIQUE)`,
+  `CREATE TABLE IF NOT EXISTS public.hotelx_country (code text PRIMARY KEY, name text NOT NULL UNIQUE, nationality text NOT NULL DEFAULT '', phonecode text NOT NULL DEFAULT '')`,
+  `ALTER TABLE public.hotelx_country ADD COLUMN IF NOT EXISTS nationality text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_country ADD COLUMN IF NOT EXISTS phonecode text NOT NULL DEFAULT ''`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_state (country_code text NOT NULL REFERENCES public.hotelx_country(code) ON DELETE CASCADE, code text NOT NULL, name text NOT NULL, PRIMARY KEY(country_code, code))`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_city (country_code text NOT NULL, state_code text NOT NULL, name text NOT NULL, PRIMARY KEY(country_code, state_code, name), FOREIGN KEY(country_code, state_code) REFERENCES public.hotelx_state(country_code, code) ON DELETE CASCADE)`,
-  `INSERT INTO public.hotelx_country (code,name) VALUES ('MY','Malaysia'),('SG','Singapore'),('TH','Thailand'),('ID','Indonesia'),('BN','Brunei'),('AU','Australia'),('CN','China'),('IN','India'),('JP','Japan'),('KR','South Korea'),('GB','United Kingdom'),('US','United States') ON CONFLICT DO NOTHING`,
-  `INSERT INTO public.hotelx_state (country_code,code,name) VALUES ('MY','SEL','Selangor'),('MY','KUL','Kuala Lumpur'),('MY','JHR','Johor'),('MY','PNG','Penang'),('MY','PRK','Perak'),('MY','SBH','Sabah'),('MY','SWK','Sarawak'),('MY','NSN','Negeri Sembilan'),('MY','MLK','Melaka'),('MY','KDH','Kedah'),('MY','PHG','Pahang'),('MY','KTN','Kelantan'),('MY','TRG','Terengganu'),('MY','PLS','Perlis'),('MY','LBN','Labuan'),('MY','PJY','Putrajaya') ON CONFLICT DO NOTHING`,
-  `INSERT INTO public.hotelx_city (country_code,state_code,name) VALUES ('MY','SEL','Petaling Jaya'),('MY','SEL','Shah Alam'),('MY','SEL','Subang Jaya'),('MY','SEL','Klang'),('MY','KUL','Kuala Lumpur'),('MY','JHR','Johor Bahru'),('MY','JHR','Mersing'),('MY','PNG','George Town'),('MY','PRK','Ipoh'),('MY','SBH','Kota Kinabalu'),('MY','SWK','Kuching'),('MY','NSN','Seremban'),('MY','MLK','Melaka'),('MY','KDH','Alor Setar'),('MY','PHG','Kuantan'),('MY','KTN','Kota Bharu'),('MY','TRG','Kuala Terengganu'),('MY','PLS','Kangar'),('MY','LBN','Victoria'),('MY','PJY','Putrajaya') ON CONFLICT DO NOTHING`,
+  `CREATE INDEX IF NOT EXISTS hotelx_city_state_idx ON public.hotelx_city(country_code, state_code)`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_guestprofile (
     property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
     id uuid NOT NULL,

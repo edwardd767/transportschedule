@@ -319,6 +319,19 @@ export function createWorker(
             401,
           );
         const connection = env.DATABASE_URL.trim();
+        if (path === '/geography' && request.method === 'GET') {
+          const countries = await query(connection, 'SELECT code, name, nationality, phonecode FROM public.hotelx_country ORDER BY name', []);
+          const states = await query(connection, 'SELECT country_code, code, name FROM public.hotelx_state ORDER BY name', []);
+          return reply({
+            countries: countries.map((row) => ({ code: row[0], name: row[1], nationality: row[2], phonecode: row[3] })),
+            states: states.map((row) => ({ countryCode: row[0], code: row[1], name: row[2] })),
+          });
+        }
+        if (path === '/geography/cities' && request.method === 'GET') {
+          const url = new URL(request.url);
+          const cities = await query(connection, 'SELECT name FROM public.hotelx_city WHERE country_code = $1 AND state_code = $2 ORDER BY name', [url.searchParams.get('country') ?? '', url.searchParams.get('state') ?? '']);
+          return reply({ cities: cities.map((row) => row[0]) });
+        }
         if (path === '/state' && request.method === 'GET') {
           if (hasPrivateAccess)
             await logPrivateLinkAccess(query, connection, request);

@@ -1,6 +1,7 @@
 'use client';
-import { useEffect, useEffectEvent, useRef, useState } from 'react';
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
 import { privateAccessFromHash } from './private-link';
+import { fallbackGeography, type CountryEntry, type Geography, type StateEntry } from './geography';
 import {
   applyTransportAction,
   newTransportState,
@@ -81,6 +82,9 @@ export function useTransportData() {
   const reloadRequired = useRef(false);
   const [error, setError] = useState('');
   const [needsReload, setNeedsReload] = useState(false);
+  const [countries, setCountries] = useState<CountryEntry[]>([]);
+  const [stateEntries, setStateEntries] = useState<StateEntry[]>([]);
+  const [cityCache, setCityCache] = useState<Record<string, string[]>>({});
   function markReload(value: boolean) {
     reloadRequired.current = value;
     setNeedsReload(value);
@@ -129,6 +133,14 @@ export function useTransportData() {
       setMode('cloud');
       setConnected(true);
       markReload(false);
+      try {
+        const geo = await request('/geography', tokenRef.current);
+        setCountries(Array.isArray(geo.countries) ? (geo.countries as CountryEntry[]) : []);
+        setStateEntries(Array.isArray(geo.states) ? (geo.states as StateEntry[]) : []);
+        setCityCache({});
+      } catch {
+        /* Geography stays on the built-in fallback. */
+      }
     } catch (error) {
       failed(error, false);
       throw error;
@@ -211,6 +223,40 @@ export function useTransportData() {
       finish();
     }
   }
+  const loadCities = useCallback((country: string, state: string) => {
+    const countryEntry = countries.find((item) => item.name === country);
+    const stateEntry = stateEntries.find((item) => item.countryCode === countryEntry?.code && item.name === state);
+    const key = `${country}|${state}`;
+    if (!countryEntry || !stateEntry || !tokenRef.current || cityCache[key]) return;
+    void (async () => {
+      try {
+        const data = await request(`/geography/cities?country=${encodeURIComponent(countryEntry.code)}&state=${encodeURIComponent(stateEntry.code)}`, tokenRef.current);
+        setCityCache((current) => ({ ...current, [key]: Array.isArray(data.cities) ? (data.cities as string[]) : [] }));
+      } catch {
+        /* Leave the city list empty for this state. */
+      }
+    })();
+  }, [countries, stateEntries, cityCache]);
+
+  const geography = useMemo<Geography>(() => {
+    if (!countries.length) return fallbackGeography;
+    const nameByCode = new Map(countries.map((item) => [item.code, item.name]));
+    const statesByCountry: Record<string, string[]> = {};
+    for (const entry of stateEntries) {
+      const name = nameByCode.get(entry.countryCode);
+      if (!name) continue;
+      (statesByCountry[name] ??= []).push(entry.name);
+    }
+    for (const list of Object.values(statesByCountry)) list.sort((a, b) => a.localeCompare(b));
+    return {
+      countries: [...countries].sort((a, b) => a.name.localeCompare(b.name)).map((item) => item.name),
+      states: statesByCountry,
+      cities: cityCache,
+      nationalities: Array.from(new Set(countries.map((item) => item.nationality).filter(Boolean))).sort(),
+      loadCities,
+    };
+  }, [countries, stateEntries, cityCache, loadCities]);
+
   return {
     state: data.state,
     revision: data.revision,
@@ -219,6 +265,7 @@ export function useTransportData() {
     pending,
     error,
     needsReload,
+    geography,
     run,
     useDemo,
     reload,
