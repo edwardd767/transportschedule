@@ -5860,7 +5860,7 @@ p {
 .booking-inline-availability .availability-head{min-height:60px;padding:12px;background:#fcf3e8;gap:12px}
 .booking-inline-availability .availability-title{font-size:13px;font-weight:700;color:#ff9000;text-align:left;margin-right:auto}
 .booking-inline-availability .hotel-date-picker{width:185px;min-width:0}
-.booking-inline-availability .hotel-date-field{border:0;background:transparent;box-shadow:none;font-size:12px}
+.booking-inline-availability .hotel-date-field{border:0;background:transparent;box-shadow:none;font-size:12px;display:inline-flex;flex-direction:row-reverse;align-items:center;gap:6px}
 .booking-inline-availability table{min-width:610px;font-size:11px}
 .booking-inline-availability th,.booking-inline-availability td{padding:4px 8px}
 .booking-inline-availability tbody tr{border:0}
