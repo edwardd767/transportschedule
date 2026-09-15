@@ -7,7 +7,6 @@ import {
   ChevronDown,
   ChevronRight,
   DoorClosed,
-  Plus,
   RotateCw,
   Search,
   SlidersHorizontal,
@@ -622,7 +621,7 @@ export function Bookings({
         disabled={!roomTypes.some((item) => item.active)}
         onClick={() => setCreateOpen(true)}
       >
-        <Plus size={28} />
+        <svg viewBox="0 0 24 24" width={28} height={28} fill="currentColor" aria-hidden="true" focusable="false"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" /></svg>
       </button>
       {availabilityOpen && <AvailabilityDialog bookings={bookings} roomTypes={roomTypes} onClose={() => setAvailabilityOpen(false)} />}
     </section>
