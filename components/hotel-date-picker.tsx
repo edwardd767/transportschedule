@@ -19,6 +19,7 @@ type HotelDatePickerProps = {
   className?: string;
   mode?: PickerMode;
   showTodayButton?: boolean;
+  displayStyle?: 'numeric' | 'weekday';
 };
 
 function HotelCalendarIcon({ size = 18 }: { size?: number }) {
@@ -80,6 +81,14 @@ function displayValue(value: string, mode: PickerMode) {
   });
 }
 
+function weekdayValue(value: string) {
+  if (!value) return 'Select date';
+  const date = parseKey(normaliseDate(value, 'date'));
+  return date
+    .toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })
+    .replace(',', '');
+}
+
 export function HotelDatePicker({
   value,
   defaultValue = '',
@@ -93,6 +102,7 @@ export function HotelDatePicker({
   className = '',
   mode = 'date',
   showTodayButton = false,
+  displayStyle = 'numeric',
 }: HotelDatePickerProps) {
   const controlled = value !== undefined;
   const [internalValue, setInternalValue] = useState(defaultValue);
@@ -177,7 +187,7 @@ export function HotelDatePicker({
         disabled={disabled}
         onClick={openPicker}
       >
-        <span>{displayValue(currentValue, mode)}</span>
+        <span>{displayStyle === 'weekday' ? weekdayValue(currentValue) : displayValue(currentValue, mode)}</span>
         <HotelCalendarIcon size={18} />
       </button>
       {required && !currentValue && <span className="sr-only">A date is required.</span>}
