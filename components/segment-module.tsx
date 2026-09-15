@@ -2,6 +2,7 @@
 import { MoreVertical, Plus, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { initialSegments, type HotelSegment } from '@/lib/hotel-masters';
+import type { Booking } from '@/lib/bookings';
 
 function formatPostedDate(value: string) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || '');
@@ -11,8 +12,9 @@ function formatPostedDate(value: string) {
   return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-export function SegmentModule({ segments, onChange, onBack: _onBack }: { segments: HotelSegment[]; onChange: (value: HotelSegment[]) => Promise<void>; onBack: () => void }) {
+export function SegmentModule({ segments, bookings = [], onChange, onBack: _onBack }: { segments: HotelSegment[]; bookings?: Booking[]; onChange: (value: HotelSegment[]) => Promise<void>; onBack: () => void }) {
   const source = segments.length ? segments : initialSegments;
+  const inUse = (item: HotelSegment) => bookings.some((booking) => (booking.segment || '').trim().toLowerCase() === item.description.trim().toLowerCase());
   const [draft, setDraft] = useState(source);
   const [menu, setMenu] = useState<string | null>(null);
   const [editing, setEditing] = useState<HotelSegment | null>(null);
@@ -60,6 +62,7 @@ export function SegmentModule({ segments, onChange, onBack: _onBack }: { segment
               <div className="segment-menu">
                 <button onClick={() => open(item)}>Edit</button>
                 <button onClick={async () => { const value = draft.map((x) => x.id === item.id ? { ...x, active: !x.active } : x); await onChange(value); setDraft(value); setMenu(null); }}>{item.active ? 'Inactive' : 'Active'}</button>
+                <button className="segment-menu-delete" disabled={inUse(item)} title={inUse(item) ? 'Cannot delete: this segment is used by existing bookings.' : 'Delete'} onClick={async () => { const value = draft.filter((x) => x.id !== item.id); await onChange(value); setDraft(value); setMenu(null); }}>Delete</button>
               </div>
             )}
           </article>
