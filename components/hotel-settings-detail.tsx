@@ -16,7 +16,7 @@ import { RateSetupModule, type RateSetupSection } from '@/components/rate-setup'
 import { initialRateSetupData, type RateSetupData } from '@/lib/rate-setup-data';
 import { RoomStatusModule } from '@/components/room-status-module';
 import { DepartmentModule } from '@/components/department-module-polished';
-import { initialHotelProfile, type HotelDepartment, type HotelRoomType, type RoomStatus, type HotelProfile, type HotelOperationalPolicy, type RoomStatusPolicy } from '@/lib/hotel-masters';
+import { initialHotelProfile, type HotelDepartment, type HotelRoomType, type RoomStatus, type HotelProfile, type HotelOperationalPolicy, type RoomStatusPolicy, type AdvancePaymentPolicy } from '@/lib/hotel-masters';
 import { HotelSetupModule as HotelSetupModuleV2 } from '@/components/hotel-setup-module';
 import { TimePicker } from '@/components/time-picker';
 
@@ -36,8 +36,9 @@ function StandardPolicyModule({ onBack, profile, onProfileChange, roomStatuses }
   if (policy === 'Security Deposit Policy') return <SecurityDepositPolicyModule profile={profile} onProfileChange={onProfileChange} />;
   if (policy === 'General Policy') return <GeneralPolicyModule profile={profile} onProfileChange={onProfileChange} onBack={() => setPolicy(null)} />;
   if (policy === 'Room Status Policy') return <RoomStatusPolicyModule profile={profile} roomStatuses={roomStatuses} onProfileChange={onProfileChange} onBack={() => setPolicy(null)} />;
+  if (policy === 'Advance Payment Policy') return <AdvancePaymentPolicyModule profile={profile} onProfileChange={onProfileChange} onBack={() => setPolicy(null)} />;
   const policies = ['Hotel Operational Policy', 'Security Deposit Policy', 'State & Tourism Tax', 'Room Status Policy', 'General Policy', 'Terms & Conditions', 'Advance Payment Policy', 'e-Invoice Policy'];
-  return <section className="master-page standard-policy-page" aria-label="Standard Policy & Guidelines"><div className="standard-policy-list">{policies.map((item) => <button className="standard-policy-row" type="button" key={item} onClick={() => (item === 'General Policy' || item === 'Hotel Operational Policy' || item === 'Security Deposit Policy' || item === 'Room Status Policy') && setPolicy(item)}><strong>{item}</strong>{item === 'State & Tourism Tax' ? <MoreVertical size={18} /> : <ChevronRight size={18} />}</button>)}</div><button className="secondary-button master-page-back" type="button" onClick={onBack}><ArrowLeft size={16} /> Back to Hotel Settings</button></section>;
+  return <section className="master-page standard-policy-page" aria-label="Standard Policy & Guidelines"><div className="standard-policy-list">{policies.map((item) => <button className="standard-policy-row" type="button" key={item} onClick={() => (item === 'General Policy' || item === 'Hotel Operational Policy' || item === 'Security Deposit Policy' || item === 'Room Status Policy' || item === 'Advance Payment Policy') && setPolicy(item)}><strong>{item}</strong>{item === 'State & Tourism Tax' ? <MoreVertical size={18} /> : <ChevronRight size={18} />}</button>)}</div><button className="secondary-button master-page-back" type="button" onClick={onBack}><ArrowLeft size={16} /> Back to Hotel Settings</button></section>;
 }
 
 type SecurityDepositPolicyState = {
@@ -141,6 +142,28 @@ function RoomStatusPolicyModule({ profile, roomStatuses, onProfileChange, onBack
       {field('blockRoomRelease', 'Block Room Release')}
     </div>
     <div className="master-page-actions room-status-policy-actions"><button className="primary-button" type="button" disabled={!dirty} onClick={async () => { await onProfileChange({ ...profile, operationalPolicy: { ...profile.operationalPolicy, roomStatusPolicy: draft } }); }}>Save</button></div>
+  </section>;
+}
+
+function AdvancePaymentPolicyModule({ profile, onProfileChange, onBack }: { profile: HotelProfile; onProfileChange: (value: HotelProfile) => void | Promise<void>; onBack: () => void }) {
+  const saved = profile.operationalPolicy.advancePaymentPolicy;
+  const initial: AdvancePaymentPolicy = { taxSchemeForfeitedRevenue: saved?.taxSchemeForfeitedRevenue ?? 'SST-5' };
+  const [draft, setDraft] = useState<AdvancePaymentPolicy>(initial);
+  const dirty = JSON.stringify(draft) !== JSON.stringify(initial);
+  return <section className="master-page advance-payment-policy-page" aria-label="Advance Payment Policy">
+    <div className="operational-policy-head"><strong>Advance Payment Policy</strong><button type="button" onClick={onBack}>Edit</button></div>
+    <div className="advance-payment-policy-card">
+      <label className="advance-payment-policy-field">
+        <span>Tax Scheme Forfeited Revenue</span>
+        <select value={draft.taxSchemeForfeitedRevenue} onChange={(event) => setDraft({ taxSchemeForfeitedRevenue: event.target.value })}>
+          <option>SST-3</option>
+          <option>SST-5</option>
+          <option>SST-6</option>
+          <option>No Tax</option>
+        </select>
+      </label>
+    </div>
+    <div className="master-page-actions advance-payment-policy-actions"><button className="primary-button" type="button" disabled={!dirty} onClick={async () => { await onProfileChange({ ...profile, operationalPolicy: { ...profile.operationalPolicy, advancePaymentPolicy: draft } }); }}>Save</button></div>
   </section>;
 }
 
