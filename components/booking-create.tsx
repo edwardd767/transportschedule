@@ -93,7 +93,7 @@ export function BookingCreate({
   const [arrival, setArrival] = useState(() => localDateKey(0));
   const [departure, setDeparture] = useState(() => localDateKey(1));
   const [groupEnabled, setGroupEnabled] = useState(false);
-  const [salesChannel, setSalesChannel] = useState('Direct');
+  const [salesChannel, setSalesChannel] = useState(salesChannels[0] ?? '');
   const [source, setSource] = useState('Booking');
   const [segment, setSegment] = useState('Leisure');
   const [printRate, setPrintRate] = useState(true);

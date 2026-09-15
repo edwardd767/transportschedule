@@ -103,7 +103,7 @@ export function BookingEdit({
   const [stateTax, setStateTax] = useState(booking.stateTax ?? true);
   const [tourismTax, setTourismTax] = useState(booking.tourismTax ?? true);
   const [email, setEmail] = useState(booking.email ?? '');
-  const [salesChannel, setSalesChannel] = useState(booking.salesChannel ?? 'Direct');
+  const [salesChannel, setSalesChannel] = useState(booking.salesChannel ?? salesChannels[0] ?? '');
   const [source, setSource] = useState(booking.source ?? 'Booking');
   const [segment, setSegment] = useState(booking.segment ?? 'Leisure');
   const [referenceNo, setReferenceNo] = useState(booking.referenceNo ?? '');
