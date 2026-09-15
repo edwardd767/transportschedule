@@ -3663,9 +3663,15 @@ p {
 .billing-daily-line small{display:block;margin-top:3px;font-size:12px}
 .billing-daily-line>span:last-child{text-align:right}
 .billing-breakdown-labels,.billing-breakdown-values{display:flex;flex-direction:column;gap:2px}.billing-breakdown-labels small,.billing-breakdown-values small{line-height:15px}.billing-daily-line>span:nth-child(2),.billing-daily-line>span:nth-child(3){display:flex;flex-direction:column}.billing-daily-line:nth-of-type(even){background:#fcf4ea}
-.billing-info{position:relative;display:inline-flex;align-items:center;margin-left:4px;color:#f58220;font-style:normal;font-size:11px;line-height:1;cursor:help;vertical-align:middle}
-.billing-info-tip{display:none;position:absolute;left:0;bottom:calc(100% + 5px);z-index:30;white-space:nowrap;background:#1f2937;color:#fff;font-size:11px;font-weight:400;font-style:normal;line-height:1.3;padding:5px 9px;border-radius:4px;box-shadow:0 3px 10px #0003}
-.billing-info:hover .billing-info-tip,.billing-info:focus .billing-info-tip,.billing-info:focus-within .billing-info-tip{display:block}
+.billing-info{position:relative;display:inline-flex;align-items:center;margin-left:5px;color:#f58220;font-style:normal;cursor:help;vertical-align:middle;outline:none}
+.billing-info-icon{display:block;transition:transform .15s ease,color .15s ease}
+.billing-info:hover .billing-info-icon,.billing-info:focus .billing-info-icon{color:#d96c00;transform:scale(1.14)}
+.billing-info-tip{display:block;position:absolute;left:0;bottom:calc(100% + 9px);z-index:40;min-width:172px;padding:9px 11px;background:#111827;color:#fff;border-radius:8px;box-shadow:0 10px 26px #00000045;font-size:11px;font-weight:400;font-style:normal;line-height:1.4;text-align:left;white-space:nowrap;pointer-events:none;opacity:0;visibility:hidden;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease,visibility .15s}
+.billing-info-tip::after{content:'';position:absolute;left:12px;top:100%;border:6px solid transparent;border-top-color:#111827}
+.billing-info-tip b{display:block;margin-bottom:6px;font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:#fbbf24;font-weight:700}
+.billing-info-row{display:flex;justify-content:space-between;gap:16px}
+.billing-info-row+.billing-info-row{margin-top:2px}
+.billing-info:hover .billing-info-tip,.billing-info:focus .billing-info-tip,.billing-info:focus-within .billing-info-tip{opacity:1;visibility:visible;transform:translateY(0)}
 .billing-schedule-actions{position:fixed;left:var(--sidebar-width, 206px);right:0;bottom:0;height:66px;background:#fff;box-shadow:0 -2px 10px #0002;display:flex;align-items:center;justify-content:center;z-index:20}
 .billing-schedule-actions .primary-button{min-width:154px;height:38px}
 .billing-schedule-actions .primary-button:disabled{background:#ddd;color:#aaa}
