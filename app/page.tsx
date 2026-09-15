@@ -598,6 +598,7 @@ function HomeContent({ store }: { store: TransportData }) {
               className={view === 'booking' ? 'active' : ''}
               aria-current={view === 'booking' ? 'page' : undefined}
               onClick={() => {
+                window.dispatchEvent(new Event('hotelx-booking-back', { cancelable: true }));
                 setBookingReference(null);
                 setView('booking');
               }}

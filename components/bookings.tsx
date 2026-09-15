@@ -328,6 +328,16 @@ export function Bookings({
 
   useEffect(() => {
     const handleBookingBack = (event: Event) => {
+      if (createOpen) {
+        event.preventDefault();
+        setCreateOpen(false);
+        return;
+      }
+      if (editing) {
+        event.preventDefault();
+        onEditingChange(false);
+        return;
+      }
       if (billingOpen) {
         event.preventDefault();
         setBillingOpen(false);
@@ -355,7 +365,7 @@ export function Bookings({
     };
     window.addEventListener('hotelx-booking-back', handleBookingBack);
     return () => window.removeEventListener('hotelx-booking-back', handleBookingBack);
-  }, [attachmentsOpen, billingInstructionOpen, billingOpen, roomingOpen, specialRequestOpen]);
+  }, [attachmentsOpen, billingInstructionOpen, billingOpen, createOpen, editing, onEditingChange, roomingOpen, specialRequestOpen]);
 
 
   function openBooking(item: Booking) {
