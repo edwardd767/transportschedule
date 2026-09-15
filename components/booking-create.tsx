@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { User, Baby, CalendarDays, Plus } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { User, Baby, CalendarDays, Plus, X } from 'lucide-react';
 import { BookingAvailability } from '@/components/booking-availability';
 import { bookingRate } from '@/lib/booking-rate';
 import { rateAddOnsForNight } from '@/lib/pax-billing';
@@ -114,6 +115,10 @@ export function BookingCreate({
   const [promoCode, setPromoCode] = useState('NONE');
   const [discountPerNight, setDiscountPerNight] = useState(0);
   const [roomLines, setRoomLines] = useState<RoomLine[]>([]);
+  const [bannerSlot, setBannerSlot] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    setBannerSlot(document.querySelector<HTMLElement>('.property-identity'));
+  }, []);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -277,6 +282,12 @@ export function BookingCreate({
 
   return (
     <section className="booking-new-page" aria-label="Create booking">
+      {bannerSlot && createPortal(
+        <button type="button" className="booking-back" aria-label="Close booking creation" onClick={onCancel} style={{ order: -1 }}>
+          <X size={18} />
+        </button>,
+        bannerSlot,
+      )}
       <form className="booking-new-scroll" onSubmit={saveBooking}>
         <BookingAvailability childRatesApplied={childRatesApplied} rateSetup={rateSetup} arrival={arrival} bookings={bookings} roomTypes={roomTypes} />
 
