@@ -8,7 +8,6 @@ import {
   ChevronRight,
   Search,
   SlidersHorizontal,
-  UserRound,
 } from 'lucide-react';
 import type { TransportData } from '@/lib/use-transport-data';
 import { HotelxBackButton } from '@/components/hotelx-back-button';
@@ -245,7 +244,7 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
                   </span>
                 </div>
                 <div className="inhouse-guest-line">
-                  <UserRound size={12} />
+                  <svg viewBox="0 0 24 24" width={12} height={12} fill="currentColor" aria-hidden="true" focusable="false"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg>
                   <span>{row.accountName}</span>
                 </div>
               </div>
