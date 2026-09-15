@@ -98,6 +98,7 @@ function GeneralPolicyModule({ onBack, profile, onProfileChange }: { onBack: () 
   const [floatAmount, setFloatAmount] = useState(String(profile.floatAmount ?? 0));
   const [paxCount, setPaxCount] = useState(profile.paxCount || 'No. of Pax Manual Updated');
   const [childRatesApplied, setChildRatesApplied] = useState(Boolean(profile.childRatesApplied));
+  const [childAgePolicy, setChildAgePolicy] = useState(String(profile.childAgePolicy ?? 0));
   return <section className="master-page general-policy-page" aria-label="General Policy">
     <div className="general-policy-head"><strong>General Policy</strong></div>
     <div className="general-policy-card">
@@ -109,8 +110,9 @@ function GeneralPolicyModule({ onBack, profile, onProfileChange }: { onBack: () 
         <option>No. of Guest Profile Created</option>
       </select></label>
       <label className="general-policy-toggle"><span>Child Rates Applied</span><input type="checkbox" checked={childRatesApplied} onChange={(event) => setChildRatesApplied(event.target.checked)} /><i /></label>
+      {childRatesApplied && <label>Child Age Policy *<input type="number" min="0" step="1" inputMode="numeric" value={childAgePolicy} onChange={(event) => setChildAgePolicy(event.target.value.replace(/\D/g, ''))} /></label>}
     </div>
-    <div className="master-page-actions general-policy-actions"><button className="primary-button" type="button" onClick={async () => { await onProfileChange({ ...profile, bookingCancellationDays: Number(days), currencyCode: currency, floatAmount: Number(floatAmount), paxCount, childRatesApplied }); }}>Save</button></div>
+    <div className="master-page-actions general-policy-actions"><button className="primary-button" type="button" onClick={async () => { await onProfileChange({ ...profile, bookingCancellationDays: Number(days), currencyCode: currency, floatAmount: Number(floatAmount), paxCount, childRatesApplied, childAgePolicy: Number(childAgePolicy) || 0 }); }}>Save</button></div>
   </section>;
 }
 
