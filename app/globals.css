@@ -2807,12 +2807,13 @@ p {
   align-items: center;
   justify-content: space-between;
   padding: 16px 18px;
-  border-bottom: 1px solid #eee;
+  background: #fff8ef;
+  border-bottom: 1px solid #f2e3cf;
 }
 .advance-search-head strong {
   font-size: 16px;
   font-weight: 700;
-  color: #222;
+  color: #f58220;
 }
 .advance-search-reset {
   display: inline-flex;
