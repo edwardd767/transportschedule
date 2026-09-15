@@ -11,8 +11,8 @@ const dateLabel = (value: string) => value ? value.split('-').reverse().join('/'
 
 type Scope = 'today' | 'month' | 'year';
 const periods: Scope[] = ['today', 'month', 'year'];
-const metricColumns = ['Room', 'Guest', 'Child', 'Room Rev.', 'Other Rev.', 'FNB Rev.', 'ARR'];
-const cellFormats = ['number', 'number', 'number', 'money', 'money', 'money', 'money'];
+const metricColumns = ['Room', 'A/C/I', 'Room Rev.', 'Other Rev.', 'FNB Rev.', 'ARR'];
+const cellFormats = ['number', 'text', 'money', 'money', 'money', 'money'];
 
 function startOfMonth(date: string) {
   return `${date.slice(0, 7)}-01`;
@@ -38,7 +38,7 @@ function scopeFrom(date: string, scope: Scope) {
   return scope === 'today' ? date : scope === 'month' ? startOfMonth(date) : startOfYear(date);
 }
 
-type Bucket = { rooms: number; guests: number; children: number; revenue: number };
+type Bucket = { rooms: number; adults: number; children: number; infants: number; revenue: number };
 
 function productionByRoomType(bookings: Booking[], date: string, scope: Scope) {
   const from = scopeFrom(date, scope);
@@ -49,14 +49,15 @@ function productionByRoomType(bookings: Booking[], date: string, scope: Scope) {
     const totalRooms = countRooms(booking);
     for (const room of booking.rooms) {
       const share = totalRooms ? room.count / totalRooms : 0;
-      const guests = room.adults !== undefined
-        ? (room.adults + (room.children ?? 0)) * room.count
-        : booking.guests * share;
+      const adults = room.adults !== undefined ? room.adults * room.count : booking.guests * share;
+      const children = (room.children ?? 0) * room.count;
+      const infants = (room.infants ?? 0) * room.count;
       const revenue = room.total ?? room.subtotal ?? booking.amount * share;
-      const current = buckets.get(room.code) ?? { rooms: 0, guests: 0, children: 0, revenue: 0 };
+      const current = buckets.get(room.code) ?? { rooms: 0, adults: 0, children: 0, infants: 0, revenue: 0 };
       current.rooms += room.count * factor;
-      current.guests += guests;
-      current.children += (room.children ?? 0) * room.count;
+      current.adults += adults;
+      current.children += children;
+      current.infants += infants;
       current.revenue += revenue;
       buckets.set(room.code, current);
     }
@@ -64,8 +65,12 @@ function productionByRoomType(bookings: Booking[], date: string, scope: Scope) {
   return buckets;
 }
 
+function paxCell(value: { adults: number; children: number; infants: number }) {
+  return `${value.adults}/${value.children}/${value.infants}`;
+}
+
 function bucketCells(bucket: Bucket) {
-  return [bucket.rooms, bucket.guests, bucket.children, bucket.revenue, 0, 0, bucket.rooms ? bucket.revenue / bucket.rooms : 0];
+  return [bucket.rooms, paxCell(bucket), bucket.revenue, 0, 0, bucket.rooms ? bucket.revenue / bucket.rooms : 0];
 }
 
 function buildRows(bookings: Booking[], hotelMasters: HotelMasters, date: string) {
@@ -75,7 +80,7 @@ function buildRows(bookings: Booking[], hotelMasters: HotelMasters, date: string
   return types.map((type) => ({
     code: type.code,
     roomType: type.description,
-    cells: buckets.flatMap((map) => bucketCells(map.get(type.code) ?? { rooms: 0, guests: 0, children: 0, revenue: 0 })),
+    cells: buckets.flatMap((map) => bucketCells(map.get(type.code) ?? { rooms: 0, adults: 0, children: 0, infants: 0, revenue: 0 })),
   }));
 }
 
@@ -85,8 +90,8 @@ function printStamp(value: Date) {
   return `${datePart}, ${timePart}`;
 }
 
-function RoomTypeRow({ code, roomType, cells, total }: { code: string; roomType: string; cells: number[]; total?: boolean }) {
-  return <tr className={total ? 'production-total-row' : undefined}><th scope="row">{code}</th><td className="production-room-type">{roomType}</td>{cells.map((value, index) => <td key={index}>{cellFormats[index % metricColumns.length] === 'money' ? money(value) : number(value)}</td>)}</tr>;
+function RoomTypeRow({ code, roomType, cells, total }: { code: string; roomType: string; cells: (number | string)[]; total?: boolean }) {
+  return <tr className={total ? 'production-total-row' : undefined}><th scope="row">{code}</th><td className="production-room-type">{roomType}</td>{cells.map((value, index) => { const format = cellFormats[index % metricColumns.length]; return <td key={index}>{format === 'money' ? money(value as number) : format === 'text' ? value : number(value as number)}</td>; })}</tr>;
 }
 
 export function ProductionAnalysisRoomType({ bookings, hotelMasters, date, onDate, onBack }: {
@@ -100,9 +105,9 @@ export function ProductionAnalysisRoomType({ bookings, hotelMasters, date, onDat
   const rows = buildRows(bookings, hotelMasters, date);
   const buckets = periods.map((scope) => productionByRoomType(bookings, date, scope));
   const totalCells = buckets.flatMap((map) => {
-    let rooms = 0, guests = 0, children = 0, revenue = 0;
-    for (const bucket of map.values()) { rooms += bucket.rooms; guests += bucket.guests; children += bucket.children; revenue += bucket.revenue; }
-    return [rooms, guests, children, revenue, 0, 0, rooms ? revenue / rooms : 0];
+    let rooms = 0, adults = 0, children = 0, infants = 0, revenue = 0;
+    for (const bucket of map.values()) { rooms += bucket.rooms; adults += bucket.adults; children += bucket.children; infants += bucket.infants; revenue += bucket.revenue; }
+    return [rooms, paxCell({ adults, children, infants }), revenue, 0, 0, rooms ? revenue / rooms : 0];
   });
   return <div className="production-analysis-report">
     <div className="report-view-head"><button type="button" onClick={onBack}>‹ Back to reports</button><strong>Production Analysis by Room Type</strong></div>

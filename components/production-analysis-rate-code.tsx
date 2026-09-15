@@ -11,8 +11,8 @@ const dateLabel = (value: string) => value ? value.split('-').reverse().join('/'
 
 type Scope = 'today' | 'month' | 'year';
 const periods: Scope[] = ['today', 'month', 'year'];
-const metricColumns = ['Room', 'Guest', 'Child', 'Room Rev.', 'Other Rev.', 'FNB Rev.', 'ARR'];
-const cellFormats = ['number', 'number', 'number', 'money', 'money', 'money', 'money'];
+const metricColumns = ['Room', 'A/C/I', 'Room Rev.', 'Other Rev.', 'FNB Rev.', 'ARR'];
+const cellFormats = ['number', 'text', 'money', 'money', 'money', 'money'];
 
 function startOfMonth(date: string) {
   return `${date.slice(0, 7)}-01`;
@@ -38,28 +38,29 @@ function scopeFrom(date: string, scope: Scope) {
   return scope === 'today' ? date : scope === 'month' ? startOfMonth(date) : startOfYear(date);
 }
 
-type Allocation = { rateCode: string; rooms: number; guests: number; children: number; revenue: number };
+type Allocation = { rateCode: string; rooms: number; adults: number; children: number; infants: number; revenue: number };
 
 function allocations(booking: Booking): Allocation[] {
   const totalRooms = countRooms(booking);
   return booking.rooms.map((room) => {
     const count = room.count;
     const share = totalRooms ? count / totalRooms : 0;
-    const guests = room.adults !== undefined
-      ? (room.adults + (room.children ?? 0)) * count
-      : booking.guests * share;
+    const adults = room.adults !== undefined ? room.adults * count : booking.guests * share;
+    const children = (room.children ?? 0) * count;
+    const infants = (room.infants ?? 0) * count;
     const revenue = room.total ?? room.subtotal ?? booking.amount * share;
     return {
       rateCode: room.rateCode ?? 'BAR',
       rooms: count,
-      guests,
-      children: (room.children ?? 0) * count,
+      adults,
+      children,
+      infants,
       revenue,
     };
   });
 }
 
-type Bucket = { rooms: number; guests: number; children: number; revenue: number };
+type Bucket = { rooms: number; adults: number; children: number; infants: number; revenue: number };
 
 function production(bookings: Booking[], date: string, scope: Scope) {
   const from = scopeFrom(date, scope);
@@ -68,10 +69,11 @@ function production(bookings: Booking[], date: string, scope: Scope) {
     if (!overlaps(booking, from, date) || ['Cancelled', 'No Show'].includes(booking.status)) continue;
     const factor = scope === 'today' ? 1 : nights(booking);
     for (const allocation of allocations(booking)) {
-      const current = buckets.get(allocation.rateCode) ?? { rooms: 0, guests: 0, children: 0, revenue: 0 };
+      const current = buckets.get(allocation.rateCode) ?? { rooms: 0, adults: 0, children: 0, infants: 0, revenue: 0 };
       current.rooms += allocation.rooms * factor;
-      current.guests += allocation.guests;
+      current.adults += allocation.adults;
       current.children += allocation.children;
+      current.infants += allocation.infants;
       current.revenue += allocation.revenue;
       buckets.set(allocation.rateCode, current);
     }
@@ -79,8 +81,12 @@ function production(bookings: Booking[], date: string, scope: Scope) {
   return buckets;
 }
 
+function paxCell(value: { adults: number; children: number; infants: number }) {
+  return `${value.adults}/${value.children}/${value.infants}`;
+}
+
 function bucketCells(bucket: Bucket) {
-  return [bucket.rooms, bucket.guests, bucket.children, bucket.revenue, 0, 0, bucket.rooms ? bucket.revenue / bucket.rooms : 0];
+  return [bucket.rooms, paxCell(bucket), bucket.revenue, 0, 0, bucket.rooms ? bucket.revenue / bucket.rooms : 0];
 }
 
 function buildRows(bookings: Booking[], date: string) {
@@ -89,7 +95,7 @@ function buildRows(bookings: Booking[], date: string) {
   const rateCodes = [...new Set(relevant.flatMap((booking) => allocations(booking).map((allocation) => allocation.rateCode)))].sort();
   return rateCodes.map((rateCode) => ({
     rateCode,
-    cells: buckets.flatMap((map) => bucketCells(map.get(rateCode) ?? { rooms: 0, guests: 0, children: 0, revenue: 0 })),
+    cells: buckets.flatMap((map) => bucketCells(map.get(rateCode) ?? { rooms: 0, adults: 0, children: 0, infants: 0, revenue: 0 })),
   }));
 }
 
@@ -99,8 +105,8 @@ function printStamp(value: Date) {
   return `${datePart}, ${timePart}`;
 }
 
-function ProductionRow({ label, cells, total }: { label: string; cells: number[]; total?: boolean }) {
-  return <tr className={total ? 'production-total-row' : undefined}><th scope="row">{label}</th>{cells.map((value, index) => <td key={index}>{cellFormats[index % metricColumns.length] === 'money' ? money(value) : number(value)}</td>)}</tr>;
+function ProductionRow({ label, cells, total }: { label: string; cells: (number | string)[]; total?: boolean }) {
+  return <tr className={total ? 'production-total-row' : undefined}><th scope="row">{label}</th>{cells.map((value, index) => { const format = cellFormats[index % metricColumns.length]; return <td key={index}>{format === 'money' ? money(value as number) : format === 'text' ? value : number(value as number)}</td>; })}</tr>;
 }
 
 export function ProductionAnalysisRateCode({ bookings, hotelMasters, date, onDate, onBack }: {
@@ -114,9 +120,9 @@ export function ProductionAnalysisRateCode({ bookings, hotelMasters, date, onDat
   const rows = buildRows(bookings, date);
   const buckets = periods.map((scope) => production(bookings, date, scope));
   const totalCells = buckets.flatMap((map) => {
-    let rooms = 0, guests = 0, children = 0, revenue = 0;
-    for (const bucket of map.values()) { rooms += bucket.rooms; guests += bucket.guests; children += bucket.children; revenue += bucket.revenue; }
-    return [rooms, guests, children, revenue, 0, 0, rooms ? revenue / rooms : 0];
+    let rooms = 0, adults = 0, children = 0, infants = 0, revenue = 0;
+    for (const bucket of map.values()) { rooms += bucket.rooms; adults += bucket.adults; children += bucket.children; infants += bucket.infants; revenue += bucket.revenue; }
+    return [rooms, paxCell({ adults, children, infants }), revenue, 0, 0, rooms ? revenue / rooms : 0];
   });
   return <div className="production-analysis-report">
     <div className="report-view-head"><button type="button" onClick={onBack}>‹ Back to reports</button><strong>Production Analysis by Rate Code</strong></div>

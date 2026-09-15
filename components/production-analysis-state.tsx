@@ -12,8 +12,8 @@ const dateLabel = (value: string) => value ? value.split('-').reverse().join('/'
 
 type Scope = 'today' | 'month' | 'year';
 const periods: Scope[] = ['today', 'month', 'year'];
-const metricColumns = ['Room', 'Guest', 'Child', 'Room Rev.', 'Other Rev.', 'FNB Rev.', 'ARR'];
-const cellFormats = ['number', 'number', 'number', 'money', 'money', 'money', 'money'];
+const metricColumns = ['Room', 'A/C/I', 'Room Rev.', 'Other Rev.', 'FNB Rev.', 'ARR'];
+const cellFormats = ['number', 'text', 'money', 'money', 'money', 'money'];
 
 function startOfMonth(date: string) {
   return `${date.slice(0, 7)}-01`;
@@ -27,8 +27,18 @@ function countRooms(booking: Booking) {
   return booking.rooms.reduce((sum, room) => sum + room.count, 0);
 }
 
+function countAdults(booking: Booking) {
+  return booking.rooms.every(room => room.adults !== undefined)
+    ? booking.rooms.reduce((sum, room) => sum + room.adults! * room.count, 0)
+    : booking.guests;
+}
+
 function countChildren(booking: Booking) {
   return booking.rooms.reduce((sum, room) => sum + (room.children ?? 0) * room.count, 0);
+}
+
+function countInfants(booking: Booking) {
+  return booking.rooms.reduce((sum, room) => sum + (room.infants ?? 0) * room.count, 0);
 }
 
 function nights(booking: Booking) {
@@ -58,10 +68,15 @@ function production(rows: Booking[], date: string, scope: Scope) {
   const room = scope === 'today'
     ? relevant.reduce((sum, booking) => sum + countRooms(booking), 0)
     : relevant.reduce((sum, booking) => sum + countRooms(booking) * nights(booking), 0);
-  const guest = relevant.reduce((sum, booking) => sum + booking.guests, 0);
-  const child = relevant.reduce((sum, booking) => sum + countChildren(booking), 0);
+  const adults = relevant.reduce((sum, booking) => sum + countAdults(booking), 0);
+  const children = relevant.reduce((sum, booking) => sum + countChildren(booking), 0);
+  const infants = relevant.reduce((sum, booking) => sum + countInfants(booking), 0);
   const roomRev = relevant.reduce((sum, booking) => sum + booking.amount, 0);
-  return { room, guest, child, roomRev, otherRev: 0, fnbRev: 0, arr: room ? roomRev / room : 0 };
+  return { room, adults, children, infants, roomRev, otherRev: 0, fnbRev: 0, arr: room ? roomRev / room : 0 };
+}
+
+function paxCell(value: { adults: number; children: number; infants: number }) {
+  return `${value.adults}/${value.children}/${value.infants}`;
 }
 
 function buildRows(bookings: Booking[], profiles: GuestProfile[], date: string) {
@@ -73,7 +88,7 @@ function buildRows(bookings: Booking[], profiles: GuestProfile[], date: string) 
   return [...groups.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([state, rows]) => {
     const cells = periods.flatMap((scope) => {
       const value = production(rows, date, scope);
-      return [value.room, value.guest, value.child, value.roomRev, value.otherRev, value.fnbRev, value.arr];
+      return [value.room, paxCell(value), value.roomRev, value.otherRev, value.fnbRev, value.arr];
     });
     return { state, cells };
   });
@@ -85,8 +100,8 @@ function printStamp(value: Date) {
   return `${datePart}, ${timePart}`;
 }
 
-function StateRow({ label, cells, total }: { label: string; cells: number[]; total?: boolean }) {
-  return <tr className={total ? 'production-total-row' : undefined}><th scope="row">{label}</th>{cells.map((value, index) => <td key={index}>{cellFormats[index % metricColumns.length] === 'money' ? money(value) : number(value)}</td>)}</tr>;
+function StateRow({ label, cells, total }: { label: string; cells: (number | string)[]; total?: boolean }) {
+  return <tr className={total ? 'production-total-row' : undefined}><th scope="row">{label}</th>{cells.map((value, index) => { const format = cellFormats[index % metricColumns.length]; return <td key={index}>{format === 'money' ? money(value as number) : format === 'text' ? value : number(value as number)}</td>; })}</tr>;
 }
 
 export function ProductionAnalysisState({ bookings, profiles, hotelMasters, date, onDate, onBack }: {
@@ -101,7 +116,7 @@ export function ProductionAnalysisState({ bookings, profiles, hotelMasters, date
   const rows = buildRows(bookings, profiles, date);
   const totalCells = periods.flatMap((scope) => {
     const value = production(bookings, date, scope);
-    return [value.room, value.guest, value.child, value.roomRev, value.otherRev, value.fnbRev, value.arr];
+    return [value.room, paxCell(value), value.roomRev, value.otherRev, value.fnbRev, value.arr];
   });
   return <div className="production-analysis-report">
     <div className="report-view-head"><button type="button" onClick={onBack}>‹ Back to reports</button><strong>Production Analysis by State/Country/Nationality</strong></div>
