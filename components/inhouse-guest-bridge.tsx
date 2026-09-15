@@ -296,9 +296,9 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
       </div>
 
       {advanceOpen && (
-        <div className="advance-search-layer" style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '72px 16px 24px' }}>
+        <div className="advance-search-layer" style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
           <button type="button" className="advance-search-scrim" aria-label="Close advance search" onClick={() => setAdvanceOpen(false)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }} />
-          <dialog open className="advance-search-panel" aria-label="Advance Search" style={{ position: 'relative', inset: 'auto', margin: 0, width: 'min(520px, calc(100vw - 32px))', maxWidth: 520, maxHeight: 'calc(100dvh - 96px)', padding: 0, border: 0, borderRadius: 4, overflow: 'hidden', background: '#fff', boxShadow: '0 12px 38px rgba(0,0,0,.32)', zIndex: 1, display: 'flex', flexDirection: 'column' }}>
+          <dialog open className="advance-search-panel" aria-label="Advance Search" style={{ position: 'relative', inset: 'auto', margin: 0, width: 'min(520px, calc(100vw - 32px))', maxWidth: 520, maxHeight: 'calc(100dvh - 32px)', padding: 0, border: 0, borderRadius: 4, overflow: 'hidden', background: '#fff', boxShadow: '0 12px 38px rgba(0,0,0,.32)', zIndex: 1, display: 'flex', flexDirection: 'column' }}>
             <div className="advance-search-head" style={{ flex: '0 0 auto' }}>
               <strong>Advance Search</strong>
               <button type="button" className="advance-search-reset" onClick={resetAdvance}><RotateCw size={15} /> Reset</button>
