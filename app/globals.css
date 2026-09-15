@@ -3493,6 +3493,9 @@ p {
   max-width: 700px;
   padding: 20px;
 }
+.transfer-dialog [data-slot='dialog-title'] {
+  font-size: 16px;
+}
 .transfer-legs {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
