@@ -258,11 +258,18 @@
 }
 
 .inhouse-sort-option input {
-  width: 16px;
-  height: 16px;
-  margin: 0;
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.inhouse-sort-radio {
   flex: none;
-  accent-color: #ff8c12;
+  color: #9aa0a6;
+}
+
+.inhouse-sort-option input:checked + .inhouse-sort-radio {
+  color: #ff8c12;
 }
 
 .inhouse-list {
