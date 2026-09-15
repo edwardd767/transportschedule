@@ -736,7 +736,7 @@ function HomeContent({ store }: { store: TransportData }) {
           </div>
           {!(view === 'booking' && activeBooking) && (
             <span className="property-switch">
-              <ArrowRightLeft size={18} />
+              <ArrowRightLeft size={14} />
             </span>
           )}
           <div className="breadcrumb">
