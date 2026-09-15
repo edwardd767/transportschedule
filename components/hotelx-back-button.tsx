@@ -18,6 +18,7 @@ export function HotelxBackButton({
       disabled={disabled}
       aria-label={label}
       className="grid h-8 w-8 shrink-0 place-items-center rounded-[3px] bg-white text-[#e78300] shadow disabled:opacity-60"
+      style={{ color: '#e78300' }}
     >
       <ChevronLeft size={17} />
     </button>
