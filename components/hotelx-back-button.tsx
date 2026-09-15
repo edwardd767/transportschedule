@@ -1,7 +1,5 @@
 'use client';
 
-import { ChevronLeft } from 'lucide-react';
-
 export function HotelxBackButton({
   onClick,
   disabled = false,
@@ -17,10 +15,12 @@ export function HotelxBackButton({
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
-      className="grid h-8 w-8 shrink-0 place-items-center rounded-[3px] bg-white text-[#e78300] shadow disabled:opacity-60"
-      style={{ color: '#e78300' }}
+      className="grid shrink-0 place-items-center disabled:opacity-60"
+      style={{ background: '#fff', color: '#ff9800', borderRadius: 3, padding: 2, border: 0, lineHeight: 0 }}
     >
-      <ChevronLeft size={17} />
+      <svg viewBox="0 0 24 24" width={24} height={24} fill="currentColor" aria-hidden="true" focusable="false">
+        <path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
+      </svg>
     </button>
   );
 }
