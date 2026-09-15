@@ -3,6 +3,7 @@ import { MoreVertical, Plus, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { initialSegments, type HotelSegment } from '@/lib/hotel-masters';
 import type { Booking } from '@/lib/bookings';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 
 function formatPostedDate(value: string) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || '');
@@ -21,6 +22,7 @@ export function SegmentModule({ segments, bookings = [], onChange, onBack: _onBa
   const [dialogOpen, setDialogOpen] = useState(false);
   const [description, setDescription] = useState('');
   const [sequence, setSequence] = useState(1);
+  const [confirm, setConfirm] = useState<{ title: string; message: string; confirmLabel: string; action: () => void | Promise<void> } | null>(null);
 
   useEffect(() => setDraft(segments.length ? segments : initialSegments), [segments]);
 
@@ -72,14 +74,15 @@ export function SegmentModule({ segments, bookings = [], onChange, onBack: _onBa
             {menu === item.id && (
               <div className="segment-menu">
                 <button onClick={() => open(item)}>Edit</button>
-                <button onClick={async () => { const value = draft.map((x) => x.id === item.id ? { ...x, active: !x.active } : x); await onChange(value); setDraft(value); setMenu(null); }}>{item.active ? 'Inactive' : 'Active'}</button>
-                <button className="segment-menu-delete" disabled={inUse(item)} title={inUse(item) ? 'Cannot delete: this segment is used by existing bookings.' : 'Delete'} onClick={async () => { const value = draft.filter((x) => x.id !== item.id); await onChange(value); setDraft(value); setMenu(null); }}>Delete</button>
+                <button onClick={() => { setMenu(null); setConfirm({ title: `${item.active ? 'Inactive' : 'Active'} ${item.description}`, message: `Do you want to set ${item.description} to ${item.active ? 'inactive' : 'active'} ?`, confirmLabel: item.active ? 'Inactive' : 'Active', action: async () => { const value = draft.map((x) => x.id === item.id ? { ...x, active: !x.active } : x); await onChange(value); setDraft(value); } }); }}>{item.active ? 'Inactive' : 'Active'}</button>
+                <button className="segment-menu-delete" disabled={inUse(item)} title={inUse(item) ? 'Cannot delete: this segment is used by existing bookings.' : 'Delete'} onClick={() => { setMenu(null); setConfirm({ title: `Delete ${item.description}`, message: `Do you want to delete ${item.description} ?`, confirmLabel: 'Delete', action: async () => { const value = draft.filter((x) => x.id !== item.id); await onChange(value); setDraft(value); } }); }}>Delete</button>
               </div>
             )}
           </article>
         ))}
       </div>
       <button className="segment-add" onClick={() => open()} aria-label="Add segment"><Plus size={24} /></button>
+      {confirm && <ConfirmDialog title={confirm.title} message={confirm.message} confirmLabel={confirm.confirmLabel} onCancel={() => setConfirm(null)} onConfirm={() => { const run = confirm.action; setConfirm(null); void run(); }} />}
       {dialogOpen && (
         <div className="billing-instruction-overlay">
           <div className="billing-instruction-card segment-dialog">

@@ -16,6 +16,7 @@ import {
   X,
 } from 'lucide-react';
 import { HotelDatePicker } from '@/components/hotel-date-picker';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { TransportDataContext } from '@/components/transport-connection';
 import type { AddOnItem, RateSetupData, RateValidityItem } from '@/lib/rate-setup-data';
 
@@ -289,6 +290,7 @@ function SeasonSetupPage({ seasons, onChange }: { seasons: Season[]; onChange: (
   const [menuId, setMenuId] = useState<string | null>(null);
   const [editing, setEditing] = useState<Season | null>(null);
   const [draft, setDraft] = useState<Season | null>(null);
+  const [confirm, setConfirm] = useState<{ title: string; message: string; confirmLabel: string; action: () => void } | null>(null);
 
   const beginEdit = (season?: Season) => {
     const next = season ?? {
@@ -329,7 +331,7 @@ function SeasonSetupPage({ seasons, onChange }: { seasons: Season[]; onChange: (
                     { label: 'Edit', onClick: () => beginEdit(season) },
                     {
                       label: season.active ? 'Inactive' : 'Active',
-                      onClick: () => { void onChange(seasons.map((item) => item.id === season.id ? { ...item, active: !item.active } : item)); },
+                      onClick: () => setConfirm({ title: `${season.active ? 'Inactive' : 'Active'} ${season.name}`, message: `Do you want to set ${season.name} to ${season.active ? 'inactive' : 'active'} ?`, confirmLabel: season.active ? 'Inactive' : 'Active', action: () => { void onChange(seasons.map((item) => item.id === season.id ? { ...item, active: !item.active } : item)); } }),
                     },
                   ]}
                 />
@@ -338,6 +340,7 @@ function SeasonSetupPage({ seasons, onChange }: { seasons: Season[]; onChange: (
           </div>
         ))}
       </div>
+      {confirm && <ConfirmDialog title={confirm.title} message={confirm.message} confirmLabel={confirm.confirmLabel} onCancel={() => setConfirm(null)} onConfirm={() => { const run = confirm.action; setConfirm(null); run(); }} />}
       <FloatingAdd label="Add season" onClick={() => beginEdit()} />
       {editing && draft && (
         <EditorModal title={seasons.some((item) => item.id === editing.id) ? 'Edit Season' : 'New Season'} onCancel={() => { setEditing(null); setDraft(null); }} onSave={save}>
@@ -437,6 +440,7 @@ function RateElementPage({ items, validity = [], onChange }: { items: RateElemen
   const [draft, setDraft] = useState<RateElementItem | null>(null);
   const filtered = useMemo(() => items.filter((item) => item.name.toLowerCase().includes(query.toLowerCase())), [items, query]);
   const inUse = (item: RateElementItem) => validity.some((row) => [...(row.inclusiveElements ?? []), ...(row.addOnElements ?? [])].includes(item.id));
+  const [confirm, setConfirm] = useState<{ title: string; message: string; confirmLabel: string; action: () => void } | null>(null);
 
   const save = () => {
     if (!draft || !draft.name.trim()) return;
@@ -459,14 +463,15 @@ function RateElementPage({ items, validity = [], onChange }: { items: RateElemen
               {menuId === item.id && (
                 <PopupMenu onClose={() => setMenuId(null)} items={[
                   { label: 'Edit', onClick: () => setDraft({ ...item }) },
-                  { label: item.active ? 'Inactive' : 'Active', onClick: () => { void onChange(items.map((row) => row.id === item.id ? { ...row, active: !row.active } : row)); } },
-                  { label: 'Delete', disabled: inUse(item), onClick: () => { void onChange(items.filter((row) => row.id !== item.id)); } },
+                  { label: item.active ? 'Inactive' : 'Active', onClick: () => setConfirm({ title: `${item.active ? 'Inactive' : 'Active'} ${item.name}`, message: `Do you want to set ${item.name} to ${item.active ? 'inactive' : 'active'} ?`, confirmLabel: item.active ? 'Inactive' : 'Active', action: () => { void onChange(items.map((row) => row.id === item.id ? { ...row, active: !row.active } : row)); } }) },
+                  { label: 'Delete', disabled: inUse(item), onClick: () => setConfirm({ title: `Delete ${item.name}`, message: `Do you want to delete ${item.name} ?`, confirmLabel: 'Delete', action: () => { void onChange(items.filter((row) => row.id !== item.id)); } }) },
                 ]} />
               )}
             </div>
           </div>
         ))}
       </div>
+      {confirm && <ConfirmDialog title={confirm.title} message={confirm.message} confirmLabel={confirm.confirmLabel} onCancel={() => setConfirm(null)} onConfirm={() => { const run = confirm.action; setConfirm(null); run(); }} />}
       <FloatingAdd label="Add rate element" onClick={() => setDraft({ id: crypto.randomUUID(), name: '', basis: 'Per Person', postingRhythm: 'Daily', min: 1, max: 1, amount: 0, active: true })} />
       {draft && (
         <EditorModal title={items.some((item) => item.id === draft.id) ? 'Edit Rate Element' : 'New Rate Element'} onCancel={() => setDraft(null)} onSave={save}>
@@ -487,6 +492,7 @@ function AddOnPage({ items, onChange }: { items: AddOnItem[]; onChange: (value: 
   const [query, setQuery] = useState('');
   const [draft, setDraft] = useState<AddOnItem | null>(null);
   const [selectedChargeKey, setSelectedChargeKey] = useState('');
+  const [confirm, setConfirm] = useState<{ title: string; message: string; confirmLabel: string; action: () => void } | null>(null);
   const filtered = useMemo(() => items.filter((item) => item.name.toLowerCase().includes(query.toLowerCase())), [items, query]);
   const incidentalCharges = useMemo(
     () => (store?.state.hotelMasters.departments ?? []).flatMap((department) =>
@@ -537,13 +543,14 @@ function AddOnPage({ items, onChange }: { items: AddOnItem[]; onChange: (value: 
               {menuId === item.id && (
                 <PopupMenu onClose={() => setMenuId(null)} items={[
                   { label: 'Edit', onClick: () => beginDraft(item) },
-                  { label: item.active ? 'Inactive' : 'Active', onClick: () => { void onChange(items.map((row) => row.id === item.id ? { ...row, active: !row.active } : row)); } },
+                  { label: item.active ? 'Inactive' : 'Active', onClick: () => setConfirm({ title: `${item.active ? 'Inactive' : 'Active'} ${item.name}`, message: `Do you want to set ${item.name} to ${item.active ? 'inactive' : 'active'} ?`, confirmLabel: item.active ? 'Inactive' : 'Active', action: () => { void onChange(items.map((row) => row.id === item.id ? { ...row, active: !row.active } : row)); } }) },
                 ]} />
               )}
             </div>
           </div>
         ))}
       </div>
+      {confirm && <ConfirmDialog title={confirm.title} message={confirm.message} confirmLabel={confirm.confirmLabel} onCancel={() => setConfirm(null)} onConfirm={() => { const run = confirm.action; setConfirm(null); run(); }} />}
       <FloatingAdd label="Add add on item" onClick={() => beginDraft()} />
       {draft && (
         <EditorModal title={items.some((item) => item.id === draft.id) ? 'Edit Add On Setup' : 'New Add On Setup'} onCancel={() => { setDraft(null); setSelectedChargeKey(''); }} onSave={save}>
@@ -573,6 +580,7 @@ function RateTypePage({ items, ratePlans = [], onChange }: { items: RateTypeItem
   const [draft, setDraft] = useState<RateTypeItem | null>(null);
   const filtered = useMemo(() => items.filter((item) => item.name.toLowerCase().includes(query.toLowerCase())), [items, query]);
   const inUse = (item: RateTypeItem) => ratePlans.some((plan) => plan.rateTypeId === item.id);
+  const [confirm, setConfirm] = useState<{ title: string; message: string; confirmLabel: string; action: () => void } | null>(null);
 
   const save = () => {
     if (!draft || !draft.name.trim()) return;
@@ -594,14 +602,15 @@ function RateTypePage({ items, ratePlans = [], onChange }: { items: RateTypeItem
               {menuId === item.id && (
                 <PopupMenu onClose={() => setMenuId(null)} items={[
                   { label: 'Edit', onClick: () => setDraft({ ...item }) },
-                  { label: item.active ? 'Inactive' : 'Active', onClick: () => { void onChange(items.map((row) => row.id === item.id ? { ...row, active: !row.active } : row)); } },
-                  { label: 'Delete', disabled: inUse(item), onClick: () => { void onChange(items.filter((row) => row.id !== item.id)); } },
+                  { label: item.active ? 'Inactive' : 'Active', onClick: () => setConfirm({ title: `${item.active ? 'Inactive' : 'Active'} ${item.name}`, message: `Do you want to set ${item.name} to ${item.active ? 'inactive' : 'active'} ?`, confirmLabel: item.active ? 'Inactive' : 'Active', action: () => { void onChange(items.map((row) => row.id === item.id ? { ...row, active: !row.active } : row)); } }) },
+                  { label: 'Delete', disabled: inUse(item), onClick: () => setConfirm({ title: `Delete ${item.name}`, message: `Do you want to delete ${item.name} ?`, confirmLabel: 'Delete', action: () => { void onChange(items.filter((row) => row.id !== item.id)); } }) },
                 ]} />
               )}
             </div>
           </div>
         ))}
       </div>
+      {confirm && <ConfirmDialog title={confirm.title} message={confirm.message} confirmLabel={confirm.confirmLabel} onCancel={() => setConfirm(null)} onConfirm={() => { const run = confirm.action; setConfirm(null); run(); }} />}
       <FloatingAdd label="Add rate type" onClick={() => setDraft({ id: crypto.randomUUID(), name: '', active: true })} />
       {draft && (
         <EditorModal title={items.some((item) => item.id === draft.id) ? 'Edit Rate Type' : 'New Rate Type'} onCancel={() => setDraft(null)} onSave={save}>
