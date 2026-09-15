@@ -8,7 +8,6 @@ import {
   ChevronRight,
   RotateCw,
   Search,
-  SlidersHorizontal,
 } from 'lucide-react';
 import type { TransportData } from '@/lib/use-transport-data';
 import { HotelxBackButton } from '@/components/hotelx-back-button';
@@ -68,8 +67,6 @@ function compareRows(a: InhouseRow, b: InhouseRow, sortKey: string) {
 export function InhouseGuestBridge({ store }: { store: TransportData }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const [roomType, setRoomType] = useState('all');
-  const [filterOpen, setFilterOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const [sortKey, setSortKey] = useState('room-asc');
   const [advanceOpen, setAdvanceOpen] = useState(false);
@@ -162,15 +159,9 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
       );
   }, [bookings, hotelMasters]);
 
-  const roomTypes = useMemo(
-    () => Array.from(new Set(rows.map((row) => row.roomType))).sort(),
-    [rows],
-  );
-
   const shownRows = useMemo(() => {
     const search = query.trim().toLowerCase();
     return rows
-      .filter((row) => roomType === 'all' || row.roomType === roomType)
       .filter((row) => {
         if (!search) return true;
         return [row.roomNo, row.roomType, row.guest, row.accountName, row.reference]
@@ -192,7 +183,7 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
         return true;
       })
       .sort((a, b) => compareRows(a, b, sortKey));
-  }, [advance, query, roomType, rows, sortKey]);
+  }, [advance, query, rows, sortKey]);
 
   if (!open || !portalTarget) return null;
 
@@ -238,44 +229,6 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
           >
             <svg viewBox="0 0 24 24" width={20} height={20} fill="currentColor" aria-hidden="true" focusable="false"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z" /></svg>
           </button>
-          <div className="inhouse-filter-wrap">
-            <button
-              type="button"
-              aria-label="Filter by room type"
-              aria-expanded={filterOpen}
-              className={roomType !== 'all' ? 'active' : ''}
-              onClick={() => setFilterOpen((value) => !value)}
-            >
-              <SlidersHorizontal size={20} />
-            </button>
-            {filterOpen && (
-              <div className="inhouse-filter-menu">
-                <button
-                  type="button"
-                  className={roomType === 'all' ? 'selected' : ''}
-                  onClick={() => {
-                    setRoomType('all');
-                    setFilterOpen(false);
-                  }}
-                >
-                  All Room Types
-                </button>
-                {roomTypes.map((code) => (
-                  <button
-                    type="button"
-                    className={roomType === code ? 'selected' : ''}
-                    key={code}
-                    onClick={() => {
-                      setRoomType(code);
-                      setFilterOpen(false);
-                    }}
-                  >
-                    {code}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
           <div className="inhouse-filter-wrap">
             <button
               type="button"
