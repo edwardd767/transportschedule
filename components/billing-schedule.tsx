@@ -235,14 +235,11 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
                 <div className="billing-date-range"><HotelDatePicker value={fromDate} min={booking.arrival} max={toDate || addDays(booking.departure, -1)} onChange={setFromDate} ariaLabel="Select billing schedule start date" className="billing-date-field" /><ChevronRight size={20} /><HotelDatePicker value={toDate} min={fromDate || booking.arrival} max={addDays(booking.departure, -1)} onChange={setToDate} ariaLabel="Select billing schedule end date" className="billing-date-field" /></div>
                 <label className="billing-select-all"><input type="checkbox" checked={allSelected} onChange={() => setSelected(allSelected ? selected.filter((id) => !visibleIds.includes(id)) : Array.from(new Set([...selected, ...visibleIds])))} /> Select All</label>
                 {dailyLines.map((line) => {
-                  const elementTotal = line.elements.reduce((sum, item) => sum + item.amount, 0);
                   const addOnTotal = line.addOns.reduce((sum, item) => sum + item.amount, 0);
-                  const roomCharge = Math.max(0, line.amount - line.extraPax - elementTotal - addOnTotal);
+                  const roomCharge = Math.max(0, line.amount - addOnTotal);
                   const sortDirection = breakdownSort[line.id];
                   const standardBreakdown = [
                     { key: 'room-charge', name: 'Room Charge', amount: roomCharge },
-                    ...line.elements.map((item, index) => ({ key: `element-${index}`, name: item.name, amount: item.amount })),
-                    ...(line.extraPax > 0 ? [{ key: 'extra-pax', name: 'Extra Pax', amount: line.extraPax }] : []),
                     ...line.addOns.map((item, index) => ({ key: `addon-${index}`, name: `Add On - ${item.name}`, amount: item.amount })),
                   ];
                   const sortedBreakdown = sortDirection
