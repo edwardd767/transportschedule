@@ -50,7 +50,7 @@ export function SegmentModule({ segments, onChange, onBack: _onBack }: { segment
       </div>
       <div className="segment-list">
         {draft.map((item) => (
-          <article className="segment-row" key={item.id}>
+          <article className={`segment-row${item.active ? '' : ' is-inactive'}`} key={item.id}>
             <div>
               <strong>{item.description}</strong>
               <small>Last posted on {formatPostedDate(item.updatedAt)}</small>
@@ -59,7 +59,7 @@ export function SegmentModule({ segments, onChange, onBack: _onBack }: { segment
             {menu === item.id && (
               <div className="segment-menu">
                 <button onClick={() => open(item)}>Edit</button>
-                <button onClick={async () => { const value = draft.map((x) => x.id === item.id ? { ...x, active: false } : x); await onChange(value); setDraft(value); setMenu(null); }}>Inactive</button>
+                <button onClick={async () => { const value = draft.map((x) => x.id === item.id ? { ...x, active: !x.active } : x); await onChange(value); setDraft(value); setMenu(null); }}>{item.active ? 'Inactive' : 'Active'}</button>
               </div>
             )}
           </article>
