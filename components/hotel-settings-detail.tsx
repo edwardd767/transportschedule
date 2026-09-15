@@ -98,7 +98,6 @@ function GeneralPolicyModule({ onBack, profile, onProfileChange }: { onBack: () 
   const [childRatesApplied, setChildRatesApplied] = useState(Boolean(profile.childRatesApplied));
   const [childAgePolicy, setChildAgePolicy] = useState(String(profile.childAgePolicy ?? 0));
   return <section className="master-page general-policy-page" aria-label="General Policy">
-    <div className="general-policy-head"><strong>General Policy</strong></div>
     <div className="general-policy-card">
       <label>Booking Cancellation Policy (days) *<input type="number" min="0" value={days} onChange={(event) => setDays(event.target.value)} /></label>
       <label>Currency Code *<input value={currency} onChange={(event) => setCurrency(event.target.value.toUpperCase())} /></label>
