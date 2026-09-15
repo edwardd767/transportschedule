@@ -40,6 +40,8 @@ next-env.d.ts
 /work/
 /inbox/
 /scripts/geography.json
+/database/geography-seed.sql
+/database/geography-seed/
 
 *.tsbuildinfo
 *.traineddata
