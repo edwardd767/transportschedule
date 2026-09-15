@@ -140,10 +140,14 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
   const assignedRoomNumbers = useMemo(() => billingRoomAssignments(booking), [booking]);
   const activeRateCodes = rateSetup.ratePlans.filter((plan) => plan.active);
   const selectedLines = lines.filter((line) => selected.includes(line.id));
-  const transportTotal = bookingLegs.filter((leg) => leg.bookingReference === booking.reference && leg.incidentalCharge?.chargeId).reduce((total, leg) => {
-    const charge = leg.incidentalCharge!;
-    return total + (leg.adults ?? leg.passengers) * charge.adultRate + (leg.children ?? 0) * charge.childRate + (leg.infants ?? 0) * charge.infantRate;
-  }, 0);
+  const transportLines = bookingLegs
+    .filter((leg) => leg.bookingReference === booking.reference && leg.incidentalCharge?.chargeId)
+    .map((leg) => {
+      const charge = leg.incidentalCharge!;
+      const amount = (leg.adults ?? leg.passengers) * charge.adultRate + (leg.children ?? 0) * charge.childRate + (leg.infants ?? 0) * charge.infantRate;
+      return { id: leg.id, direction: leg.direction, title: charge.chargeTitle || leg.serviceName, date: leg.date, time: leg.time, amount };
+    });
+  const transportTotal = transportLines.reduce((total, line) => total + line.amount, 0);
   const roomTotal = lines.reduce((total, line) => total + line.amount, 0);
   const visibleIds = lines.map((line) => line.id);
   const allSelected = visibleIds.length > 0 && visibleIds.every((id) => selected.includes(id));
@@ -256,6 +260,23 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
           })}
         </article>;
       })}
+      {transportLines.length > 0 && <article className="billing-room-type-card" key="transport">
+        <button className="billing-room-type-head" type="button" onClick={() => setExpandedRoomType(expandedRoomType === 'transport' ? '' : 'transport')}>
+          <span><strong>Transport</strong><small>{transportLines.length} | {money(transportTotal)}</small></span>{expandedRoomType === 'transport' ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+        </button>
+        {expandedRoomType === 'transport' && <div className="billing-room-detail">
+          {transportLines.map((line) => (
+            <div className="billing-daily-line" key={line.id}>
+              <span aria-hidden="true" />
+              <span>
+                <strong>{line.direction === 'arrival' ? 'Arrival' : 'Departure'} | {line.title}</strong>
+                <span className="billing-breakdown-labels"><small>{dayLabel(line.date)}{line.time ? ` · ${line.time}` : ''}</small></span>
+              </span>
+              <span><strong>{money(line.amount)}</strong></span>
+            </div>
+          ))}
+        </div>}
+      </article>}
     </div>
     <div className="billing-schedule-actions max-[720px]:!left-0"><button type="button" className="primary-button" disabled={!selectedLines.length} onClick={openAdjustment}>Rate Adjustment</button></div>
     {adjustOpen && <div className="billing-instruction-overlay" role="dialog" aria-modal="true" aria-label="Rate Adjustment"><div className="billing-rate-dialog">
