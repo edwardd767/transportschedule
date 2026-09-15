@@ -575,7 +575,7 @@ export function Bookings({
                   <div className="advance-search-field"><span>End Date</span><HotelDatePicker value={advance.departureEnd} onChange={(value) => setAdvance({ ...advance, departureEnd: value })} ariaLabel="Departure end date" editable /></div>
                 </div>
               </div>
-              <div className="advance-search-field"><span>Booking Date</span><HotelDatePicker value={advance.bookingDate} onChange={(value) => setAdvance({ ...advance, bookingDate: value })} ariaLabel="Booking date" /></div>
+              <div className="advance-search-field"><span>Booking Date</span><HotelDatePicker value={advance.bookingDate} onChange={(value) => setAdvance({ ...advance, bookingDate: value })} ariaLabel="Booking date" editable /></div>
               <AdvanceSelect label="Status" value={advance.status} placeholder="Select status" options={advanceStatusOptions} onChange={(status) => setAdvance({ ...advance, status })} />
               <AdvanceSelect label="Room Type" value={advance.roomType} placeholder="Select room type" options={roomTypes.map((room) => ({ value: room.code, label: `${room.code} - ${room.description}` }))} onChange={(roomType) => setAdvance({ ...advance, roomType })} />
               <label className="advance-search-field"><span>Booking No</span><input placeholder=" " value={advance.bookingNo} onChange={(event) => setAdvance({ ...advance, bookingNo: event.target.value })} /></label>
