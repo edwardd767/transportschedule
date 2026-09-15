@@ -6099,6 +6099,19 @@ p {
 .rooming-edit-label{float:right;font-size:10px}
 .rooming-profile-card .rooming-form-grid .rooming-check input{width:16px;height:16px;min-height:16px}
 
+/* Searchable country / nationality / state / city fields. */
+.hotelx-search-select{position:relative;width:100%}
+.hotelx-search-select input{padding-right:44px!important}
+.hotelx-search-select .hotelx-search-clear,.hotelx-search-select .hotelx-search-toggle{position:absolute;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:20px;height:20px;padding:0;border:0;background:transparent;color:#8a8a8a;cursor:pointer}
+.hotelx-search-select .hotelx-search-clear{right:20px}
+.hotelx-search-select .hotelx-search-toggle{right:0}
+.hotelx-search-select .hotelx-search-clear:hover,.hotelx-search-select .hotelx-search-toggle:hover{color:#111}
+.hotelx-search-select-menu{position:absolute;z-index:140;top:calc(100% + 2px);left:0;right:0;max-height:232px;overflow-y:auto;border:1px solid #ddd;border-radius:3px;background:#fff;box-shadow:0 5px 16px #0000002e}
+.hotelx-search-select-menu button{display:block;width:100%;padding:9px 12px;border:0;background:#fff;color:#222;text-align:left;font:inherit;font-size:15px;line-height:20px;cursor:pointer}
+.hotelx-search-select-menu button.is-selected{background:#e5e5e5;color:#111}
+.hotelx-search-select-menu button[data-active="true"]{background:#e5e5e5;color:#111}
+.hotelx-search-select-empty{margin:0;padding:10px 12px;color:#888;font-size:13px}
+
 /* Billing schedule reference: compact hierarchy, daily charges and controls. */
 .billing-schedule-page{font-family:var(--font-hotelx),sans-serif;font-style:normal;padding-inline:0}
 .billing-schedule-breadcrumb{height:22px;font-size:10px;padding:0 12px}
