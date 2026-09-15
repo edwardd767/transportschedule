@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, type FormEvent } from 'react';
-import { User, Baby, CalendarDays, Plus, Trash2 } from 'lucide-react';
+import { User, Baby, CalendarDays, Plus } from 'lucide-react';
 import { BookingAvailability } from '@/components/booking-availability';
 import { bookingRate } from '@/lib/booking-rate';
 import { rateAddOnsForNight } from '@/lib/pax-billing';
@@ -322,7 +322,7 @@ export function BookingEdit({
                 <span><b>{room.rateCode || 'BAR'}</b><small>Subtotal</small></span>
                 <span><b>{room.count}</b><small>{money.format(room.total ?? 0)}</small></span>
                 <button type="button" aria-label={`Edit room type ${room.code}`} onClick={() => openEditRoom(index)}><img src="https://hms1.hotelx.asia/static/media/view_edit_icon.cb90a368.svg" alt="" aria-hidden="true" width={22} height={22} style={{ display: 'block', objectFit: 'contain' }} /></button>
-                <button type="button" aria-label={`Delete room type ${room.code}`} onClick={() => setRoomLines((current) => current.filter((_, roomIndex) => roomIndex !== index))}><Trash2 size={17} /></button>
+                <button type="button" aria-label={`Delete room type ${room.code}`} onClick={() => setRoomLines((current) => current.filter((_, roomIndex) => roomIndex !== index))}><svg viewBox="0 0 24 24" width={20} height={20} fill="gray" aria-hidden="true" focusable="false"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" /></svg></button>
               </div>
             ))}
             <div className="booking-edit-room-total"><strong>Total</strong><strong>{money.format(bookingTotal)}</strong></div>
