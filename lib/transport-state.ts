@@ -43,7 +43,7 @@ import {
 } from './booking-transport';
 import { initialRateSetupData, type RateSetupData } from './rate-setup-data';
 
-export type GuestProfile = GuestProfileDetails & { id: string; name: string; mobile: string; email: string; nationality: string; identityNo: string; address: string; country: string; state: string; city: string; postcode: string; birthDate: string; occupation: string; accountName: string; guestType: string; adultChild: 'Adult' | 'Child'; remark: string; newsletter: boolean; tourismTax: boolean; visits: number; updated: string };
+export type GuestProfile = GuestProfileDetails & { id: string; name: string; mobile: string; email: string; nationality: string; identityNo: string; address: string; country: string; state: string; city: string; postcode: string; birthDate: string; occupation: string; accountName: string; guestType: string; adultChild: 'Adult' | 'Child' | 'Infant'; remark: string; newsletter: boolean; tourismTax: boolean; visits: number; updated: string };
 
 export type GuestProfileDetails = { vehicle?: string; paymentRemark1?: string; paymentRemark2?: string; taxExemptReason?: string };
 export type TransportState = {
