@@ -117,7 +117,9 @@ function GeneralPolicyModule({ onBack, profile, onProfileChange }: { onBack: () 
 function RoomStatusPolicyModule({ profile, roomStatuses, onProfileChange, onBack }: { profile: HotelProfile; roomStatuses: RoomStatus[]; onProfileChange: (value: HotelProfile) => void | Promise<void>; onBack: () => void }) {
   const saved = profile.operationalPolicy.roomStatusPolicy;
   const defaults: RoomStatusPolicy = { checkIn: '', checkOut: '', transfer: '', cancelCheckIn: '', cancelCheckOut: '', blockRoomRelease: '' };
-  const [draft, setDraft] = useState<RoomStatusPolicy>({ ...defaults, ...(saved ?? {}) });
+  const initial: RoomStatusPolicy = { ...defaults, ...(saved ?? {}) };
+  const [draft, setDraft] = useState<RoomStatusPolicy>(initial);
+  const dirty = JSON.stringify(draft) !== JSON.stringify(initial);
   const options = roomStatuses.filter((status) => status.active);
   const field = (key: keyof RoomStatusPolicy, label: string) => (
     <label className="room-status-policy-field" key={key}>
@@ -138,7 +140,7 @@ function RoomStatusPolicyModule({ profile, roomStatuses, onProfileChange, onBack
       {field('cancelCheckOut', 'Cancel Check Out')}
       {field('blockRoomRelease', 'Block Room Release')}
     </div>
-    <div className="master-page-actions room-status-policy-actions"><button className="primary-button" type="button" onClick={async () => { await onProfileChange({ ...profile, operationalPolicy: { ...profile.operationalPolicy, roomStatusPolicy: draft } }); }}>Save</button></div>
+    <div className="master-page-actions room-status-policy-actions"><button className="primary-button" type="button" disabled={!dirty} onClick={async () => { await onProfileChange({ ...profile, operationalPolicy: { ...profile.operationalPolicy, roomStatusPolicy: draft } }); }}>Save</button></div>
   </section>;
 }
 
