@@ -61,7 +61,6 @@ function SecurityDepositPolicyModule({ profile, onProfileChange }: { profile: Ho
   const amountField = (label: string, value: string, setValue: (next: string) => void) => <label className="security-deposit-field"><span>{label} *</span><input inputMode="decimal" value={value} onChange={(event) => setValue(money(event.target.value))} onBlur={() => setValue((Number.parseFloat(value || '0') || 0).toFixed(2))} /></label>;
   const toggle = (label: string, checked: boolean, onClick: () => void) => <button type="button" className={`security-deposit-switch ${checked ? 'is-on' : ''}`} onClick={onClick}><span>{label}</span><i aria-hidden="true" /></button>;
   return <section className="master-page security-deposit-page" aria-label="Security Deposit Policy">
-    <div className="operational-policy-head"><strong>Security Deposit Policy</strong><button type="button">Edit</button></div>
     <div className="security-deposit-card">
       {amountField('Security Deposit Amt', securityDepositAmount, setSecurityDepositAmount)}
       {amountField('Key Card Deposit Amt', keyCardDepositAmount, setKeyCardDepositAmount)}
