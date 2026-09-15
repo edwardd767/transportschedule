@@ -14,7 +14,7 @@ const bookings = [{
   arrival:'2026-09-09',
   departure:'2026-09-10',
   status:'Booked',
-  rooms:[{code:'SPK',count:2,adults:2,children:1}],
+  rooms:[{code:'SPK',count:2,adults:2,children:1,infants:5}],
   assignedRooms:2,
   checkedInGuests:0,
   guests:6,
@@ -26,8 +26,9 @@ const hotelMasters = {
   roomTypes:[{code:'SPK',totalRoom:24,active:true}],
 };
 const html = renderToStaticMarkup(React.createElement(module.exports.ManagerReport,{bookings,hotelMasters,date:'2026-09-09',onDate:()=>{},onBack:()=>{}}));
-for (const value of ['Manager Report','Room Statistic','NO OF GUEST','NO OF ADULT','NO OF CHILD','Corporate','Total Room Available']) assert.ok(html.toUpperCase().includes(value.toUpperCase()), value);
+for (const value of ['Manager Report','Room Statistic','NO OF GUEST','NO OF ADULT','NO OF CHILD','NO OF INFANT','Corporate','Total Room Available']) assert.ok(html.toUpperCase().includes(value.toUpperCase()), value);
 assert.ok(html.includes('6'), 'guest count');
 assert.ok(html.includes('4'), 'adult count');
 assert.ok(html.includes('2'), 'child count');
-console.log('Manager report renders guest, adult and child counts from booking data.');
+assert.ok(html.includes('10'), 'infant count');
+console.log('Manager report renders guest, adult, child and infant counts from booking data.');

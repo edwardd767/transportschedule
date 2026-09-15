@@ -16,6 +16,7 @@ type Metrics = {
   guests: number;
   adults: number;
   children: number;
+  infants: number;
   cancelled: number;
   noShow: number;
   stayover: number;
@@ -50,6 +51,10 @@ function countChildren(booking: Booking) {
   return booking.rooms.reduce((sum, room) => sum + (room.children ?? 0) * room.count, 0);
 }
 
+function countInfants(booking: Booking) {
+  return booking.rooms.reduce((sum, room) => sum + (room.infants ?? 0) * room.count, 0);
+}
+
 function nights(booking: Booking) {
   return Math.max(1, Math.round((Date.parse(booking.departure) - Date.parse(booking.arrival)) / dayMs));
 }
@@ -79,6 +84,7 @@ function metrics(bookings: Booking[], reportDate: string, roomTotal: number, sco
     guests: revenueBookings.reduce((sum, booking) => sum + booking.guests, 0),
     adults: revenueBookings.reduce((sum, booking) => sum + countAdults(booking), 0),
     children: revenueBookings.reduce((sum, booking) => sum + countChildren(booking), 0),
+    infants: revenueBookings.reduce((sum, booking) => sum + countInfants(booking), 0),
     cancelled: relevant.filter(booking => booking.status === 'Cancelled').length,
     noShow: relevant.filter(booking => booking.status === 'No Show').length,
     stayover: activeToday.length,
@@ -124,6 +130,7 @@ export function ManagerReport({ bookings, hotelMasters, date, onDate, onBack }: 
     ['NO OF GUEST', value => number(value.guests)],
     ['NO OF ADULT', value => number(value.adults)],
     ['NO OF CHILD', value => number(value.children)],
+    ['NO OF INFANT', value => number(value.infants)],
     ['NO SHOW', value => number(value.noShow)],
     ['OCCUPANCY %', value => money(value.available ? value.occupied / value.available * 100 : 0)],
     ['OCCUPANCY % (Total - OOO - OOI)', value => money(value.available ? value.occupied / value.available * 100 : 0)],
