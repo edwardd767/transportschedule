@@ -2500,6 +2500,19 @@ var schemaStatements = [
     tax_scheme_forfeited_revenue text NOT NULL DEFAULT 'SST',
     prompt_during_walk_in boolean NOT NULL DEFAULT true,
     prompt_during_pre_checkin boolean NOT NULL DEFAULT false,
+    room_status_check_in text NOT NULL DEFAULT '',
+    room_status_check_out text NOT NULL DEFAULT '',
+    room_status_transfer text NOT NULL DEFAULT '',
+    room_status_cancel_check_in text NOT NULL DEFAULT '',
+    room_status_cancel_check_out text NOT NULL DEFAULT '',
+    room_status_block_release text NOT NULL DEFAULT '',
+    advance_payment_tax_scheme text NOT NULL DEFAULT 'SST-5',
+    e_invoice_classification_room_charges text NOT NULL DEFAULT '022',
+    e_invoice_classification_service_charges text NOT NULL DEFAULT '022',
+    e_invoice_classification_advance_payment_forfeit text NOT NULL DEFAULT '022',
+    e_invoice_classification_deposit_forfeit text NOT NULL DEFAULT '022',
+    e_invoice_classification_state_tax text NOT NULL DEFAULT '022',
+    e_invoice_use_submission_date_as_doc_date boolean NOT NULL DEFAULT false,
     updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS hotel_name text NOT NULL DEFAULT ''`,
@@ -2542,6 +2555,19 @@ var schemaStatements = [
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS tax_scheme_forfeited_revenue text NOT NULL DEFAULT 'SST'`,
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS prompt_during_walk_in boolean NOT NULL DEFAULT true`,
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS prompt_during_pre_checkin boolean NOT NULL DEFAULT false`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS room_status_check_in text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS room_status_check_out text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS room_status_transfer text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS room_status_cancel_check_in text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS room_status_cancel_check_out text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS room_status_block_release text NOT NULL DEFAULT ''`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS advance_payment_tax_scheme text NOT NULL DEFAULT 'SST-5'`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS e_invoice_classification_room_charges text NOT NULL DEFAULT '022'`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS e_invoice_classification_service_charges text NOT NULL DEFAULT '022'`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS e_invoice_classification_advance_payment_forfeit text NOT NULL DEFAULT '022'`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS e_invoice_classification_deposit_forfeit text NOT NULL DEFAULT '022'`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS e_invoice_classification_state_tax text NOT NULL DEFAULT '022'`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS e_invoice_use_submission_date_as_doc_date boolean NOT NULL DEFAULT false`,
   `DO $$
     BEGIN
       IF EXISTS (
@@ -2853,7 +2879,11 @@ var schemaStatements = [
       business_email, booking_cancellation_days, currency_code, float_amount, pax_count, child_rates_applied, child_age_policy,
       standard_check_in_time, standard_check_out_time, night_audit_cut_off_time, postpaid, floor_plan, cashier_closure,
       occupancy_house_use, occupancy_day_use, occupancy_complimentary, occupancy_ooo, occupancy_ooi,
-      security_deposit_amount, key_card_deposit_amount, tax_scheme_forfeited_revenue, prompt_during_walk_in, prompt_during_pre_checkin
+      security_deposit_amount, key_card_deposit_amount, tax_scheme_forfeited_revenue, prompt_during_walk_in, prompt_during_pre_checkin,
+      room_status_check_in, room_status_check_out, room_status_transfer, room_status_cancel_check_in, room_status_cancel_check_out, room_status_block_release,
+      advance_payment_tax_scheme,
+      e_invoice_classification_room_charges, e_invoice_classification_service_charges, e_invoice_classification_advance_payment_forfeit,
+      e_invoice_classification_deposit_forfeit, e_invoice_classification_state_tax, e_invoice_use_submission_date_as_doc_date
     )
     VALUES (
       p_property_id, p_state #>> '{hotelMasters,profile,hotelName}', p_state #>> '{hotelMasters,profile,address}',
@@ -2880,7 +2910,20 @@ var schemaStatements = [
       COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,operationalPolicy,securityDepositPolicy,keyCardDepositAmount}', '')::numeric, 0),
       COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,operationalPolicy,securityDepositPolicy,taxSchemeForfeitedRevenue}', ''), 'SST'),
       COALESCE((p_state #>> '{hotelMasters,profile,operationalPolicy,securityDepositPolicy,promptDuringWalkIn}')::boolean, true),
-      COALESCE((p_state #>> '{hotelMasters,profile,operationalPolicy,securityDepositPolicy,promptDuringPreCheckin}')::boolean, false)
+      COALESCE((p_state #>> '{hotelMasters,profile,operationalPolicy,securityDepositPolicy,promptDuringPreCheckin}')::boolean, false),
+      COALESCE(p_state #>> '{hotelMasters,profile,operationalPolicy,roomStatusPolicy,checkIn}', ''),
+      COALESCE(p_state #>> '{hotelMasters,profile,operationalPolicy,roomStatusPolicy,checkOut}', ''),
+      COALESCE(p_state #>> '{hotelMasters,profile,operationalPolicy,roomStatusPolicy,transfer}', ''),
+      COALESCE(p_state #>> '{hotelMasters,profile,operationalPolicy,roomStatusPolicy,cancelCheckIn}', ''),
+      COALESCE(p_state #>> '{hotelMasters,profile,operationalPolicy,roomStatusPolicy,cancelCheckOut}', ''),
+      COALESCE(p_state #>> '{hotelMasters,profile,operationalPolicy,roomStatusPolicy,blockRoomRelease}', ''),
+      COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,operationalPolicy,advancePaymentPolicy,taxSchemeForfeitedRevenue}', ''), 'SST-5'),
+      COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,operationalPolicy,eInvoicePolicy,classificationRoomCharges}', ''), '022'),
+      COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,operationalPolicy,eInvoicePolicy,classificationServiceCharges}', ''), '022'),
+      COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,operationalPolicy,eInvoicePolicy,classificationAdvancePaymentForfeit}', ''), '022'),
+      COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,operationalPolicy,eInvoicePolicy,classificationDepositForfeit}', ''), '022'),
+      COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,operationalPolicy,eInvoicePolicy,classificationStateTax}', ''), '022'),
+      COALESCE((p_state #>> '{hotelMasters,profile,operationalPolicy,eInvoicePolicy,useSubmissionDateAsDocDate}')::boolean, false)
     );
 
     INSERT INTO public.hotelx_transport_rules (
@@ -3155,6 +3198,19 @@ var schemaStatements = [
               'taxSchemeForfeitedRevenue', tax_scheme_forfeited_revenue,
               'promptDuringWalkIn', prompt_during_walk_in,
               'promptDuringPreCheckin', prompt_during_pre_checkin
+            ),
+            'roomStatusPolicy', jsonb_build_object(
+              'checkIn', room_status_check_in, 'checkOut', room_status_check_out, 'transfer', room_status_transfer,
+              'cancelCheckIn', room_status_cancel_check_in, 'cancelCheckOut', room_status_cancel_check_out, 'blockRoomRelease', room_status_block_release
+            ),
+            'advancePaymentPolicy', jsonb_build_object('taxSchemeForfeitedRevenue', advance_payment_tax_scheme),
+            'eInvoicePolicy', jsonb_build_object(
+              'classificationRoomCharges', e_invoice_classification_room_charges,
+              'classificationServiceCharges', e_invoice_classification_service_charges,
+              'classificationAdvancePaymentForfeit', e_invoice_classification_advance_payment_forfeit,
+              'classificationDepositForfeit', e_invoice_classification_deposit_forfeit,
+              'classificationStateTax', e_invoice_classification_state_tax,
+              'useSubmissionDateAsDocDate', e_invoice_use_submission_date_as_doc_date
             )
           )
         ) FROM public.hotelx_hotel_setup WHERE property_id = meta.id), '{}'::jsonb),

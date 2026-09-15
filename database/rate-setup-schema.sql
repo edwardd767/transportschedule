@@ -114,6 +114,9 @@ ALTER TABLE public.hotelx_rate_setup_validity
 CREATE TABLE IF NOT EXISTS public.hotelx_hotel_setup (
   property_id text PRIMARY KEY REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
   hotel_name text NOT NULL DEFAULT '', address text NOT NULL DEFAULT '', postcode text NOT NULL DEFAULT '', country text NOT NULL DEFAULT '', city text NOT NULL DEFAULT '', state text NOT NULL DEFAULT '', hotel_type text NOT NULL DEFAULT '', company_name text NOT NULL DEFAULT '', company_reg_no text NOT NULL DEFAULT '', sst_reg_no text NOT NULL DEFAULT '', ttx_reg_no text NOT NULL DEFAULT '', online_booking_url text NOT NULL DEFAULT '', live_run_date text NOT NULL DEFAULT '', contact_person text NOT NULL DEFAULT '', phone_no text NOT NULL DEFAULT '', mobile_no text NOT NULL DEFAULT '', reservation_email text NOT NULL DEFAULT '', business_email text NOT NULL DEFAULT '', booking_cancellation_days integer NOT NULL DEFAULT 3, currency_code text NOT NULL DEFAULT 'MYR', float_amount numeric(12,2) NOT NULL DEFAULT 0, pax_count text NOT NULL DEFAULT 'No. of Pax Manual Updated', child_rates_applied boolean NOT NULL DEFAULT false, child_age_policy integer NOT NULL DEFAULT 0,
+  room_status_check_in text NOT NULL DEFAULT '', room_status_check_out text NOT NULL DEFAULT '', room_status_transfer text NOT NULL DEFAULT '', room_status_cancel_check_in text NOT NULL DEFAULT '', room_status_cancel_check_out text NOT NULL DEFAULT '', room_status_block_release text NOT NULL DEFAULT '',
+  advance_payment_tax_scheme text NOT NULL DEFAULT 'SST-5',
+  e_invoice_classification_room_charges text NOT NULL DEFAULT '022', e_invoice_classification_service_charges text NOT NULL DEFAULT '022', e_invoice_classification_advance_payment_forfeit text NOT NULL DEFAULT '022', e_invoice_classification_deposit_forfeit text NOT NULL DEFAULT '022', e_invoice_classification_state_tax text NOT NULL DEFAULT '022', e_invoice_use_submission_date_as_doc_date boolean NOT NULL DEFAULT false,
   updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -137,6 +140,19 @@ ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS reservation_email
 ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS business_email text NOT NULL DEFAULT '';
 ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS child_rates_applied boolean NOT NULL DEFAULT false;
 ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS child_age_policy integer NOT NULL DEFAULT 0;
+ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS room_status_check_in text NOT NULL DEFAULT '';
+ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS room_status_check_out text NOT NULL DEFAULT '';
+ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS room_status_transfer text NOT NULL DEFAULT '';
+ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS room_status_cancel_check_in text NOT NULL DEFAULT '';
+ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS room_status_cancel_check_out text NOT NULL DEFAULT '';
+ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS room_status_block_release text NOT NULL DEFAULT '';
+ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS advance_payment_tax_scheme text NOT NULL DEFAULT 'SST-5';
+ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS e_invoice_classification_room_charges text NOT NULL DEFAULT '022';
+ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS e_invoice_classification_service_charges text NOT NULL DEFAULT '022';
+ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS e_invoice_classification_advance_payment_forfeit text NOT NULL DEFAULT '022';
+ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS e_invoice_classification_deposit_forfeit text NOT NULL DEFAULT '022';
+ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS e_invoice_classification_state_tax text NOT NULL DEFAULT '022';
+ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS e_invoice_use_submission_date_as_doc_date boolean NOT NULL DEFAULT false;
 ALTER TABLE public.hotelx_hotel_setup DROP COLUMN IF EXISTS profile;
 
 CREATE INDEX IF NOT EXISTS hotelx_season_calendar_season_idx
