@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { BedDouble, ChevronLeft, DoorClosed } from 'lucide-react';
+import { ChevronLeft, DoorClosed } from 'lucide-react';
 import { stayDates, type Booking } from '@/lib/bookings';
 import type { TransportData } from '@/lib/use-transport-data';
 
@@ -172,7 +172,7 @@ export function BookingHouseLimitBridge({ store }: { store: TransportData }) {
               <div className="min-w-0 text-[11px] text-[#111]">
                 <div className="flex items-center gap-1 font-semibold">
                   <span>{rowIndex + 1}. {row.code}</span>
-                  <BedDouble size={14} />
+                  <img src="https://hms1.hotelx.asia/static/media/room.7cce94dd.svg" alt="" aria-hidden="true" width={14} height={14} style={{ display: 'inline-block', objectFit: 'contain', flex: '0 0 auto' }} />
                   <span>{row.roomNo || '-'}</span>
                 </div>
                 <div className="mt-1 truncate">{row.guest}</div>
