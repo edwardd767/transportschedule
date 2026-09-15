@@ -16,12 +16,12 @@ import { RateSetupModule, type RateSetupSection } from '@/components/rate-setup'
 import { initialRateSetupData, type RateSetupData } from '@/lib/rate-setup-data';
 import { RoomStatusModule } from '@/components/room-status-module';
 import { DepartmentModule } from '@/components/department-module-polished';
-import { initialHotelProfile, type HotelDepartment, type HotelRoomType, type RoomStatus, type HotelProfile, type HotelOperationalPolicy } from '@/lib/hotel-masters';
+import { initialHotelProfile, type HotelDepartment, type HotelRoomType, type RoomStatus, type HotelProfile, type HotelOperationalPolicy, type RoomStatusPolicy } from '@/lib/hotel-masters';
 import { HotelSetupModule as HotelSetupModuleV2 } from '@/components/hotel-setup-module';
 import { TimePicker } from '@/components/time-picker';
 
 
-function StandardPolicyModule({ onBack, profile, onProfileChange }: { onBack: () => void; profile: HotelProfile; onProfileChange: (value: HotelProfile) => void | Promise<void> }) {
+function StandardPolicyModule({ onBack, profile, onProfileChange, roomStatuses }: { onBack: () => void; profile: HotelProfile; onProfileChange: (value: HotelProfile) => void | Promise<void>; roomStatuses: RoomStatus[] }) {
   const [policy, setPolicy] = useState<string | null>(null);
   useEffect(() => {
     const handleStandardPolicyBack = (event: Event) => {
@@ -35,8 +35,9 @@ function StandardPolicyModule({ onBack, profile, onProfileChange }: { onBack: ()
   if (policy === 'Hotel Operational Policy') return <HotelOperationalPolicyModule profile={profile} onProfileChange={onProfileChange} onBack={() => setPolicy(null)} />;
   if (policy === 'Security Deposit Policy') return <SecurityDepositPolicyModule profile={profile} onProfileChange={onProfileChange} />;
   if (policy === 'General Policy') return <GeneralPolicyModule profile={profile} onProfileChange={onProfileChange} onBack={() => setPolicy(null)} />;
+  if (policy === 'Room Status Policy') return <RoomStatusPolicyModule profile={profile} roomStatuses={roomStatuses} onProfileChange={onProfileChange} onBack={() => setPolicy(null)} />;
   const policies = ['Hotel Operational Policy', 'Security Deposit Policy', 'State & Tourism Tax', 'Room Status Policy', 'General Policy', 'Terms & Conditions', 'Advance Payment Policy', 'e-Invoice Policy'];
-  return <section className="master-page standard-policy-page" aria-label="Standard Policy & Guidelines"><div className="standard-policy-list">{policies.map((item) => <button className="standard-policy-row" type="button" key={item} onClick={() => (item === 'General Policy' || item === 'Hotel Operational Policy' || item === 'Security Deposit Policy') && setPolicy(item)}><strong>{item}</strong>{item === 'State & Tourism Tax' ? <MoreVertical size={18} /> : <ChevronRight size={18} />}</button>)}</div><button className="secondary-button master-page-back" type="button" onClick={onBack}><ArrowLeft size={16} /> Back to Hotel Settings</button></section>;
+  return <section className="master-page standard-policy-page" aria-label="Standard Policy & Guidelines"><div className="standard-policy-list">{policies.map((item) => <button className="standard-policy-row" type="button" key={item} onClick={() => (item === 'General Policy' || item === 'Hotel Operational Policy' || item === 'Security Deposit Policy' || item === 'Room Status Policy') && setPolicy(item)}><strong>{item}</strong>{item === 'State & Tourism Tax' ? <MoreVertical size={18} /> : <ChevronRight size={18} />}</button>)}</div><button className="secondary-button master-page-back" type="button" onClick={onBack}><ArrowLeft size={16} /> Back to Hotel Settings</button></section>;
 }
 
 type SecurityDepositPolicyState = {
@@ -110,6 +111,34 @@ function GeneralPolicyModule({ onBack, profile, onProfileChange }: { onBack: () 
       {childRatesApplied && <label>Child Age Policy *<input type="number" min="0" step="1" inputMode="numeric" value={childAgePolicy} onChange={(event) => setChildAgePolicy(event.target.value.replace(/\D/g, ''))} /></label>}
     </div>
     <div className="master-page-actions general-policy-actions"><button className="primary-button" type="button" onClick={async () => { await onProfileChange({ ...profile, bookingCancellationDays: Number(days), currencyCode: currency, floatAmount: Number(floatAmount), paxCount, childRatesApplied, childAgePolicy: Number(childAgePolicy) || 0 }); }}>Save</button></div>
+  </section>;
+}
+
+function RoomStatusPolicyModule({ profile, roomStatuses, onProfileChange, onBack }: { profile: HotelProfile; roomStatuses: RoomStatus[]; onProfileChange: (value: HotelProfile) => void | Promise<void>; onBack: () => void }) {
+  const saved = profile.operationalPolicy.roomStatusPolicy;
+  const defaults: RoomStatusPolicy = { checkIn: '', checkOut: '', transfer: '', cancelCheckIn: '', cancelCheckOut: '', blockRoomRelease: '' };
+  const [draft, setDraft] = useState<RoomStatusPolicy>({ ...defaults, ...(saved ?? {}) });
+  const options = roomStatuses.filter((status) => status.active);
+  const field = (key: keyof RoomStatusPolicy, label: string) => (
+    <label className="room-status-policy-field" key={key}>
+      <span>{label}</span>
+      <select value={draft[key]} onChange={(event) => setDraft({ ...draft, [key]: event.target.value })}>
+        <option value="">Select room status</option>
+        {options.map((status) => <option key={status.code} value={status.code}>{status.code} - {status.description}</option>)}
+      </select>
+    </label>
+  );
+  return <section className="master-page room-status-policy-page" aria-label="Room Status Policy">
+    <div className="operational-policy-head"><strong>Room Status Policy</strong><button type="button" onClick={onBack}>Edit</button></div>
+    <div className="room-status-policy-card">
+      {field('checkIn', 'Check In')}
+      {field('checkOut', 'Check Out')}
+      {field('transfer', 'Transfer')}
+      {field('cancelCheckIn', 'Cancel Check In')}
+      {field('cancelCheckOut', 'Cancel Check Out')}
+      {field('blockRoomRelease', 'Block Room Release')}
+    </div>
+    <div className="master-page-actions room-status-policy-actions"><button className="primary-button" type="button" onClick={async () => { await onProfileChange({ ...profile, operationalPolicy: { ...profile.operationalPolicy, roomStatusPolicy: draft } }); }}>Save</button></div>
   </section>;
 }
 
@@ -221,7 +250,7 @@ export function HotelSettingsDetail({
   if (kind === 'roomStatus') return <RoomStatusModule statuses={roomStatuses} onChange={onRoomStatusesChange} onBack={onBack} />;
   if (kind === 'department') return <DepartmentModule departments={departments} onChange={onDepartmentsChange} onBack={onBack} />;
   if (kind === 'standardPolicy') {
-    return <StandardPolicyModule profile={hotelProfile || initialHotelProfile} onProfileChange={onHotelProfileChange} onBack={onBack} />;
+    return <StandardPolicyModule profile={hotelProfile || initialHotelProfile} onProfileChange={onHotelProfileChange} onBack={onBack} roomStatuses={roomStatuses} />;
   }
   return (
     <section className="master-page" aria-label={page.title}>

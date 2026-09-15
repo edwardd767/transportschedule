@@ -5890,6 +5890,11 @@ p {
 
 
 .standard-policy-list{display:flex;flex-direction:column;gap:6px;padding:0 0 18px}.standard-policy-row{width:100%;min-height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border:1px solid #e5e5e5;border-radius:6px;background:#fff;box-shadow:0 2px 5px #00000012;color:#111;text-align:left;cursor:pointer}.standard-policy-row strong{font-size:12px}.standard-policy-row svg{flex:none}.standard-policy-row:hover{background:#fff8ef}.standard-policy-page .master-page-back{margin-top:4px}
+.room-status-policy-page{padding:0 12px 96px;background:#f5f5f5;overflow:auto}
+.room-status-policy-card{margin-top:0;background:#fff;border-radius:4px;box-shadow:0 2px 6px #0002;padding:6px 14px 12px}
+.room-status-policy-field{display:flex;flex-direction:column;gap:5px;padding:12px 0;border-bottom:1px solid #aaa;color:#789;font-size:12px;font-weight:400}
+.room-status-policy-field select{border:0;background:transparent;font-size:16px;color:#111;appearance:auto;padding:0}
+.room-status-policy-actions{position:fixed;left:197px;right:0;bottom:0;height:74px;margin:0;padding:10px 20px;background:#fff;box-shadow:0 -2px 7px #0002;z-index:20;display:flex;align-items:center;justify-content:center}
 
 .general-policy-page{padding:0 12px 78px;background:#f5f5f5;overflow:auto}
 .general-policy-head{height:28px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;background:#ff8a19;color:#111}
