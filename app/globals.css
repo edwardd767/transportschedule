@@ -3633,7 +3633,7 @@ p {
 .workspace:has(.billing-schedule-page) > .property-banner{min-height:58px;padding-bottom:8px}
 .workspace:has(.billing-schedule-page) > .property-banner .breadcrumb{display:none}
 .billing-schedule-breadcrumb{height:26px;background:#ff8a19;display:flex;align-items:center;gap:4px;padding:0 12px;font-size:11px}
-.billing-schedule-breadcrumb button{width:22px;height:22px;border:0;background:transparent;color:#333;font-size:20px;line-height:20px;padding:0}
+.billing-schedule-breadcrumb button{width:22px;height:22px;border:0;background:transparent;color:#fff;font-size:20px;line-height:20px;padding:0}
 .billing-schedule-breadcrumb span{font-weight:600}
 .billing-schedule-summary{border-radius:0;margin:0 0 16px;box-shadow:none;border:0;border-bottom:1px solid #ebe2d8;background:#fff7ee}
 .billing-schedule-summary .booking-detail-top{padding:10px 12px 4px}
