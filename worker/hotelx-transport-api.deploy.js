@@ -2612,13 +2612,8 @@ var schemaStatements = [
   ) RETURNS void
   LANGUAGE plpgsql
   AS $$
-  DECLARE
-    v_root_revision integer;
-    v_root_schema integer;
   BEGIN
-    SELECT revision, schema_version INTO v_root_revision, v_root_schema FROM public.hotelx_hotel_setup WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_guestprofile WHERE property_id = p_property_id;
-    DELETE FROM public.hotelx_hotel_setup WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_rate_setup_validity WHERE property_id = p_property_id;
     INSERT INTO public.hotelx_guestprofile (property_id, id, guest_name, mobile, email, nationality, identity_no, address, country, state, city, postcode, birth_date, occupation, account_name, guest_type, adult_child, remark, newsletter, tourism_tax, visits, updated_at)
     SELECT p_property_id, (item.value->>'id')::uuid, COALESCE(item.value->>'name',''), COALESCE(item.value->>'mobile',''), COALESCE(item.value->>'email',''), COALESCE(item.value->>'nationality',''), COALESCE(item.value->>'identityNo',''), COALESCE(item.value->>'address',''), COALESCE(item.value->>'country',''), COALESCE(item.value->>'state',''), COALESCE(item.value->>'city',''), COALESCE(item.value->>'postcode',''), NULLIF(item.value->>'birthDate','')::date, COALESCE(item.value->>'occupation',''), COALESCE(item.value->>'accountName',''), COALESCE(item.value->>'guestType','Normal'), COALESCE(item.value->>'adultChild','Adult'), COALESCE(item.value->>'remark',''), COALESCE((item.value->>'newsletter')::boolean,false), COALESCE((item.value->>'tourismTax')::boolean,false), COALESCE(NULLIF(item.value->>'visits','')::integer,0), COALESCE(NULLIF(item.value->>'updated','')::timestamptz,CURRENT_TIMESTAMP)
@@ -2869,8 +2864,8 @@ var schemaStatements = [
     SELECT p_property_id, (item.value->>'rateSetupId')::uuid, (item.value->>'id')::uuid, item.ordinality::integer, (item.value->>'from')::date, (item.value->>'to')::date, COALESCE((item.value->>'active')::boolean, true), COALESCE(item.value->'seasonalRates', '{}'::jsonb), COALESCE(item.value->'inclusiveElements', '[]'::jsonb), COALESCE(item.value->'addOnElements', '[]'::jsonb)
     FROM jsonb_array_elements(COALESCE(p_state #> '{rateSetup,validity}', '[]'::jsonb)) WITH ORDINALITY AS item(value, ordinality);
 
-    INSERT INTO public.hotelx_hotel_setup (
-      property_id, revision, schema_version, hotel_name, address, postcode, country, city, state, hotel_type, company_name, company_reg_no,
+    UPDATE public.hotelx_hotel_setup SET (
+      hotel_name, address, postcode, country, city, state, hotel_type, company_name, company_reg_no,
       sst_reg_no, ttx_reg_no, online_booking_url, live_run_date, contact_person, phone_no, mobile_no, reservation_email,
       business_email, booking_cancellation_days, currency_code, float_amount, pax_count, child_rates_applied, child_age_policy,
       standard_check_in_time, standard_check_out_time, night_audit_cut_off_time, postpaid, floor_plan, cashier_closure,
@@ -2881,8 +2876,8 @@ var schemaStatements = [
       e_invoice_classification_room_charges, e_invoice_classification_service_charges, e_invoice_classification_advance_payment_forfeit,
       e_invoice_classification_deposit_forfeit, e_invoice_classification_state_tax, e_invoice_use_submission_date_as_doc_date
     )
-    VALUES (
-      p_property_id, COALESCE(v_root_revision, 1), COALESCE(v_root_schema, 2), p_state #>> '{hotelMasters,profile,hotelName}', p_state #>> '{hotelMasters,profile,address}',
+    = (
+      p_state #>> '{hotelMasters,profile,hotelName}', p_state #>> '{hotelMasters,profile,address}',
       p_state #>> '{hotelMasters,profile,postcode}', p_state #>> '{hotelMasters,profile,country}', p_state #>> '{hotelMasters,profile,city}',
       p_state #>> '{hotelMasters,profile,state}', p_state #>> '{hotelMasters,profile,hotelType}', p_state #>> '{hotelMasters,profile,companyName}',
       p_state #>> '{hotelMasters,profile,companyRegNo}', p_state #>> '{hotelMasters,profile,sstRegNo}', p_state #>> '{hotelMasters,profile,ttxRegNo}',
@@ -2920,7 +2915,8 @@ var schemaStatements = [
       COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,operationalPolicy,eInvoicePolicy,classificationDepositForfeit}', ''), '022'),
       COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,operationalPolicy,eInvoicePolicy,classificationStateTax}', ''), '022'),
       COALESCE((p_state #>> '{hotelMasters,profile,operationalPolicy,eInvoicePolicy,useSubmissionDateAsDocDate}')::boolean, false)
-    );
+    )
+    WHERE property_id = p_property_id;
 
     INSERT INTO public.hotelx_transport_rules (
       property_id, start_time, end_time, turnaround_minutes,
