@@ -10,7 +10,7 @@
 .rooming-profile-card .rooming-form-grid label{padding:16px 0}
 .rooming-profile-card .rooming-form-grid input,.rooming-profile-card .rooming-form-grid select{width:100%;min-height:38px;padding:4px 0;border:0;border-bottom:1px solid #aaa;border-radius:0;outline:0;background:transparent;color:#111;font:inherit;font-size:16px}.rooming-profile-card .rooming-form-grid select{appearance:auto}
 .guest-profile-grid input,.guest-profile-grid select{width:100%;min-height:38px;padding:4px 0;border:0;border-bottom:1px solid #aaa;border-radius:0;outline:0;background:transparent;color:#111;font:inherit;font-size:18px}.guest-profile-grid select{appearance:auto}
-select option:checked,select option:hover{background:#ff9000 linear-gradient(0deg,#ff9000 0%,#ff9000 100%);color:#fff}
+select option:checked,select option:hover{background:#e5e5e5 linear-gradient(0deg,#e5e5e5 0%,#e5e5e5 100%);color:#111}
 .rooming-pax-dialog{width:min(600px,calc(100vw - 32px));max-width:600px!important;border-radius:4px;gap:0}
 .rooming-pax-dialog h2{font-size:13px;color:#ff9000;background:#fcf3e8;padding:12px}
 .rooming-pax-dialog>small{background:#fcf3e8;padding:0 12px 12px}
