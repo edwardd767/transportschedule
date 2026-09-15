@@ -159,11 +159,17 @@ p {
 .menu-button {
   width: 34px !important;
   height: 40px !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
+.menu-button:focus,
 .menu-button:focus-visible {
-  outline: none;
-  box-shadow: none;
-  border-color: transparent;
+  outline: none !important;
+  box-shadow: none !important;
+  border: 0 !important;
+  background: transparent !important;
 }
 .hamburger-icon {
   height: 30px;
