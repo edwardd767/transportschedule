@@ -24,6 +24,17 @@ export function SegmentModule({ segments, bookings = [], onChange, onBack: _onBa
 
   useEffect(() => setDraft(segments.length ? segments : initialSegments), [segments]);
 
+  useEffect(() => {
+    if (!menu) return;
+    const onDocumentClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest('.segment-menu') || target?.closest('[aria-label="Segment options"]')) return;
+      setMenu(null);
+    };
+    document.addEventListener('mousedown', onDocumentClick);
+    return () => document.removeEventListener('mousedown', onDocumentClick);
+  }, [menu]);
+
   const open = (item?: HotelSegment) => {
     setMenu(null);
     setEditing(item || null);

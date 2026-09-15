@@ -1,7 +1,7 @@
 
 'use client';
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   User, Baby,
   ChevronLeft,
@@ -177,8 +177,19 @@ function PopupMenu({
   items: { label: string; onClick: () => void; disabled?: boolean }[];
   onClose: () => void;
 }) {
+  const menuRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const onDocumentClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (menuRef.current && target && menuRef.current.contains(target)) return;
+      if (target?.closest('[aria-label^="Options for"]')) return;
+      onClose();
+    };
+    document.addEventListener('mousedown', onDocumentClick);
+    return () => document.removeEventListener('mousedown', onDocumentClick);
+  }, [onClose]);
   return (
-    <div className="rate-popup-menu" role="menu">
+    <div className="rate-popup-menu" role="menu" ref={menuRef}>
       {items.map((item) => (
         <button
           key={item.label}
