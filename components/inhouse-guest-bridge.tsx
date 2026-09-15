@@ -98,6 +98,8 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
   useEffect(() => {
     if (!open) {
       setPortalTarget(null);
+      setAdvanceOpen(false);
+      setSortOpen(false);
       return;
     }
 
