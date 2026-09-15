@@ -420,11 +420,12 @@ function SeasonCalendarPage({ seasons, assignments, onSave }: { seasons: Season[
   );
 }
 
-function RateElementPage({ items, onChange }: { items: RateElementItem[]; onChange: (value: RateElementItem[]) => void | Promise<void> }) {
+function RateElementPage({ items, validity = [], onChange }: { items: RateElementItem[]; validity?: RateValidityItem[]; onChange: (value: RateElementItem[]) => void | Promise<void> }) {
   const [menuId, setMenuId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [draft, setDraft] = useState<RateElementItem | null>(null);
   const filtered = useMemo(() => items.filter((item) => item.name.toLowerCase().includes(query.toLowerCase())), [items, query]);
+  const inUse = (item: RateElementItem) => validity.some((row) => [...(row.inclusiveElements ?? []), ...(row.addOnElements ?? [])].includes(item.id));
 
   const save = () => {
     if (!draft || !draft.name.trim()) return;
@@ -448,6 +449,7 @@ function RateElementPage({ items, onChange }: { items: RateElementItem[]; onChan
                 <PopupMenu onClose={() => setMenuId(null)} items={[
                   { label: 'Edit', onClick: () => setDraft({ ...item }) },
                   { label: item.active ? 'Inactive' : 'Active', onClick: () => { void onChange(items.map((row) => row.id === item.id ? { ...row, active: !row.active } : row)); } },
+                  { label: 'Delete', disabled: inUse(item), onClick: () => { void onChange(items.filter((row) => row.id !== item.id)); } },
                 ]} />
               )}
             </div>
@@ -554,11 +556,12 @@ function AddOnPage({ items, onChange }: { items: AddOnItem[]; onChange: (value: 
   );
 }
 
-function RateTypePage({ items, onChange }: { items: RateTypeItem[]; onChange: (value: RateTypeItem[]) => void | Promise<void> }) {
+function RateTypePage({ items, ratePlans = [], onChange }: { items: RateTypeItem[]; ratePlans?: RatePlanItem[]; onChange: (value: RateTypeItem[]) => void | Promise<void> }) {
   const [menuId, setMenuId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [draft, setDraft] = useState<RateTypeItem | null>(null);
   const filtered = useMemo(() => items.filter((item) => item.name.toLowerCase().includes(query.toLowerCase())), [items, query]);
+  const inUse = (item: RateTypeItem) => ratePlans.some((plan) => plan.rateTypeId === item.id);
 
   const save = () => {
     if (!draft || !draft.name.trim()) return;
@@ -581,6 +584,7 @@ function RateTypePage({ items, onChange }: { items: RateTypeItem[]; onChange: (v
                 <PopupMenu onClose={() => setMenuId(null)} items={[
                   { label: 'Edit', onClick: () => setDraft({ ...item }) },
                   { label: item.active ? 'Inactive' : 'Active', onClick: () => { void onChange(items.map((row) => row.id === item.id ? { ...row, active: !row.active } : row)); } },
+                  { label: 'Delete', disabled: inUse(item), onClick: () => { void onChange(items.filter((row) => row.id !== item.id)); } },
                 ]} />
               )}
             </div>
@@ -715,9 +719,9 @@ export function RateSetupModule({
     <ChildRateContext.Provider value={childRatesApplied}><div className="rate-setup-module">
       {section === 'season-setup' ? <SeasonSetupPage seasons={data.seasons} onChange={(value) => savePart('seasons', value)} /> : null}
       {section === 'season-calendar' ? <SeasonCalendarPage seasons={data.seasons} assignments={data.calendar} onSave={(value) => savePart('calendar', value)} /> : null}
-      {section === 'rate-element' ? <RateElementPage items={data.elements} onChange={(value) => savePart('elements', value)} /> : null}
+      {section === 'rate-element' ? <RateElementPage items={data.elements} validity={data.validity} onChange={(value) => savePart('elements', value)} /> : null}
       {section === 'add-on' ? <AddOnPage items={data.addOns} onChange={(value) => savePart('addOns', value)} /> : null}
-      {section === 'rate-type' ? <RateTypePage items={data.rateTypes} onChange={(value) => savePart('rateTypes', value)} /> : null}
+      {section === 'rate-type' ? <RateTypePage items={data.rateTypes} ratePlans={data.ratePlans} onChange={(value) => savePart('rateTypes', value)} /> : null}
       {section === 'rate-setup' ? <RateSetupPage items={data.ratePlans} rateTypes={data.rateTypes} validityItems={data.validity} seasons={data.seasons} roomTypes={roomTypes} elements={data.elements} addOns={data.addOns} onChange={(value) => savePart('ratePlans', value)} onValidityChange={(value) => savePart('validity', value)} /> : null}
     </div></ChildRateContext.Provider>
   );
