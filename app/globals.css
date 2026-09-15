@@ -3671,6 +3671,8 @@ p {
 .billing-info-tip b{display:block;margin-bottom:6px;font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:#fbbf24;font-weight:700}
 .billing-info-row{display:flex;justify-content:space-between;gap:16px}
 .billing-info-row+.billing-info-row{margin-top:2px}
+.billing-info-row.is-muted{padding-left:10px;color:#9ca3af;font-size:10px}
+.billing-info-total{margin-top:6px;padding-top:6px;border-top:1px solid #ffffff2e;font-weight:700;color:#fff}
 .billing-info:hover .billing-info-tip,.billing-info:focus .billing-info-tip,.billing-info:focus-within .billing-info-tip{opacity:1;visibility:visible;transform:translateY(0)}
 .billing-schedule-actions{position:fixed;left:var(--sidebar-width, 206px);right:0;bottom:0;height:66px;background:#fff;box-shadow:0 -2px 10px #0002;display:flex;align-items:center;justify-content:center;z-index:20}
 .billing-schedule-actions .primary-button{min-width:154px;height:38px}
