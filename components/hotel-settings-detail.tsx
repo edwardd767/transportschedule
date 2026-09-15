@@ -16,7 +16,7 @@ import { RateSetupModule, type RateSetupSection } from '@/components/rate-setup'
 import { initialRateSetupData, type RateSetupData } from '@/lib/rate-setup-data';
 import { RoomStatusModule } from '@/components/room-status-module';
 import { DepartmentModule } from '@/components/department-module-polished';
-import { initialHotelProfile, type HotelDepartment, type HotelRoomType, type RoomStatus, type HotelProfile, type HotelOperationalPolicy, type RoomStatusPolicy, type AdvancePaymentPolicy } from '@/lib/hotel-masters';
+import { initialHotelProfile, type HotelDepartment, type HotelRoomType, type RoomStatus, type HotelProfile, type HotelOperationalPolicy, type RoomStatusPolicy, type AdvancePaymentPolicy, type EInvoicePolicy } from '@/lib/hotel-masters';
 import { HotelSetupModule as HotelSetupModuleV2 } from '@/components/hotel-setup-module';
 import { TimePicker } from '@/components/time-picker';
 
@@ -37,8 +37,9 @@ function StandardPolicyModule({ onBack, profile, onProfileChange, roomStatuses }
   if (policy === 'General Policy') return <GeneralPolicyModule profile={profile} onProfileChange={onProfileChange} onBack={() => setPolicy(null)} />;
   if (policy === 'Room Status Policy') return <RoomStatusPolicyModule profile={profile} roomStatuses={roomStatuses} onProfileChange={onProfileChange} onBack={() => setPolicy(null)} />;
   if (policy === 'Advance Payment Policy') return <AdvancePaymentPolicyModule profile={profile} onProfileChange={onProfileChange} onBack={() => setPolicy(null)} />;
+  if (policy === 'e-Invoice Policy') return <EInvoicePolicyModule profile={profile} onProfileChange={onProfileChange} onBack={() => setPolicy(null)} />;
   const policies = ['Hotel Operational Policy', 'Security Deposit Policy', 'State & Tourism Tax', 'Room Status Policy', 'General Policy', 'Terms & Conditions', 'Advance Payment Policy', 'e-Invoice Policy'];
-  return <section className="master-page standard-policy-page" aria-label="Standard Policy & Guidelines"><div className="standard-policy-list">{policies.map((item) => <button className="standard-policy-row" type="button" key={item} onClick={() => (item === 'General Policy' || item === 'Hotel Operational Policy' || item === 'Security Deposit Policy' || item === 'Room Status Policy' || item === 'Advance Payment Policy') && setPolicy(item)}><strong>{item}</strong>{item === 'State & Tourism Tax' ? <MoreVertical size={18} /> : <ChevronRight size={18} />}</button>)}</div><button className="secondary-button master-page-back" type="button" onClick={onBack}><ArrowLeft size={16} /> Back to Hotel Settings</button></section>;
+  return <section className="master-page standard-policy-page" aria-label="Standard Policy & Guidelines"><div className="standard-policy-list">{policies.map((item) => <button className="standard-policy-row" type="button" key={item} onClick={() => (item === 'General Policy' || item === 'Hotel Operational Policy' || item === 'Security Deposit Policy' || item === 'Room Status Policy' || item === 'Advance Payment Policy' || item === 'e-Invoice Policy') && setPolicy(item)}><strong>{item}</strong>{item === 'State & Tourism Tax' ? <MoreVertical size={18} /> : <ChevronRight size={18} />}</button>)}</div><button className="secondary-button master-page-back" type="button" onClick={onBack}><ArrowLeft size={16} /> Back to Hotel Settings</button></section>;
 }
 
 type SecurityDepositPolicyState = {
@@ -164,6 +165,42 @@ function AdvancePaymentPolicyModule({ profile, onProfileChange, onBack }: { prof
       </label>
     </div>
     <div className="master-page-actions advance-payment-policy-actions"><button className="primary-button" type="button" disabled={!dirty} onClick={async () => { await onProfileChange({ ...profile, operationalPolicy: { ...profile.operationalPolicy, advancePaymentPolicy: draft } }); }}>Save</button></div>
+  </section>;
+}
+
+const EINVOICE_CLASSIFICATIONS = ['022', '021', '023', '041', '042'];
+
+function EInvoicePolicyModule({ profile, onProfileChange, onBack }: { profile: HotelProfile; onProfileChange: (value: HotelProfile) => void | Promise<void>; onBack: () => void }) {
+  const saved = profile.operationalPolicy.eInvoicePolicy;
+  const initial: EInvoicePolicy = {
+    classificationRoomCharges: saved?.classificationRoomCharges ?? '022',
+    classificationServiceCharges: saved?.classificationServiceCharges ?? '022',
+    classificationAdvancePaymentForfeit: saved?.classificationAdvancePaymentForfeit ?? '022',
+    classificationDepositForfeit: saved?.classificationDepositForfeit ?? '022',
+    classificationStateTax: saved?.classificationStateTax ?? '022',
+    useSubmissionDateAsDocDate: saved?.useSubmissionDateAsDocDate ?? false,
+  };
+  const [draft, setDraft] = useState<EInvoicePolicy>(initial);
+  const dirty = JSON.stringify(draft) !== JSON.stringify(initial);
+  const field = (key: 'classificationRoomCharges' | 'classificationServiceCharges' | 'classificationAdvancePaymentForfeit' | 'classificationDepositForfeit' | 'classificationStateTax', label: string) => (
+    <label className="advance-payment-policy-field" key={key}>
+      <span>{label}</span>
+      <select value={draft[key]} onChange={(event) => setDraft({ ...draft, [key]: event.target.value })}>
+        {EINVOICE_CLASSIFICATIONS.map((code) => <option key={code}>{code}</option>)}
+      </select>
+    </label>
+  );
+  return <section className="master-page e-invoice-policy-page" aria-label="E-Invoice Policy">
+    <div className="operational-policy-head"><strong>E-Invoice Policy</strong><button type="button" onClick={onBack}>Edit</button></div>
+    <div className="advance-payment-policy-card">
+      {field('classificationRoomCharges', 'Classification for Room Charges')}
+      {field('classificationServiceCharges', 'Classification for Service Charges')}
+      {field('classificationAdvancePaymentForfeit', 'Classification for Advance Payment Forfeit')}
+      {field('classificationDepositForfeit', 'Classification for Deposit Forfeit')}
+      {field('classificationStateTax', 'Classification for State Tax')}
+      <button type="button" className={`operational-switch-row ${draft.useSubmissionDateAsDocDate ? 'is-on' : ''}`} onClick={() => setDraft({ ...draft, useSubmissionDateAsDocDate: !draft.useSubmissionDateAsDocDate })}><span>Use Submission Date as Doc Date</span><i aria-hidden="true" /></button>
+    </div>
+    <div className="master-page-actions e-invoice-policy-actions"><button className="primary-button" type="button" disabled={!dirty} onClick={async () => { await onProfileChange({ ...profile, operationalPolicy: { ...profile.operationalPolicy, eInvoicePolicy: draft } }); }}>Confirm</button></div>
   </section>;
 }
 
