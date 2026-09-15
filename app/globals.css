@@ -2886,6 +2886,12 @@ p {
   font-size: 11px;
   color: #f58220;
 }
+.advance-search-field input:focus,
+.advance-search-field input:focus-visible,
+.advance-search-field .hotel-date-field input:focus,
+.advance-search-field .hotel-date-field input:focus-visible {
+  outline: none;
+}
 .advance-search-field input,
 .advance-search-field select {
   width: 100%;
