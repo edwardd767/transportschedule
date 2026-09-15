@@ -239,15 +239,15 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
                   const addOnTotal = line.addOns.reduce((sum, item) => sum + item.amount, 0);
                   const roomCharge = Math.max(0, line.amount - elementTotal - addOnTotal);
                   const sortDirection = breakdownSort[line.id];
-                  const standardBreakdown = [
-                    { key: 'room-charge', name: 'Room Charge', amount: roomCharge },
+                  const standardBreakdown: { key: string; name: string; amount: number; info?: string }[] = [
+                    { key: 'room-charge', name: 'Room Charge', amount: roomCharge, info: line.extraPax > 0 ? `Includes Extra Pax ${money(line.extraPax)}` : undefined },
                     ...line.elements.map((item, index) => ({ key: `element-${index}`, name: item.name, amount: item.amount })),
                     ...line.addOns.map((item, index) => ({ key: `addon-${index}`, name: `Add On - ${item.name}`, amount: item.amount })),
                   ];
                   const sortedBreakdown = sortDirection
                     ? [...standardBreakdown].sort((a, b) => sortDirection === 'asc' ? a.amount - b.amount : b.amount - a.amount)
                     : standardBreakdown;
-                  return <label className="billing-daily-line" key={line.id}><input type="checkbox" checked={selected.includes(line.id)} onChange={() => toggleLine(line.id)} /><span><strong>{dayLabel(line.date)} | <button type="button" title="Sort breakdown by amount" aria-label={`Sort ${line.date} ${line.rateCode} breakdown by amount ${sortDirection === 'asc' ? 'descending' : 'ascending'}`} onClick={(event) => { event.preventDefault(); event.stopPropagation(); toggleBreakdownSort(line.id); }} style={{ border: 0, padding: 0, background: 'transparent', font: 'inherit', fontWeight: 'inherit', cursor: 'pointer', color: 'inherit' }}>{line.rateCode}{sortDirection ? ` ${sortDirection === 'asc' ? '↑' : '↓'}` : ''}</button></strong><span className="billing-breakdown-labels">{sortedBreakdown.map((item) => <small key={item.key}>{item.name}</small>)}</span></span><span><strong>{money(line.amount)}</strong><span className="billing-breakdown-values">{sortedBreakdown.map((item) => <small key={item.key}>{money(item.amount)}</small>)}</span></span></label>;
+                  return <label className="billing-daily-line" key={line.id}><input type="checkbox" checked={selected.includes(line.id)} onChange={() => toggleLine(line.id)} /><span><strong>{dayLabel(line.date)} | <button type="button" title="Sort breakdown by amount" aria-label={`Sort ${line.date} ${line.rateCode} breakdown by amount ${sortDirection === 'asc' ? 'descending' : 'ascending'}`} onClick={(event) => { event.preventDefault(); event.stopPropagation(); toggleBreakdownSort(line.id); }} style={{ border: 0, padding: 0, background: 'transparent', font: 'inherit', fontWeight: 'inherit', cursor: 'pointer', color: 'inherit' }}>{line.rateCode}{sortDirection ? ` ${sortDirection === 'asc' ? '↑' : '↓'}` : ''}</button></strong><span className="billing-breakdown-labels">{sortedBreakdown.map((item) => <small key={item.key}>{item.name}{item.info ? <span className="billing-info" tabIndex={0} aria-label={item.info}>ⓘ<span className="billing-info-tip">{item.info}</span></span> : null}</small>)}</span></span><span><strong>{money(line.amount)}</strong><span className="billing-breakdown-values">{sortedBreakdown.map((item) => <small key={item.key}>{money(item.amount)}</small>)}</span></span></label>;
                 })}
               </div>}
             </div>;
