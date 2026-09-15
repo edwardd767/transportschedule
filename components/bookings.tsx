@@ -45,6 +45,8 @@ const advanceStatusOptions = [
 
 type AdvanceSelectOption = { value: string; label: string };
 
+const emptyAdvanceSearch = { arrivalStart: '', arrivalEnd: '', departureStart: '', departureEnd: '', bookingDate: '', status: '', roomType: '', bookingNo: '', guestName: '', accountName: '', referenceNo: '', groupName: '' };
+
 const HOTELX_ROOM_ICON = 'https://hms1.hotelx.asia/static/media/room.7cce94dd.svg';
 
 function RoomIcon({ size = 18 }: { size?: number }) {
@@ -291,25 +293,26 @@ export function Bookings({
   const [roomingOpen, setRoomingOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [oldestFirst, setOldestFirst] = useState(false);
-  const [advance, setAdvance] = useState({ arrivalStart: '', arrivalEnd: '', departureStart: '', departureEnd: '', bookingDate: '', status: '', roomType: '', bookingNo: '', guestName: '', accountName: '', referenceNo: '', groupName: '' });
+  const [advance, setAdvance] = useState(emptyAdvanceSearch);
+  const [appliedAdvance, setAppliedAdvance] = useState(emptyAdvanceSearch);
   const listRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const previousScroll = useRef(0);
   const lastBooking = useRef<string | null>(null);
-  const hasFilters = Boolean(query || Object.values(advance).some(Boolean));
+  const hasFilters = Boolean(query || Object.values(appliedAdvance).some(Boolean));
   const filtered = bookings.filter((item) => {
     if (query.trim() && !`${item.reference} ${item.guest}`.toLowerCase().includes(query.trim().toLowerCase())) return false;
-    if (advance.arrivalStart && item.arrival < advance.arrivalStart) return false;
-    if (advance.arrivalEnd && item.arrival > advance.arrivalEnd) return false;
-    if (advance.departureStart && item.departure < advance.departureStart) return false;
-    if (advance.departureEnd && item.departure > advance.departureEnd) return false;
-    if (advance.status && item.status !== advance.status) return false;
-    if (advance.roomType && !item.rooms.some((room) => room.code === advance.roomType)) return false;
-    if (advance.bookingNo && !item.reference.toLowerCase().includes(advance.bookingNo.toLowerCase())) return false;
-    if (advance.guestName && !item.guest.toLowerCase().includes(advance.guestName.toLowerCase())) return false;
-    if (advance.accountName && !(item.accountName ?? '').toLowerCase().includes(advance.accountName.toLowerCase())) return false;
-    if (advance.referenceNo && !(item.referenceNo ?? '').toLowerCase().includes(advance.referenceNo.toLowerCase())) return false;
-    if (advance.groupName && !(item.groupName ?? '').toLowerCase().includes(advance.groupName.toLowerCase())) return false;
+    if (appliedAdvance.arrivalStart && item.arrival < appliedAdvance.arrivalStart) return false;
+    if (appliedAdvance.arrivalEnd && item.arrival > appliedAdvance.arrivalEnd) return false;
+    if (appliedAdvance.departureStart && item.departure < appliedAdvance.departureStart) return false;
+    if (appliedAdvance.departureEnd && item.departure > appliedAdvance.departureEnd) return false;
+    if (appliedAdvance.status && item.status !== appliedAdvance.status) return false;
+    if (appliedAdvance.roomType && !item.rooms.some((room) => room.code === appliedAdvance.roomType)) return false;
+    if (appliedAdvance.bookingNo && !item.reference.toLowerCase().includes(appliedAdvance.bookingNo.toLowerCase())) return false;
+    if (appliedAdvance.guestName && !item.guest.toLowerCase().includes(appliedAdvance.guestName.toLowerCase())) return false;
+    if (appliedAdvance.accountName && !(item.accountName ?? '').toLowerCase().includes(appliedAdvance.accountName.toLowerCase())) return false;
+    if (appliedAdvance.referenceNo && !(item.referenceNo ?? '').toLowerCase().includes(appliedAdvance.referenceNo.toLowerCase())) return false;
+    if (appliedAdvance.groupName && !(item.groupName ?? '').toLowerCase().includes(appliedAdvance.groupName.toLowerCase())) return false;
     return true;
   });
   const shown = oldestFirst ? [...filtered].reverse() : filtered;
@@ -374,7 +377,12 @@ export function Bookings({
   }
   function resetFilters() {
     setQuery('');
-    setAdvance({ arrivalStart: '', arrivalEnd: '', departureStart: '', departureEnd: '', bookingDate: '', status: '', roomType: '', bookingNo: '', guestName: '', accountName: '', referenceNo: '', groupName: '' });
+    setAdvance(emptyAdvanceSearch);
+    setAppliedAdvance(emptyAdvanceSearch);
+  }
+
+  function resetAdvance() {
+    setAdvance(emptyAdvanceSearch);
   }
 
   if (createOpen) {
@@ -501,7 +509,7 @@ export function Bookings({
         <h1>Booking Listing <span>({shown.length})</span></h1>
         <div className="booking-toolbar">
           <button className="icon-button" aria-label="Search bookings" title="Search bookings" aria-pressed={searchOpen} onClick={() => setSearchOpen(!searchOpen)}><HotelXSearchIcon size={23} /></button>
-          <button className="icon-button" aria-label="Advance search" title="Advance search" aria-pressed={advanceOpen} onClick={() => setAdvanceOpen(true)}><HotelXAdvanceSearchIcon size={23} /></button>
+          <button className="icon-button" aria-label="Advance search" title="Advance search" aria-pressed={advanceOpen} onClick={() => { setAdvance(appliedAdvance); setAdvanceOpen(true); }}><HotelXAdvanceSearchIcon size={23} /></button>
           <button className="icon-button" aria-label={oldestFirst ? 'Sort newest bookings first' : 'Sort oldest bookings first'} title={oldestFirst ? 'Oldest bookings first' : 'Newest bookings first'} aria-pressed={oldestFirst} onClick={() => setOldestFirst(!oldestFirst)}><HotelXSortIcon size={23} /></button>
           <button className="icon-button" aria-label="View availability" title="View availability" onClick={() => setAvailabilityOpen(true)}><AvailabilityIcon size={23} /></button>
         </div>
@@ -558,7 +566,7 @@ export function Bookings({
           >
             <div className="advance-search-head" style={{ flex: '0 0 auto' }}>
               <strong>Advance Search</strong>
-              <button type="button" className="advance-search-reset" onClick={resetFilters}><RotateCw size={15} /> Reset</button>
+              <button type="button" className="advance-search-reset" onClick={resetAdvance}><RotateCw size={15} /> Reset</button>
             </div>
             <div className="advance-search-body" style={{ overflowY: 'auto', minHeight: 0, flex: '1 1 auto' }}>
               <div className="advance-search-group">
@@ -585,8 +593,8 @@ export function Bookings({
               <label className="advance-search-field"><span>Group Name</span><input placeholder=" " value={advance.groupName} onChange={(event) => setAdvance({ ...advance, groupName: event.target.value })} /></label>
             </div>
             <div className="advance-search-actions" style={{ flex: '0 0 auto' }}>
-              <button type="button" className="primary-button" onClick={() => setAdvanceOpen(false)}>Cancel</button>
-              <button type="button" className="primary-button" onClick={() => setAdvanceOpen(false)}>Confirm</button>
+              <button type="button" className="primary-button" onClick={() => { setAdvance(appliedAdvance); setAdvanceOpen(false); }}>Cancel</button>
+              <button type="button" className="primary-button" onClick={() => { setAppliedAdvance(advance); setAdvanceOpen(false); }}>Confirm</button>
             </div>
           </dialog>
         </div>
