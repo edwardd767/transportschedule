@@ -53,6 +53,19 @@ const SORT_OPTIONS = [
   { key: 'location-desc', label: 'Location (High-Low)' },
 ] as const;
 
+const emptyAdvance = {
+  arrivalStart: '',
+  arrivalEnd: '',
+  departureStart: '',
+  departureEnd: '',
+  bookingNo: '',
+  roomNo: '',
+  guestName: '',
+  accountName: '',
+  referenceNo: '',
+  groupName: '',
+};
+
 function compareRows(a: InhouseRow, b: InhouseRow, sortKey: string) {
   const [field, direction] = sortKey.split('-');
   const factor = direction === 'desc' ? -1 : 1;
@@ -70,8 +83,9 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
   const [sortOpen, setSortOpen] = useState(false);
   const [sortKey, setSortKey] = useState('room-asc');
   const [advanceOpen, setAdvanceOpen] = useState(false);
-  const [advance, setAdvance] = useState({ arrivalStart: '', arrivalEnd: '', departureStart: '', departureEnd: '', bookingNo: '', roomNo: '', guestName: '', accountName: '', referenceNo: '', groupName: '' });
-  const resetAdvance = () => setAdvance({ arrivalStart: '', arrivalEnd: '', departureStart: '', departureEnd: '', bookingNo: '', roomNo: '', guestName: '', accountName: '', referenceNo: '', groupName: '' });
+  const [advance, setAdvance] = useState(emptyAdvance);
+  const [appliedAdvance, setAppliedAdvance] = useState(emptyAdvance);
+  const resetAdvance = () => setAdvance(emptyAdvance);
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
   const { bookings, hotelMasters } = store.state;
 
@@ -172,20 +186,20 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
           .includes(search);
       })
       .filter((row) => {
-        if (advance.arrivalStart && row.arrival < advance.arrivalStart) return false;
-        if (advance.arrivalEnd && row.arrival > advance.arrivalEnd) return false;
-        if (advance.departureStart && row.departure < advance.departureStart) return false;
-        if (advance.departureEnd && row.departure > advance.departureEnd) return false;
-        if (advance.bookingNo && !row.reference.toLowerCase().includes(advance.bookingNo.toLowerCase())) return false;
-        if (advance.roomNo && !row.roomNo.toLowerCase().includes(advance.roomNo.toLowerCase())) return false;
-        if (advance.guestName && !row.guest.toLowerCase().includes(advance.guestName.toLowerCase())) return false;
-        if (advance.accountName && !row.accountName.toLowerCase().includes(advance.accountName.toLowerCase())) return false;
-        if (advance.referenceNo && !row.referenceNo.toLowerCase().includes(advance.referenceNo.toLowerCase())) return false;
-        if (advance.groupName && !row.groupName.toLowerCase().includes(advance.groupName.toLowerCase())) return false;
+        if (appliedAdvance.arrivalStart && row.arrival < appliedAdvance.arrivalStart) return false;
+        if (appliedAdvance.arrivalEnd && row.arrival > appliedAdvance.arrivalEnd) return false;
+        if (appliedAdvance.departureStart && row.departure < appliedAdvance.departureStart) return false;
+        if (appliedAdvance.departureEnd && row.departure > appliedAdvance.departureEnd) return false;
+        if (appliedAdvance.bookingNo && !row.reference.toLowerCase().includes(appliedAdvance.bookingNo.toLowerCase())) return false;
+        if (appliedAdvance.roomNo && !row.roomNo.toLowerCase().includes(appliedAdvance.roomNo.toLowerCase())) return false;
+        if (appliedAdvance.guestName && !row.guest.toLowerCase().includes(appliedAdvance.guestName.toLowerCase())) return false;
+        if (appliedAdvance.accountName && !row.accountName.toLowerCase().includes(appliedAdvance.accountName.toLowerCase())) return false;
+        if (appliedAdvance.referenceNo && !row.referenceNo.toLowerCase().includes(appliedAdvance.referenceNo.toLowerCase())) return false;
+        if (appliedAdvance.groupName && !row.groupName.toLowerCase().includes(appliedAdvance.groupName.toLowerCase())) return false;
         return true;
       })
       .sort((a, b) => compareRows(a, b, sortKey));
-  }, [advance, query, rows, sortKey]);
+  }, [appliedAdvance, query, rows, sortKey]);
 
   if (!open || !portalTarget) return null;
 
@@ -226,8 +240,11 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
             type="button"
             aria-label="Advance search"
             aria-pressed={advanceOpen}
-            className={Object.values(advance).some(Boolean) ? 'active' : ''}
-            onClick={() => setAdvanceOpen(true)}
+            className={Object.values(appliedAdvance).some(Boolean) ? 'active' : ''}
+            onClick={() => {
+              setAdvance(appliedAdvance);
+              setAdvanceOpen(true);
+            }}
           >
             <svg viewBox="0 0 24 24" width={20} height={20} fill="currentColor" aria-hidden="true" focusable="false"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z" /></svg>
           </button>
@@ -328,8 +345,8 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
               <label className="advance-search-field"><span>Group Name</span><input placeholder=" " value={advance.groupName} onChange={(event) => setAdvance({ ...advance, groupName: event.target.value })} /></label>
             </div>
             <div className="advance-search-actions" style={{ flex: '0 0 auto' }}>
-              <button type="button" className="primary-button" onClick={() => setAdvanceOpen(false)}>Cancel</button>
-              <button type="button" className="primary-button" onClick={() => setAdvanceOpen(false)}>Confirm</button>
+              <button type="button" className="primary-button" onClick={() => { setAdvance(appliedAdvance); setAdvanceOpen(false); }}>Cancel</button>
+              <button type="button" className="primary-button" onClick={() => { setAppliedAdvance(advance); setAdvanceOpen(false); }}>Confirm</button>
             </div>
           </dialog>
         </div>
