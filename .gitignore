@@ -39,6 +39,7 @@ next-env.d.ts
 /outputs/
 /work/
 /inbox/
+/scripts/geography.json
 
 *.tsbuildinfo
 *.traineddata
