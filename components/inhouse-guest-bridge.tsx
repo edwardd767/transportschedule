@@ -6,11 +6,13 @@ import {
   ArrowRightLeft,
   ArrowUpDown,
   ChevronRight,
+  RotateCw,
   Search,
   SlidersHorizontal,
 } from 'lucide-react';
 import type { TransportData } from '@/lib/use-transport-data';
 import { HotelxBackButton } from '@/components/hotelx-back-button';
+import { HotelDatePicker } from '@/components/hotel-date-picker';
 import './inhouse-guest-bridge.css';
 
 function formatStayDate(value: string) {
@@ -32,6 +34,8 @@ type InhouseRow = {
   arrival: string;
   departure: string;
   reference: string;
+  referenceNo: string;
+  groupName: string;
   location: string;
 };
 
@@ -68,6 +72,9 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
   const [filterOpen, setFilterOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const [sortKey, setSortKey] = useState('room-asc');
+  const [advanceOpen, setAdvanceOpen] = useState(false);
+  const [advance, setAdvance] = useState({ arrivalStart: '', arrivalEnd: '', departureStart: '', departureEnd: '', bookingNo: '', roomNo: '', guestName: '', accountName: '', referenceNo: '', groupName: '' });
+  const resetAdvance = () => setAdvance({ arrivalStart: '', arrivalEnd: '', departureStart: '', departureEnd: '', bookingNo: '', roomNo: '', guestName: '', accountName: '', referenceNo: '', groupName: '' });
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
   const { bookings, hotelMasters } = store.state;
 
@@ -146,6 +153,8 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
               arrival: booking.arrival,
               departure: booking.departure,
               reference: booking.reference,
+              referenceNo: booking.referenceNo ?? '',
+              groupName: booking.groupName ?? '',
               location: assigned?.locationCode ?? '',
             };
           }),
@@ -169,8 +178,21 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
           .toLowerCase()
           .includes(search);
       })
+      .filter((row) => {
+        if (advance.arrivalStart && row.arrival < advance.arrivalStart) return false;
+        if (advance.arrivalEnd && row.arrival > advance.arrivalEnd) return false;
+        if (advance.departureStart && row.departure < advance.departureStart) return false;
+        if (advance.departureEnd && row.departure > advance.departureEnd) return false;
+        if (advance.bookingNo && !row.reference.toLowerCase().includes(advance.bookingNo.toLowerCase())) return false;
+        if (advance.roomNo && !row.roomNo.toLowerCase().includes(advance.roomNo.toLowerCase())) return false;
+        if (advance.guestName && !row.guest.toLowerCase().includes(advance.guestName.toLowerCase())) return false;
+        if (advance.accountName && !row.accountName.toLowerCase().includes(advance.accountName.toLowerCase())) return false;
+        if (advance.referenceNo && !row.referenceNo.toLowerCase().includes(advance.referenceNo.toLowerCase())) return false;
+        if (advance.groupName && !row.groupName.toLowerCase().includes(advance.groupName.toLowerCase())) return false;
+        return true;
+      })
       .sort((a, b) => compareRows(a, b, sortKey));
-  }, [query, roomType, rows, sortKey]);
+  }, [advance, query, roomType, rows, sortKey]);
 
   if (!open || !portalTarget) return null;
 
@@ -207,6 +229,15 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
               placeholder="Search"
             />
           </label>
+          <button
+            type="button"
+            aria-label="Advance search"
+            aria-pressed={advanceOpen}
+            className={Object.values(advance).some(Boolean) ? 'active' : ''}
+            onClick={() => setAdvanceOpen(true)}
+          >
+            <svg viewBox="0 0 24 24" width={20} height={20} fill="currentColor" aria-hidden="true" focusable="false"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z" /></svg>
+          </button>
           <div className="inhouse-filter-wrap">
             <button
               type="button"
@@ -310,6 +341,44 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
           <div className="inhouse-empty">No in-house guest found.</div>
         )}
       </div>
+
+      {advanceOpen && (
+        <div className="advance-search-layer" style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '72px 16px 24px' }}>
+          <button type="button" className="advance-search-scrim" aria-label="Close advance search" onClick={() => setAdvanceOpen(false)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }} />
+          <dialog open className="advance-search-panel" aria-label="Advance Search" style={{ position: 'relative', inset: 'auto', margin: 0, width: 'min(520px, calc(100vw - 32px))', maxWidth: 520, maxHeight: 'calc(100dvh - 96px)', padding: 0, border: 0, borderRadius: 4, overflow: 'hidden', background: '#fff', boxShadow: '0 12px 38px rgba(0,0,0,.32)', zIndex: 1, display: 'flex', flexDirection: 'column' }}>
+            <div className="advance-search-head" style={{ flex: '0 0 auto' }}>
+              <strong>Advance Search</strong>
+              <button type="button" className="advance-search-reset" onClick={resetAdvance}><RotateCw size={15} /> Reset</button>
+            </div>
+            <div className="advance-search-body" style={{ overflowY: 'auto', minHeight: 0, flex: '1 1 auto' }}>
+              <div className="advance-search-group">
+                <span className="advance-search-group-label">Arrival Date</span>
+                <div className="advance-search-pair">
+                  <div className="advance-search-field"><span>Start Date</span><HotelDatePicker value={advance.arrivalStart} onChange={(value) => setAdvance({ ...advance, arrivalStart: value })} ariaLabel="Arrival start date" /></div>
+                  <div className="advance-search-field"><span>End Date</span><HotelDatePicker value={advance.arrivalEnd} onChange={(value) => setAdvance({ ...advance, arrivalEnd: value })} ariaLabel="Arrival end date" /></div>
+                </div>
+              </div>
+              <div className="advance-search-group">
+                <span className="advance-search-group-label">Departure Date</span>
+                <div className="advance-search-pair">
+                  <div className="advance-search-field"><span>Start Date</span><HotelDatePicker value={advance.departureStart} onChange={(value) => setAdvance({ ...advance, departureStart: value })} ariaLabel="Departure start date" /></div>
+                  <div className="advance-search-field"><span>End Date</span><HotelDatePicker value={advance.departureEnd} onChange={(value) => setAdvance({ ...advance, departureEnd: value })} ariaLabel="Departure end date" /></div>
+                </div>
+              </div>
+              <label className="advance-search-field"><span>Booking No</span><input value={advance.bookingNo} onChange={(event) => setAdvance({ ...advance, bookingNo: event.target.value })} /></label>
+              <label className="advance-search-field"><span>Room No</span><input value={advance.roomNo} onChange={(event) => setAdvance({ ...advance, roomNo: event.target.value })} /></label>
+              <label className="advance-search-field"><span>Guest Name</span><input value={advance.guestName} onChange={(event) => setAdvance({ ...advance, guestName: event.target.value })} /></label>
+              <label className="advance-search-field"><span>Account Name</span><input value={advance.accountName} onChange={(event) => setAdvance({ ...advance, accountName: event.target.value })} /></label>
+              <label className="advance-search-field"><span>Reference No</span><input value={advance.referenceNo} onChange={(event) => setAdvance({ ...advance, referenceNo: event.target.value })} /></label>
+              <label className="advance-search-field"><span>Group Name</span><input value={advance.groupName} onChange={(event) => setAdvance({ ...advance, groupName: event.target.value })} /></label>
+            </div>
+            <div className="advance-search-actions" style={{ flex: '0 0 auto' }}>
+              <button type="button" className="primary-button" onClick={() => setAdvanceOpen(false)}>Cancel</button>
+              <button type="button" className="primary-button" onClick={() => setAdvanceOpen(false)}>Confirm</button>
+            </div>
+          </dialog>
+        </div>
+      )}
     </section>,
     portalTarget,
   );
