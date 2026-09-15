@@ -12,6 +12,7 @@ import { ProductionAnalysisSalesChannel } from '@/components/production-analysis
 import { ProductionAnalysisSegment } from '@/components/production-analysis-segment';
 import { ProductionAnalysisSource } from '@/components/production-analysis-source';
 import { ProductionAnalysisState } from '@/components/production-analysis-state';
+import { HotelxBackButton } from '@/components/hotelx-back-button';
 import {
   useEffect,
   useRef,
@@ -677,23 +678,21 @@ function HomeContent({ store }: { store: TransportData }) {
         <div className="property-banner">
           <div className="property-identity">
             {view === 'booking' && activeBooking && (
-              <button
+              <HotelxBackButton
                 className="booking-back"
-                aria-label="Back to booking listing"
+                label="Back to booking listing"
                 onClick={() => {
                   const bookingBackEvent = new Event('hotelx-booking-back', { cancelable: true });
                   window.dispatchEvent(bookingBackEvent);
                   if (bookingBackEvent.defaultPrevented) return;
                   bookingEditing ? setBookingEditing(false) : setBookingReference(null);
                 }}
-              >
-                <ChevronLeft size={24} />
-              </button>
+              />
             )}
             {['hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy', 'standardpolicy', 'setup'].includes(view) && (
-              <button
+              <HotelxBackButton
                 className="booking-back"
-                aria-label={view === 'ratepolicy' && rateSetupSection ? 'Back to Rate Setup' : view === 'standardpolicy' ? 'Back' : 'Back to Hotel Settings'}
+                label={view === 'ratepolicy' && rateSetupSection ? 'Back to Rate Setup' : view === 'standardpolicy' ? 'Back' : 'Back to Hotel Settings'}
                 onClick={() => {
                   if (view === 'standardpolicy') {
                     const standardPolicyBackEvent = new Event('hotelx-standard-policy-back', { cancelable: true });
@@ -702,27 +701,13 @@ function HomeContent({ store }: { store: TransportData }) {
                   }
                   view === 'ratepolicy' && rateSetupSection ? setRateSetupSection(null) : setView('hotelsettings');
                 }}
-              >
-                <ChevronLeft size={24} />
-              </button>
+              />
             )}
             {view === 'checkin' && (
-              <button
-                className="booking-back"
-                aria-label="Back to Front Desk"
-                onClick={() => setView('frontdesk')}
-              >
-                <ChevronLeft size={24} />
-              </button>
+              <HotelxBackButton className="booking-back" label="Back to Front Desk" onClick={() => setView('frontdesk')} />
             )}
             {view === 'segment' && (
-              <button
-                className="booking-back"
-                aria-label="Back to Hotel Settings"
-                onClick={() => setView('hotelsettings')}
-              >
-                <ChevronLeft size={24} />
-              </button>
+              <HotelxBackButton className="booking-back" label="Back to Hotel Settings" onClick={() => setView('hotelsettings')} />
             )}
             <div>
               <small>{['setup', 'hotelsettings', 'hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy', 'standardpolicy', 'segment'].includes(view) ? 'HMS' : 'PMS'}</small>
