@@ -1,7 +1,7 @@
 'use client';
 
 import { MoreVertical, Search, SlidersHorizontal, UserRound } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { GuestProfile } from '@/lib/transport-state';
 import { geography } from '@/lib/geography';
 
@@ -13,6 +13,11 @@ function formatUpdated(value: string) {
 
 export function GuestProfiles({ profiles, onSave }: { profiles: GuestProfile[]; onSave: (value: GuestProfile[]) => Promise<void> }) {
   const [editing, setEditing] = useState<GuestProfile | null>(null);
+  useEffect(() => {
+    const handler = () => setEditing(null);
+    window.addEventListener('hotelx-guest-profile-back', handler);
+    return () => window.removeEventListener('hotelx-guest-profile-back', handler);
+  }, []);
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [visitsOnly, setVisitsOnly] = useState(false);

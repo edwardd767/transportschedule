@@ -621,7 +621,10 @@ function HomeContent({ store }: { store: TransportData }) {
             <button
               className={view === 'guestprofile' ? 'active' : ''}
               aria-current={view === 'guestprofile' ? 'page' : undefined}
-              onClick={() => setView('guestprofile')}
+              onClick={() => {
+                window.dispatchEvent(new Event('hotelx-guest-profile-back'));
+                setView('guestprofile');
+              }}
             >
               <Users />
               Guest Profile
