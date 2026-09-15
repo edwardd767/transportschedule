@@ -9,7 +9,7 @@ const schemaStatements = [
   `INSERT INTO public.hotelx_state (country_code,code,name) VALUES ('MY','SEL','Selangor'),('MY','KUL','Kuala Lumpur'),('MY','JHR','Johor'),('MY','PNG','Penang'),('MY','PRK','Perak'),('MY','SBH','Sabah'),('MY','SWK','Sarawak'),('MY','NSN','Negeri Sembilan'),('MY','MLK','Melaka'),('MY','KDH','Kedah'),('MY','PHG','Pahang'),('MY','KTN','Kelantan'),('MY','TRG','Terengganu'),('MY','PLS','Perlis'),('MY','LBN','Labuan'),('MY','PJY','Putrajaya') ON CONFLICT DO NOTHING`,
   `INSERT INTO public.hotelx_city (country_code,state_code,name) VALUES ('MY','SEL','Petaling Jaya'),('MY','SEL','Shah Alam'),('MY','SEL','Subang Jaya'),('MY','SEL','Klang'),('MY','KUL','Kuala Lumpur'),('MY','JHR','Johor Bahru'),('MY','JHR','Mersing'),('MY','PNG','George Town'),('MY','PRK','Ipoh'),('MY','SBH','Kota Kinabalu'),('MY','SWK','Kuching'),('MY','NSN','Seremban'),('MY','MLK','Melaka'),('MY','KDH','Alor Setar'),('MY','PHG','Kuantan'),('MY','KTN','Kota Bharu'),('MY','TRG','Kuala Terengganu'),('MY','PLS','Kangar'),('MY','LBN','Victoria'),('MY','PJY','Putrajaya') ON CONFLICT DO NOTHING`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_guestprofile (
-    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
     id uuid NOT NULL,
     guest_name text NOT NULL,
     mobile text NOT NULL DEFAULT '',
@@ -33,15 +33,41 @@ const schemaStatements = [
     PRIMARY KEY (property_id, id)
   )`,
   `ALTER TABLE public.hotelx_guestprofile ADD COLUMN IF NOT EXISTS vehicle text NOT NULL DEFAULT '', ADD COLUMN IF NOT EXISTS payment_remark1 text NOT NULL DEFAULT '', ADD COLUMN IF NOT EXISTS payment_remark2 text NOT NULL DEFAULT '', ADD COLUMN IF NOT EXISTS tax_exempt_reason text NOT NULL DEFAULT '', ADD COLUMN IF NOT EXISTS adult_child text NOT NULL DEFAULT 'Adult'`,
-  `CREATE TABLE IF NOT EXISTS public.hotelx_transport_meta (
-    id text PRIMARY KEY,
+  `DO $hotelx_root$
+    DECLARE
+      col record;
+      col_list text;
+    BEGIN
+      IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'hotelx_transport_meta')
+         AND EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'hotelx_hotel_setup') THEN
+        FOR col IN
+          SELECT a.attname AS name, format_type(a.atttypid, a.atttypmod) AS type, pg_get_expr(d.adbin, d.adrelid) AS def
+          FROM pg_attribute a
+          LEFT JOIN pg_attrdef d ON d.adrelid = a.attrelid AND d.adnum = a.attnum
+          WHERE a.attrelid = 'public.hotelx_hotel_setup'::regclass AND a.attnum > 0 AND NOT a.attisdropped AND a.attname <> 'property_id'
+            AND a.attname NOT IN (SELECT m.attname FROM pg_attribute m WHERE m.attrelid = 'public.hotelx_transport_meta'::regclass AND m.attnum > 0)
+        LOOP
+          EXECUTE format('ALTER TABLE public.hotelx_transport_meta ADD COLUMN %I %s%s', col.name, col.type, CASE WHEN col.def IS NOT NULL THEN ' DEFAULT ' || col.def ELSE '' END);
+        END LOOP;
+        SELECT string_agg(quote_ident(a.attname), ', ' ORDER BY a.attnum) INTO col_list
+        FROM pg_attribute a
+        WHERE a.attrelid = 'public.hotelx_hotel_setup'::regclass AND a.attnum > 0 AND NOT a.attisdropped AND a.attname <> 'property_id';
+        EXECUTE format('UPDATE public.hotelx_transport_meta m SET (%s) = (SELECT %s FROM public.hotelx_hotel_setup s WHERE s.property_id = m.id) WHERE EXISTS (SELECT 1 FROM public.hotelx_hotel_setup s2 WHERE s2.property_id = m.id)', col_list, col_list);
+        EXECUTE 'DROP TABLE public.hotelx_hotel_setup';
+        EXECUTE 'ALTER TABLE public.hotelx_transport_meta RENAME COLUMN id TO property_id';
+        EXECUTE 'ALTER TABLE public.hotelx_transport_meta RENAME TO hotelx_hotel_setup';
+      END IF;
+    END
+  $hotelx_root$`,
+  `CREATE TABLE IF NOT EXISTS public.hotelx_hotel_setup (
+    property_id text PRIMARY KEY,
     schema_version integer NOT NULL DEFAULT 2 CHECK (schema_version = 2),
     revision integer NOT NULL DEFAULT 1 CHECK (revision >= 1),
     operational_policy jsonb NOT NULL DEFAULT '{}'::jsonb,
     updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_transport_rules (
-    property_id text PRIMARY KEY REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    property_id text PRIMARY KEY REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
     start_time text NOT NULL,
     end_time text NOT NULL,
     turnaround_minutes integer NOT NULL DEFAULT 0,
@@ -49,7 +75,7 @@ const schemaStatements = [
     notes text NOT NULL DEFAULT ''
   )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_transport_operators (
-    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
     id text NOT NULL,
     sort_order integer NOT NULL,
     name text NOT NULL,
@@ -60,7 +86,7 @@ const schemaStatements = [
     PRIMARY KEY (property_id, id)
   )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_transport_services (
-    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
     id text NOT NULL,
     sort_order integer NOT NULL,
     name text NOT NULL,
@@ -73,7 +99,7 @@ const schemaStatements = [
     PRIMARY KEY (property_id, id)
   )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_transport_routes (
-    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
     id text NOT NULL,
     sort_order integer NOT NULL,
     origin text NOT NULL,
@@ -86,7 +112,7 @@ const schemaStatements = [
     PRIMARY KEY (property_id, id)
   )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_transport_templates (
-    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
     id text NOT NULL,
     sort_order integer NOT NULL,
     name text NOT NULL,
@@ -100,7 +126,7 @@ const schemaStatements = [
     PRIMARY KEY (property_id, id)
   )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_transport_day_notes (
-    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
     date_key text NOT NULL,
     tide text NOT NULL DEFAULT '',
     restricted text NOT NULL DEFAULT '',
@@ -109,7 +135,7 @@ const schemaStatements = [
     PRIMARY KEY (property_id, date_key)
   )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_transport_trips (
-    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
     id text NOT NULL,
     sort_order integer NOT NULL,
     trip_date text NOT NULL,
@@ -147,7 +173,7 @@ const schemaStatements = [
       REFERENCES public.hotelx_transport_trips(property_id, id) ON DELETE CASCADE
   )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_transport_booking_legs (
-    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
     id text NOT NULL,
     sort_order integer NOT NULL,
     booking_reference text NOT NULL,
@@ -175,7 +201,7 @@ const schemaStatements = [
     PRIMARY KEY (property_id, id)
   )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_location_master (
-    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
     code text NOT NULL,
     sort_order integer NOT NULL,
     description text NOT NULL,
@@ -184,7 +210,7 @@ const schemaStatements = [
     PRIMARY KEY (property_id, code)
   )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_room_type_master (
-    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
     code text NOT NULL,
     sort_order integer NOT NULL,
     description text NOT NULL,
@@ -199,7 +225,7 @@ const schemaStatements = [
     PRIMARY KEY (property_id, code)
   )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_room_master (
-    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
     room_no text NOT NULL,
     sort_order integer NOT NULL,
     room_type_code text NOT NULL,
@@ -221,7 +247,7 @@ const schemaStatements = [
   `ALTER TABLE public.hotelx_transport_booking_legs ADD COLUMN IF NOT EXISTS infants integer NOT NULL DEFAULT 0`,
   `ALTER TABLE public.hotelx_transport_trip_groups ADD COLUMN IF NOT EXISTS infants integer NOT NULL DEFAULT 0`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_roomstatus (
-    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
     status_code text NOT NULL,
     sort_order integer NOT NULL,
     status_name text NOT NULL,
@@ -230,7 +256,7 @@ const schemaStatements = [
     PRIMARY KEY (property_id, status_code)
   )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_department (
-    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
     department_id uuid NOT NULL DEFAULT gen_random_uuid(),
     sort_order integer NOT NULL,
     department_name text NOT NULL,
@@ -251,7 +277,7 @@ const schemaStatements = [
   `ALTER TABLE public.hotelx_department
     ADD COLUMN IF NOT EXISTS is_allow_service_request boolean NOT NULL DEFAULT false`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_sales_channel (
-    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
     department_id uuid NOT NULL,
     sales_channel_id text NOT NULL,
     sort_order integer NOT NULL,
@@ -292,7 +318,7 @@ const schemaStatements = [
     END $$`,
   `ALTER TABLE public.hotelx_department DROP COLUMN IF EXISTS sales_channels`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_segments (
-    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
     segment_id text NOT NULL,
     sort_order integer NOT NULL,
     description text NOT NULL,
@@ -314,7 +340,7 @@ const schemaStatements = [
       END IF;
     END $$`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_payment_type (
-    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
     payment_type_id uuid NOT NULL DEFAULT gen_random_uuid(),
     sort_order integer NOT NULL DEFAULT 0,
     description text NOT NULL,
@@ -324,12 +350,12 @@ const schemaStatements = [
     UNIQUE (property_id, description)
   )`,
   `INSERT INTO public.hotelx_payment_type (property_id, sort_order, description)
-    SELECT meta.id, item.sort_order, item.description
-    FROM public.hotelx_transport_meta AS meta
+    SELECT meta.property_id, item.sort_order, item.description
+    FROM public.hotelx_hotel_setup AS meta
     CROSS JOIN (VALUES (1, 'Cash'), (2, 'Credit/Debit Card'), (3, 'CityLedger'), (4, 'Cheque'), (5, 'Bank TT'), (6, 'Voucher'), (7, 'Other')) AS item(sort_order, description)
     ON CONFLICT (property_id, description) DO NOTHING`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_incidentalcharges (
-    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
     charge_id text NOT NULL,
     department_id uuid NOT NULL,
     title text NOT NULL,
@@ -342,7 +368,7 @@ const schemaStatements = [
     PRIMARY KEY (property_id, charge_id)
   )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_bookings (
-    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
     reference text NOT NULL,
     sort_order integer NOT NULL,
     guest text NOT NULL,
@@ -397,7 +423,7 @@ const schemaStatements = [
   `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS total numeric(14,2) NOT NULL DEFAULT 0`,
   `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS guest_profile_ids jsonb NOT NULL DEFAULT '[]'::jsonb`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_room_availability (
-    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
     availability_date date NOT NULL,
     room_type_code text NOT NULL,
     total_rooms integer NOT NULL DEFAULT 0 CHECK (total_rooms >= 0),
@@ -408,7 +434,7 @@ const schemaStatements = [
     PRIMARY KEY (property_id, availability_date, room_type_code)
   )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_season_master (
-    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
     id text NOT NULL,
     sort_order integer NOT NULL,
     name text NOT NULL,
@@ -418,7 +444,7 @@ const schemaStatements = [
     PRIMARY KEY (property_id, id)
   )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_season_calendar (
-    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
     calendar_date date NOT NULL,
     season_id text NOT NULL,
     updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -427,7 +453,7 @@ const schemaStatements = [
       REFERENCES public.hotelx_season_master(property_id, id)
   )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_rate_element (
-    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
     id text NOT NULL,
     sort_order integer NOT NULL,
     name text NOT NULL,
@@ -444,7 +470,7 @@ const schemaStatements = [
     ADD COLUMN IF NOT EXISTS posting_rhythm text NOT NULL DEFAULT 'Daily'
     CHECK (posting_rhythm IN ('Daily', 'First Night', 'Last Night'))`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_addon (
-    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
     id text NOT NULL,
     sort_order integer NOT NULL,
     name text NOT NULL,
@@ -458,7 +484,7 @@ const schemaStatements = [
     PRIMARY KEY (property_id, id)
   )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_rate_type (
-    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
     id text NOT NULL,
     sort_order integer NOT NULL,
     name text NOT NULL,
@@ -467,7 +493,7 @@ const schemaStatements = [
     PRIMARY KEY (property_id, id)
   )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_rate_setup (
-    property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+    property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
     id text NOT NULL,
     sort_order integer NOT NULL,
     code text NOT NULL,
@@ -509,40 +535,6 @@ const schemaStatements = [
     ADD COLUMN IF NOT EXISTS inclusive_elements jsonb NOT NULL DEFAULT '[]'::jsonb`,
   `ALTER TABLE public.hotelx_rate_setup_validity
     ADD COLUMN IF NOT EXISTS add_on_elements jsonb NOT NULL DEFAULT '[]'::jsonb`,
-  `CREATE TABLE IF NOT EXISTS public.hotelx_hotel_setup (
-    property_id text PRIMARY KEY REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
-    hotel_name text NOT NULL DEFAULT '', address text NOT NULL DEFAULT '', postcode text NOT NULL DEFAULT '', country text NOT NULL DEFAULT '', city text NOT NULL DEFAULT '', state text NOT NULL DEFAULT '', hotel_type text NOT NULL DEFAULT '', company_name text NOT NULL DEFAULT '', company_reg_no text NOT NULL DEFAULT '', sst_reg_no text NOT NULL DEFAULT '', ttx_reg_no text NOT NULL DEFAULT '', online_booking_url text NOT NULL DEFAULT '', live_run_date text NOT NULL DEFAULT '', contact_person text NOT NULL DEFAULT '', phone_no text NOT NULL DEFAULT '', mobile_no text NOT NULL DEFAULT '', reservation_email text NOT NULL DEFAULT '', business_email text NOT NULL DEFAULT '', booking_cancellation_days integer NOT NULL DEFAULT 3, currency_code text NOT NULL DEFAULT 'MYR', float_amount numeric(12,2) NOT NULL DEFAULT 0,     pax_count text NOT NULL DEFAULT 'No. of Pax Manual Updated', child_rates_applied boolean NOT NULL DEFAULT false, child_age_policy integer NOT NULL DEFAULT 0,
-    standard_check_in_time text NOT NULL DEFAULT '01:00 PM',
-    standard_check_out_time text NOT NULL DEFAULT '12:00 PM',
-    night_audit_cut_off_time text NOT NULL DEFAULT '10:00 AM',
-    postpaid boolean NOT NULL DEFAULT false,
-    floor_plan boolean NOT NULL DEFAULT false,
-    cashier_closure boolean NOT NULL DEFAULT false,
-    occupancy_house_use boolean NOT NULL DEFAULT true,
-    occupancy_day_use boolean NOT NULL DEFAULT true,
-    occupancy_complimentary boolean NOT NULL DEFAULT true,
-    occupancy_ooo boolean NOT NULL DEFAULT false,
-    occupancy_ooi boolean NOT NULL DEFAULT false,
-    security_deposit_amount numeric(12,2) NOT NULL DEFAULT 0,
-    key_card_deposit_amount numeric(12,2) NOT NULL DEFAULT 0,
-    tax_scheme_forfeited_revenue text NOT NULL DEFAULT 'SST',
-    prompt_during_walk_in boolean NOT NULL DEFAULT true,
-    prompt_during_pre_checkin boolean NOT NULL DEFAULT false,
-    room_status_check_in text NOT NULL DEFAULT '',
-    room_status_check_out text NOT NULL DEFAULT '',
-    room_status_transfer text NOT NULL DEFAULT '',
-    room_status_cancel_check_in text NOT NULL DEFAULT '',
-    room_status_cancel_check_out text NOT NULL DEFAULT '',
-    room_status_block_release text NOT NULL DEFAULT '',
-    advance_payment_tax_scheme text NOT NULL DEFAULT 'SST-5',
-    e_invoice_classification_room_charges text NOT NULL DEFAULT '022',
-    e_invoice_classification_service_charges text NOT NULL DEFAULT '022',
-    e_invoice_classification_advance_payment_forfeit text NOT NULL DEFAULT '022',
-    e_invoice_classification_deposit_forfeit text NOT NULL DEFAULT '022',
-    e_invoice_classification_state_tax text NOT NULL DEFAULT '022',
-    e_invoice_use_submission_date_as_doc_date boolean NOT NULL DEFAULT false,
-    updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
-  )`,
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS hotel_name text NOT NULL DEFAULT ''`,
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS postcode text NOT NULL DEFAULT ''`,
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS country text NOT NULL DEFAULT ''`,
@@ -648,7 +640,11 @@ const schemaStatements = [
   ) RETURNS void
   LANGUAGE plpgsql
   AS $$
+  DECLARE
+    v_root_revision integer;
+    v_root_schema integer;
   BEGIN
+    SELECT revision, schema_version INTO v_root_revision, v_root_schema FROM public.hotelx_hotel_setup WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_guestprofile WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_hotel_setup WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_rate_setup_validity WHERE property_id = p_property_id;
@@ -902,7 +898,7 @@ const schemaStatements = [
     FROM jsonb_array_elements(COALESCE(p_state #> '{rateSetup,validity}', '[]'::jsonb)) WITH ORDINALITY AS item(value, ordinality);
 
     INSERT INTO public.hotelx_hotel_setup (
-      property_id, hotel_name, address, postcode, country, city, state, hotel_type, company_name, company_reg_no,
+      property_id, revision, schema_version, hotel_name, address, postcode, country, city, state, hotel_type, company_name, company_reg_no,
       sst_reg_no, ttx_reg_no, online_booking_url, live_run_date, contact_person, phone_no, mobile_no, reservation_email,
       business_email, booking_cancellation_days, currency_code, float_amount, pax_count, child_rates_applied, child_age_policy,
       standard_check_in_time, standard_check_out_time, night_audit_cut_off_time, postpaid, floor_plan, cashier_closure,
@@ -914,7 +910,7 @@ const schemaStatements = [
       e_invoice_classification_deposit_forfeit, e_invoice_classification_state_tax, e_invoice_use_submission_date_as_doc_date
     )
     VALUES (
-      p_property_id, p_state #>> '{hotelMasters,profile,hotelName}', p_state #>> '{hotelMasters,profile,address}',
+      p_property_id, COALESCE(v_root_revision, 1), COALESCE(v_root_schema, 2), p_state #>> '{hotelMasters,profile,hotelName}', p_state #>> '{hotelMasters,profile,address}',
       p_state #>> '{hotelMasters,profile,postcode}', p_state #>> '{hotelMasters,profile,country}', p_state #>> '{hotelMasters,profile,city}',
       p_state #>> '{hotelMasters,profile,state}', p_state #>> '{hotelMasters,profile,hotelType}', p_state #>> '{hotelMasters,profile,companyName}',
       p_state #>> '{hotelMasters,profile,companyRegNo}', p_state #>> '{hotelMasters,profile,sstRegNo}', p_state #>> '{hotelMasters,profile,ttxRegNo}',
@@ -1159,9 +1155,9 @@ const schemaStatements = [
   DECLARE
     v_revision integer;
   BEGIN
-    INSERT INTO public.hotelx_transport_meta (id, schema_version, revision)
+    INSERT INTO public.hotelx_hotel_setup (property_id, schema_version, revision)
     VALUES (p_property_id, 2, GREATEST(COALESCE(p_revision, 1), 1))
-    ON CONFLICT (id) DO NOTHING
+    ON CONFLICT (property_id) DO NOTHING
     RETURNING revision INTO v_revision;
 
     IF v_revision IS NULL THEN
@@ -1182,11 +1178,11 @@ const schemaStatements = [
   DECLARE
     v_revision integer;
   BEGIN
-    UPDATE public.hotelx_transport_meta
+    UPDATE public.hotelx_hotel_setup
     SET revision = revision + 1,
         schema_version = 2,
         updated_at = CURRENT_TIMESTAMP
-    WHERE id = p_property_id
+    WHERE property_id = p_property_id
       AND revision = p_expected_revision
     RETURNING revision INTO v_revision;
 
@@ -1241,7 +1237,7 @@ const schemaStatements = [
               'useSubmissionDateAsDocDate', e_invoice_use_submission_date_as_doc_date
             )
           )
-        ) FROM public.hotelx_hotel_setup WHERE property_id = meta.id), '{}'::jsonb),
+        ) FROM public.hotelx_hotel_setup WHERE property_id = meta.property_id), '{}'::jsonb),
         'locations', COALESCE((
           SELECT jsonb_agg(jsonb_build_object(
             'code', location.code,
@@ -1250,7 +1246,7 @@ const schemaStatements = [
             'active', location.active
           ) ORDER BY location.sort_order)
           FROM public.hotelx_location_master AS location
-          WHERE location.property_id = meta.id
+          WHERE location.property_id = meta.property_id
         ), '[]'::jsonb),
         'roomTypes', COALESCE((
           SELECT jsonb_agg(jsonb_build_object(
@@ -1266,7 +1262,7 @@ const schemaStatements = [
             'active', room_type.active
           ) ORDER BY room_type.sort_order)
           FROM public.hotelx_room_type_master AS room_type
-          WHERE room_type.property_id = meta.id
+          WHERE room_type.property_id = meta.property_id
         ), '[]'::jsonb),
         'rooms', COALESCE((
           SELECT jsonb_agg(jsonb_build_object(
@@ -1281,7 +1277,7 @@ const schemaStatements = [
             'active', room.active
           ) ORDER BY room.sort_order)
           FROM public.hotelx_room_master AS room
-          WHERE room.property_id = meta.id
+          WHERE room.property_id = meta.property_id
         ), '[]'::jsonb),
         'roomStatuses', COALESCE((
           SELECT jsonb_agg(jsonb_build_object(
@@ -1291,7 +1287,7 @@ const schemaStatements = [
             'active', status.active
           ) ORDER BY status.sort_order)
           FROM public.hotelx_roomstatus AS status
-          WHERE status.property_id = meta.id
+          WHERE status.property_id = meta.property_id
         ), '[]'::jsonb),
         'departments', COALESCE((
           SELECT jsonb_agg(jsonb_build_object(
@@ -1328,11 +1324,11 @@ const schemaStatements = [
             ), '[]'::jsonb)
           ) ORDER BY department.sort_order)
           FROM public.hotelx_department AS department
-          WHERE department.property_id = meta.id
+          WHERE department.property_id = meta.property_id
         ), '[]'::jsonb),
-        'segments', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', segment.segment_id, 'description', segment.description, 'displaySequence', segment.sort_order, 'icon', segment.icon, 'active', segment.active, 'updatedAt', segment.updated_at) ORDER BY segment.sort_order) FROM public.hotelx_segments AS segment WHERE segment.property_id = meta.id), '[]'::jsonb)
+        'segments', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', segment.segment_id, 'description', segment.description, 'displaySequence', segment.sort_order, 'icon', segment.icon, 'active', segment.active, 'updatedAt', segment.updated_at) ORDER BY segment.sort_order) FROM public.hotelx_segments AS segment WHERE segment.property_id = meta.property_id), '[]'::jsonb)
       ),
-      'guestProfiles', COALESCE((SELECT jsonb_agg(jsonb_build_object('vehicle', g.vehicle, 'paymentRemark1', g.payment_remark1, 'paymentRemark2', g.payment_remark2, 'taxExemptReason', g.tax_exempt_reason, 'id', g.id, 'name', g.guest_name, 'mobile', g.mobile, 'email', g.email, 'nationality', g.nationality, 'identityNo', g.identity_no, 'address', g.address, 'country', g.country, 'state', g.state, 'city', g.city, 'postcode', g.postcode, 'birthDate', COALESCE(to_char(g.birth_date, 'YYYY-MM-DD'), ''), 'occupation', g.occupation, 'accountName', g.account_name, 'guestType', g.guest_type, 'adultChild', g.adult_child, 'remark', g.remark, 'newsletter', g.newsletter, 'tourismTax', g.tourism_tax, 'visits', g.visits, 'updated', to_char(g.updated_at, 'YYYY-MM-DD')) ORDER BY g.guest_name) FROM public.hotelx_guestprofile g WHERE g.property_id = meta.id), '[]'::jsonb),
+      'guestProfiles', COALESCE((SELECT jsonb_agg(jsonb_build_object('vehicle', g.vehicle, 'paymentRemark1', g.payment_remark1, 'paymentRemark2', g.payment_remark2, 'taxExemptReason', g.tax_exempt_reason, 'id', g.id, 'name', g.guest_name, 'mobile', g.mobile, 'email', g.email, 'nationality', g.nationality, 'identityNo', g.identity_no, 'address', g.address, 'country', g.country, 'state', g.state, 'city', g.city, 'postcode', g.postcode, 'birthDate', COALESCE(to_char(g.birth_date, 'YYYY-MM-DD'), ''), 'occupation', g.occupation, 'accountName', g.account_name, 'guestType', g.guest_type, 'adultChild', g.adult_child, 'remark', g.remark, 'newsletter', g.newsletter, 'tourismTax', g.tourism_tax, 'visits', g.visits, 'updated', to_char(g.updated_at, 'YYYY-MM-DD')) ORDER BY g.guest_name) FROM public.hotelx_guestprofile g WHERE g.property_id = meta.property_id), '[]'::jsonb),
       'bookings', COALESCE((
         SELECT jsonb_agg(jsonb_build_object(
           'reference', booking.booking_no,
@@ -1362,16 +1358,16 @@ const schemaStatements = [
           'source', booking.source, 'segment', booking.segment, 'referenceNo', booking.reference_no, 'cityAccount', booking.city_account, 'billingRemark', booking.billing_remark, 'billingSchedule', booking.billing_schedule, 'specialRequests', booking.special_requests, 'attachments', booking.attachments
         ) ORDER BY booking.sort_order)
         FROM public.hotelx_bookings AS booking
-        WHERE booking.property_id = meta.id
+        WHERE booking.property_id = meta.property_id
       ), '[]'::jsonb),
       'rateSetup', jsonb_build_object(
-        'seasons', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', s.id, 'name', s.name, 'color', s.color, 'active', s.active) ORDER BY s.sort_order) FROM public.hotelx_season_master s WHERE s.property_id = meta.id), '[]'::jsonb),
-        'calendar', COALESCE((SELECT jsonb_object_agg(to_char(c.calendar_date, 'YYYY-MM-DD'), c.season_id) FROM public.hotelx_season_calendar c WHERE c.property_id = meta.id), '{}'::jsonb),
-        'elements', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', e.id, 'name', e.name, 'basis', e.basis, 'postingRhythm', e.posting_rhythm, 'min', e.min_qty, 'max', e.max_qty, 'amount', e.amount::double precision, 'active', e.active) ORDER BY e.sort_order) FROM public.hotelx_rate_element e WHERE e.property_id = meta.id), '[]'::jsonb),
-        'addOns', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', a.id, 'name', a.name, 'basis', a.basis, 'postingRhythm', a.posting_rhythm, 'min', a.min_qty, 'max', a.max_qty, 'amount', a.amount::double precision, 'active', a.active) ORDER BY a.sort_order) FROM public.hotelx_addon a WHERE a.property_id = meta.id), '[]'::jsonb),
-        'rateTypes', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', t.id, 'name', t.name, 'active', t.active) ORDER BY t.sort_order) FROM public.hotelx_rate_type t WHERE t.property_id = meta.id), '[]'::jsonb),
-        'ratePlans', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', r.id, 'code', r.code, 'description', r.description, 'rateTypeId', r.rate_type_id, 'rateFrequency', r.rate_frequency, 'updated', COALESCE(to_char(r.last_updated_on, 'DD Mon YYYY'), ''), 'active', r.active, 'web', r.web) ORDER BY r.sort_order) FROM public.hotelx_rate_setup r WHERE r.property_id = meta.id), '[]'::jsonb),
-        'validity', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', v.id, 'rateSetupId', v.rate_setup_id, 'from', to_char(v.valid_from, 'YYYY-MM-DD'), 'to', to_char(v.valid_to, 'YYYY-MM-DD'), 'active', v.active, 'seasonalRates', v.seasonal_rates, 'inclusiveElements', v.inclusive_elements, 'addOnElements', v.add_on_elements) ORDER BY v.sort_order) FROM public.hotelx_rate_setup_validity v WHERE v.property_id = meta.id), '[]'::jsonb)
+        'seasons', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', s.id, 'name', s.name, 'color', s.color, 'active', s.active) ORDER BY s.sort_order) FROM public.hotelx_season_master s WHERE s.property_id = meta.property_id), '[]'::jsonb),
+        'calendar', COALESCE((SELECT jsonb_object_agg(to_char(c.calendar_date, 'YYYY-MM-DD'), c.season_id) FROM public.hotelx_season_calendar c WHERE c.property_id = meta.property_id), '{}'::jsonb),
+        'elements', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', e.id, 'name', e.name, 'basis', e.basis, 'postingRhythm', e.posting_rhythm, 'min', e.min_qty, 'max', e.max_qty, 'amount', e.amount::double precision, 'active', e.active) ORDER BY e.sort_order) FROM public.hotelx_rate_element e WHERE e.property_id = meta.property_id), '[]'::jsonb),
+        'addOns', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', a.id, 'name', a.name, 'basis', a.basis, 'postingRhythm', a.posting_rhythm, 'min', a.min_qty, 'max', a.max_qty, 'amount', a.amount::double precision, 'active', a.active) ORDER BY a.sort_order) FROM public.hotelx_addon a WHERE a.property_id = meta.property_id), '[]'::jsonb),
+        'rateTypes', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', t.id, 'name', t.name, 'active', t.active) ORDER BY t.sort_order) FROM public.hotelx_rate_type t WHERE t.property_id = meta.property_id), '[]'::jsonb),
+        'ratePlans', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', r.id, 'code', r.code, 'description', r.description, 'rateTypeId', r.rate_type_id, 'rateFrequency', r.rate_frequency, 'updated', COALESCE(to_char(r.last_updated_on, 'DD Mon YYYY'), ''), 'active', r.active, 'web', r.web) ORDER BY r.sort_order) FROM public.hotelx_rate_setup r WHERE r.property_id = meta.property_id), '[]'::jsonb),
+        'validity', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', v.id, 'rateSetupId', v.rate_setup_id, 'from', to_char(v.valid_from, 'YYYY-MM-DD'), 'to', to_char(v.valid_to, 'YYYY-MM-DD'), 'active', v.active, 'seasonalRates', v.seasonal_rates, 'inclusiveElements', v.inclusive_elements, 'addOnElements', v.add_on_elements) ORDER BY v.sort_order) FROM public.hotelx_rate_setup_validity v WHERE v.property_id = meta.property_id), '[]'::jsonb)
       ),
       'setup', jsonb_build_object(
         'operators', COALESCE((
@@ -1386,7 +1382,7 @@ const schemaStatements = [
             ) ORDER BY op.sort_order
           )
           FROM public.hotelx_transport_operators AS op
-          WHERE op.property_id = meta.id
+          WHERE op.property_id = meta.property_id
         ), '[]'::jsonb),
         'boats', COALESCE((
           SELECT jsonb_agg(
@@ -1405,7 +1401,7 @@ const schemaStatements = [
             ) ORDER BY service.sort_order
           )
           FROM public.hotelx_transport_services AS service
-          WHERE service.property_id = meta.id
+          WHERE service.property_id = meta.property_id
         ), '[]'::jsonb),
         'routes', COALESCE((
           SELECT jsonb_agg(
@@ -1421,7 +1417,7 @@ const schemaStatements = [
             ) ORDER BY route.sort_order
           )
           FROM public.hotelx_transport_routes AS route
-          WHERE route.property_id = meta.id
+          WHERE route.property_id = meta.property_id
         ), '[]'::jsonb),
         'rules', COALESCE((
           SELECT jsonb_build_object(
@@ -1432,7 +1428,7 @@ const schemaStatements = [
             'notes', rules.notes
           )
           FROM public.hotelx_transport_rules AS rules
-          WHERE rules.property_id = meta.id
+          WHERE rules.property_id = meta.property_id
         ), '{}'::jsonb)
       ),
       'trips', COALESCE((
@@ -1475,7 +1471,7 @@ const schemaStatements = [
           ) ORDER BY trip.sort_order
         )
         FROM public.hotelx_transport_trips AS trip
-        WHERE trip.property_id = meta.id
+        WHERE trip.property_id = meta.property_id
       ), '[]'::jsonb),
       'templates', COALESCE((
         SELECT jsonb_agg(
@@ -1492,7 +1488,7 @@ const schemaStatements = [
           ) ORDER BY template.sort_order
         )
         FROM public.hotelx_transport_templates AS template
-        WHERE template.property_id = meta.id
+        WHERE template.property_id = meta.property_id
       ), '[]'::jsonb),
       'dayNotes', COALESCE((
         SELECT jsonb_object_agg(
@@ -1505,7 +1501,7 @@ const schemaStatements = [
           )
         )
         FROM public.hotelx_transport_day_notes AS note
-        WHERE note.property_id = meta.id
+        WHERE note.property_id = meta.property_id
       ), '{}'::jsonb),
       'bookingLegs', COALESCE((
         SELECT jsonb_agg(
@@ -1539,11 +1535,11 @@ const schemaStatements = [
           ) ORDER BY leg.sort_order
         )
         FROM public.hotelx_transport_booking_legs AS leg
-        WHERE leg.property_id = meta.id
+        WHERE leg.property_id = meta.property_id
       ), '[]'::jsonb)
     )
-  FROM public.hotelx_transport_meta AS meta
-  WHERE meta.id = p_property_id;
+  FROM public.hotelx_hotel_setup AS meta
+  WHERE meta.property_id = p_property_id;
   $$`,
 ];
 

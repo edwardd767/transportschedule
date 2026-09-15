@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS public.hotelx_incidentalcharges (
-  property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+  property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
   charge_id text NOT NULL,
   department_id uuid NOT NULL,
   title text NOT NULL,

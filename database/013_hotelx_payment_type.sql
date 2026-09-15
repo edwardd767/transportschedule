@@ -14,7 +14,7 @@ DO $$
   END $$;
 
 CREATE TABLE IF NOT EXISTS public.hotelx_payment_type (
-  property_id text NOT NULL REFERENCES public.hotelx_transport_meta(id) ON DELETE CASCADE,
+  property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
   payment_type_id uuid NOT NULL DEFAULT gen_random_uuid(),
   sort_order integer NOT NULL DEFAULT 0,
   description text NOT NULL,
@@ -25,8 +25,8 @@ CREATE TABLE IF NOT EXISTS public.hotelx_payment_type (
 );
 
 INSERT INTO public.hotelx_payment_type (property_id, sort_order, description)
-SELECT meta.id, item.sort_order, item.description
-FROM public.hotelx_transport_meta AS meta
+SELECT meta.property_id, item.sort_order, item.description
+FROM public.hotelx_hotel_setup AS meta
 CROSS JOIN (VALUES
   (1, 'Cash'),
   (2, 'Credit/Debit Card'),
