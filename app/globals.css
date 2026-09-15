@@ -2806,7 +2806,7 @@ p {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 18px;
+  padding: 11px 14px;
   background: #fff8ef;
   border-bottom: 1px solid #f2e3cf;
 }
@@ -2831,10 +2831,10 @@ p {
 .advance-search-body {
   display: grid;
   gap: 2px;
-  padding: 8px 18px 14px;
+  padding: 4px 14px 8px;
 }
 .advance-search-group {
-  padding-top: 10px;
+  padding-top: 6px;
 }
 .advance-search-group-label {
   display: block;
@@ -2851,8 +2851,8 @@ p {
 .advance-search-field {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  padding: 9px 0;
+  gap: 2px;
+  padding: 6px 0;
   border-bottom: 1px solid #ddd;
 }
 .advance-search-field > span {
@@ -2894,7 +2894,7 @@ p {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  padding: 14px 18px 18px;
+  padding: 10px 14px 12px;
   border-top: 1px solid #eee;
 }
 .booking-detail-summary {
