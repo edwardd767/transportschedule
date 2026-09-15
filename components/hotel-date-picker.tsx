@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 
@@ -20,6 +20,7 @@ type HotelDatePickerProps = {
   mode?: PickerMode;
   showTodayButton?: boolean;
   displayStyle?: 'numeric' | 'weekday';
+  editable?: boolean;
 };
 
 function HotelCalendarIcon({ size = 18 }: { size?: number }) {
@@ -103,12 +104,14 @@ export function HotelDatePicker({
   mode = 'date',
   showTodayButton = false,
   displayStyle = 'numeric',
+  editable = false,
 }: HotelDatePickerProps) {
   const controlled = value !== undefined;
   const [internalValue, setInternalValue] = useState(defaultValue);
   const currentValue = controlled ? value ?? '' : internalValue;
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(() => normaliseDate(currentValue, mode));
+  const [typed, setTyped] = useState(() => (currentValue ? displayValue(currentValue, mode) : ''));
   const [cursor, setCursor] = useState(() => {
     const selected = parseKey(normaliseDate(currentValue, mode));
     return { year: selected.getFullYear(), month: selected.getMonth() };
@@ -166,6 +169,29 @@ export function HotelDatePicker({
     applyValue(next);
   }
 
+  useEffect(() => {
+    if (!editable) return;
+    setTyped(currentValue ? displayValue(currentValue, mode) : '');
+  }, [currentValue, editable, mode]);
+
+  function commitTyped() {
+    const value = typed.trim();
+    if (!value) {
+      applyValue('');
+      return;
+    }
+    const match = value.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4})$/);
+    const parsed = match
+      ? `${match[3]}-${pad(Number(match[2]))}-${pad(Number(match[1]))}`
+      : (/^\d{4}-\d{2}-\d{2}$/.test(value) ? value : '');
+    if (parsed) {
+      applyValue(parsed);
+      setTyped(displayValue(parsed, mode));
+    } else {
+      setTyped(currentValue ? displayValue(currentValue, mode) : '');
+    }
+  }
+
   const header = selected.toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',
@@ -179,17 +205,39 @@ export function HotelDatePicker({
   return (
     <>
       {name && <input type="hidden" name={name} value={currentValue} />}
-      <button
-        type="button"
-        className={`hotel-date-field ${className}`.trim()}
-        aria-label={ariaLabel}
-        aria-haspopup="dialog"
-        disabled={disabled}
-        onClick={openPicker}
-      >
-        <span>{displayStyle === 'weekday' ? weekdayValue(currentValue) : displayValue(currentValue, mode)}</span>
-        <HotelCalendarIcon size={18} />
-      </button>
+      {editable ? (
+        <div className={`hotel-date-field is-editable ${className}`.trim()}>
+          <input
+            value={typed}
+            onChange={(event) => setTyped(event.target.value)}
+            onBlur={commitTyped}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                commitTyped();
+              }
+            }}
+            placeholder="dd/mm/yyyy"
+            aria-label={ariaLabel}
+            disabled={disabled}
+          />
+          <button type="button" onClick={openPicker} disabled={disabled} aria-label={`${ariaLabel} calendar`}>
+            <HotelCalendarIcon size={18} />
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          className={`hotel-date-field ${className}`.trim()}
+          aria-label={ariaLabel}
+          aria-haspopup="dialog"
+          disabled={disabled}
+          onClick={openPicker}
+        >
+          <span>{displayStyle === 'weekday' ? weekdayValue(currentValue) : displayValue(currentValue, mode)}</span>
+          <HotelCalendarIcon size={18} />
+        </button>
+      )}
       {required && !currentValue && <span className="sr-only">A date is required.</span>}
 
       <Dialog open={open} onOpenChange={setOpen}>
