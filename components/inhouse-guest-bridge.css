@@ -229,6 +229,20 @@
   color: #a95600;
 }
 
+.inhouse-sort-menu {
+  width: 212px;
+  max-height: 330px;
+  overflow-y: auto;
+}
+
+.inhouse-sort-head {
+  display: block;
+  padding: 7px 8px 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #a95600;
+}
+
 .inhouse-list {
   flex: 1;
   min-height: 0;

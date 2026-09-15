@@ -32,14 +32,42 @@ type InhouseRow = {
   arrival: string;
   departure: string;
   reference: string;
+  location: string;
 };
+
+const SORT_OPTIONS = [
+  { key: 'arrival-asc', label: 'Arrival Date (A-Z)' },
+  { key: 'arrival-desc', label: 'Arrival Date (Z-A)' },
+  { key: 'departure-asc', label: 'Departure Date (A-Z)' },
+  { key: 'departure-desc', label: 'Departure Date (Z-A)' },
+  { key: 'reference-asc', label: 'Booking No (A-Z)' },
+  { key: 'reference-desc', label: 'Booking No (Z-A)' },
+  { key: 'room-asc', label: 'Room No (Low-High)' },
+  { key: 'room-desc', label: 'Room No (High-Low)' },
+  { key: 'guest-asc', label: 'Guest Name (A-Z)' },
+  { key: 'guest-desc', label: 'Guest Name (Z-A)' },
+  { key: 'location-asc', label: 'Location (Low-High)' },
+  { key: 'location-desc', label: 'Location (High-Low)' },
+] as const;
+
+function compareRows(a: InhouseRow, b: InhouseRow, sortKey: string) {
+  const [field, direction] = sortKey.split('-');
+  const factor = direction === 'desc' ? -1 : 1;
+  if (field === 'arrival') return a.arrival.localeCompare(b.arrival) * factor;
+  if (field === 'departure') return a.departure.localeCompare(b.departure) * factor;
+  if (field === 'reference') return a.reference.localeCompare(b.reference, undefined, { numeric: true }) * factor;
+  if (field === 'guest') return a.guest.localeCompare(b.guest) * factor;
+  if (field === 'location') return a.location.localeCompare(b.location, undefined, { numeric: true }) * factor;
+  return a.roomNo.localeCompare(b.roomNo, undefined, { numeric: true }) * factor;
+}
 
 export function InhouseGuestBridge({ store }: { store: TransportData }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [roomType, setRoomType] = useState('all');
   const [filterOpen, setFilterOpen] = useState(false);
-  const [sortAsc, setSortAsc] = useState(true);
+  const [sortOpen, setSortOpen] = useState(false);
+  const [sortKey, setSortKey] = useState('room-asc');
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
   const { bookings, hotelMasters } = store.state;
 
@@ -118,6 +146,7 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
               arrival: booking.arrival,
               departure: booking.departure,
               reference: booking.reference,
+              location: assigned?.locationCode ?? '',
             };
           }),
         ),
@@ -140,11 +169,8 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
           .toLowerCase()
           .includes(search);
       })
-      .sort((a, b) => {
-        const value = a.roomNo.localeCompare(b.roomNo, undefined, { numeric: true });
-        return sortAsc ? value : -value;
-      });
-  }, [query, roomType, rows, sortAsc]);
+      .sort((a, b) => compareRows(a, b, sortKey));
+  }, [query, roomType, rows, sortKey]);
 
   if (!open || !portalTarget) return null;
 
@@ -219,13 +245,35 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
               </div>
             )}
           </div>
-          <button
-            type="button"
-            aria-label={sortAsc ? 'Sort room descending' : 'Sort room ascending'}
-            onClick={() => setSortAsc((value) => !value)}
-          >
-            <ArrowUpDown size={20} />
-          </button>
+          <div className="inhouse-filter-wrap">
+            <button
+              type="button"
+              aria-label="Sort listing"
+              aria-expanded={sortOpen}
+              className={sortKey !== 'room-asc' ? 'active' : ''}
+              onClick={() => setSortOpen((value) => !value)}
+            >
+              <ArrowUpDown size={20} />
+            </button>
+            {sortOpen && (
+              <div className="inhouse-filter-menu inhouse-sort-menu">
+                <span className="inhouse-sort-head">Sort By</span>
+                {SORT_OPTIONS.map((option) => (
+                  <button
+                    type="button"
+                    className={sortKey === option.key ? 'selected' : ''}
+                    key={option.key}
+                    onClick={() => {
+                      setSortKey(option.key);
+                      setSortOpen(false);
+                    }}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
