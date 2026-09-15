@@ -259,17 +259,18 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
               <div className="inhouse-filter-menu inhouse-sort-menu">
                 <span className="inhouse-sort-head">Sort By</span>
                 {SORT_OPTIONS.map((option) => (
-                  <button
-                    type="button"
-                    className={sortKey === option.key ? 'selected' : ''}
-                    key={option.key}
-                    onClick={() => {
-                      setSortKey(option.key);
-                      setSortOpen(false);
-                    }}
-                  >
-                    {option.label}
-                  </button>
+                  <label className="inhouse-sort-option" key={option.key}>
+                    <input
+                      type="radio"
+                      name="inhouse-sort"
+                      checked={sortKey === option.key}
+                      onChange={() => {
+                        setSortKey(option.key);
+                        setSortOpen(false);
+                      }}
+                    />
+                    <span>{option.label}</span>
+                  </label>
                 ))}
               </div>
             )}

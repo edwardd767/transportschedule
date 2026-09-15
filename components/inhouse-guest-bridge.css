@@ -243,6 +243,28 @@
   color: #a95600;
 }
 
+.inhouse-sort-option {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.inhouse-sort-option:hover {
+  background: #fff0dd;
+}
+
+.inhouse-sort-option input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  flex: none;
+  accent-color: #ff8c12;
+}
+
 .inhouse-list {
   flex: 1;
   min-height: 0;
