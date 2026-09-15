@@ -2859,6 +2859,36 @@ p {
   font-size: 12px;
   color: #8a94a6;
 }
+.advance-search-field:has(> input) {
+  position: relative;
+  display: block;
+  padding: 16px 0 7px;
+}
+.advance-search-field:has(> input) > span {
+  position: absolute;
+  left: 0;
+  top: 24px;
+  transform: translateY(-50%);
+  font-size: 15px;
+  color: #9aa0a6;
+  transition: top .15s ease, font-size .15s ease, color .15s ease;
+  pointer-events: none;
+}
+.advance-search-field:has(> input):has(> input:not(:placeholder-shown)) > span {
+  top: 2px;
+  transform: none;
+  font-size: 11px;
+  color: #8a94a6;
+}
+.advance-search-field:has(> input):focus-within > span {
+  top: 2px;
+  transform: none;
+  font-size: 11px;
+  color: #f58220;
+}
+.advance-search-field:has(> input):focus-within {
+  border-bottom-color: #f58220;
+}
 .advance-search-field input,
 .advance-search-field select {
   width: 100%;

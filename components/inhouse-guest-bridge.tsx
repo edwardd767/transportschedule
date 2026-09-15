@@ -320,12 +320,12 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
                   <div className="advance-search-field"><span>End Date</span><HotelDatePicker value={advance.departureEnd} onChange={(value) => setAdvance({ ...advance, departureEnd: value })} ariaLabel="Departure end date" editable /></div>
                 </div>
               </div>
-              <label className="advance-search-field"><span>Booking No</span><input value={advance.bookingNo} onChange={(event) => setAdvance({ ...advance, bookingNo: event.target.value })} /></label>
-              <label className="advance-search-field"><span>Room No</span><input value={advance.roomNo} onChange={(event) => setAdvance({ ...advance, roomNo: event.target.value })} /></label>
-              <label className="advance-search-field"><span>Guest Name</span><input value={advance.guestName} onChange={(event) => setAdvance({ ...advance, guestName: event.target.value })} /></label>
-              <label className="advance-search-field"><span>Account Name</span><input value={advance.accountName} onChange={(event) => setAdvance({ ...advance, accountName: event.target.value })} /></label>
-              <label className="advance-search-field"><span>Reference No</span><input value={advance.referenceNo} onChange={(event) => setAdvance({ ...advance, referenceNo: event.target.value })} /></label>
-              <label className="advance-search-field"><span>Group Name</span><input value={advance.groupName} onChange={(event) => setAdvance({ ...advance, groupName: event.target.value })} /></label>
+              <label className="advance-search-field"><span>Booking No</span><input placeholder=" " value={advance.bookingNo} onChange={(event) => setAdvance({ ...advance, bookingNo: event.target.value })} /></label>
+              <label className="advance-search-field"><span>Room No</span><input placeholder=" " value={advance.roomNo} onChange={(event) => setAdvance({ ...advance, roomNo: event.target.value })} /></label>
+              <label className="advance-search-field"><span>Guest Name</span><input placeholder=" " value={advance.guestName} onChange={(event) => setAdvance({ ...advance, guestName: event.target.value })} /></label>
+              <label className="advance-search-field"><span>Account Name</span><input placeholder=" " value={advance.accountName} onChange={(event) => setAdvance({ ...advance, accountName: event.target.value })} /></label>
+              <label className="advance-search-field"><span>Reference No</span><input placeholder=" " value={advance.referenceNo} onChange={(event) => setAdvance({ ...advance, referenceNo: event.target.value })} /></label>
+              <label className="advance-search-field"><span>Group Name</span><input placeholder=" " value={advance.groupName} onChange={(event) => setAdvance({ ...advance, groupName: event.target.value })} /></label>
             </div>
             <div className="advance-search-actions" style={{ flex: '0 0 auto' }}>
               <button type="button" className="primary-button" onClick={() => setAdvanceOpen(false)}>Cancel</button>
