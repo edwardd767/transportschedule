@@ -34,6 +34,10 @@ function countChildren(booking: Booking) {
   return booking.rooms.reduce((sum, room) => sum + (room.children ?? 0) * room.count, 0);
 }
 
+function countInfants(booking: Booking) {
+  return booking.rooms.reduce((sum, room) => sum + (room.infants ?? 0) * room.count, 0);
+}
+
 function nights(booking: Booking) {
   return Math.max(1, Math.round((Date.parse(booking.departure) - Date.parse(booking.arrival)) / dayMs));
 }
@@ -55,6 +59,7 @@ type ForecastRow = {
   expOcc: number;
   adults: number;
   children: number;
+  infants: number;
   reservedRoom: number;
   fitReservations: number;
   gitReservations: number;
@@ -91,6 +96,7 @@ function buildRow(bookings: Booking[], roomTotal: number, date: string): Forecas
     expOcc: roomTotal ? occupiedRoom / roomTotal * 100 : 0,
     adults: active.reduce((sum, booking) => sum + countAdults(booking), 0),
     children: active.reduce((sum, booking) => sum + countChildren(booking), 0),
+    infants: active.reduce((sum, booking) => sum + countInfants(booking), 0),
     reservedRoom: active.reduce((sum, booking) => sum + countRooms(booking), 0),
     fitReservations: active.filter(booking => (booking.segment || '').toLowerCase() !== 'group').reduce((sum, booking) => sum + countRooms(booking), 0),
     gitReservations: active.filter(booking => (booking.segment || '').toLowerCase() === 'group').reduce((sum, booking) => sum + countRooms(booking), 0),
@@ -117,6 +123,7 @@ function sumRows(rows: ForecastRow[]): ForecastRow {
     dueIn: sum.dueIn + row.dueIn,
     adults: sum.adults + row.adults,
     children: sum.children + row.children,
+    infants: sum.infants + row.infants,
     reservedRoom: sum.reservedRoom + row.reservedRoom,
     fitReservations: sum.fitReservations + row.fitReservations,
     gitReservations: sum.gitReservations + row.gitReservations,
@@ -125,7 +132,7 @@ function sumRows(rows: ForecastRow[]): ForecastRow {
     roomRevenue: sum.roomRevenue + row.roomRevenue,
     otherRevenue: sum.otherRevenue + row.otherRevenue,
     totalRevenue: sum.totalRevenue + row.totalRevenue,
-  }), { occupiedRoom: 0, dueOut: 0, dueIn: 0, adults: 0, children: 0, reservedRoom: 0, fitReservations: 0, gitReservations: 0, waitlistRoom: 0, availableRoom: 0, roomRevenue: 0, otherRevenue: 0, totalRevenue: 0 });
+  }), { occupiedRoom: 0, dueOut: 0, dueIn: 0, adults: 0, children: 0, infants: 0, reservedRoom: 0, fitReservations: 0, gitReservations: 0, waitlistRoom: 0, availableRoom: 0, roomRevenue: 0, otherRevenue: 0, totalRevenue: 0 });
   return {
     hotelDate: 'Forecast Total',
     day: '',
@@ -152,9 +159,9 @@ function cell(value: string | number, format: 'money' | 'number' = 'number') {
 function ForecastTable({ rows }: { rows: ForecastRow[] }) {
   const total = sumRows(rows);
   const allRows = [...rows, total, { ...total, hotelDate: 'Grand Total:' }];
-  const headers = ['Hotel Date', 'Day', 'Total Room', 'OOO', 'OOI', 'Rent Room', 'Occ. Room', 'Due Out', 'Due In', 'Exp. Occ', 'OCC (%)', 'A/C', 'Resv. Room', 'FIT Resv.', 'GIT Resv.', 'Waitlist Room', 'Blocked Room', 'Available Room', 'House Room', 'Comp Room', 'Day Use Room', 'Room Revenue', 'Other Revenue', 'External Revenue', 'FNB Revenue', 'Total Revenue', 'ARR'];
+  const headers = ['Hotel Date', 'Day', 'Total Room', 'OOO', 'OOI', 'Rent Room', 'Occ. Room', 'Due Out', 'Due In', 'Exp. Occ', 'OCC (%)', 'A/C/I', 'Resv. Room', 'FIT Resv.', 'GIT Resv.', 'Waitlist Room', 'Blocked Room', 'Available Room', 'House Room', 'Comp Room', 'Day Use Room', 'Room Revenue', 'Other Revenue', 'External Revenue', 'FNB Revenue', 'Total Revenue', 'ARR'];
   return <table className="historical-forecast-table"><thead><tr>{headers.map(header => <th key={header}>{header}</th>)}</tr></thead><tbody>{allRows.map((row, index) => <tr key={`${row.hotelDate}-${index}`} className={index >= rows.length ? 'forecast-total-row' : undefined}>
-    <th scope="row">{row.hotelDate}</th><td>{row.day}</td><td>{cell(row.totalRoom)}</td><td>{cell(row.ooo)}</td><td>{cell(row.ooi)}</td><td>{cell(row.rentRoom)}</td><td>{cell(row.occupiedRoom)}</td><td>{cell(row.dueOut)}</td><td>{cell(row.dueIn)}</td><td>{cell(row.expOcc, 'money')}</td><td>{cell(row.expOcc, 'money')}</td><td>{row.adults}/{row.children}</td><td>{cell(row.reservedRoom)}</td><td>{cell(row.fitReservations)}</td><td>{cell(row.gitReservations)}</td><td>{cell(row.waitlistRoom)}</td><td>{cell(row.blockedRoom)}</td><td>{cell(row.availableRoom)}</td><td>{cell(row.houseRoom)}</td><td>{cell(row.compRoom)}</td><td>{cell(row.dayUseRoom)}</td><td>{cell(row.roomRevenue, 'money')}</td><td>{cell(row.otherRevenue, 'money')}</td><td>{cell(row.externalRevenue, 'money')}</td><td>{cell(row.fnbRevenue, 'money')}</td><td>{cell(row.totalRevenue, 'money')}</td><td>{cell(row.arr, 'money')}</td>
+    <th scope="row">{row.hotelDate}</th><td>{row.day}</td><td>{cell(row.totalRoom)}</td><td>{cell(row.ooo)}</td><td>{cell(row.ooi)}</td><td>{cell(row.rentRoom)}</td><td>{cell(row.occupiedRoom)}</td><td>{cell(row.dueOut)}</td><td>{cell(row.dueIn)}</td><td>{cell(row.expOcc, 'money')}</td><td>{cell(row.expOcc, 'money')}</td><td>{row.adults}/{row.children}/{row.infants}</td><td>{cell(row.reservedRoom)}</td><td>{cell(row.fitReservations)}</td><td>{cell(row.gitReservations)}</td><td>{cell(row.waitlistRoom)}</td><td>{cell(row.blockedRoom)}</td><td>{cell(row.availableRoom)}</td><td>{cell(row.houseRoom)}</td><td>{cell(row.compRoom)}</td><td>{cell(row.dayUseRoom)}</td><td>{cell(row.roomRevenue, 'money')}</td><td>{cell(row.otherRevenue, 'money')}</td><td>{cell(row.externalRevenue, 'money')}</td><td>{cell(row.fnbRevenue, 'money')}</td><td>{cell(row.totalRevenue, 'money')}</td><td>{cell(row.arr, 'money')}</td>
   </tr>)}</tbody></table>;
 }
 

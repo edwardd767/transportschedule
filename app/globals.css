@@ -5937,7 +5937,7 @@ p {
 .historical-forecast-heading{text-align:center;padding:18px 0 24px;font-size:14px;line-height:1.25}
 .historical-forecast-heading h2{margin:0;font-size:16px;font-weight:700}
 .historical-forecast-heading p{margin:2px 0 0}
-.historical-forecast-wrap{max-width:100%;overflow:auto;padding-bottom:4px}
+.historical-forecast-wrap{max-width:100%;overflow:auto;padding-bottom:20px}
 .historical-forecast-table{border-collapse:collapse;min-width:1500px;width:100%;font-size:12px;line-height:1.12;color:#000}
 .historical-forecast-table th,.historical-forecast-table td{padding:4px 6px;text-align:right;white-space:nowrap;border-bottom:1px solid #111}
 .historical-forecast-table th:first-child,.historical-forecast-table td:first-child{text-align:left}

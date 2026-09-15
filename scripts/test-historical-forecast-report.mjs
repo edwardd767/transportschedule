@@ -14,7 +14,7 @@ const bookings = [{
   arrival:'2026-09-09',
   departure:'2026-09-10',
   status:'Booked',
-  rooms:[{code:'SPK',count:2,adults:2,children:1}],
+  rooms:[{code:'SPK',count:2,adults:2,children:1,infants:5}],
   assignedRooms:2,
   checkedInGuests:0,
   guests:6,
@@ -26,6 +26,6 @@ const hotelMasters = {
   roomTypes:[{code:'SPK',totalRoom:24,active:true}],
 };
 const html = renderToStaticMarkup(React.createElement(module.exports.HistoricalForecastReport,{bookings,hotelMasters,from:'2026-09-09',to:'2026-09-09',onFrom:()=>{},onTo:()=>{},onBack:()=>{}}));
-for (const value of ['Hotel Historical &amp; Forecast Report','Hotel Date','A/C','Forecast Total','Grand Total:','4/2']) assert.ok(html.includes(value), value);
+for (const value of ['Hotel Historical &amp; Forecast Report','Hotel Date','A/C/I','Forecast Total','Grand Total:','4/2/10']) assert.ok(html.includes(value), value);
 assert.ok(!html.includes('No Of Adult'), 'old adult header should be replaced');
-console.log('Historical forecast report renders A/C counts and totals.');
+console.log('Historical forecast report renders A/C/I counts and totals.');
