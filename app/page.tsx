@@ -15,6 +15,7 @@ import { ProductionAnalysisState } from '@/components/production-analysis-state'
 import { HotelxBackButton } from '@/components/hotelx-back-button';
 import {
   useEffect,
+  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -226,6 +227,24 @@ function HomeContent({ store }: { store: TransportData }) {
   const { setup, trips, templates, bookingLegs, hotelMasters, bookings, rateSetup, guestProfiles } = store.state;
   const activeBooking =
     bookings.find((booking) => booking.reference === bookingReference) ?? null;
+  const frontDeskDetails = useMemo<Record<string, string>>(() => {
+    const today = todayKey();
+    const totalRooms = (booking: Booking) => booking.rooms.reduce((sum, room) => sum + room.count, 0);
+    const isActive = (booking: Booking) => !['Cancelled', 'No Show'].includes(booking.status);
+    const checkedInRooms = (booking: Booking) => (booking.status === 'Inhouse' ? Math.min(booking.assignedRooms, totalRooms(booking)) : 0);
+    const checkedOutRooms = (booking: Booking) => (booking.status === 'Checkout' ? totalRooms(booking) : 0);
+    const sum = (list: Booking[], value: (booking: Booking) => number) => list.reduce((total, booking) => total + value(booking), 0);
+    const dueIn = bookings.filter((booking) => isActive(booking) && booking.arrival === today);
+    const groupDueIn = dueIn.filter((booking) => (booking.groupName ?? '').trim() !== '');
+    const dueOut = bookings.filter((booking) => isActive(booking) && booking.departure === today);
+    const inhouse = bookings.filter((booking) => booking.status === 'Inhouse');
+    return {
+      'check-in': `Check-in: ${sum(dueIn, checkedInRooms)} out of ${sum(dueIn, totalRooms)}`,
+      'group-check-in': `Check-in: ${sum(groupDueIn, checkedInRooms)} out of ${sum(groupDueIn, totalRooms)}`,
+      'check-out': `Check-Out: ${sum(dueOut, checkedOutRooms)} out of ${sum(dueOut, totalRooms)}`,
+      'inhouse-guest': `In House: ${sum(inhouse, totalRooms)} Room(s) | ${sum(inhouse, (booking) => booking.guests)} Guest(s)`,
+    };
+  }, [bookings]);
   const [scheduleView, setScheduleView] = useState<'day' | 'month'>('day');
   const [listingMenuOpen, setListingMenuOpen] = useState(false);
   const [reportSearch, setReportSearch] = useState('');
@@ -958,7 +977,7 @@ function HomeContent({ store }: { store: TransportData }) {
                     </span>
                     <span className="frontdesk-body">
                       <strong>{item.label}</strong>
-                      <small>{item.detail}</small>
+                      <small>{frontDeskDetails[item.key] ?? item.detail}</small>
                     </span>
                     <ChevronRight size={18} className="frontdesk-chevron" />
                   </button>
