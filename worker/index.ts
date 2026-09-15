@@ -259,7 +259,15 @@ export function createWorker(
             signInStatus: passwordStatus(env.TRANSPORT_PASSWORD),
           });
         }
-        if (!['/session', '/state', '/action'].includes(path))
+        if (
+          ![
+            '/session',
+            '/state',
+            '/action',
+            '/geography',
+            '/geography/cities',
+          ].includes(path)
+        )
           throw new ApiError('NOT_FOUND', 'Not found.', 404);
         if (!env.DATABASE_URL)
           throw new ApiError(
