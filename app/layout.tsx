@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Poppins } from 'next/font/google';
 import { HotelXBreadcrumbNavigation } from '@/components/hotelx-breadcrumb-navigation';
+import { NumberInputGuard } from '@/components/number-input-guard';
 import './globals.css';
 import './frontdesk-overrides.css';
 import './frontdesk-side-icon.css';
@@ -28,6 +29,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${hotelFont.variable} antialiased`}>
         <HotelXBreadcrumbNavigation />
+        <NumberInputGuard />
         {children}
       </body>
     </html>
