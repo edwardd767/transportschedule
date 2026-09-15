@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronLeft, MoreVertical, Search } from 'lucide-react';
+import { MoreVertical, Search } from 'lucide-react';
+import { HotelxBackButton } from '@/components/hotelx-back-button';
 import type { HotelDepartment } from '@/lib/hotel-masters';
 import type { TransportData } from '@/lib/use-transport-data';
 
@@ -223,9 +224,7 @@ export function ReasonMasterBridge({ store }: { store: TransportData }) {
     <section className="absolute inset-0 z-[56] flex min-h-0 flex-col bg-[#f4f4f4] p-3" aria-label="Reason Master">
       <div className="relative min-h-[72px] shrink-0 overflow-hidden bg-[radial-gradient(ellipse_at_82%_105%,#ffbd14_0_39%,transparent_39.5%),radial-gradient(ellipse_at_38%_-55%,#f57818_0_51%,transparent_51.5%),linear-gradient(110deg,#f89912,#ffa524_65%,#f67e1b)] px-3 pb-7 pt-2">
         <div className="flex items-start gap-2">
-          <button type="button" onClick={() => setDepartmentId(null)} disabled={saving} className="grid h-8 w-8 place-items-center rounded-[3px] bg-white text-[#e78300] shadow disabled:opacity-60" aria-label="Back">
-            <ChevronLeft size={23} />
-          </button>
+          <HotelxBackButton onClick={() => setDepartmentId(null)} disabled={saving} />
           <div>
             <small className="block text-[10px] font-semibold text-white">HMS</small>
             <strong className="block text-[13px] text-[#111]">{store.state.hotelMasters.profile.hotelName || 'HOTEL PARADISE'}</strong>

@@ -6,13 +6,13 @@ import {
   ArrowRightLeft,
   ArrowUpDown,
   CalendarDays,
-  ChevronLeft,
   ChevronRight,
   Search,
   SlidersHorizontal,
   UserRound,
 } from 'lucide-react';
 import type { TransportData } from '@/lib/use-transport-data';
+import { HotelxBackButton } from '@/components/hotelx-back-button';
 import './inhouse-guest-bridge.css';
 
 function formatStayDate(value: string) {
@@ -154,14 +154,7 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
     <section className="inhouse-screen" aria-label="In House Listing">
       <header className="inhouse-property">
         <div className="inhouse-property-main">
-          <button
-            type="button"
-            className="inhouse-back"
-            aria-label="Back to Front Desk"
-            onClick={() => setOpen(false)}
-          >
-            <ChevronLeft size={20} />
-          </button>
+          <HotelxBackButton onClick={() => setOpen(false)} label="Back to Front Desk" />
           <div className="inhouse-property-copy">
             <small>HMS</small>
             <strong>{hotelMasters.profile.hotelName}</strong>

@@ -3,7 +3,6 @@
 import { useContext, useEffect, useState } from 'react';
 import {
   ChevronDown,
-  ChevronLeft,
   ChevronUp,
   MoreVertical,
   RotateCcw,
@@ -15,6 +14,7 @@ import {
 import type { Booking } from '@/lib/bookings';
 import type { GuestProfile } from '@/lib/transport-state';
 import { TransportDataContext } from '@/components/transport-connection';
+import { HotelxBackButton } from '@/components/hotelx-back-button';
 
 const ASSIGNMENT_KEY = '_roomAssignments';
 const HOTELX_CHECKIN_ROOM_ICON = 'https://hms1.hotelx.asia/static/media/room.7cce94dd.svg';
@@ -278,7 +278,7 @@ export function CheckIn({ bookings }: { bookings: Booking[] }) {
       <section className="checkin-page" aria-label="Guest Check In" style={{ fontSize: 12, minHeight: '100%' }}>
         <div style={{ padding: '9px 10px 0' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #ddd', paddingBottom: 8 }}>
-            <button type="button" onClick={() => { setCheckInContext(null); setGuestDraft(null); }} style={{ width: 32, height: 32, display: 'grid', placeItems: 'center', border: 0, borderRadius: 4, background: '#fff', color: '#ff8700' }} aria-label="Back to Due In"><ChevronLeft size={22} /></button>
+            <HotelxBackButton onClick={() => { setCheckInContext(null); setGuestDraft(null); }} label="Back to Due In" />
             <strong style={{ fontSize: 12 }}>Check-In</strong>
           </div>
           <div style={{ padding: '7px 2px 8px', fontSize: 11, fontWeight: 600 }}>... / ... / {booking.reference}</div>

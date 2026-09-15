@@ -6,13 +6,13 @@ import {
   BedDouble,
   Check,
   ChevronDown,
-  ChevronLeft,
   ChevronRight,
   DoorClosed,
   RotateCw,
   UserRound,
   Users,
 } from 'lucide-react';
+import { HotelxBackButton } from '@/components/hotelx-back-button';
 import type { Booking } from '@/lib/bookings';
 import { roomCount, stayDates } from '@/lib/bookings';
 import type { TransportData } from '@/lib/use-transport-data';
@@ -535,9 +535,7 @@ export function BookingRoomAssignmentBridge({ store }: { store: TransportData })
       <div className="shrink-0 px-3 pt-3">
         <div className="relative min-h-[68px] overflow-hidden bg-[radial-gradient(ellipse_at_82%_105%,#ffbd14_0_39%,transparent_39.5%),radial-gradient(ellipse_at_38%_-55%,#f57818_0_51%,transparent_51.5%),linear-gradient(110deg,#f89912,#ffa524_65%,#f67e1b)] px-3 pb-6 pt-2">
           <div className="flex items-start gap-2">
-            <button type="button" onClick={back} disabled={saving} className="grid h-8 w-8 place-items-center rounded-[3px] bg-white text-[#e78300] shadow disabled:opacity-60" aria-label="Back">
-              <ChevronLeft size={21} />
-            </button>
+            <HotelxBackButton onClick={back} disabled={saving} />
             <div>
               <small className="block text-[9px] font-semibold text-white">HMS</small>
               <strong className="block text-[12px] text-[#111]">{store.state.hotelMasters.profile.hotelName || 'HOTEL PARADISE'}</strong>

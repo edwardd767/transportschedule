@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown, ChevronLeft, DoorClosed, RotateCcw, X } from 'lucide-react';
+import { ChevronDown, DoorClosed, RotateCcw, X } from 'lucide-react';
+import { HotelxBackButton } from '@/components/hotelx-back-button';
 import type { Booking } from '@/lib/bookings';
 import type { HotelDepartment } from '@/lib/hotel-masters';
 import type { TransportData } from '@/lib/use-transport-data';
@@ -250,14 +251,7 @@ export function BookingRoomCancellationBridge({ store }: { store: TransportData 
       <div className="mx-auto max-w-[1180px] p-3 sm:p-4">
         <div className="overflow-hidden bg-gradient-to-r from-[#ff8b28] via-[#ffb52f] to-[#ff762d] text-[#222] shadow-sm">
           <div className="flex items-center gap-3 px-3 py-2">
-            <button
-              type="button"
-              aria-label="Back to booking"
-              onClick={() => setReference(null)}
-              className="flex h-9 w-9 items-center justify-center rounded bg-white text-[#ef821d] shadow"
-            >
-              <ChevronLeft size={22} />
-            </button>
+            <HotelxBackButton onClick={() => setReference(null)} label="Back to booking" />
             <div>
               <small className="block text-[11px] font-semibold text-white">HMS</small>
               <strong className="block text-[15px]">HOTEL PARADISE</strong>
