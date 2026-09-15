@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, type FormEvent } from 'react';
-import { User, Baby, CalendarDays, Pencil, Plus, Trash2 } from 'lucide-react';
+import { User, Baby, CalendarDays, Plus, Trash2 } from 'lucide-react';
 import { BookingAvailability } from '@/components/booking-availability';
 import { bookingRate } from '@/lib/booking-rate';
 import { rateAddOnsForNight } from '@/lib/pax-billing';
@@ -321,7 +321,7 @@ export function BookingEdit({
                 <span><b>{room.code}</b><small className="booking-pax-count"><User size={13} aria-label="Adults" /><b>{room.adults ?? 0}</b><Baby size={13} aria-label="Children" /><b>{room.children ?? 0}</b></small></span>
                 <span><b>{room.rateCode || 'BAR'}</b><small>Subtotal</small></span>
                 <span><b>{room.count}</b><small>{money.format(room.total ?? 0)}</small></span>
-                <button type="button" aria-label={`Edit room type ${room.code}`} onClick={() => openEditRoom(index)}><Pencil size={17} /></button>
+                <button type="button" aria-label={`Edit room type ${room.code}`} onClick={() => openEditRoom(index)}><img src="https://hms1.hotelx.asia/static/media/view_edit_icon.cb90a368.svg" alt="" aria-hidden="true" width={22} height={22} style={{ display: 'block', objectFit: 'contain' }} /></button>
                 <button type="button" aria-label={`Delete room type ${room.code}`} onClick={() => setRoomLines((current) => current.filter((_, roomIndex) => roomIndex !== index))}><Trash2 size={17} /></button>
               </div>
             ))}
