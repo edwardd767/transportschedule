@@ -5,7 +5,6 @@ import { createPortal } from 'react-dom';
 import {
   ArrowRightLeft,
   ArrowUpDown,
-  CalendarDays,
   ChevronRight,
   Search,
   SlidersHorizontal,
@@ -240,7 +239,7 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
                   <b>{row.roomNo}</b>
                   <strong>{row.roomType}</strong>
                   <span className="inhouse-divider" />
-                  <CalendarDays size={12} />
+                  <svg viewBox="0 0 24 24" width={12} height={12} fill="currentColor" aria-hidden="true" focusable="false"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z" /></svg>
                   <span>
                     {formatStayDate(row.arrival)} - {formatStayDate(row.departure)}
                   </span>
