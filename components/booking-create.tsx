@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { User, Baby, CalendarDays, Plus, X } from 'lucide-react';
+import { User, Baby, CalendarDays, Plus } from 'lucide-react';
 import { BookingAvailability } from '@/components/booking-availability';
 import { bookingRate } from '@/lib/booking-rate';
 import { rateAddOnsForNight } from '@/lib/pax-billing';
@@ -277,14 +277,6 @@ export function BookingCreate({
 
   return (
     <section className="booking-new-page" aria-label="Create booking">
-      <div className="booking-new-titlebar">
-        <button type="button" className="booking-new-close" aria-label="Close booking creation" onClick={onCancel}>
-          <X size={22} />
-        </button>
-        <span>Booking</span>
-        <strong>New</strong>
-      </div>
-
       <form className="booking-new-scroll" onSubmit={saveBooking}>
         <BookingAvailability childRatesApplied={childRatesApplied} rateSetup={rateSetup} arrival={arrival} bookings={bookings} roomTypes={roomTypes} />
 
