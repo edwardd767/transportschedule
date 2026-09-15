@@ -6,7 +6,6 @@ import {
   CalendarDays,
   ChevronDown,
   ChevronRight,
-  ClipboardList,
   DoorClosed,
   Plus,
   RotateCw,
@@ -449,7 +448,7 @@ export function Bookings({
           </div>
           <div className="booking-detail-bottom">
             <span>{booking.reference} <span className="booking-divider">|</span> {booking.guest}</span>
-            <ClipboardList size={20} aria-hidden="true" />
+            <img src="https://hms1.hotelx.asia/static/media/audit.da3ff731.svg" alt="" aria-hidden="true" width={20} height={20} style={{ display: 'block', objectFit: 'contain' }} />
           </div>
         </div>
         <div className="booking-detail-scroll" key={booking.reference}>
