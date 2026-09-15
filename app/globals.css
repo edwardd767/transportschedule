@@ -3489,8 +3489,9 @@ p {
   padding: 5px 0;
 }
 .transfer-dialog[data-slot='dialog-content'] {
-  width: min(920px, calc(100vw - 32px));
-  max-width: 920px;
+  width: min(600px, calc(100vw - 32px));
+  max-width: 600px;
+  padding: 20px;
 }
 .transfer-legs {
   display: grid;
