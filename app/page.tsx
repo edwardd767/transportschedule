@@ -64,7 +64,7 @@ import { Choice } from '@/components/hotel-choice';
 import { TransportSetup } from '@/components/transport-setup';
 import { HotelSettingsMenu } from '@/components/hotel-settings-menu';
 import { HotelSettingsDetail } from '@/components/hotel-settings-detail';
-import type { RateSetupSection } from '@/components/rate-setup';
+import { moduleItems, type RateSetupSection } from '@/components/rate-setup';
 import { HotelMasterFiles } from '@/components/hotel-master-files';
 import { Bookings } from '@/components/bookings';
 import { GuestProfiles } from '@/components/guest-profiles';
@@ -847,7 +847,7 @@ function HomeContent({ store }: { store: TransportData }) {
                             : view === 'roomstatus'
                               ? 'Room Status'
                               : rateSetupSection
-                                ? <>Rate Setup <ChevronRight size={14} /> {rateSetupSection === 'season-setup' ? 'Season Setup' : rateSetupSection === 'season-calendar' ? 'Season Calendar' : rateSetupSection === 'rate-element' ? 'Rate Element' : rateSetupSection === 'rate-type' ? 'Rate Type' : 'Rate Setup'}</>
+                                ? <>Rate Setup <ChevronRight size={14} /> {moduleItems.find((item) => item.key === rateSetupSection)?.label ?? 'Rate Setup'}</>
                                 : 'Rate Setup'}
               </>
             ) : view === 'segment' ? (

@@ -163,7 +163,7 @@ const initialRatePlans: RatePlanItem[] = [
   })),
 ];
 
-const moduleItems: { key: RateSetupSection; label: string; detail: string }[] = [
+export const moduleItems: { key: RateSetupSection; label: string; detail: string }[] = [
   { key: 'season-setup', label: 'Season Setup', detail: 'Season: 4' },
   { key: 'season-calendar', label: 'Season Calendar', detail: 'Latest updated on 23 Jul 2026' },
   { key: 'rate-element', label: 'Rate Element', detail: 'Latest update on 19 Aug 2026' },
