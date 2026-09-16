@@ -2038,6 +2038,16 @@ var schemaStatements = [
     operational_policy jsonb NOT NULL DEFAULT '{}'::jsonb,
     updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS tnc_guest_notice boolean NOT NULL DEFAULT true`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS tnc_transfer_description boolean NOT NULL DEFAULT false`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS tnc_extend_stay_description boolean NOT NULL DEFAULT false`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS tnc_split_description boolean NOT NULL DEFAULT false`,
+  `CREATE TABLE IF NOT EXISTS public.hotelx_terms_condition (
+    property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
+    clause_key text NOT NULL,
+    content text NOT NULL DEFAULT '',
+    PRIMARY KEY (property_id, clause_key)
+  )`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_transport_rules (
     property_id text PRIMARY KEY REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
     start_time text NOT NULL,
@@ -2647,6 +2657,11 @@ var schemaStatements = [
     DELETE FROM public.hotelx_transport_routes WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_transport_operators WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_transport_rules WHERE property_id = p_property_id;
+    DELETE FROM public.hotelx_terms_condition WHERE property_id = p_property_id;
+
+    INSERT INTO public.hotelx_terms_condition (property_id, clause_key, content)
+    SELECT p_property_id, entry.key, COALESCE(entry.value, '')
+    FROM jsonb_each_text(COALESCE(p_state #> '{hotelMasters,profile,operationalPolicy,termsConditions,clauses}', '{}'::jsonb)) AS entry;
 
     INSERT INTO public.hotelx_location_master (
       property_id, code, sort_order, description, floor_plan_attachment, active
@@ -2874,7 +2889,8 @@ var schemaStatements = [
       room_status_check_in, room_status_check_out, room_status_transfer, room_status_cancel_check_in, room_status_cancel_check_out, room_status_block_release,
       advance_payment_tax_scheme,
       e_invoice_classification_room_charges, e_invoice_classification_service_charges, e_invoice_classification_advance_payment_forfeit,
-      e_invoice_classification_deposit_forfeit, e_invoice_classification_state_tax, e_invoice_use_submission_date_as_doc_date
+      e_invoice_classification_deposit_forfeit, e_invoice_classification_state_tax, e_invoice_use_submission_date_as_doc_date,
+      tnc_guest_notice, tnc_transfer_description, tnc_extend_stay_description, tnc_split_description
     )
     = (
       p_state #>> '{hotelMasters,profile,hotelName}', p_state #>> '{hotelMasters,profile,address}',
@@ -2914,7 +2930,11 @@ var schemaStatements = [
       COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,operationalPolicy,eInvoicePolicy,classificationAdvancePaymentForfeit}', ''), '022'),
       COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,operationalPolicy,eInvoicePolicy,classificationDepositForfeit}', ''), '022'),
       COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,operationalPolicy,eInvoicePolicy,classificationStateTax}', ''), '022'),
-      COALESCE((p_state #>> '{hotelMasters,profile,operationalPolicy,eInvoicePolicy,useSubmissionDateAsDocDate}')::boolean, false)
+      COALESCE((p_state #>> '{hotelMasters,profile,operationalPolicy,eInvoicePolicy,useSubmissionDateAsDocDate}')::boolean, false),
+      COALESCE((p_state #>> '{hotelMasters,profile,operationalPolicy,termsConditions,guestNotice}')::boolean, true),
+      COALESCE((p_state #>> '{hotelMasters,profile,operationalPolicy,termsConditions,transferDescription}')::boolean, false),
+      COALESCE((p_state #>> '{hotelMasters,profile,operationalPolicy,termsConditions,extendStayDescription}')::boolean, false),
+      COALESCE((p_state #>> '{hotelMasters,profile,operationalPolicy,termsConditions,splitDescription}')::boolean, false)
     )
     WHERE property_id = p_property_id;
 
@@ -3203,6 +3223,17 @@ var schemaStatements = [
               'classificationDepositForfeit', e_invoice_classification_deposit_forfeit,
               'classificationStateTax', e_invoice_classification_state_tax,
               'useSubmissionDateAsDocDate', e_invoice_use_submission_date_as_doc_date
+            ),
+            'termsConditions', jsonb_build_object(
+              'clauses', COALESCE((
+                SELECT jsonb_object_agg(clause.clause_key, clause.content)
+                FROM public.hotelx_terms_condition AS clause
+                WHERE clause.property_id = meta.property_id
+              ), '{}'::jsonb),
+              'guestNotice', tnc_guest_notice,
+              'transferDescription', tnc_transfer_description,
+              'extendStayDescription', tnc_extend_stay_description,
+              'splitDescription', tnc_split_description
             )
           )
         ) FROM public.hotelx_hotel_setup WHERE property_id = meta.property_id), '{}'::jsonb),
