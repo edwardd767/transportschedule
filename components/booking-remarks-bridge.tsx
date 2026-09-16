@@ -182,7 +182,15 @@ export function BookingRemarksBridge({ store }: { store: TransportData }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true" aria-label="Booking Remarks">
+    <div
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-black/45 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Booking Remarks"
+      onClick={(event) => {
+        if (event.target === event.currentTarget && !saving) setReference(null);
+      }}
+    >
       <div className="w-full max-w-[600px] overflow-hidden rounded-[3px] bg-white shadow-2xl">
         <div className="bg-[#fff6eb] px-3 pb-3 pt-3">
           <div className="text-[11px] font-medium text-[#f28b00]">Remarks</div>

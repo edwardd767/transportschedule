@@ -42,6 +42,9 @@ export function SpecialRequest({
       role="dialog"
       aria-modal="true"
       aria-label="Special Request"
+      onClick={(event) => {
+        if (event.target === event.currentTarget && !saving) onBack();
+      }}
     >
       <div className="w-full max-w-[600px] overflow-hidden rounded-[3px] bg-white shadow-2xl">
         <div className="bg-[#fff6eb] px-3 pb-3 pt-3">
