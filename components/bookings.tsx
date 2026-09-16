@@ -45,6 +45,28 @@ const advanceStatusOptions = [
 
 type AdvanceSelectOption = { value: string; label: string };
 
+const BOOKING_SORT_OPTIONS = [
+  { key: 'arrival-asc', label: 'Arrival Date (A-Z)' },
+  { key: 'arrival-desc', label: 'Arrival Date (Z-A)' },
+  { key: 'departure-asc', label: 'Departure Date (A-Z)' },
+  { key: 'departure-desc', label: 'Departure Date (Z-A)' },
+  { key: 'reference-asc', label: 'Booking No (A-Z)' },
+  { key: 'reference-desc', label: 'Booking No (Z-A)' },
+  { key: 'created-asc', label: 'Last Created Date (A-Z)' },
+  { key: 'created-desc', label: 'Last Created Date (Z-A)' },
+  { key: 'guest-asc', label: 'Guest Name (A-Z)' },
+  { key: 'guest-desc', label: 'Guest Name (Z-A)' },
+] as const;
+
+function compareBookings(a: Booking, b: Booking, sortKey: string) {
+  const [field, direction] = sortKey.split('-');
+  const factor = direction === 'desc' ? -1 : 1;
+  if (field === 'arrival') return a.arrival.localeCompare(b.arrival) * factor;
+  if (field === 'departure') return a.departure.localeCompare(b.departure) * factor;
+  if (field === 'guest') return a.guest.localeCompare(b.guest) * factor;
+  return a.reference.localeCompare(b.reference, undefined, { numeric: true }) * factor;
+}
+
 const emptyAdvanceSearch = { arrivalStart: '', arrivalEnd: '', departureStart: '', departureEnd: '', bookingDate: '', status: '', roomType: '', bookingNo: '', guestName: '', accountName: '', referenceNo: '', groupName: '' };
 
 const HOTELX_ROOM_ICON = 'https://hms1.hotelx.asia/static/media/room.7cce94dd.svg';
@@ -292,7 +314,9 @@ export function Bookings({
   const [availabilityOpen, setAvailabilityOpen] = useState(false);
   const [roomingOpen, setRoomingOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const [oldestFirst, setOldestFirst] = useState(false);
+  const [sortKey, setSortKey] = useState('created-desc');
+  const [sortOpen, setSortOpen] = useState(false);
+  const sortRef = useRef<HTMLDivElement>(null);
   const [advance, setAdvance] = useState(emptyAdvanceSearch);
   const [appliedAdvance, setAppliedAdvance] = useState(emptyAdvanceSearch);
   const listRef = useRef<HTMLDivElement>(null);
@@ -315,7 +339,16 @@ export function Bookings({
     if (appliedAdvance.groupName && !(item.groupName ?? '').toLowerCase().includes(appliedAdvance.groupName.toLowerCase())) return false;
     return true;
   });
-  const shown = oldestFirst ? [...filtered].reverse() : filtered;
+  const shown = [...filtered].sort((a, b) => compareBookings(a, b, sortKey));
+
+  useEffect(() => {
+    if (!sortOpen) return;
+    const closeSort = (event: MouseEvent) => {
+      if (!sortRef.current?.contains(event.target as Node)) setSortOpen(false);
+    };
+    document.addEventListener('mousedown', closeSort);
+    return () => document.removeEventListener('mousedown', closeSort);
+  }, [sortOpen]);
 
   useEffect(() => {
     if (booking) {
@@ -510,7 +543,25 @@ export function Bookings({
         <div className="booking-toolbar">
           <button className="icon-button" aria-label="Search bookings" title="Search bookings" aria-pressed={searchOpen} onClick={() => setSearchOpen(!searchOpen)}><HotelXSearchIcon size={23} /></button>
           <button className="icon-button" aria-label="Advance search" title="Advance search" aria-pressed={advanceOpen} onClick={() => { setAdvance(appliedAdvance); setAdvanceOpen(true); }}><HotelXAdvanceSearchIcon size={23} /></button>
-          <button className="icon-button" aria-label={oldestFirst ? 'Sort newest bookings first' : 'Sort oldest bookings first'} title={oldestFirst ? 'Oldest bookings first' : 'Newest bookings first'} aria-pressed={oldestFirst} onClick={() => setOldestFirst(!oldestFirst)}><HotelXSortIcon size={23} /></button>
+          <div className="booking-sort-wrap" ref={sortRef}>
+            <button className="icon-button" aria-label="Sort by" title="Sort by" aria-expanded={sortOpen} aria-pressed={sortOpen} onClick={() => setSortOpen((current) => !current)}><HotelXSortIcon size={23} /></button>
+            {sortOpen && (
+              <div className="booking-sort-menu" role="radiogroup" aria-label="sortby">
+                <span className="booking-sort-head">Sort By</span>
+                {BOOKING_SORT_OPTIONS.map((option) => (
+                  <label className="booking-sort-option" key={option.key}>
+                    <input type="radio" name="booking-sort" checked={sortKey === option.key} onChange={() => { setSortKey(option.key); setSortOpen(false); }} />
+                    <svg className="booking-sort-radio" viewBox="0 0 24 24" width={18} height={18} fill="currentColor" aria-hidden="true" focusable="false">
+                      {sortKey === option.key
+                        ? <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0-5C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />
+                        : <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />}
+                    </svg>
+                    <span>{option.label}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
           <button className="icon-button" aria-label="View availability" title="View availability" onClick={() => setAvailabilityOpen(true)}><AvailabilityIcon size={23} /></button>
         </div>
       </div>
