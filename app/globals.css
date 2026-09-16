@@ -6271,9 +6271,10 @@ p {
 .room-type-add{position:fixed;right:22px;bottom:22px;z-index:6;display:grid;place-items:center;width:56px;height:56px;border:0;border-radius:50%;background:#ff9414;color:#fff;box-shadow:0 3px 10px #00000038;cursor:pointer}
 
 /* Room Type master: amenities and photos sections. */
-.master-amenities{display:flex;flex-direction:column;gap:2px;padding:6px 0 12px}
-.master-amenities label{display:flex;align-items:center;gap:10px;padding:6px 0;color:#111;font-size:13px;cursor:pointer}
-.master-amenities input{width:16px;height:16px;flex:none;accent-color:#ff9800}
+.master-amenities{display:flex;flex-direction:column;gap:2px;padding:6px 16px 14px}
+.master-amenities label{display:flex;align-items:center;gap:12px;padding:6px 0;color:#111;font-size:13px;cursor:pointer}
+.master-amenities input{appearance:none;-webkit-appearance:none;width:24px;height:24px;margin:0;flex:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%239aa0a6' d='M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z'/%3E%3C/svg%3E") center/contain no-repeat}
+.master-amenities input:checked{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23ff9200' d='M19 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.11 0 2-.9 2-2V5c0-1.1-.89-2-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z'/%3E%3C/svg%3E")}
 .master-amenities input:disabled{cursor:default}
 .master-photos{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:4px 0 12px}
 .master-photo{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid #e2e2e2;border-radius:4px;background:#fff;color:#333;font-size:12px}
