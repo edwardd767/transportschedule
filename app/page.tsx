@@ -21,7 +21,7 @@ import {
   type CSSProperties,
   type FormEvent,
 } from 'react';
-import { flushSync } from 'react-dom';
+import { createPortal, flushSync } from 'react-dom';
 import {
   ArrowRight,
   ArrowRightLeft,
@@ -223,10 +223,12 @@ function HomeContent({ store }: { store: TransportData }) {
   >('booking');
   const [rateSetupSection, setRateSetupSection] = useState<RateSetupSection | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [profileMenuPos, setProfileMenuPos] = useState<{ top: number; left: number } | null>(null);
+  const profileButtonRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (!profileMenuOpen) return;
     const closeProfileMenu = (event: MouseEvent) => {
-      if (!(event.target as HTMLElement | null)?.closest('.profile-menu-wrap')) setProfileMenuOpen(false);
+      if (!(event.target as HTMLElement | null)?.closest('.profile-menu-wrap, .profile-menu')) setProfileMenuOpen(false);
     };
     document.addEventListener('mousedown', closeProfileMenu);
     return () => document.removeEventListener('mousedown', closeProfileMenu);
@@ -623,16 +625,26 @@ function HomeContent({ store }: { store: TransportData }) {
             <div className="profile-menu-wrap">
               <button
                 type="button"
+                ref={profileButtonRef}
                 className="profile-menu-button"
                 aria-label="Account menu"
                 aria-haspopup="menu"
                 aria-expanded={profileMenuOpen}
-                onClick={() => setProfileMenuOpen((current) => !current)}
+                onClick={() => {
+                  if (profileMenuOpen) {
+                    setProfileMenuOpen(false);
+                    return;
+                  }
+                  const rect = profileButtonRef.current?.getBoundingClientRect();
+                  if (!rect) return;
+                  setProfileMenuPos({ top: rect.bottom + 6, left: Math.max(8, rect.right - 176) });
+                  setProfileMenuOpen(true);
+                }}
               >
                 <svg viewBox="0 0 24 24" width={24} height={24} fill="currentColor" aria-hidden="true" focusable="false"><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z" /></svg>
               </button>
-              {profileMenuOpen && (
-                <div className="profile-menu" role="menu">
+              {profileMenuOpen && profileMenuPos && createPortal(
+                <div className="profile-menu" role="menu" style={{ position: 'fixed', top: profileMenuPos.top, left: profileMenuPos.left }}>
                   <button type="button" role="menuitem" className="profile-menu-item" onClick={() => setProfileMenuOpen(false)}>
                     <span className="profile-menu-icon"><svg viewBox="0 0 24 24" width={20} height={20} fill="currentColor" aria-hidden="true" focusable="false"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg></span>
                     Profile
@@ -641,7 +653,8 @@ function HomeContent({ store }: { store: TransportData }) {
                     <span className="profile-menu-icon"><svg viewBox="0 0 24 24" width={20} height={20} fill="currentColor" aria-hidden="true" focusable="false"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" /></svg></span>
                     Logout
                   </button>
-                </div>
+                </div>,
+                document.body,
               )}
             </div>
           </div>
