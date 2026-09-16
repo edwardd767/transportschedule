@@ -12,9 +12,12 @@ import {
 
 const HOTELX_MEDIA = 'https://hms1.hotelx.asia/static/media';
 const CHECKIN_CANCEL_ICON = `${HOTELX_MEDIA}/checkin.d4105e6c.svg`;
-const ROOM_ICON = `${HOTELX_MEDIA}/room.7cce94dd.svg`;
+const ROOM_ICON = `${HOTELX_MEDIA}/door-subinfoline.44af6263.svg`;
 const AUDIT_ICON = `${HOTELX_MEDIA}/audit.da3ff731.svg`;
-const PERSON_ICON = `${HOTELX_MEDIA}/person.eed5ce8b.svg`;
+
+function PersonIcon({ size = 13 }: { size?: number }) {
+  return <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true" focusable="false"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg>;
+}
 
 function HotelxIcon({ src, size }: { src: string; size: number }) {
   return <img src={src} alt="" aria-hidden="true" width={size} height={size} style={{ width: size, height: size, display: 'inline-block', objectFit: 'contain', flex: '0 0 auto' }} />;
@@ -611,7 +614,7 @@ function InhouseSummary({ row, showActions = true }: { row: InhouseRow; showActi
         {showActions && <span className="inhouse-detail-action"><QrIcon /></span>}
       </div>
       <div className="inhouse-detail-bottom">
-        <span className="inhouse-detail-guest"><HotelxIcon src={PERSON_ICON} size={13} /> <strong>{row.accountName}</strong></span>
+        <span className="inhouse-detail-guest"><PersonIcon /> <strong>{row.accountName}</strong></span>
         {showActions && <span className="inhouse-detail-action"><HotelxIcon src={AUDIT_ICON} size={15} /></span>}
       </div>
     </div>
