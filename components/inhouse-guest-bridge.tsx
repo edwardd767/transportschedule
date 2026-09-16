@@ -44,7 +44,7 @@ import { SpecialRequest } from '@/components/special-request';
 import { BillingInstruction } from '@/components/billing-instruction';
 import { BookingAttachments } from '@/components/booking-attachments';
 import { BillingSchedule } from '@/components/billing-schedule';
-import type { Booking } from '@/lib/bookings';
+import { billingInstructionFor, type Booking } from '@/lib/bookings';
 import './inhouse-guest-bridge.css';
 
 const SOURCE_OPTIONS = ['Walk In', 'Booking', 'OTA', 'Corporate', 'Channel Manager', 'Travel Agent'];
@@ -97,6 +97,7 @@ type InhouseRow = {
   specialRequest: string;
   billingRemark: string;
   remark: string;
+  roomKey: string;
 };
 
 const SORT_OPTIONS = [
@@ -224,6 +225,8 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
             const cursor = roomCursor.get(room.code) ?? 0;
             const assigned = availableRooms[cursor];
             roomCursor.set(room.code, cursor + 1);
+            const roomKey = `${room.code}-${index}`;
+            const billing = billingInstructionFor(booking, roomKey);
             return {
               key: `${booking.reference}-${room.code}-${index}`,
               roomNo: assigned?.roomNo ?? '-',
@@ -241,13 +244,14 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
               rateCode: room.rateCode?.trim() || 'BAR',
               source: (booking.source || booking.salesChannel || 'Walk In').replace(/_/g, ' '),
               isGroup: Boolean(booking.groupName?.trim()),
-              cityAccount: Boolean(booking.cityAccount),
+              cityAccount: billing.cityAccount,
               houseLimit: booking.creditLimit ?? 100,
               amount: booking.amount,
               attachmentCount: booking.attachments?.length ?? 0,
-              specialRequest: booking.specialRequests?.[`${room.code}-${index}`] ?? '',
-              billingRemark: booking.billingRemark ?? '',
+              specialRequest: booking.specialRequests?.[roomKey] ?? '',
+              billingRemark: billing.remark,
               remark: booking.specialRequests?.__bookingInternalRemarks ?? '',
+              roomKey,
             };
           }),
         ),
@@ -452,10 +456,10 @@ function InhouseDetail({ row: sourceRow, hotelName, store, onBack }: { row: Inho
         guest: booking.guest,
         accountName: booking.accountName?.trim() || booking.guest,
         isGroup: Boolean(booking.groupName?.trim()),
-        cityAccount: Boolean(booking.cityAccount),
+        cityAccount: billingInstructionFor(booking, sourceRow.roomKey).cityAccount,
         source: booking.source?.replace(/_/g, ' ') || sourceRow.source,
         attachmentCount: booking.attachments?.length ?? 0,
-        billingRemark: booking.billingRemark ?? '',
+        billingRemark: billingInstructionFor(booking, sourceRow.roomKey).remark,
         remark: booking.specialRequests?.__bookingInternalRemarks ?? '',
       }
     : sourceRow;
@@ -572,7 +576,7 @@ function InhouseDetail({ row: sourceRow, hotelName, store, onBack }: { row: Inho
         document.body,
       )}
       {panel === 'billingInstruction' && booking && createPortal(
-        <BillingInstruction booking={booking} onSave={saveBooking} onBack={() => setPanel('menu')} />,
+        <BillingInstruction booking={booking} roomKey={row.roomKey} onSave={saveBooking} onBack={() => setPanel('menu')} />,
         document.body,
       )}
     </section>

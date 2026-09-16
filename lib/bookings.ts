@@ -68,6 +68,27 @@ export type Booking = {
   attachments?: Array<{ room: string; remarks: string; fileName?: string }>;
 };
 
+export const ROOM_BILLING_KEY = '__roomBillingInstructions';
+
+export type BillingInstructionValue = { cityAccount: boolean; remark: string };
+
+export function readRoomBillingInstructions(booking: Booking): Record<string, BillingInstructionValue> {
+  const raw = booking.specialRequests?.[ROOM_BILLING_KEY];
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw) as Record<string, BillingInstructionValue>;
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+/** The room's own billing instruction, falling back to the booking-level one. */
+export function billingInstructionFor(booking: Booking, roomKey: string): BillingInstructionValue {
+  const override = readRoomBillingInstructions(booking)[roomKey];
+  return override ?? { cityAccount: Boolean(booking.cityAccount), remark: booking.billingRemark ?? '' };
+}
+
 // The guest names follow the supplied screen. Statuses and amounts are sample data.
 export const sampleBookings: Booking[] = [
   {
