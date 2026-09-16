@@ -234,19 +234,13 @@ const schemaStatements = [
     active boolean NOT NULL DEFAULT true,
     PRIMARY KEY (property_id, code)
   )`,
-  `DO $hotelx_overbooking$
-    BEGIN
-      IF EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_schema = 'public' AND table_name = 'hotelx_room_type_master'
-          AND column_name = 'overbooking_allowed' AND data_type = 'boolean'
-      ) THEN
-        ALTER TABLE public.hotelx_room_type_master
-          ALTER COLUMN overbooking_allowed TYPE integer
-          USING (CASE WHEN overbooking_allowed THEN 1 ELSE 0 END);
-      END IF;
-    END
-  $hotelx_overbooking$`,
+  `IF EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'hotelx_room_type_master'
+        AND column_name = 'overbooking_allowed' AND data_type = 'boolean'
+    ) THEN
+      EXECUTE 'ALTER TABLE public.hotelx_room_type_master ALTER COLUMN overbooking_allowed TYPE integer USING (CASE WHEN overbooking_allowed THEN 1 ELSE 0 END)';
+    END IF`,
   `ALTER TABLE public.hotelx_room_type_master ADD COLUMN IF NOT EXISTS overbooking_allowed integer NOT NULL DEFAULT 0`,
   `ALTER TABLE public.hotelx_room_type_master ADD COLUMN IF NOT EXISTS amenities jsonb NOT NULL DEFAULT '[]'::jsonb`,
   `ALTER TABLE public.hotelx_room_type_master ADD COLUMN IF NOT EXISTS photos jsonb NOT NULL DEFAULT '[]'::jsonb`,
