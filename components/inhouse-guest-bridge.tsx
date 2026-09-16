@@ -639,11 +639,11 @@ function InhouseBookingInfo({ row, hotelName, store, onBack }: { row: InhouseRow
             <div className="inhouse-form-grid">
               <span className="inhouse-form-field">
                 <span>Arrival Date</span>
-                <span className="inhouse-form-readonly inhouse-form-date"><b>{formatNumericDate(row.arrival)}</b><CalendarIcon size={20} /></span>
+                <span className="inhouse-form-readonly inhouse-form-date"><b>{formatNumericDate(row.arrival)}</b><CalendarIcon size={18} /></span>
               </span>
               <span className="inhouse-form-field">
                 <span>Departure Date</span>
-                <span className="inhouse-form-readonly inhouse-form-date"><b>{formatNumericDate(row.departure)}</b><CalendarIcon size={20} /></span>
+                <span className="inhouse-form-readonly inhouse-form-date"><b>{formatNumericDate(row.departure)}</b><CalendarIcon size={18} /></span>
               </span>
               <span className="inhouse-form-field">
                 <span>Night(s)</span>

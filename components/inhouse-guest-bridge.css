@@ -598,35 +598,35 @@
 
 .inhouse-form-head {
   margin: 0;
-  padding: 13px 14px;
+  padding: 11px 12px;
   background: #faf1e6;
   color: #f28119;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
 }
 
 .inhouse-form-body {
-  padding: 4px 14px 14px;
+  padding: 2px 12px 12px;
   background: #fff;
 }
 
 .inhouse-form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 4px 18px;
+  gap: 3px 16px;
 }
 
 .inhouse-form-field {
   display: block;
   min-width: 0;
-  padding: 9px 0 7px;
+  padding: 8px 0 6px;
 }
 
 .inhouse-form-field > span:first-child {
   display: block;
   color: #85909d;
-  font-size: 13px;
-  line-height: 20px;
+  font-size: 12px;
+  line-height: 18px;
 }
 
 .inhouse-form-wide {
@@ -636,7 +636,7 @@
 .inhouse-form-field input,
 .inhouse-form-field select {
   width: 100%;
-  min-height: 30px;
+  min-height: 28px;
   padding: 2px 0;
   border: 0;
   border-bottom: 1px solid #999;
@@ -645,8 +645,8 @@
   background: transparent;
   color: #07182a;
   font: inherit;
-  font-size: 18px;
-  line-height: 26px;
+  font-size: 16px;
+  line-height: 24px;
 }
 
 .inhouse-form-field select {
@@ -662,12 +662,12 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  min-height: 30px;
+  min-height: 28px;
   padding: 2px 0;
   border-bottom: 1px solid #999;
   color: #07182a;
-  font-size: 18px;
-  line-height: 26px;
+  font-size: 16px;
+  line-height: 24px;
 }
 
 .inhouse-form-readonly b {
@@ -688,10 +688,10 @@
 .inhouse-form-check {
   display: flex;
   align-items: center;
-  gap: 9px;
-  min-height: 30px;
+  gap: 8px;
+  min-height: 28px;
   color: #9a9a9a;
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .inhouse-form-check input {
@@ -701,8 +701,8 @@
 }
 
 .inhouse-form-check i {
-  width: 17px;
-  height: 17px;
+  width: 16px;
+  height: 16px;
   flex: none;
   border: 1.6px solid #9a9a9a;
   border-radius: 2px;
@@ -733,20 +733,20 @@
   flex: none;
   display: grid;
   place-items: center;
-  padding: 11px 14px;
+  padding: 10px 12px;
   background: #fff;
   box-shadow: 0 -2px 7px #0000001f;
 }
 
 .inhouse-form-confirm {
-  min-width: 150px;
-  padding: 9px 26px;
+  min-width: 140px;
+  padding: 8px 24px;
   border: 0;
   border-radius: 4px;
   background: #ff9800;
   color: #fff;
   font: inherit;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
 }
