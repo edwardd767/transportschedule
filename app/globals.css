@@ -5340,6 +5340,12 @@ p {
   place-items: center;
   width: 30px;
   height: 30px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #222;
+  cursor: pointer;
+}
 .rate-search-button {
   display: grid;
   place-items: center;
