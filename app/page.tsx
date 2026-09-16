@@ -956,6 +956,7 @@ function HomeContent({ store }: { store: TransportData }) {
               roomStatuses={hotelMasters.roomStatuses}
               onRoomStatusesChange={async (value) => { await store.run({ type: 'roomStatusSave', value }); setNotice('Room Status saved.'); }}
               departments={hotelMasters.departments}
+              bookings={bookings}
               onDepartmentsChange={async (value) => { await store.run({ type: 'departmentSave', value }); setNotice('Department saved.'); }}
               roomTypes={hotelMasters.roomTypes}
               hotelProfile={hotelMasters.profile}

@@ -2,12 +2,15 @@
 import { ArrowLeft, Mic, MoreVertical, Search, Upload, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { cleanSalesChannels, type HotelDepartment, type IncidentalCharge } from '@/lib/hotel-masters';
+import type { Booking } from '@/lib/bookings';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 
 const blank = (): IncidentalCharge => ({ id: crypto.randomUUID(), title: '', amount: 0, taxScheme: 'SST-3', outletCode: '', rateElement: false, guestAppFb: false, guestAppOnlineShop: false, posInterface: false, eventInterface: false, allowNegative: true, packageRedemption: false, kiosk: false, thirdPartyPos: false, eInvoice: true, msicCode: '55101', classification: '022' });
 const flags: Array<[keyof IncidentalCharge, string]> = [['rateElement', 'Rate Element'], ['guestAppFb', 'GuestApp - F&B'], ['guestAppOnlineShop', 'GuestApp - OnlineShop'], ['posInterface', 'POS Interface'], ['eventInterface', 'Event Interface'], ['allowNegative', 'Allow Negative'], ['packageRedemption', 'Package Redemption'], ['kiosk', 'Kiosk'], ['thirdPartyPos', '3rd Party POS'], ['eInvoice', 'e-Invoice']];
 
-export function DepartmentModule({ departments, onChange, onBack }: { departments: HotelDepartment[]; onChange: (v: HotelDepartment[]) => void | Promise<void>; onBack: () => void }) {
+export function DepartmentModule({ departments, bookings = [], onChange, onBack }: { departments: HotelDepartment[]; bookings?: Booking[]; onChange: (v: HotelDepartment[]) => void | Promise<void>; onBack: () => void }) {
   const [draft, setDraft] = useState(departments), [menu, setMenu] = useState<string | null>(null), [dept, setDept] = useState<string | null>(null), [charge, setCharge] = useState<IncidentalCharge | null>(null), [chargeList, setChargeList] = useState(false), [chargeMenu, setChargeMenu] = useState<string | null>(null), [salesChannelList, setSalesChannelList] = useState(false), [salesChannelMenu, setSalesChannelMenu] = useState<string | null>(null), [salesChannelDraft, setSalesChannelDraft] = useState(''), [salesChannelEditing, setSalesChannelEditing] = useState<string | null>(null), [salesChannelDialog, setSalesChannelDialog] = useState(false), [saving, setSaving] = useState(false), [query, setQuery] = useState(''), [searchOpen, setSearchOpen] = useState(false);
+  const [confirm, setConfirm] = useState<{ title: string; message: string; confirmLabel: string; action: () => void | Promise<void> } | null>(null);
   const [departmentDialog, setDepartmentDialog] = useState(false);
   const [departmentEditingId, setDepartmentEditingId] = useState<string | null>(null);
   const [departmentDraft, setDepartmentDraft] = useState({
@@ -24,6 +27,33 @@ export function DepartmentModule({ departments, onChange, onBack }: { department
   const open = (d: HotelDepartment, c?: IncidentalCharge) => { setDept(d.id); setCharge(c ? { ...c } : blank()); setChargeList(false); setSalesChannelList(false); setMenu(null); setChargeMenu(null); };
   const showCharges = (d: HotelDepartment) => { setDept(d.id); setCharge(null); setChargeList(true); setMenu(null); };
   const showSalesChannels = (d: HotelDepartment) => { setDept(d.id); setCharge(null); setChargeList(false); setSalesChannelList(true); setMenu(null); setSalesChannelMenu(null); setSalesChannelDialog(false); setSalesChannelDraft(''); setSalesChannelEditing(null); setQuery(''); setSearchOpen(false); };
+  // A department can only be removed while no booking references its sales channels or charges.
+  const inUse = (department: HotelDepartment) => {
+    const channels = cleanSalesChannels(department.salesChannels).map((value) => value.trim().toLowerCase()).filter(Boolean);
+    const titles = department.incidentalCharges.map((item) => item.title.trim().toLowerCase()).filter(Boolean);
+    return bookings.some((booking) => {
+      if (booking.salesChannel && channels.includes(booking.salesChannel.trim().toLowerCase())) return true;
+      const haystack = [booking.billingRemark ?? '', ...Object.values(booking.specialRequests ?? {})].join(' ').toLowerCase();
+      return titles.some((title) => haystack.includes(title));
+    });
+  };
+  useEffect(() => {
+    if (!menu) return;
+    const onDocumentClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest('.department-menu') || target?.closest('.department-menu-trigger')) return;
+      setMenu(null);
+    };
+    document.addEventListener('mousedown', onDocumentClick);
+    return () => document.removeEventListener('mousedown', onDocumentClick);
+  }, [menu]);
+
+  const removeDepartment = async (department: HotelDepartment) => {
+    const value = draft.filter((item) => item.id !== department.id);
+    await onChange(value);
+    setDraft(value);
+  };
+
   const close = () => { setCharge(null); setChargeList(false); setSalesChannelList(false); setSalesChannelDialog(false); setSalesChannelDraft(''); setSalesChannelEditing(null); setDept(null); setQuery(''); setSearchOpen(false); };
   const openSalesChannel = (value = '') => { setSalesChannelEditing(value || null); setSalesChannelDraft(value); setSalesChannelMenu(null); setSalesChannelDialog(true); };
   const saveSalesChannel = async () => {
@@ -145,11 +175,28 @@ export function DepartmentModule({ departments, onChange, onBack }: { department
                 <button>Reason</button>
                 <button onClick={() => showSalesChannels(d)}>Sales Channel</button>
                 <button>Inactive</button>
+                <button
+                  className="department-menu-delete"
+                  disabled={inUse(d)}
+                  title={inUse(d) ? 'Cannot delete a department used by booking records.' : undefined}
+                  onClick={() => {
+                    setMenu(null);
+                    setConfirm({
+                      title: 'Delete Department',
+                      message: `Are you sure you want to delete ${d.name}? This cannot be undone.`,
+                      confirmLabel: 'Delete',
+                      action: () => removeDepartment(d),
+                    });
+                  }}
+                >
+                  Delete
+                </button>
               </div>
             )}
           </article>
         ))}
       </div>
+      {confirm && <ConfirmDialog title={confirm.title} message={confirm.message} confirmLabel={confirm.confirmLabel} onCancel={() => setConfirm(null)} onConfirm={() => { const run = confirm.action; setConfirm(null); void run(); }} />}
       <button className="incidental-add-button department-add-button" type="button" aria-label="Add department" onClick={openDepartmentDialog}><span>+</span></button>
       <button className="secondary-button master-page-back" onClick={onBack}><ArrowLeft size={16} /> Back to Hotel Settings</button>
       {departmentDialog && (

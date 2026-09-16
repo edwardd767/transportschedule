@@ -20,6 +20,7 @@ import { initialHotelProfile, type HotelDepartment, type HotelRoomType, type Roo
 import { HotelSetupModule as HotelSetupModuleV2 } from '@/components/hotel-setup-module';
 import { TimePicker } from '@/components/time-picker';
 import { RichTextEditor } from '@/components/rich-text-editor';
+import type { Booking } from '@/lib/bookings';
 
 
 function StandardPolicyModule({ onBack, profile, onProfileChange, roomStatuses }: { onBack: () => void; profile: HotelProfile; onProfileChange: (value: HotelProfile) => void | Promise<void>; roomStatuses: RoomStatus[] }) {
@@ -364,6 +365,7 @@ export function HotelSettingsDetail({
   roomStatuses = [],
   onRoomStatusesChange = () => {},
   departments = [],
+  bookings = [],
   onDepartmentsChange = () => {},
   roomTypes = [],
   hotelProfile,
@@ -379,6 +381,7 @@ export function HotelSettingsDetail({
   onRoomStatusesChange?: (value: RoomStatus[]) => void | Promise<void>;
   departments?: HotelDepartment[];
   onDepartmentsChange?: (value: HotelDepartment[]) => void | Promise<void>;
+  bookings?: Booking[];
   roomTypes?: HotelRoomType[];
   hotelProfile?: HotelProfile;
   onHotelProfileChange?: (value: HotelProfile) => void | Promise<void>;
@@ -400,7 +403,7 @@ export function HotelSettingsDetail({
   }
   if (kind === 'hotelSetup' && hotelProfile) return <HotelSetupModuleV2 profile={hotelProfile} onChange={onHotelProfileChange} onBack={onBack} />;
   if (kind === 'roomStatus') return <RoomStatusModule statuses={roomStatuses} onChange={onRoomStatusesChange} onBack={onBack} />;
-  if (kind === 'department') return <DepartmentModule departments={departments} onChange={onDepartmentsChange} onBack={onBack} />;
+  if (kind === 'department') return <DepartmentModule departments={departments} bookings={bookings} onChange={onDepartmentsChange} onBack={onBack} />;
   if (kind === 'standardPolicy') {
     return <StandardPolicyModule profile={hotelProfile || initialHotelProfile} onProfileChange={onHotelProfileChange} onBack={onBack} roomStatuses={roomStatuses} />;
   }
