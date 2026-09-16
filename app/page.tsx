@@ -626,7 +626,7 @@ function HomeContent({ store }: { store: TransportData }) {
               <button
                 type="button"
                 ref={profileButtonRef}
-                className="profile-menu-button"
+                className="profile-menu-trigger"
                 aria-label="Account menu"
                 aria-haspopup="menu"
                 aria-expanded={profileMenuOpen}
@@ -637,12 +637,10 @@ function HomeContent({ store }: { store: TransportData }) {
                   }
                   const rect = profileButtonRef.current?.getBoundingClientRect();
                   if (!rect) return;
-                  setProfileMenuPos({ top: rect.bottom + 6, left: Math.max(8, rect.right - 176) });
+                  setProfileMenuPos({ top: rect.bottom + 6, left: Math.max(8, rect.right - 186) });
                   setProfileMenuOpen(true);
                 }}
-              >
-                <svg viewBox="0 0 24 24" width={24} height={24} fill="currentColor" aria-hidden="true" focusable="false"><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z" /></svg>
-              </button>
+              />
               {profileMenuOpen && profileMenuPos && createPortal(
                 <div className="profile-menu" role="menu" style={{ position: 'fixed', top: profileMenuPos.top, left: profileMenuPos.left }}>
                   <button type="button" role="menuitem" className="profile-menu-item" onClick={() => setProfileMenuOpen(false)}>
