@@ -1,5 +1,5 @@
 'use client';
-import { ArrowLeft, MoreVertical, Search, Upload } from 'lucide-react';
+import { ArrowLeft, Mic, MoreVertical, Search, Upload, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { cleanSalesChannels, type HotelDepartment, type IncidentalCharge } from '@/lib/hotel-masters';
 
@@ -110,14 +110,16 @@ export function DepartmentModule({ departments, onChange, onBack }: { department
   if (department && charge) return <section className="master-page incidental-charge-page"><div className="department-editor-head"><button className="master-back" onClick={close}><ArrowLeft size={18} /> Back</button><strong>Incidental Charges</strong></div><div className="master-detail-card incidental-charge-card"><div className="master-section-label">Charge Item</div><div className="master-form-grid"><label className="master-field master-field-wide"><span>Title</span><input value={charge.title} onChange={(e) => setCharge({ ...charge, title: e.target.value })} /></label><label className="master-field"><span>Amount (MYR)</span><input type="number" min="0" value={charge.amount} onChange={(e) => setCharge({ ...charge, amount: Number(e.target.value) })} /></label><label className="master-field"><span>Tax Scheme *</span><select value={charge.taxScheme} onChange={(e) => setCharge({ ...charge, taxScheme: e.target.value })}><option>SST-3</option><option>SST-4</option><option>SST-6</option><option>None</option></select></label><label className="master-field master-field-wide"><span>Outlet Code</span><input value={charge.outletCode} onChange={(e) => setCharge({ ...charge, outletCode: e.target.value })} /></label></div><div className="incidental-checks">{flags.map(([key, label]) => <label key={String(key)}><input type="checkbox" checked={Boolean(charge[key])} onChange={(e) => setCharge({ ...charge, [key]: e.target.checked })} />{label}</label>)}</div><div className="incidental-attachment"><span>Upload Attachment(s)</span><Upload size={18} /></div></div><div className="master-page-actions"><button className="secondary-button" onClick={close}>Cancel</button><button className="primary-button" disabled={!charge.title.trim() || saving} onClick={save}>{saving ? 'Saving…' : 'Save'}</button></div></section>;
   return (
     <section className="master-page department-page">
-      <div className="master-list-head department-list-head">
-        <div><h1>Department <em>({draft.length})</em></h1></div>
-        <button className="department-search-button" aria-label="Search departments" onClick={() => setSearchOpen(!searchOpen)}><Search size={21} /></button>
-      </div>
-      {searchOpen && (
+      {searchOpen ? (
         <div className="department-search-field">
-          <Search size={16} />
-          <input autoFocus placeholder="Search department" value={query} onChange={(e) => setQuery(e.target.value)} />
+          <input autoFocus placeholder="Search here.." value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search departments" />
+          <button type="button" aria-label="Voice search"><Mic size={18} /></button>
+          <button type="button" aria-label="Close search" onClick={() => { setQuery(''); setSearchOpen(false); }}><X size={18} /></button>
+        </div>
+      ) : (
+        <div className="master-list-head department-list-head">
+          <div><h1>Department (<em>{draft.length}</em>)</h1></div>
+          <button className="department-search-button" aria-label="Search departments" onClick={() => setSearchOpen(true)}><Search size={18} /></button>
         </div>
       )}
       <div className="department-list">
