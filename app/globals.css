@@ -6202,14 +6202,14 @@ p {
 
 
 /* HotelX Segment listing reference styling */
-.segment-page>.segment-list-head{min-height:46px!important;padding:9px 12px!important;border:0!important;border-bottom:1px solid #e6e6e6!important;border-radius:0!important;background:#fff!important;box-shadow:0 2px 5px #00000012!important}
-.segment-page>.segment-list-head h1{margin:0!important;font-size:14px!important;line-height:1.25!important;font-weight:700!important;letter-spacing:0!important;color:#191919!important}
-.segment-page>.segment-list-head h1 em{font-size:14px!important;font-style:normal!important;font-weight:500!important;color:#f58200!important}
-.segment-page>.segment-list-head>svg{width:20px!important;height:20px!important;stroke-width:2.4!important;color:#151515!important}
+.segment-page>.segment-list-head{min-height:38px!important;padding:8px 12px!important;border:0!important;border-radius:0!important;background:#fff!important;box-shadow:0 1px 4px #00000014!important}
+.segment-page>.segment-list-head h1{margin:0!important;font-size:12px!important;line-height:1.3!important;font-weight:700!important;letter-spacing:0!important;color:#000!important}
+.segment-page>.segment-list-head h1 em{font-size:12px!important;font-style:normal!important;font-weight:700!important;color:#f58200!important}
+.segment-page>.segment-list-head>button{width:22px!important;height:22px!important;padding:0!important;border:0!important;background:transparent!important;color:#151515!important;cursor:pointer!important}
 .segment-page>.segment-list{padding-top:4px}
 .segment-page>.segment-list .segment-row{min-height:57px!important;padding:8px 12px!important}
-.segment-page>.segment-list .segment-row strong{font-size:13px!important;line-height:1.25!important;font-weight:700!important;color:#171717!important}
-.segment-page>.segment-list .segment-row small{margin-top:3px!important;font-size:11.5px!important;line-height:1.25!important;color:#333!important}
+.segment-page>.segment-list .segment-row strong{font-size:12px!important;line-height:1.3!important;font-weight:700!important;color:#171717!important}
+.segment-page>.segment-list .segment-row small{margin-top:3px!important;font-size:11px!important;line-height:1.3!important;color:#333!important}
 /* Fixed Hotel Operational Policy footer */
 .operational-policy-page{padding-bottom:92px}
 .operational-policy-page>.operational-policy-actions{position:fixed;left:197px;right:0;bottom:0;height:74px;min-height:74px;margin:0;padding:10px 20px;background:#fff;box-shadow:0 -2px 7px #0002;z-index:20;display:flex;align-items:center;justify-content:center}
@@ -6249,7 +6249,10 @@ p {
 .segment-field:focus-within > span{color:#ff9800}
 .segment-field input{width:100%;min-height:30px;padding:2px 0;border:0;border-bottom:1px solid #999;border-radius:0;outline:0;background:transparent;color:#07182a;font:inherit;font-size:16px}
 .segment-field:focus-within input{border-bottom-color:#ff9800}
-.segment-search-button{display:grid;place-items:center;width:30px;height:30px;flex:none;border:0;border-radius:3px;background:transparent;color:#111;cursor:pointer}
+.segment-list-head{min-height:38px;padding:8px 12px;border:0;border-radius:0;background:#fff;box-shadow:0 1px 4px #00000014}
+.segment-list-head h1{font-size:12px;font-weight:700;color:#000}
+.segment-list-head em{color:#ff870e}
+.segment-search-button{display:grid;place-items:center;width:22px;height:22px;flex:none;border:0;border-radius:3px;background:transparent;color:#111;cursor:pointer}
 .segment-search-button:hover{background:#f4f4f4}
 .segment-search-row{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;flex:none;padding:8px 12px;background:#fff}
 .segment-search-row input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#111;font:inherit;font-size:16px}
