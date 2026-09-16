@@ -122,7 +122,7 @@ function SaveBar({
         disabled={!editing || saving}
         onClick={onSave}
       >
-        <Save size={17} /> {saving ? 'Saving…' : 'Save'}
+        {saving ? 'Saving…' : 'Save'}
       </button>
     </div>
   );
