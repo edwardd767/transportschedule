@@ -295,7 +295,7 @@ export function BookingCreate({
         </button>,
         bannerSlot,
       )}
-      <form className="booking-new-scroll" onSubmit={saveBooking}>
+      <form id="booking-create-form" className="booking-new-scroll" onSubmit={saveBooking}>
         <BookingAvailability childRatesApplied={childRatesApplied} rateSetup={rateSetup} arrival={arrival} bookings={bookings} roomTypes={roomTypes} />
 
         <div className="booking-form-section">
@@ -410,11 +410,12 @@ export function BookingCreate({
         </div>
 
         {error && <p className="booking-new-error">{error}</p>}
-        <div className="booking-new-actions">
-          <button type="button" className="booking-share-button" disabled>Share</button>
-          <button type="submit" className="booking-save-button" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
-        </div>
       </form>
+
+      <div className="booking-new-actions">
+        <button type="button" className="booking-share-button" disabled>Share</button>
+        <button type="submit" form="booking-create-form" className="booking-save-button" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
+      </div>
 
       <Dialog open={roomDialogOpen} onOpenChange={setRoomDialogOpen}>
         <DialogContent className="booking-room-dialog">
