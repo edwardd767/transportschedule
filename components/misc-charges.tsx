@@ -48,7 +48,7 @@ export function MiscCharges({ onBack }: { onBack: () => void }) {
   const currency = store?.state.hotelMasters.profile.currencyCode || 'MYR';
   const charges = useMemo(() => {
     const department = (store?.state.hotelMasters.departments ?? []).find((item) => item.name.trim().toLowerCase() === 'housekeeping');
-    return (department?.incidentalCharges ?? []).map((item) => ({ title: item.title, amount: item.amount }));
+    return (department?.incidentalCharges ?? []).map((item) => ({ title: item.title, amount: item.amount, taxScheme: item.taxScheme }));
   }, [store?.state.hotelMasters.departments]);
   const rooms = useMemo(() => {
     const masterRooms = (store?.state.hotelMasters.rooms ?? []).filter((room) => room.active).sort((a, b) => a.roomNo.localeCompare(b.roomNo, undefined, { numeric: true }));
@@ -74,7 +74,19 @@ export function MiscCharges({ onBack }: { onBack: () => void }) {
 
   const guestName = rooms.find((room) => room.roomNo === roomNo)?.guest ?? '';
   const gross = Math.max(0, (Number(quantity) || 0) * (Number(unitPrice) || 0));
-  const nett = Math.max(0, gross - (Number(discount) || 0));
+  const taxLines = useMemo(() => {
+    const raw = charges.find((item) => item.title === charge)?.taxScheme ?? '';
+    return raw
+      .split(/[,/|]/)
+      .map((token) => token.trim())
+      .filter(Boolean)
+      .map((token) => {
+        const rate = Number.parseFloat(token.replace(/[^0-9.]/g, '')) || 0;
+        return { label: token.toUpperCase().startsWith('SC') ? `SC${rate}` : `SST${rate}`, rate };
+      });
+  }, [charge, charges]);
+  const taxTotal = taxLines.reduce((sum, line) => sum + (gross * line.rate) / 100, 0);
+  const nett = Math.max(0, gross + taxTotal - (Number(discount) || 0));
   const canConfirm = Boolean(roomNo && charge);
 
   const reset = () => {
@@ -183,13 +195,19 @@ export function MiscCharges({ onBack }: { onBack: () => void }) {
                   <input value={description} onChange={(event) => setDescription(event.target.value)} />
                 </label>
                 {text('Reference No.', referenceNo, setReferenceNo)}
-                {text('Quantity', quantity, setQuantity, true)}
+                <label className="misc-charge-field">
+                  <span>Quantity</span>
+                  <input inputMode="numeric" value={quantity} onChange={(event) => setQuantity(event.target.value.replace(/[^0-9]/g, ''))} />
+                </label>
                 {text(`Unit Price (${currency})`, unitPrice, setUnitPrice, true)}
                 {text(`Discount Amount (${currency})`, discount, setDiscount, true)}
               </div>
               <div className="misc-charge-summary">
                 <div><span>Gross Amount</span><b>{money(gross)}</b></div>
-                <div><span>NETT AMOUNT</span><b>{money(nett)}</b></div>
+                {taxLines.map((line) => (
+                  <div key={line.label}><span>{line.label} ({line.rate.toFixed(2)}%)</span><b>{money((gross * line.rate) / 100)}</b></div>
+                ))}
+                <div className="misc-charge-nett"><span>NETT AMOUNT</span><b>{money(nett)}</b></div>
               </div>
             </div>
             <div className="misc-charge-actions">

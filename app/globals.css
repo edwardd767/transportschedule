@@ -6275,7 +6275,8 @@ p {
 .misc-charge-readonly{display:block;min-height:28px;padding:2px 0;border-bottom:1px solid #999;color:#07182a;font-size:16px}
 .misc-charge-summary{display:flex;flex-direction:column;gap:6px;margin:6px 0 12px;padding:12px;background:#fff8ef}
 .misc-charge-summary div{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:#111}
-.misc-charge-summary div:last-child b{font-weight:700}
+.misc-charge-summary .misc-charge-nett{margin-top:4px;padding-top:6px;border-top:1px solid #111}
+.misc-charge-summary .misc-charge-nett b{font-weight:700}
 .misc-charge-actions{display:flex;justify-content:flex-end;align-items:center;gap:8px;padding:12px}
 .misc-charge-actions button{min-height:32px;padding:6px 14px;border:0;border-radius:4px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
 .misc-charge-save-new{background:#fff;color:#555;box-shadow:0 1px 3px #0002}
