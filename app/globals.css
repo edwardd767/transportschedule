@@ -6242,6 +6242,10 @@ p {
 .booking-room-subtotal>strong{text-align:right;font-weight:600}
 @media(max-width:639px){.booking-room-stay-head small{font-size:10px}.booking-room-subtotal{min-width:680px;gap:9px;font-size:11px}}
 
+.master-file-actions{position:fixed!important;left:197px!important;right:0!important;bottom:0!important;height:52px!important;margin:0!important;padding:7px 20px!important;background:#fff!important;box-shadow:0 -2px 7px #0002!important;z-index:20!important;display:flex!important;align-items:center!important;justify-content:center!important}
+.master-file-actions .primary-button{min-width:126px;height:36px;border-radius:4px;font-size:13px}
+@media(max-width:700px){.master-file-actions{left:0!important}}
+
 /* Room Type master: card list. */
 .room-type-page{position:relative;padding-bottom:90px}
 .room-type-list-head{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:38px;padding:8px 12px;background:#fff;box-shadow:0 1px 4px #00000014}

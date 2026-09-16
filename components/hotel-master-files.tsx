@@ -73,9 +73,6 @@ function DetailHeader({
 }) {
   return (
     <div className="master-detail-toolbar">
-      <button type="button" className="master-back" onClick={onBack}>
-        <ChevronLeft size={19} /> Back
-      </button>
       <strong>{title}</strong>
       {!editing && (
         <button type="button" className="master-edit" onClick={onEdit}>
@@ -118,7 +115,7 @@ function SaveBar({
   onSave: () => void;
 }) {
   return (
-    <div className="master-save-bar">
+    <div className="master-page-actions master-file-actions">
       <button
         type="button"
         className="primary-button"
@@ -311,6 +308,17 @@ function RoomTypeMaster({
     return () => document.removeEventListener('mousedown', onDocumentClick);
   }, [menu]);
 
+  useEffect(() => {
+    const onHeaderBack = (event: Event) => {
+      if (!selected) return;
+      event.preventDefault();
+      setSelected(null);
+      setEditing(false);
+    };
+    window.addEventListener('hotelx-master-detail-back', onHeaderBack);
+    return () => window.removeEventListener('hotelx-master-detail-back', onHeaderBack);
+  }, [selected]);
+
   async function reorder(targetIndex: number) {
     if (!dragCode) return;
     const from = masters.roomTypes.findIndex((item) => item.code === dragCode);
@@ -406,8 +414,8 @@ function RoomTypeMaster({
               </div>
               <button type="button" className="room-type-menu-trigger" aria-label="Room type options" onClick={(event) => { event.stopPropagation(); setMenu(menu === item.code ? null : item.code); }}><MoreVertical size={21} /></button>
               {menu === item.code && (
-                <div className="room-type-menu">
-                  <button onClick={() => open(item)}>Edit</button>
+                <div className="room-type-menu" onClick={(event) => event.stopPropagation()}>
+                  <button onClick={() => { setMenu(null); setSelected(item.code); setAdding(false); setEditing(true); setDraft({ ...item }); setError(''); }}>Edit</button>
                   <button
                     disabled={masters.rooms.some((room) => room.roomTypeCode === item.code)}
                     title={masters.rooms.some((room) => room.roomTypeCode === item.code) ? 'Cannot delete a room type that has rooms.' : undefined}

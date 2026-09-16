@@ -783,6 +783,11 @@ function HomeContent({ store }: { store: TransportData }) {
                     window.dispatchEvent(standardPolicyBackEvent);
                     if (standardPolicyBackEvent.defaultPrevented) return;
                   }
+                  if (['location', 'roomtype', 'room'].includes(view)) {
+                    const masterDetailBackEvent = new Event('hotelx-master-detail-back', { cancelable: true });
+                    window.dispatchEvent(masterDetailBackEvent);
+                    if (masterDetailBackEvent.defaultPrevented) return;
+                  }
                   view === 'ratepolicy' && rateSetupSection ? setRateSetupSection(null) : setView('hotelsettings');
                 }}
               />
