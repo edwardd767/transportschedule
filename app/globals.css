@@ -6232,6 +6232,7 @@ p {
 
 /* Booking room type table: stay dates under the room type column and a per-line subtotal. */
 .booking-room-stay-head small{display:flex;align-items:center;gap:5px;margin-top:3px;color:#8a8a8a;font-size:11px;font-weight:400}
+.booking-pax-icon{display:flex;align-items:center}
 .booking-room-subtotal{min-width:680px;display:grid;grid-template-columns:70px 1.4fr 1.2fr 1fr 1fr;gap:12px;padding:2px 0 6px;color:#666;font-size:12px}
 .booking-room-subtotal>span{grid-column:4}
 .booking-room-subtotal>strong{text-align:right;font-weight:600}

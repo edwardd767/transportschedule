@@ -396,7 +396,7 @@ export function BookingCreate({
               <div className="booking-room-line" key={line.id}>
                 <div className="booking-room-table-row">
                   <span>{index + 1}</span>
-                  <span>{line.code}<small className="booking-pax-count"><User size={13} aria-label="Adults" title="Adult" /><b title="Adult">{line.adults}</b><Baby size={13} aria-label="Children" title="Child" /><b title="Child">{line.children}</b></small></span>
+                  <span>{line.code}<small className="booking-pax-count"><span className="booking-pax-icon" title="Adult"><User size={13} aria-label="Adults" /></span><b title="Adult">{line.adults}</b><span className="booking-pax-icon" title="Child"><Baby size={13} aria-label="Children" /></span><b title="Child">{line.children}</b></small></span>
                   <span>{line.rateCode}</span>
                   <span>{line.count}</span>
                   <span>{money.format(line.total)}</span>

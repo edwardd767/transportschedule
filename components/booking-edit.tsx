@@ -318,7 +318,7 @@ export function BookingEdit({
             {roomLines.map((room, index) => (
               <div className="booking-edit-room-row" key={`${room.code}-${index}`}>
                 <span><small>📅 {prettyDate(arrival)} - {prettyDate(departure)}</small><b>{index + 1}</b></span>
-                <span><b>{room.code}</b><small className="booking-pax-count"><User size={13} aria-label="Adults" title="Adult" /><b title="Adult">{room.adults ?? 0}</b><Baby size={13} aria-label="Children" title="Child" /><b title="Child">{room.children ?? 0}</b></small></span>
+                <span><b>{room.code}</b><small className="booking-pax-count"><span className="booking-pax-icon" title="Adult"><User size={13} aria-label="Adults" /></span><b title="Adult">{room.adults ?? 0}</b><span className="booking-pax-icon" title="Child"><Baby size={13} aria-label="Children" /></span><b title="Child">{room.children ?? 0}</b></small></span>
                 <span><b>{room.rateCode || 'BAR'}</b><small>Subtotal</small></span>
                 <span><b>{room.count}</b><small>{money.format(room.total ?? 0)}</small></span>
                 <button type="button" aria-label={`Edit room type ${room.code}`} onClick={() => openEditRoom(index)}><img src="https://hms1.hotelx.asia/static/media/view_edit_icon.cb90a368.svg" alt="" aria-hidden="true" width={22} height={22} style={{ display: 'block', objectFit: 'contain' }} /></button>
