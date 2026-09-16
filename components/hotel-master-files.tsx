@@ -24,6 +24,7 @@ import type {
   HotelRoomType,
 } from '@/lib/hotel-masters';
 import { platformAmenities } from '@/lib/hotel-masters';
+import { SearchSelect } from '@/components/search-select';
 
 export type HotelMasterKind = 'location' | 'roomType' | 'room';
 
@@ -444,8 +445,8 @@ function RoomTypeMaster({
           <Field label="Code" required><input value={draft.code} readOnly={!editing || !adding} onChange={(e) => setDraft({ ...draft, code: e.target.value.toUpperCase() })} /></Field>
           <Field label="Total Room"><input value={adding ? 0 : actualTotal} readOnly /></Field>
           <Field label="Description" wide><input value={draft.description} readOnly={!editing} onChange={(e) => setDraft({ ...draft, description: e.target.value })} /></Field>
-          <Field label="Property Type">{editing ? <select value={draft.propertyType} onChange={(e) => setDraft({ ...draft, propertyType: e.target.value })}><option>Room</option><option>Villa</option><option>Suite</option></select> : <input value={draft.propertyType} readOnly />}</Field>
-          <Field label="Measure Type">{editing ? <select value={draft.measureType} onChange={(e) => setDraft({ ...draft, measureType: e.target.value })}><option>Square Metre</option><option>Square Feet</option></select> : <input value={draft.measureType} readOnly />}</Field>
+          <Field label="Property Type">{editing ? <SearchSelect value={draft.propertyType} onChange={(value) => setDraft({ ...draft, propertyType: value })} options={['Room', 'Villa', 'Suite']} ariaLabel="Property Type" /> : <input value={draft.propertyType} readOnly />}</Field>
+          <Field label="Measure Type">{editing ? <SearchSelect value={draft.measureType} onChange={(value) => setDraft({ ...draft, measureType: value })} options={['Square Metre', 'Square Feet']} ariaLabel="Measure Type" /> : <input value={draft.measureType} readOnly />}</Field>
           <Field label="Room Size"><input type="number" min="0" value={draft.roomSize} readOnly={!editing} onChange={(e) => setDraft({ ...draft, roomSize: Number(e.target.value) })} /></Field>
           <Field label="Max Guest" required><input type="number" min="1" value={draft.maxGuest} readOnly={!editing} onChange={(e) => setDraft({ ...draft, maxGuest: Number(e.target.value) })} /></Field>
           <Field label="House Limit"><input type="number" min="0" value={draft.houseLimit} readOnly={!editing} onChange={(e) => setDraft({ ...draft, houseLimit: Number(e.target.value) })} /></Field>
@@ -577,9 +578,9 @@ function RoomMaster({
         <div className="master-section-label">Room</div>
         <div className="master-form-grid">
           <Field label="Room No" required><input value={draft.roomNo} readOnly={!editing || !adding} onChange={(e) => setDraft({ ...draft, roomNo: e.target.value.toUpperCase() })} /></Field>
-          <Field label="Room Type">{editing ? <select value={draft.roomTypeCode} onChange={(e) => changeType(e.target.value)}>{masters.roomTypes.filter((item) => item.active).map((item) => <option key={item.code} value={item.code}>{item.code} - {item.description}</option>)}</select> : <input value={draft.roomTypeCode} readOnly />}</Field>
+          <Field label="Room Type">{editing ? <SearchSelect value={draft.roomTypeCode} onChange={(value) => changeType(value)} options={masters.roomTypes.filter((item) => item.active).map((item) => item.code)} ariaLabel="Room Type" /> : <input value={draft.roomTypeCode} readOnly />}</Field>
           <Field label="Description" wide><input value={draft.description} readOnly={!editing} onChange={(e) => setDraft({ ...draft, description: e.target.value })} /></Field>
-          <Field label="Location" required wide>{editing ? <select value={draft.locationCode} onChange={(e) => setDraft({ ...draft, locationCode: e.target.value })}>{masters.locations.filter((item) => item.active).map((item) => <option key={item.code} value={item.code}>{item.description}</option>)}</select> : <input value={masters.locations.find((item) => item.code === draft.locationCode)?.description ?? draft.locationCode} readOnly />}</Field>
+          <Field label="Location" required wide>{editing ? <SearchSelect value={draft.locationCode} onChange={(value) => setDraft({ ...draft, locationCode: value })} options={masters.locations.filter((item) => item.active).map((item) => item.code)} ariaLabel="Location" /> : <input value={masters.locations.find((item) => item.code === draft.locationCode)?.description ?? draft.locationCode} readOnly />}</Field>
           <Field label="Max Guest"><input value={draft.maxGuest} readOnly /></Field>
           <Field label="Room Size"><input value={draft.roomSize} readOnly /></Field>
           <Field label="Display Sequence"><input type="number" min="1" value={draft.displaySequence} readOnly={!editing} onChange={(e) => setDraft({ ...draft, displaySequence: Number(e.target.value) })} /></Field>
