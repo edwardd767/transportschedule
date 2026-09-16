@@ -94,6 +94,9 @@ type InhouseRow = {
   houseLimit: number;
   amount: number;
   attachmentCount: number;
+  specialRequest: string;
+  billingRemark: string;
+  remark: string;
 };
 
 const SORT_OPTIONS = [
@@ -242,6 +245,9 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
               houseLimit: booking.creditLimit ?? 100,
               amount: booking.amount,
               attachmentCount: booking.attachments?.length ?? 0,
+              specialRequest: booking.specialRequests?.[`${room.code}-${index}`] ?? '',
+              billingRemark: booking.billingRemark ?? '',
+              remark: booking.specialRequests?.__bookingInternalRemarks ?? '',
             };
           }),
         ),
@@ -449,6 +455,8 @@ function InhouseDetail({ row: sourceRow, hotelName, store, onBack }: { row: Inho
         cityAccount: Boolean(booking.cityAccount),
         source: booking.source?.replace(/_/g, ' ') || sourceRow.source,
         attachmentCount: booking.attachments?.length ?? 0,
+        billingRemark: booking.billingRemark ?? '',
+        remark: booking.specialRequests?.__bookingInternalRemarks ?? '',
       }
     : sourceRow;
   const money = (value: number) => value.toFixed(2);
@@ -506,10 +514,10 @@ function InhouseDetail({ row: sourceRow, hotelName, store, onBack }: { row: Inho
     { label: 'Service Requests', info: <span className="inhouse-menu-desc">Request: 0</span> },
     { label: 'Incidental Charges', info: <><span className="inhouse-menu-desc inhouse-menu-desc-fill">0.00</span><span className="inhouse-menu-desc">Credit Balance: 100.00</span></> },
     { label: 'Deposit', info: <span className="inhouse-menu-desc">0.00</span> },
-    { label: 'Special Request', info: null },
+    { label: 'Special Request', info: row.specialRequest ? <span className="inhouse-menu-desc">{row.specialRequest}</span> : null },
     { label: 'Advance payment', info: <span className="inhouse-menu-desc">0.00</span> },
-    { label: 'Remarks', info: null },
-    { label: 'Billing Instruction', info: <span className="inhouse-menu-desc">City Account: {row.cityAccount ? 'Yes' : 'No'}<MenuDivider /></span> },
+    { label: 'Remarks', info: row.remark ? <span className="inhouse-menu-desc">{row.remark}</span> : null },
+    { label: 'Billing Instruction', info: <span className="inhouse-menu-desc">City Account: {row.cityAccount ? 'Yes' : 'No'}<MenuDivider /> {row.billingRemark}</span> },
     { label: 'Folio', info: <span className="inhouse-menu-desc">0.00</span> },
     { label: 'Early Checkout', disabled: true, info: <span className="inhouse-menu-desc"><CalendarIcon /> N/A</span> },
     { label: 'Late Checkout', info: <span className="inhouse-menu-desc"><CalendarIcon /> N/A</span> },
