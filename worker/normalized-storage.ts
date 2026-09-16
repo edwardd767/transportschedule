@@ -239,7 +239,9 @@ const schemaStatements = [
       WHERE table_schema = 'public' AND table_name = 'hotelx_room_type_master'
         AND column_name = 'overbooking_allowed' AND data_type = 'boolean'
     ) THEN
+      EXECUTE 'ALTER TABLE public.hotelx_room_type_master ALTER COLUMN overbooking_allowed DROP DEFAULT';
       EXECUTE 'ALTER TABLE public.hotelx_room_type_master ALTER COLUMN overbooking_allowed TYPE integer USING (CASE WHEN overbooking_allowed THEN 1 ELSE 0 END)';
+      EXECUTE 'ALTER TABLE public.hotelx_room_type_master ALTER COLUMN overbooking_allowed SET DEFAULT 0';
     END IF`,
   `ALTER TABLE public.hotelx_room_type_master ADD COLUMN IF NOT EXISTS overbooking_allowed integer NOT NULL DEFAULT 0`,
   `ALTER TABLE public.hotelx_room_type_master ADD COLUMN IF NOT EXISTS amenities jsonb NOT NULL DEFAULT '[]'::jsonb`,
