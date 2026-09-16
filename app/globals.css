@@ -5288,6 +5288,9 @@ p {
   grid-template-columns: minmax(0, 1fr);
   padding: 0 8px 74px;
 }
+.rate-row-list > * {
+  width: 100%;
+  justify-self: stretch;}
 .rate-list-row {
   position: relative;
   display: grid;
