@@ -123,7 +123,20 @@ export function BookingRemarksBridge({ store }: { store: TransportData }) {
       setTab('internal');
     };
 
+    const onOpen = (event: Event) => {
+      const reference = (event as CustomEvent<{ reference?: string }>).detail?.reference;
+      const activeBooking = store.state.bookings.find((item) => item.reference === reference);
+      if (!activeBooking) return;
+      const requests = activeBooking.specialRequests ?? {};
+      setReference(activeBooking.reference);
+      setInternalRemarks(requests[INTERNAL_KEY] ?? '');
+      setPaymentRemarks1(requests[PAYMENT_1_KEY] ?? '');
+      setPaymentRemarks2(requests[PAYMENT_2_KEY] ?? '');
+      setTab('internal');
+    };
+
     document.addEventListener('click', onClick, true);
+    window.addEventListener('hotelx-remarks-open', onOpen);
     const observer = new MutationObserver(syncSummary);
     const workspace = document.querySelector('.workspace');
     if (workspace) observer.observe(workspace, { childList: true, subtree: true });
@@ -131,6 +144,7 @@ export function BookingRemarksBridge({ store }: { store: TransportData }) {
 
     return () => {
       document.removeEventListener('click', onClick, true);
+      window.removeEventListener('hotelx-remarks-open', onOpen);
       observer.disconnect();
     };
   }, [store.state.bookings]);

@@ -62,16 +62,7 @@ export function BookingHouseLimitBridge({ store }: { store: TransportData }) {
 
   useEffect(() => {
     setWorkspace(document.querySelector<HTMLElement>('.workspace'));
-    const onClick = (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null;
-      const card = target?.closest<HTMLButtonElement>('.booking-section-card');
-      if (!card || card.querySelector('strong')?.textContent?.trim() !== 'House Limit') return;
-      const activeReference = bookingReferenceFromScreen();
-      const activeBooking = store.state.bookings.find((item) => item.reference === activeReference);
-      if (!activeBooking) return;
-      event.preventDefault();
-      event.stopPropagation();
-
+    const openFor = (activeBooking: Booking) => {
       const saved = readHouseLimits(activeBooking);
       const next: Record<string, string[]> = {};
       for (const room of activeBooking.rooms) {
@@ -86,8 +77,29 @@ export function BookingHouseLimitBridge({ store }: { store: TransportData }) {
       setReference(activeBooking.reference);
       setError('');
     };
+
+    const onClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      const card = target?.closest<HTMLButtonElement>('.booking-section-card');
+      if (!card || card.querySelector('strong')?.textContent?.trim() !== 'House Limit') return;
+      const activeReference = bookingReferenceFromScreen();
+      const activeBooking = store.state.bookings.find((item) => item.reference === activeReference);
+      if (!activeBooking) return;
+      event.preventDefault();
+      event.stopPropagation();
+      openFor(activeBooking);
+    };
+    const onOpen = (event: Event) => {
+      const reference = (event as CustomEvent<{ reference?: string }>).detail?.reference;
+      const activeBooking = store.state.bookings.find((item) => item.reference === reference);
+      if (activeBooking) openFor(activeBooking);
+    };
     document.addEventListener('click', onClick, true);
-    return () => document.removeEventListener('click', onClick, true);
+    window.addEventListener('hotelx-house-limit-open', onOpen);
+    return () => {
+      document.removeEventListener('click', onClick, true);
+      window.removeEventListener('hotelx-house-limit-open', onOpen);
+    };
   }, [store.state.bookings, store.state.hotelMasters.roomTypes]);
 
   useEffect(() => {

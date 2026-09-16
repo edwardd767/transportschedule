@@ -37,6 +37,11 @@ import { HotelxBackButton } from '@/components/hotelx-back-button';
 import { HotelDatePicker } from '@/components/hotel-date-picker';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { RoomingList } from '@/components/rooming-list';
+import { SpecialRequest } from '@/components/special-request';
+import { BillingInstruction } from '@/components/billing-instruction';
+import { BookingAttachments } from '@/components/booking-attachments';
+import { BillingSchedule } from '@/components/billing-schedule';
+import type { Booking } from '@/lib/bookings';
 import './inhouse-guest-bridge.css';
 
 const SOURCE_OPTIONS = ['Walk In', 'Booking', 'OTA', 'Corporate', 'Channel Manager', 'Travel Agent'];
@@ -430,7 +435,7 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
 type InhouseMenuRow = { label: string; info: ReactNode; badge?: ReactNode; disabled?: boolean };
 
 function InhouseDetail({ row: sourceRow, hotelName, store, onBack }: { row: InhouseRow; hotelName: string; store: TransportData; onBack: () => void }) {
-  const [panel, setPanel] = useState<'menu' | 'bookingInfo' | 'roomingList'>('menu');
+  const [panel, setPanel] = useState<'menu' | 'bookingInfo' | 'roomingList' | 'specialRequest' | 'billingInstruction' | 'attachments' | 'billingSchedule'>('menu');
   const booking = store.state.bookings.find((item) => item.reference === sourceRow.reference);
   const row: InhouseRow = booking
     ? {
@@ -464,6 +469,30 @@ function InhouseDetail({ row: sourceRow, hotelName, store, onBack }: { row: Inho
           }}
           onBack={() => setPanel('menu')}
         />
+      </div>
+    );
+
+  const saveBooking = async (value: Booking) => {
+    await store.run({ type: 'bookingUpdate', value });
+  };
+
+  if (panel === 'specialRequest' && booking)
+    return <SpecialRequest booking={booking} onSave={saveBooking} onBack={() => setPanel('menu')} />;
+
+  if (panel === 'billingInstruction' && booking)
+    return <BillingInstruction booking={booking} onSave={saveBooking} onBack={() => setPanel('menu')} />;
+
+  if (panel === 'attachments' && booking)
+    return (
+      <div className="inhouse-screen">
+        <BookingAttachments booking={booking} onSave={saveBooking} onBack={() => setPanel('menu')} />
+      </div>
+    );
+
+  if (panel === 'billingSchedule' && booking)
+    return (
+      <div className="inhouse-screen">
+        <BillingSchedule booking={booking} bookingLegs={store.state.bookingLegs} rateSetup={store.state.rateSetup} onSave={saveBooking} onBack={() => setPanel('menu')} />
       </div>
     );
 
@@ -507,6 +536,12 @@ function InhouseDetail({ row: sourceRow, hotelName, store, onBack }: { row: Inho
             onClick={() => {
               if (item.label === 'Booking Info') setPanel('bookingInfo');
               else if (item.label === 'Rooming List') setPanel('roomingList');
+              else if (item.label === 'Special Request') setPanel('specialRequest');
+              else if (item.label === 'Billing Instruction') setPanel('billingInstruction');
+              else if (item.label === 'Attachments') setPanel('attachments');
+              else if (item.label === 'Billing Schedule') setPanel('billingSchedule');
+              else if (item.label === 'House Limit') window.dispatchEvent(new CustomEvent('hotelx-house-limit-open', { detail: { reference: row.reference } }));
+              else if (item.label === 'Remarks') window.dispatchEvent(new CustomEvent('hotelx-remarks-open', { detail: { reference: row.reference } }));
             }}
           >
             <span className="inhouse-menu-text">
