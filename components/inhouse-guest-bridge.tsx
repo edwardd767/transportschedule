@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import {
   ArrowRightLeft,
@@ -9,6 +9,28 @@ import {
   RotateCw,
   Search,
 } from 'lucide-react';
+
+const HOTELX_MEDIA = 'https://hms1.hotelx.asia/static/media';
+const CHECKIN_CANCEL_ICON = `${HOTELX_MEDIA}/checkin.d4105e6c.svg`;
+const ROOM_ICON = `${HOTELX_MEDIA}/room.7cce94dd.svg`;
+const AUDIT_ICON = `${HOTELX_MEDIA}/audit.da3ff731.svg`;
+const PERSON_ICON = `${HOTELX_MEDIA}/person.eed5ce8b.svg`;
+
+function HotelxIcon({ src, size }: { src: string; size: number }) {
+  return <img src={src} alt="" aria-hidden="true" width={size} height={size} style={{ width: size, height: size, display: 'inline-block', objectFit: 'contain', flex: '0 0 auto' }} />;
+}
+
+function CalendarIcon({ size = 12 }: { size?: number }) {
+  return <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true" focusable="false"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z" /></svg>;
+}
+
+function QrIcon({ size = 17 }: { size?: number }) {
+  return <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true" focusable="false"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm12-2h2v2h-2v-2zm2 2h2v2h-2v-2zm-2 2h2v2h-2v-2zm2 2h2v2h-2v-2zm-4-4h2v2h-2v-2zm0 4h2v2h-2v-2z" /></svg>;
+}
+
+function MenuDivider() {
+  return <span className="inhouse-menu-divider" aria-hidden="true" />;
+}
 import type { TransportData } from '@/lib/use-transport-data';
 import { HotelxBackButton } from '@/components/hotelx-back-button';
 import { HotelDatePicker } from '@/components/hotel-date-picker';
@@ -36,6 +58,15 @@ type InhouseRow = {
   referenceNo: string;
   groupName: string;
   location: string;
+  pax: number;
+  roomCount: number;
+  rateCode: string;
+  source: string;
+  isGroup: boolean;
+  cityAccount: boolean;
+  houseLimit: number;
+  amount: number;
+  attachmentCount: number;
 };
 
 const SORT_OPTIONS = [
@@ -85,6 +116,7 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
   const [advanceOpen, setAdvanceOpen] = useState(false);
   const [advance, setAdvance] = useState(emptyAdvance);
   const [appliedAdvance, setAppliedAdvance] = useState(emptyAdvance);
+  const [selected, setSelected] = useState<InhouseRow | null>(null);
   const resetAdvance = () => setAdvance(emptyAdvance);
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
   const { bookings, hotelMasters } = store.state;
@@ -114,6 +146,7 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
       setPortalTarget(null);
       setAdvanceOpen(false);
       setSortOpen(false);
+      setSelected(null);
       return;
     }
 
@@ -124,7 +157,11 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
     setPortalTarget(workspace);
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false);
+      if (event.key !== 'Escape') return;
+      setSelected((current) => {
+        if (!current) setOpen(false);
+        return null;
+      });
     };
     document.addEventListener('keydown', onKeyDown);
     return () => {
@@ -169,6 +206,15 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
               referenceNo: booking.referenceNo ?? '',
               groupName: booking.groupName ?? '',
               location: assigned?.locationCode ?? '',
+              pax: Math.max(0, (room.adults ?? booking.guests ?? 1) + (room.children ?? 0)),
+              roomCount: Math.max(1, room.count),
+              rateCode: room.rateCode?.trim() || 'BAR',
+              source: (booking.source || booking.salesChannel || 'Walk In').replace(/_/g, ' '),
+              isGroup: Boolean(booking.groupName?.trim()),
+              cityAccount: Boolean(booking.cityAccount),
+              houseLimit: booking.creditLimit ?? 100,
+              amount: booking.amount,
+              attachmentCount: booking.attachments?.length ?? 0,
             };
           }),
         ),
@@ -202,6 +248,12 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
   }, [appliedAdvance, query, rows, sortKey]);
 
   if (!open || !portalTarget) return null;
+
+  if (selected)
+    return createPortal(
+      <InhouseDetail row={selected} hotelName={hotelMasters.profile.hotelName} onBack={() => setSelected(null)} />,
+      portalTarget,
+    );
 
   return createPortal(
     <section className="inhouse-screen" aria-label="In House Listing">
@@ -289,7 +341,7 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
       <div className="inhouse-list">
         {shownRows.length ? (
           shownRows.map((row) => (
-            <button type="button" className="inhouse-card" key={row.key}>
+            <button type="button" className="inhouse-card" key={row.key} onClick={() => setSelected(row)}>
               <div className="inhouse-card-copy">
                 <div className="inhouse-room-line">
                   <b>{row.roomNo}</b>
@@ -353,5 +405,90 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
       )}
     </section>,
     portalTarget,
+  );
+}
+
+type InhouseMenuRow = { label: string; info: ReactNode; badge?: ReactNode; disabled?: boolean };
+
+function InhouseDetail({ row, hotelName, onBack }: { row: InhouseRow; hotelName: string; onBack: () => void }) {
+  const money = (value: number) => value.toFixed(2);
+  const rows: InhouseMenuRow[] = [
+    { label: 'Booking Info', info: <><span className="inhouse-menu-desc">Group: {row.isGroup ? 'Yes' : 'No'}</span><span className="inhouse-menu-desc" style={{ paddingLeft: 4 }}>Source: {row.source}</span></> },
+    { label: 'Check In Cancellation', disabled: true, info: <span className="inhouse-menu-desc"><HotelxIcon src={CHECKIN_CANCEL_ICON} size={10} /> -</span> },
+    { label: 'Rooming List', info: <span className="inhouse-menu-desc">No. of Pax: {row.pax}</span> },
+    { label: 'Service Requests', info: <span className="inhouse-menu-desc">Request: 0</span> },
+    { label: 'Incidental Charges', info: <><span className="inhouse-menu-desc inhouse-menu-desc-fill">0.00</span><span className="inhouse-menu-desc">Credit Balance: 100.00</span></> },
+    { label: 'Deposit', info: <span className="inhouse-menu-desc">0.00</span> },
+    { label: 'Special Request', info: null },
+    { label: 'Advance payment', info: <span className="inhouse-menu-desc">0.00</span> },
+    { label: 'Remarks', info: null },
+    { label: 'Billing Instruction', info: <span className="inhouse-menu-desc">City Account: {row.cityAccount ? 'Yes' : 'No'}<MenuDivider /></span> },
+    { label: 'Folio', info: <span className="inhouse-menu-desc">0.00</span> },
+    { label: 'Early Checkout', disabled: true, info: <span className="inhouse-menu-desc"><CalendarIcon /> N/A</span> },
+    { label: 'Late Checkout', info: <span className="inhouse-menu-desc"><CalendarIcon /> N/A</span> },
+    { label: 'Extend / Shorten Stay', info: <span className="inhouse-menu-desc"><CalendarIcon /> {formatStayDate(row.arrival)} - {formatStayDate(row.departure)}</span> },
+    { label: 'Room Transfer', info: <span className="inhouse-menu-desc"><HotelxIcon src={ROOM_ICON} size={15} /> {row.roomNo} <MenuDivider /> {row.roomType}</span> },
+    { label: 'Room Upgrade', info: <span className="inhouse-menu-desc"><HotelxIcon src={ROOM_ICON} size={15} /> {row.roomType}</span> },
+    { label: 'House Limit', info: <span className="inhouse-menu-desc">{money(row.houseLimit)}</span> },
+    { label: 'Folio History', info: <span className="inhouse-menu-desc">Total: 0</span> },
+    { label: 'Attachments', badge: <span className="inhouse-menu-count">{row.attachmentCount}</span>, info: <span className="inhouse-menu-desc">No Record</span> },
+    { label: 'Billing Schedule', info: <><span className="inhouse-menu-desc">{money(row.amount)} | <HotelxIcon src={ROOM_ICON} size={15} /> {row.roomCount}</span><span className="inhouse-menu-desc">Rate Code: {row.rateCode}</span></> },
+    { label: 'Key Card', info: <span className="inhouse-menu-desc">-</span> },
+    { label: 'Unsplit', info: <span className="inhouse-menu-desc">-</span> },
+  ];
+
+  return (
+    <section className="inhouse-screen" aria-label="In House Guest">
+      <header className="inhouse-property">
+        <div className="inhouse-property-main">
+          <HotelxBackButton onClick={onBack} label="Back to In House listing" />
+          <div className="inhouse-property-copy">
+            <small>HMS</small>
+            <strong>{hotelName}</strong>
+          </div>
+          <span className="inhouse-switch" aria-hidden="true">
+            <ArrowRightLeft size={14} />
+          </span>
+        </div>
+        <div className="inhouse-crumb">
+          <span className="inhouse-crumb-path">
+            <span className="inhouse-crumb-full">Front Desk</span>
+            <span className="inhouse-crumb-more">…</span> / <strong>In House</strong>
+          </span>
+          <strong>{row.reference}</strong>
+        </div>
+      </header>
+
+      <div className="inhouse-detail-summary">
+        <div className="inhouse-detail-top">
+          <span className="inhouse-detail-roomline">
+            <b>{row.roomNo}</b>
+            <strong>{row.roomType}</strong>
+            <MenuDivider />
+            <span className="inhouse-detail-dates"><CalendarIcon /> {formatStayDate(row.arrival)} - {formatStayDate(row.departure)}</span>
+          </span>
+          <span className="inhouse-detail-action"><QrIcon /></span>
+        </div>
+        <div className="inhouse-detail-bottom">
+          <span className="inhouse-detail-guest"><HotelxIcon src={PERSON_ICON} size={13} /> <strong>{row.accountName}</strong></span>
+          <span className="inhouse-detail-action"><HotelxIcon src={AUDIT_ICON} size={15} /></span>
+        </div>
+      </div>
+
+      <div className="inhouse-list inhouse-menu-list">
+        {rows.map((item) => (
+          <button key={item.label} type="button" className="inhouse-menu-card" disabled={item.disabled}>
+            <span className="inhouse-menu-text">
+              <span className="inhouse-menu-head">
+                <span className="inhouse-menu-title">{item.label}</span>
+                {item.badge}
+              </span>
+              {item.info && <span className="inhouse-menu-line">{item.info}</span>}
+            </span>
+            <ChevronRight size={20} className="inhouse-menu-chevron" />
+          </button>
+        ))}
+      </div>
+    </section>
   );
 }
