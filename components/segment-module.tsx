@@ -5,6 +5,19 @@ import { initialSegments, type HotelSegment } from '@/lib/hotel-masters';
 import type { Booking } from '@/lib/bookings';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 
+const HOTELX_MEDIA = 'https://hms1.hotelx.asia/static/media';
+
+const STAY_VIEW_ICONS = [
+  { id: 'CTrip', src: `${HOTELX_MEDIA}/ctrip.e48d1d1b.svg` },
+  { id: 'Booking', src: `${HOTELX_MEDIA}/booking.42625cb6.svg` },
+  { id: 'Agoda', src: `${HOTELX_MEDIA}/agoda.82065b83.svg` },
+  { id: 'Traveloka', src: `${HOTELX_MEDIA}/traveloka.6c4c5e1d.svg` },
+  { id: 'Expedia', src: `${HOTELX_MEDIA}/Expedia.3c18d183.svg` },
+  { id: 'HotelWorld', src: `${HOTELX_MEDIA}/HotelWorld.264caac6.svg` },
+  { id: 'TripAdvisor', src: `${HOTELX_MEDIA}/tripadvisor.d17439c9.svg` },
+  { id: 'HotelBeds', src: `${HOTELX_MEDIA}/HotelBeds.02047415.svg` },
+];
+
 function formatPostedDate(value: string) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || '');
   if (!match) return value;
@@ -22,6 +35,8 @@ export function SegmentModule({ segments, bookings = [], onChange, onBack: _onBa
   const [dialogOpen, setDialogOpen] = useState(false);
   const [description, setDescription] = useState('');
   const [sequence, setSequence] = useState(1);
+  const [icon, setIcon] = useState('');
+  const [active, setActive] = useState(true);
   const [confirm, setConfirm] = useState<{ title: string; message: string; confirmLabel: string; action: () => void | Promise<void> } | null>(null);
 
   useEffect(() => setDraft(segments.length ? segments : initialSegments), [segments]);
@@ -43,14 +58,16 @@ export function SegmentModule({ segments, bookings = [], onChange, onBack: _onBa
     setDialogOpen(true);
     setDescription(item?.description || '');
     setSequence(item?.displaySequence || draft.length + 1);
+    setIcon(item?.icon || STAY_VIEW_ICONS[0].id);
+    setActive(item ? item.active : true);
   };
 
   const save = async () => {
     if (!description.trim()) return;
     const today = new Date().toISOString().slice(0, 10);
     const value = editing
-      ? draft.map((item) => item.id === editing.id ? { ...item, description: description.trim(), displaySequence: sequence, updatedAt: today } : item)
-      : [...draft, { id: crypto.randomUUID(), description: description.trim(), displaySequence: sequence, icon: '', active: true, updatedAt: today }];
+      ? draft.map((item) => item.id === editing.id ? { ...item, description: description.trim(), displaySequence: sequence, icon, updatedAt: today } : item)
+      : [...draft, { id: crypto.randomUUID(), description: description.trim(), displaySequence: sequence, icon, active, updatedAt: today }];
     await onChange(value);
     setDraft(value);
     setDialogOpen(false);
@@ -89,6 +106,23 @@ export function SegmentModule({ segments, bookings = [], onChange, onBack: _onBa
             <h2>{editing ? 'Edit Segment' : 'Add Segment'}</h2>
             <label>Description *<input value={description} onChange={(event) => setDescription(event.target.value)} /></label>
             <label>Display Sequence<input type="number" min="1" value={sequence} onChange={(event) => setSequence(Number(event.target.value))} /></label>
+            <fieldset className="segment-icon-field">
+              <span>Stay View Icon Mapping</span>
+              <div className="segment-icon-grid">
+                {STAY_VIEW_ICONS.map((option) => (
+                  <label className="segment-icon-option" key={option.id}>
+                    <input type="radio" name="segment-icon" checked={icon === option.id} onChange={() => setIcon(option.id)} />
+                    <img src={option.src} alt={option.id} width={25} height={25} />
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            {!editing && (
+              <label className="segment-active-row">
+                <span>Active</span>
+                <input type="checkbox" checked={active} onChange={(event) => setActive(event.target.checked)} />
+              </label>
+            )}
             <div className="billing-instruction-actions">
               <button className="secondary-button" onClick={() => { setDialogOpen(false); setEditing(null); }}>Cancel</button>
               <button className="primary-button" disabled={!description.trim()} onClick={save}>Save</button>

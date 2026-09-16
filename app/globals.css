@@ -6238,6 +6238,17 @@ p {
 .booking-room-subtotal>strong{text-align:right;font-weight:600}
 @media(max-width:639px){.booking-room-stay-head small{font-size:10px}.booking-room-subtotal{min-width:680px;gap:9px;font-size:11px}}
 
+/* Segment dialog: stay view icon mapping. */
+.segment-icon-field{margin:10px 0 0;padding:0;border:0}
+.segment-icon-field > span{display:block;margin-bottom:6px;color:#85909d;font-size:12px}
+.segment-icon-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.segment-icon-option{display:grid;place-items:center;min-height:46px;border:1px solid #e5e5e5;border-radius:4px;background:#fff;cursor:pointer}
+.segment-icon-option input{position:absolute;opacity:0;pointer-events:none}
+.segment-icon-option img{display:block;object-fit:contain}
+.segment-icon-option:has(input:checked){border-color:#ff9800;box-shadow:0 0 0 1px #ff9800 inset}
+.segment-active-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;color:#555;font-size:13px}
+.segment-active-row input{width:18px;height:18px;accent-color:#ff9800}
+
 /* Housekeeping Misc Charges. */
 .misc-charges{position:relative;display:flex;flex:1;min-height:0;flex-direction:column;background:#f4f4f4;overflow:hidden}
 .misc-charges-banner{flex:none;background:linear-gradient(110deg,#f89912,#ffa524 65%,#f67e1b)}
