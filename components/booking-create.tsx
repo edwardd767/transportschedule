@@ -54,12 +54,6 @@ function nightsBetween(arrival: string, departure: string) {
   return Math.round((end - start) / 86400000);
 }
 
-function prettyDate(value: string) {
-  if (!value) return '';
-  const [year, month, day] = value.split('-');
-  return `${day}/${month}/${year}`;
-}
-
 function localDateKey(offsetDays = 0) {
   const date = new Date();
   date.setHours(12, 0, 0, 0);
@@ -425,8 +419,8 @@ export function BookingCreate({
             <DialogDescription>Add a room type and rate to this booking.</DialogDescription>
           </DialogHeader>
           <div className="booking-room-dialog-grid">
-            <label className="booking-line-field"><span>Arrival Date *</span><input value={prettyDate(arrival)} readOnly /></label>
-            <label className="booking-line-field"><span>Departure Date *</span><input value={prettyDate(departure)} readOnly /></label>
+            <label className="booking-line-field"><span>Arrival Date *</span><HotelDatePicker value={arrival} onChange={setArrival} ariaLabel="Arrival date" /></label>
+            <label className="booking-line-field"><span>Departure Date *</span><HotelDatePicker value={departure} onChange={setDeparture} ariaLabel="Departure date" /></label>
             <label className="booking-line-field booking-choice-field"><span>Room Type *</span><Choice label="Room Type" value={roomType} onChange={setRoomType} items={roomTypeItems} /></label>
             <label className="booking-line-field"><span>No. of Room *</span><input type="number" min="1" value={roomQty} onChange={(event) => setRoomQty(Number(event.target.value))} /></label>
             <div className="booking-room-occupancy-entry">
