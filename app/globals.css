@@ -6241,6 +6241,7 @@ p {
 /* Sidebar account menu. */
 .profile-menu-wrap{position:absolute;inset:0;z-index:30}
 .profile-menu-trigger{position:absolute;inset:0;width:100%;height:100%;padding:0;border:0;background:transparent;cursor:pointer}
+.profile-menu-trigger svg{position:absolute;right:12px;bottom:20px;color:#fff}
 
 .profile-menu{z-index:1200;min-width:176px;padding:6px 0;border-radius:4px;background:#fff;box-shadow:0 8px 26px #00000033}
 .profile-menu-item{display:flex;align-items:center;gap:12px;width:100%;padding:10px 16px;border:0;background:#fff;color:#222;font-size:15px;text-align:left;cursor:pointer}
