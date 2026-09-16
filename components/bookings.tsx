@@ -258,6 +258,7 @@ function BookingOccupancy({ booking }: { booking: Booking }) {
 export function Bookings({
   paxCountPolicy = "",
   childRatesApplied = false,
+  childAgePolicy = 0,
   bookings,
   roomTypes,
   rateSetup,
@@ -279,6 +280,7 @@ export function Bookings({
 }: {
   paxCountPolicy?: string;
   childRatesApplied?: boolean;
+  childAgePolicy?: number;
   bookings: Booking[];
   roomTypes: HotelRoomType[];
   rateSetup: RateSetupData;
@@ -422,6 +424,7 @@ export function Bookings({
     return (
       <BookingCreate
         childRatesApplied={childRatesApplied}
+        childAgePolicy={childAgePolicy}
         bookings={bookings}
         roomTypes={roomTypes}
         rateSetup={rateSetup}
@@ -459,7 +462,7 @@ export function Bookings({
             </div>
             <div className="booking-detail-bottom"><span>{booking.reference} <span className="booking-divider">|</span> {booking.guest}</span></div>
           </div>
-          <BookingEdit childRatesApplied={childRatesApplied} rateSetup={rateSetup} bookings={bookings} booking={booking} roomTypes={roomTypes} salesChannels={salesChannels} onCancel={() => onEditingChange(false)} onNotice={onNotice} onUpdate={async (value) => { await onUpdate(value); onEditingChange(false); }} />
+          <BookingEdit childRatesApplied={childRatesApplied} childAgePolicy={childAgePolicy} rateSetup={rateSetup} bookings={bookings} booking={booking} roomTypes={roomTypes} salesChannels={salesChannels} onCancel={() => onEditingChange(false)} onNotice={onNotice} onUpdate={async (value) => { await onUpdate(value); onEditingChange(false); }} />
         </section>
       );
     }

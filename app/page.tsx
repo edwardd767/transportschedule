@@ -867,6 +867,7 @@ function HomeContent({ store }: { store: TransportData }) {
           <Bookings
             paxCountPolicy={hotelMasters.profile.paxCount}
             childRatesApplied={hotelMasters.profile.childRatesApplied}
+            childAgePolicy={hotelMasters.profile.childAgePolicy}
             bookings={bookings}
             roomTypes={hotelMasters.roomTypes}
             rateSetup={rateSetup}

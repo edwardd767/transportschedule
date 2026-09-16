@@ -46,6 +46,7 @@ const money = new Intl.NumberFormat('en-MY', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
+const INFANT_MAX_AGE = 2;
 
 function nightsBetween(arrival: string, departure: string) {
   const start = new Date(`${arrival}T00:00:00Z`).getTime();
@@ -63,6 +64,7 @@ function localDateKey(offsetDays = 0) {
 
 export function BookingCreate({
   childRatesApplied = false,
+  childAgePolicy = 0,
   bookings,
   roomTypes,
   rateSetup,
@@ -73,6 +75,7 @@ export function BookingCreate({
   onNotice,
 }: {
   childRatesApplied?: boolean;
+  childAgePolicy?: number;
   bookings: Booking[];
   roomTypes: HotelRoomType[];
   rateSetup?: RateSetupData;
@@ -425,8 +428,8 @@ export function BookingCreate({
             <label className="booking-line-field"><span>No. of Room *</span><input type="number" min="1" value={roomQty} onChange={(event) => setRoomQty(Number(event.target.value))} /></label>
             <div className="booking-room-occupancy-entry">
               <label className="booking-line-field"><span>No. of Adult *</span><input type="number" min="1" value={adults} onChange={(event) => setAdults(Number(event.target.value))} /></label>
-              <label className="booking-line-field"><span>No. of Child</span><input type="number" min="0" value={children} onChange={(event) => setChildren(Number(event.target.value))} /></label>
-              <label className="booking-line-field"><span>No. of Infant</span><input type="number" min="0" value={infants} onChange={(event) => setInfants(Number(event.target.value))} /></label>
+              <label className="booking-line-field"><span>No. of Child</span><input type="number" min="0" value={children} onChange={(event) => setChildren(Number(event.target.value))} />{childAgePolicy > INFANT_MAX_AGE && <small className="booking-child-age-note">Age {INFANT_MAX_AGE + 1} - {childAgePolicy} years</small>}</label>
+              <label className="booking-line-field"><span>No. of Infant</span><input type="number" min="0" value={infants} onChange={(event) => setInfants(Number(event.target.value))} />{childAgePolicy > INFANT_MAX_AGE && <small className="booking-child-age-note">Age 0 - {INFANT_MAX_AGE} years</small>}</label>
             </div>
             <label className="booking-line-field booking-choice-field"><span>Rate Code *</span><Choice label="Rate Code" value={rateCode} onChange={(value) => { setRateCode(value); setRoomRate(rateAmount(value)); }} items={rateItems.length ? rateItems : [{ value: 'BAR', label: 'BAR - Best Available Rate' }]} /></label>
             <label className="booking-line-field"><span>Room Rate</span><input type="number" min="0" step="0.01" value={roomRate} readOnly /></label>
