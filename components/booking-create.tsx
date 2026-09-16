@@ -36,6 +36,12 @@ type RoomLine = {
   total: number;
 };
 
+const stayDateFormatter = new Intl.DateTimeFormat('en-GB', {
+  day: '2-digit',
+  month: 'short',
+  year: '2-digit',
+  timeZone: 'UTC',
+});
 const money = new Intl.NumberFormat('en-MY', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
@@ -123,6 +129,7 @@ export function BookingCreate({
   const [error, setError] = useState('');
 
   const nights = nightsBetween(arrival, departure);
+  const stayLabel = `${stayDateFormatter.format(new Date(`${arrival}T00:00:00Z`))} - ${stayDateFormatter.format(new Date(`${departure}T00:00:00Z`))}`;
   const bookingTotal = roomLines.reduce((total, line) => total + line.total, 0);
   const selectedRoom = activeRoomTypes.find((item) => item.code === roomType);
   const configuredPaxRate = bookingRate(rateSetup, rateCode, roomType, arrival);
@@ -381,15 +388,20 @@ export function BookingCreate({
           </div>
           <div className="booking-room-table">
             <div className="booking-room-table-head">
-              <span>No.</span><span>Room Type</span><span>Rate Code</span><span>No. of Room</span><span>Amount</span>
+              <span>No.</span>
+              <span className="booking-room-stay-head">Room Type<small><svg viewBox="0 0 24 24" width={11} height={11} fill="currentColor" aria-hidden="true" focusable="false"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z" /></svg> {stayLabel}</small></span>
+              <span>Rate Code</span><span>No. of Room</span><span>Amount</span>
             </div>
             {roomLines.map((line, index) => (
-              <div className="booking-room-table-row" key={line.id}>
-                <span>{index + 1}</span>
-                <span>{line.code}<small className="booking-pax-count"><User size={13} aria-label="Adults" /><b>{line.adults}</b><Baby size={13} aria-label="Children" /><b>{line.children}</b></small></span>
-                <span>{line.rateCode}</span>
-                <span>{line.count}</span>
-                <span>{money.format(line.total)}</span>
+              <div className="booking-room-line" key={line.id}>
+                <div className="booking-room-table-row">
+                  <span>{index + 1}</span>
+                  <span>{line.code}<small className="booking-pax-count"><User size={13} aria-label="Adults" /><b>{line.adults}</b><Baby size={13} aria-label="Children" /><b>{line.children}</b></small></span>
+                  <span>{line.rateCode}</span>
+                  <span>{line.count}</span>
+                  <span>{money.format(line.total)}</span>
+                </div>
+                <div className="booking-room-subtotal"><span>Subtotal</span><strong>{money.format(line.subtotal)}</strong></div>
               </div>
             ))}
             {!roomLines.length && <div className="booking-room-empty">Add a Room Type to continue.</div>}

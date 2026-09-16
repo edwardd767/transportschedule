@@ -6229,3 +6229,10 @@ p {
 .security-deposit-page>.security-deposit-actions{position:fixed;left:197px;right:0;bottom:0;height:74px;min-height:74px;margin:0;padding:10px 20px;background:#fff;box-shadow:0 -2px 7px #0002;z-index:20;display:flex;align-items:center;justify-content:center}
 .security-deposit-actions .primary-button{min-width:126px;height:40px;border-radius:4px;font-size:13px}.security-deposit-actions .primary-button:disabled{background:#ddd;color:#aaa;opacity:1}
 @media(max-width:700px){.security-deposit-page{padding-bottom:84px}.security-deposit-page>.security-deposit-actions{left:0;height:68px;min-height:68px;padding:10px 12px}}
+
+/* Booking room type table: stay dates under the room type column and a per-line subtotal. */
+.booking-room-stay-head small{display:flex;align-items:center;gap:5px;margin-top:3px;color:#8a8a8a;font-size:11px;font-weight:400}
+.booking-room-subtotal{min-width:680px;display:grid;grid-template-columns:70px 1.4fr 1.2fr 1fr 1fr;gap:12px;padding:2px 0 6px;color:#666;font-size:12px}
+.booking-room-subtotal>span{grid-column:4}
+.booking-room-subtotal>strong{text-align:right;font-weight:600}
+@media(max-width:639px){.booking-room-stay-head small{font-size:10px}.booking-room-subtotal{min-width:680px;gap:9px;font-size:11px}}
