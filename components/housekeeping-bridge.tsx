@@ -836,6 +836,7 @@ export function HousekeepingBridge({ store }: { store: TransportData }) {
       const nav = document.querySelector<HTMLElement>('.main-nav');
       targetWorkspace = document.querySelector<HTMLElement>('.workspace');
       if (!nav || !targetWorkspace) return false;
+      if (mount && nav.contains(mount)) return true;
 
       const existing = nav.querySelector<HTMLButtonElement>(
         '[data-housekeeping-nav="true"]',
@@ -862,12 +863,13 @@ export function HousekeepingBridge({ store }: { store: TransportData }) {
       return true;
     };
 
-    if (!attach()) {
-      observer = new MutationObserver(() => {
-        if (attach()) observer?.disconnect();
-      });
-      observer.observe(document.body, { childList: true, subtree: true });
-    }
+    // The sidebar is re-created when the layout switches between desktop and the
+    // mobile sheet, so keep watching and re-attach the nav item to the live nav.
+    attach();
+    observer = new MutationObserver(() => {
+      attach();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
 
     return () => {
       observer?.disconnect();
