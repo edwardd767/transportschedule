@@ -641,7 +641,7 @@ function HomeContent({ store }: { store: TransportData }) {
                   setProfileMenuOpen(true);
                 }}
               >
-                <svg viewBox="0 0 24 24" width={22} height={22} fill="currentColor" aria-hidden="true" focusable="false"><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z" /></svg>
+                <svg style={{ position: 'absolute', right: 12, bottom: 23 }} viewBox="0 0 24 24" width={22} height={22} fill="currentColor" aria-hidden="true" focusable="false"><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z" /></svg>
               </button>
               {profileMenuOpen && profileMenuPos && createPortal(
                 <div className="profile-menu" role="menu" style={{ position: 'fixed', top: profileMenuPos.top, left: profileMenuPos.left }}>
