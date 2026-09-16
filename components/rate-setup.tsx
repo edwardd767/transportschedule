@@ -11,6 +11,7 @@ import {
   Info,
   MoreVertical,
   Plus,
+  Mic,
   Pencil,
   Search,
   X,
@@ -269,23 +270,27 @@ function SearchHeader({
   onQuery: (value: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  if (open) {
+    return (
+      <div className="rate-search-row">
+        <input
+          autoFocus
+          value={query}
+          onChange={(event) => onQuery(event.target.value)}
+          placeholder="Search here.."
+          aria-label={`Search ${title}`}
+        />
+        <button type="button" aria-label="Voice search"><Mic size={18} /></button>
+        <button type="button" aria-label="Close search" onClick={() => { onQuery(''); setOpen(false); }}><X size={18} /></button>
+      </div>
+    );
+  }
   return (
     <div className="rate-list-heading">
-      <strong>{title} <span>({count})</span></strong>
-      <div className="rate-search-wrap">
-        {open && (
-          <input
-            autoFocus
-            value={query}
-            onChange={(event) => onQuery(event.target.value)}
-            placeholder={`Search ${title}`}
-            aria-label={`Search ${title}`}
-          />
-        )}
-        <button type="button" className="rate-search-button" aria-label={`Search ${title}`} onClick={() => setOpen((value) => !value)}>
-          <Search size={24} />
-        </button>
-      </div>
+      <strong>{title} (<em>{count}</em>)</strong>
+      <button type="button" className="rate-search-button" aria-label={`Search ${title}`} onClick={() => setOpen(true)}>
+        <Search size={18} />
+      </button>
     </div>
   );
 }

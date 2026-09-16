@@ -5335,12 +5335,16 @@ p {
   grid-column: -2 / -1;
   justify-self: end;
 }
-.rate-row-actions > button,
-.rate-search-button {
+.rate-row-actions > button {
   display: inline-grid;
   place-items: center;
   width: 30px;
   height: 30px;
+.rate-search-button {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -5410,17 +5414,52 @@ p {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  min-height: 48px;
-  margin: 0 0 8px;
-  padding: 8px 14px;
+  min-height: 38px;
+  padding: 8px 12px;
   background: #fff;
-  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.12);
-}
+  box-shadow: 0 1px 4px #00000014;}
 .rate-list-heading strong {
-  font-size: 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #000;
 }
-.rate-list-heading strong span {
+.rate-list-heading strong em {
+  font-style: normal;
+  font-weight: 700;
   color: #ff8900;
+}
+.rate-search-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 8px 12px;
+  background: #fff;
+  box-shadow: 0 1px 4px #00000014;
+}
+.rate-search-row input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #111;
+  font: inherit;
+  font-size: 16px;
+}
+.rate-search-row input::placeholder {
+  color: #9a9a9a;
+}
+.rate-search-row button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border: 0;
+  background: transparent;
+  color: #111;
+  cursor: pointer;
 }
 .rate-search-wrap {
   display: flex;
