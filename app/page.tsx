@@ -784,7 +784,7 @@ function HomeContent({ store }: { store: TransportData }) {
                 }}
               />
             )}
-            {view === 'checkin' && (
+            {(view === 'checkin' || view === 'checkout') && (
               <HotelxBackButton className="booking-back" label="Back to Front Desk" onClick={() => setView('frontdesk')} />
             )}
             {view === 'segment' && (
