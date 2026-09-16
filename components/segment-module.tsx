@@ -105,8 +105,8 @@ export function SegmentModule({ segments, bookings = [], onChange, onBack: _onBa
           <div className="segment-dialog">
             <div className="segment-dialog-head"><strong>{editing ? 'Edit Segment' : 'Add Segment'}</strong></div>
             <div className="segment-dialog-body">
-              <label className="segment-field"><span>Description *</span><input value={description} onChange={(event) => setDescription(event.target.value)} /></label>
-              <label className="segment-field"><span>Display Sequence</span><input type="number" min="1" value={sequence} onChange={(event) => setSequence(Number(event.target.value))} /></label>
+              <label className="segment-field"><span>Description *</span><input placeholder=" " value={description} onChange={(event) => setDescription(event.target.value)} /></label>
+              <label className="segment-field"><span>Display Sequence</span><input placeholder=" " type="number" min="1" value={sequence} onChange={(event) => setSequence(Number(event.target.value))} /></label>
               <div className="segment-icon-field">
                 <span className="segment-icon-title">Stay View Icon Mapping</span>
                 <div className="segment-icon-grid">
