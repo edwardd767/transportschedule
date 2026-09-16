@@ -656,7 +656,7 @@ export function applyTransportAction(
         housekeepingPoints: number(v.housekeepingPoints, 'housekeeping points', 0, 10000),
         totalRoom: normalized.hotelMasters.rooms.filter((room) => room.roomTypeCode === code).length,
         active: boolean(v.active),
-        overbookingAllowed: boolean(v.overbookingAllowed),
+        overbookingAllowed: number(v.overbookingAllowed, 'overbooking allowed', 0, 999),
         amenities: list(v.amenities).map((item) => String(item ?? '').trim()).filter(Boolean),
         photos: list(v.photos).map((item) => String(item ?? '').trim()).filter(Boolean),
       };

@@ -382,6 +382,7 @@ function RoomTypeMaster({
               className="room-type-row"
               key={item.code}
               draggable
+              onClick={() => open(item)}
               onDragStart={(event) => {
                 setDragCode(item.code);
                 event.dataTransfer.effectAllowed = 'move';
@@ -403,7 +404,7 @@ function RoomTypeMaster({
                   {Number(item.houseLimit ?? 0).toFixed(2)}
                 </small>
               </div>
-              <button type="button" className="room-type-menu-trigger" aria-label="Room type options" onClick={() => setMenu(menu === item.code ? null : item.code)}><MoreVertical size={21} /></button>
+              <button type="button" className="room-type-menu-trigger" aria-label="Room type options" onClick={(event) => { event.stopPropagation(); setMenu(menu === item.code ? null : item.code); }}><MoreVertical size={21} /></button>
               {menu === item.code && (
                 <div className="room-type-menu">
                   <button onClick={() => open(item)}>Edit</button>
@@ -441,13 +442,13 @@ function RoomTypeMaster({
           <Field label="Max Guest" required><input type="number" min="1" value={draft.maxGuest} readOnly={!editing} onChange={(e) => setDraft({ ...draft, maxGuest: Number(e.target.value) })} /></Field>
           <Field label="House Limit"><input type="number" min="0" value={draft.houseLimit} readOnly={!editing} onChange={(e) => setDraft({ ...draft, houseLimit: Number(e.target.value) })} /></Field>
           <Field label="Housekeeping Points"><input type="number" min="0" value={draft.housekeepingPoints} readOnly={!editing} onChange={(e) => setDraft({ ...draft, housekeepingPoints: Number(e.target.value) })} /></Field>
-          <Field label="Overbooking Allowed"><input type="checkbox" checked={Boolean(draft.overbookingAllowed)} disabled={!editing} onChange={(e) => setDraft({ ...draft, overbookingAllowed: e.target.checked })} /></Field>
+          <Field label="Overbooking Allowed"><input type="number" min="0" value={draft.overbookingAllowed ?? 0} readOnly={!editing} onChange={(e) => setDraft({ ...draft, overbookingAllowed: Number(e.target.value) })} /></Field>
         </div>
         {error && <p className="form-error">{error}</p>}
       </div>
 
       <div className="master-detail-card">
-        <div className="master-section-label">Amenities</div>
+        <div className="master-section-label">Features/ Amenities</div>
         <div className="master-amenities">
           {platformAmenities.map((amenity) => (
             <label key={amenity}>

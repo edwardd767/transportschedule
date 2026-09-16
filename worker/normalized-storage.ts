@@ -234,7 +234,20 @@ const schemaStatements = [
     active boolean NOT NULL DEFAULT true,
     PRIMARY KEY (property_id, code)
   )`,
-  `ALTER TABLE public.hotelx_room_type_master ADD COLUMN IF NOT EXISTS overbooking_allowed boolean NOT NULL DEFAULT false`,
+  `DO $hotelx_overbooking$
+    BEGIN
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'hotelx_room_type_master'
+          AND column_name = 'overbooking_allowed' AND data_type = 'boolean'
+      ) THEN
+        ALTER TABLE public.hotelx_room_type_master
+          ALTER COLUMN overbooking_allowed TYPE integer
+          USING (CASE WHEN overbooking_allowed THEN 1 ELSE 0 END);
+      END IF;
+    END
+  $hotelx_overbooking$`,
+  `ALTER TABLE public.hotelx_room_type_master ADD COLUMN IF NOT EXISTS overbooking_allowed integer NOT NULL DEFAULT 0`,
   `ALTER TABLE public.hotelx_room_type_master ADD COLUMN IF NOT EXISTS amenities jsonb NOT NULL DEFAULT '[]'::jsonb`,
   `ALTER TABLE public.hotelx_room_type_master ADD COLUMN IF NOT EXISTS photos jsonb NOT NULL DEFAULT '[]'::jsonb`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_room_master (
@@ -717,7 +730,7 @@ const schemaStatements = [
       COALESCE(NULLIF(item.value->>'housekeepingPoints', ''), '0')::integer,
       COALESCE(NULLIF(item.value->>'totalRoom', ''), '0')::integer,
       COALESCE((item.value->>'active')::boolean, true),
-      COALESCE((item.value->>'overbookingAllowed')::boolean, false),
+      COALESCE(NULLIF(item.value->>'overbookingAllowed', '')::integer, 0),
       COALESCE(item.value->'amenities', '[]'::jsonb),
       COALESCE(item.value->'photos', '[]'::jsonb)
     FROM jsonb_array_elements(COALESCE(p_state #> '{hotelMasters,roomTypes}', '[]'::jsonb))

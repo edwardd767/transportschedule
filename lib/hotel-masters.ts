@@ -18,14 +18,15 @@ export type HotelRoomType = {
   housekeepingPoints: number;
   totalRoom: number;
   active: boolean;
-  overbookingAllowed?: boolean;
+  overbookingAllowed?: number;
   amenities?: string[];
   photos?: string[];
 };
 
 export const platformAmenities = [
-  'Air Conditioning', 'Bath Tub', 'Coffee Maker', 'Hair Dryer', 'Iron & Ironing Board',
-  'Kitchenette', 'Mini Bar', 'Non-Smoking', 'Safe Box', 'Shower', 'Television', 'Wi-Fi',
+  'Air conditioning', 'Balcony', 'Bath', 'Bathroom amenities', 'Cable TV', 'Coffee/tea maker',
+  'Desk', 'Hair dryer', 'Iron/ironing board', 'Mini bar', 'Non-smoking', 'Safe', 'Shower',
+  'Telephone', 'Wi-Fi',
 ];
 
 export type HotelRoom = {
