@@ -32,9 +32,27 @@ function MenuDivider() {
   return <span className="inhouse-menu-divider" aria-hidden="true" />;
 }
 import type { TransportData } from '@/lib/use-transport-data';
+import { salesChannelsFromDepartments } from '@/lib/hotel-masters';
 import { HotelxBackButton } from '@/components/hotelx-back-button';
 import { HotelDatePicker } from '@/components/hotel-date-picker';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import './inhouse-guest-bridge.css';
+
+const SOURCE_OPTIONS = ['Walk In', 'Booking', 'OTA', 'Corporate', 'Channel Manager', 'Travel Agent'];
+
+function MalaysiaFlag({ size = 16 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 24 16" width={size} height={(size * 16) / 24} aria-hidden="true" focusable="false">
+      <rect width="24" height="16" fill="#fff" />
+      {[0, 2, 4, 6, 8, 10, 12].map((row) => <rect key={row} y={row} width="24" height="1" fill="#cc0001" />)}
+      {[1, 3, 5, 7, 9, 11, 13, 15].map((row) => <rect key={row} y={row} width="24" height="1" fill="#cc0001" />)}
+      <rect width="12" height="9" fill="#010066" />
+      <circle cx="5.6" cy="4.5" r="2.7" fill="#ffcc00" />
+      <circle cx="6.7" cy="4.5" r="2.4" fill="#010066" />
+      <path d="M8.6 2.6l.5 1.4 1.5.1-1.2.9.4 1.4-1.2-.9-1.2.9.4-1.4-1.2-.9 1.5-.1z" fill="#ffcc00" />
+    </svg>
+  );
+}
 
 function formatStayDate(value: string) {
   const date = new Date(`${value}T00:00:00Z`);
@@ -251,7 +269,7 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
 
   if (selected)
     return createPortal(
-      <InhouseDetail row={selected} hotelName={hotelMasters.profile.hotelName} onBack={() => setSelected(null)} />,
+      <InhouseDetail row={selected} hotelName={hotelMasters.profile.hotelName} store={store} onBack={() => setSelected(null)} />,
       portalTarget,
     );
 
@@ -410,8 +428,25 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
 
 type InhouseMenuRow = { label: string; info: ReactNode; badge?: ReactNode; disabled?: boolean };
 
-function InhouseDetail({ row, hotelName, onBack }: { row: InhouseRow; hotelName: string; onBack: () => void }) {
+function InhouseDetail({ row: sourceRow, hotelName, store, onBack }: { row: InhouseRow; hotelName: string; store: TransportData; onBack: () => void }) {
+  const [panel, setPanel] = useState<'menu' | 'bookingInfo'>('menu');
+  const booking = store.state.bookings.find((item) => item.reference === sourceRow.reference);
+  const row: InhouseRow = booking
+    ? {
+        ...sourceRow,
+        guest: booking.guest,
+        accountName: booking.accountName?.trim() || booking.guest,
+        isGroup: Boolean(booking.groupName?.trim()),
+        cityAccount: Boolean(booking.cityAccount),
+        source: booking.source?.replace(/_/g, ' ') || sourceRow.source,
+        attachmentCount: booking.attachments?.length ?? 0,
+      }
+    : sourceRow;
   const money = (value: number) => value.toFixed(2);
+
+  if (panel === 'bookingInfo')
+    return <InhouseBookingInfo row={row} hotelName={hotelName} store={store} onBack={() => setPanel('menu')} />;
+
   const rows: InhouseMenuRow[] = [
     { label: 'Booking Info', info: <><span className="inhouse-menu-desc">Group: {row.isGroup ? 'Yes' : 'No'}</span><span className="inhouse-menu-desc" style={{ paddingLeft: 4 }}>Source: {row.source}</span></> },
     { label: 'Check In Cancellation', disabled: true, info: <span className="inhouse-menu-desc"><HotelxIcon src={CHECKIN_CANCEL_ICON} size={10} /> -</span> },
@@ -439,45 +474,20 @@ function InhouseDetail({ row, hotelName, onBack }: { row: InhouseRow; hotelName:
 
   return (
     <section className="inhouse-screen" aria-label="In House Guest">
-      <header className="inhouse-property">
-        <div className="inhouse-property-main">
-          <HotelxBackButton onClick={onBack} label="Back to In House listing" />
-          <div className="inhouse-property-copy">
-            <small>HMS</small>
-            <strong>{hotelName}</strong>
-          </div>
-          <span className="inhouse-switch" aria-hidden="true">
-            <ArrowRightLeft size={14} />
-          </span>
-        </div>
-        <div className="inhouse-crumb">
-          <span className="inhouse-crumb-path">
-            <span className="inhouse-crumb-full">Front Desk</span>
-            <span className="inhouse-crumb-more">…</span> / <strong>In House</strong>
-          </span>
-          <strong>{row.reference}</strong>
-        </div>
-      </header>
-
-      <div className="inhouse-detail-summary">
-        <div className="inhouse-detail-top">
-          <span className="inhouse-detail-roomline">
-            <b>{row.roomNo}</b>
-            <strong>{row.roomType}</strong>
-            <MenuDivider />
-            <span className="inhouse-detail-dates"><CalendarIcon /> {formatStayDate(row.arrival)} - {formatStayDate(row.departure)}</span>
-          </span>
-          <span className="inhouse-detail-action"><QrIcon /></span>
-        </div>
-        <div className="inhouse-detail-bottom">
-          <span className="inhouse-detail-guest"><HotelxIcon src={PERSON_ICON} size={13} /> <strong>{row.accountName}</strong></span>
-          <span className="inhouse-detail-action"><HotelxIcon src={AUDIT_ICON} size={15} /></span>
-        </div>
-      </div>
+      <InhousePropertyHeader hotelName={hotelName} segments={['Front Desk', 'In House']} reference={row.reference} onBack={onBack} />
+      <InhouseSummary row={row} />
 
       <div className="inhouse-list inhouse-menu-list">
         {rows.map((item) => (
-          <button key={item.label} type="button" className="inhouse-menu-card" disabled={item.disabled}>
+          <button
+            key={item.label}
+            type="button"
+            className="inhouse-menu-card"
+            disabled={item.disabled}
+            onClick={() => {
+              if (item.label === 'Booking Info') setPanel('bookingInfo');
+            }}
+          >
             <span className="inhouse-menu-text">
               <span className="inhouse-menu-head">
                 <span className="inhouse-menu-title">{item.label}</span>
@@ -489,6 +499,235 @@ function InhouseDetail({ row, hotelName, onBack }: { row: InhouseRow; hotelName:
           </button>
         ))}
       </div>
+    </section>
+  );
+}
+
+function InhousePropertyHeader({ hotelName, segments, reference, onBack }: { hotelName: string; segments: string[]; reference: string; onBack: () => void }) {
+  return (
+    <header className="inhouse-property">
+      <div className="inhouse-property-main">
+        <HotelxBackButton onClick={onBack} label="Back" />
+        <div className="inhouse-property-copy">
+          <small>HMS</small>
+          <strong>{hotelName}</strong>
+        </div>
+        <span className="inhouse-switch" aria-hidden="true">
+          <ArrowRightLeft size={14} />
+        </span>
+      </div>
+      <div className="inhouse-crumb">
+        <span className="inhouse-crumb-path">
+          <span className="inhouse-crumb-full">{segments[0]}</span>
+          <span className="inhouse-crumb-more">…</span>
+          {segments.slice(1).map((name, index) => (
+            <span className="inhouse-crumb-segment" key={name}>
+              <span className="inhouse-crumb-slash">/</span>
+              {index === segments.length - 2 ? <strong className="inhouse-crumb-current">{name}</strong> : <span>{name}</span>}
+            </span>
+          ))}
+        </span>
+        <strong>{reference}</strong>
+      </div>
+    </header>
+  );
+}
+
+function InhouseSummary({ row, showActions = true }: { row: InhouseRow; showActions?: boolean }) {
+  return (
+    <div className="inhouse-detail-summary">
+      <div className="inhouse-detail-top">
+        <span className="inhouse-detail-roomline">
+          <b>{row.roomNo}</b>
+          <strong>{row.roomType}</strong>
+          <MenuDivider />
+          <span className="inhouse-detail-dates"><CalendarIcon /> {formatStayDate(row.arrival)} - {formatStayDate(row.departure)}</span>
+        </span>
+        {showActions && <span className="inhouse-detail-action"><QrIcon /></span>}
+      </div>
+      <div className="inhouse-detail-bottom">
+        <span className="inhouse-detail-guest"><HotelxIcon src={PERSON_ICON} size={13} /> <strong>{row.accountName}</strong></span>
+        {showActions && <span className="inhouse-detail-action"><HotelxIcon src={AUDIT_ICON} size={15} /></span>}
+      </div>
+    </div>
+  );
+}
+
+function formatNumericDate(value: string) {
+  const [year, month, day] = value.split('-');
+  return year && month && day ? `${day}/${month}/${year}` : value;
+}
+
+function InhouseBookingInfo({ row, hotelName, store, onBack }: { row: InhouseRow; hotelName: string; store: TransportData; onBack: () => void }) {
+  const booking = store.state.bookings.find((item) => item.reference === row.reference);
+  const [draft, setDraft] = useState(() => ({
+    bookBy: booking?.guest ?? row.guest,
+    mobileNo: booking?.phone ?? '',
+    email: booking?.email ?? '',
+    salesChannel: booking?.salesChannel ?? '',
+    source: booking?.source?.replace(/_/g, ' ') || row.source,
+    segment: booking?.segment ?? '',
+    referenceNo: booking?.referenceNo ?? '',
+  }));
+  const [exitOpen, setExitOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const salesChannels = salesChannelsFromDepartments(store.state.hotelMasters.departments);
+  const segments = store.state.hotelMasters.segments
+    .filter((item) => item.active)
+    .sort((a, b) => a.displaySequence - b.displaySequence);
+  const nights = Math.max(1, Math.round((new Date(`${row.departure}T00:00:00Z`).getTime() - new Date(`${row.arrival}T00:00:00Z`).getTime()) / 86400000));
+  const update = (key: keyof typeof draft, value: string) => setDraft((current) => ({ ...current, [key]: value }));
+  const dirty = Boolean(booking) && (
+    draft.bookBy !== (booking?.guest ?? '') ||
+    draft.mobileNo !== (booking?.phone ?? '') ||
+    draft.email !== (booking?.email ?? '') ||
+    draft.salesChannel !== (booking?.salesChannel ?? '') ||
+    draft.source !== (booking?.source?.replace(/_/g, ' ') || row.source) ||
+    draft.segment !== (booking?.segment ?? '') ||
+    draft.referenceNo !== (booking?.referenceNo ?? '')
+  );
+  const valid = Boolean(draft.source && draft.segment && draft.bookBy.trim());
+
+  const confirm = async () => {
+    if (!booking) return;
+    setBusy(true);
+    setError('');
+    try {
+      await store.run({
+        type: 'bookingUpdate',
+        value: {
+          ...booking,
+          guest: draft.bookBy.trim(),
+          phone: draft.mobileNo,
+          email: draft.email,
+          salesChannel: draft.salesChannel,
+          source: draft.source,
+          segment: draft.segment,
+          referenceNo: draft.referenceNo,
+        },
+      });
+      onBack();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Unable to save the booking contact.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const back = () => {
+    if (dirty) setExitOpen(true);
+    else onBack();
+  };
+
+  return (
+    <section className="inhouse-screen" aria-label="Edit Booking Contact">
+      <InhousePropertyHeader hotelName={hotelName} segments={['Front Desk', 'In house', 'Edit Booking Contact']} reference={row.reference} onBack={back} />
+      <InhouseSummary row={row} showActions={false} />
+
+      <form
+        className="inhouse-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void confirm();
+        }}
+      >
+        <section className="inhouse-form-section">
+          <h2 className="inhouse-form-head">Stay Information</h2>
+          <div className="inhouse-form-body">
+            <div className="inhouse-form-grid">
+              <span className="inhouse-form-field">
+                <span>Arrival Date</span>
+                <span className="inhouse-form-readonly inhouse-form-date"><b>{formatNumericDate(row.arrival)}</b><CalendarIcon size={20} /></span>
+              </span>
+              <span className="inhouse-form-field">
+                <span>Departure Date</span>
+                <span className="inhouse-form-readonly inhouse-form-date"><b>{formatNumericDate(row.departure)}</b><CalendarIcon size={20} /></span>
+              </span>
+              <span className="inhouse-form-field">
+                <span>Night(s)</span>
+                <span className="inhouse-form-readonly"><b>{nights}</b></span>
+              </span>
+              <span className="inhouse-form-field inhouse-form-group">
+                <span>Group Booking</span>
+                <label className="inhouse-form-check">
+                  <input type="checkbox" checked={row.isGroup} disabled readOnly />
+                  <i aria-hidden="true" />
+                  Yes
+                </label>
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <section className="inhouse-form-section">
+          <h2 className="inhouse-form-head">Contact Information</h2>
+          <div className="inhouse-form-body">
+            <div className="inhouse-form-grid">
+              <label className="inhouse-form-field inhouse-form-wide">
+                <span>Book by</span>
+                <input value={draft.bookBy} onChange={(event) => update('bookBy', event.target.value)} />
+              </label>
+              <label className="inhouse-form-field inhouse-form-wide">
+                <span>Phone No. (Optional)</span>
+                <span className="inhouse-form-phone">
+                  <MalaysiaFlag />
+                  <svg viewBox="0 0 12 8" width={11} height={8} aria-hidden="true" focusable="false"><path d="m1 1 5 5 5-5" fill="none" stroke="#555" strokeWidth="1.6" /></svg>
+                  <input value={draft.mobileNo} onChange={(event) => update('mobileNo', event.target.value)} />
+                </span>
+              </label>
+              <span className="inhouse-form-field inhouse-form-wide">
+                <span>Account Name (If applicable)</span>
+                <span className="inhouse-form-readonly is-disabled"><b>{booking?.accountName ?? row.accountName}</b></span>
+              </span>
+              <label className="inhouse-form-field inhouse-form-wide">
+                <span>Email Address</span>
+                <input type="email" value={draft.email} onChange={(event) => update('email', event.target.value)} />
+              </label>
+              <label className="inhouse-form-field">
+                <span>Sales Channel</span>
+                <select value={draft.salesChannel} onChange={(event) => update('salesChannel', event.target.value)}>
+                  <option value="">Select</option>
+                  {salesChannels.map((item) => <option key={item} value={item}>{item}</option>)}
+                </select>
+              </label>
+              <label className="inhouse-form-field">
+                <span>Source *</span>
+                <select value={draft.source} onChange={(event) => update('source', event.target.value)} required>
+                  {Array.from(new Set([draft.source, ...SOURCE_OPTIONS])).filter(Boolean).map((item) => <option key={item} value={item}>{item}</option>)}
+                </select>
+              </label>
+              <label className="inhouse-form-field">
+                <span>Segment *</span>
+                <select value={draft.segment} onChange={(event) => update('segment', event.target.value)} required>
+                  <option value="">Select</option>
+                  {segments.map((item) => <option key={item.id} value={item.description}>{item.description}</option>)}
+                </select>
+              </label>
+              <label className="inhouse-form-field">
+                <span>Reference No</span>
+                <input value={draft.referenceNo} onChange={(event) => update('referenceNo', event.target.value)} />
+              </label>
+            </div>
+          </div>
+        </section>
+
+        {error && <p className="inhouse-form-error" role="alert">{error}</p>}
+
+        <footer className="inhouse-form-footer">
+          <button type="submit" className="inhouse-form-confirm" disabled={busy || !valid || !dirty}>Confirm</button>
+        </footer>
+      </form>
+
+      {exitOpen && (
+        <ConfirmDialog
+          title="Exit Confirmation"
+          message="Are you sure to exit? Your changes will be not saved"
+          onCancel={() => setExitOpen(false)}
+          onConfirm={onBack}
+        />
+      )}
     </section>
   );
 }
