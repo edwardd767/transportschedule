@@ -36,6 +36,7 @@ import { salesChannelsFromDepartments } from '@/lib/hotel-masters';
 import { HotelxBackButton } from '@/components/hotelx-back-button';
 import { HotelDatePicker } from '@/components/hotel-date-picker';
 import { ConfirmDialog } from '@/components/confirm-dialog';
+import { RoomingList } from '@/components/rooming-list';
 import './inhouse-guest-bridge.css';
 
 const SOURCE_OPTIONS = ['Walk In', 'Booking', 'OTA', 'Corporate', 'Channel Manager', 'Travel Agent'];
@@ -429,7 +430,7 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
 type InhouseMenuRow = { label: string; info: ReactNode; badge?: ReactNode; disabled?: boolean };
 
 function InhouseDetail({ row: sourceRow, hotelName, store, onBack }: { row: InhouseRow; hotelName: string; store: TransportData; onBack: () => void }) {
-  const [panel, setPanel] = useState<'menu' | 'bookingInfo'>('menu');
+  const [panel, setPanel] = useState<'menu' | 'bookingInfo' | 'roomingList'>('menu');
   const booking = store.state.bookings.find((item) => item.reference === sourceRow.reference);
   const row: InhouseRow = booking
     ? {
@@ -446,6 +447,25 @@ function InhouseDetail({ row: sourceRow, hotelName, store, onBack }: { row: Inho
 
   if (panel === 'bookingInfo')
     return <InhouseBookingInfo row={row} hotelName={hotelName} store={store} onBack={() => setPanel('menu')} />;
+
+  if (panel === 'roomingList' && booking)
+    return (
+      <div className="inhouse-screen">
+        <RoomingList
+          paxCountPolicy={store.state.hotelMasters.profile.paxCount}
+          rateSetup={store.state.rateSetup}
+          booking={booking}
+          profiles={store.state.guestProfiles}
+          onProfilesSave={async (value) => {
+            await store.run({ type: 'guestProfilesSave', value });
+          }}
+          onBookingSave={async (value) => {
+            await store.run({ type: 'bookingUpdate', value });
+          }}
+          onBack={() => setPanel('menu')}
+        />
+      </div>
+    );
 
   const rows: InhouseMenuRow[] = [
     { label: 'Booking Info', info: <><span className="inhouse-menu-desc">Group: {row.isGroup ? 'Yes' : 'No'}</span><span className="inhouse-menu-desc" style={{ paddingLeft: 4 }}>Source: {row.source}</span></> },
@@ -486,6 +506,7 @@ function InhouseDetail({ row: sourceRow, hotelName, store, onBack }: { row: Inho
             disabled={item.disabled}
             onClick={() => {
               if (item.label === 'Booking Info') setPanel('bookingInfo');
+              else if (item.label === 'Rooming List') setPanel('roomingList');
             }}
           >
             <span className="inhouse-menu-text">
