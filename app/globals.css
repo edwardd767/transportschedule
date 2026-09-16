@@ -6238,6 +6238,12 @@ p {
 .booking-room-subtotal>strong{text-align:right;font-weight:600}
 @media(max-width:639px){.booking-room-stay-head small{font-size:10px}.booking-room-subtotal{min-width:680px;gap:9px;font-size:11px}}
 
+/* Digital Document: the HotelX core-list cards. */
+.digital-document{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:5px;padding:10px 0 20px}
+.digital-document-card{display:block;width:100%;padding:12px;text-align:left;border:0;border-radius:5px;background:#fff;color:#111;cursor:pointer;box-shadow:0 3px 1px -2px transparent,0 1px 10px 2px #0000000d,0 0 5px 0 #0000001a}
+.digital-document-card strong{display:block;font-size:12px;font-weight:700;line-height:18px}
+.digital-document-card small{display:block;margin-top:1px;color:#454545;font-size:11px;font-weight:500;line-height:16px}
+
 /* Sidebar account menu. */
 .profile-menu-wrap{position:absolute;inset:0;z-index:30}
 .profile-menu-trigger{position:absolute;inset:0;width:100%;height:100%;padding:0;border:0;background:transparent;cursor:pointer}

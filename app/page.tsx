@@ -68,6 +68,7 @@ import type { RateSetupSection } from '@/components/rate-setup';
 import { HotelMasterFiles } from '@/components/hotel-master-files';
 import { Bookings } from '@/components/bookings';
 import { GuestProfiles } from '@/components/guest-profiles';
+import { DigitalDocument } from '@/components/digital-document';
 import { CheckIn } from '@/components/check-in';
 import { SegmentModule } from '@/components/segment-module';
 import type { Booking } from '@/lib/bookings';
@@ -120,6 +121,8 @@ function SvgIcon({ size = 24, markup }: { size?: number; markup: string }) {
 
 
 const digitalReports = ['Booking Status', 'Manager Report', 'Hotel Historical & Forecast Report', 'Production Analysis by Corp/Govt/Travel Agent', 'Production Analysis by Rate Code', 'Production Analysis by Rate Type', 'Production Analysis by Room No', 'Production Analysis by Room Type', 'Production Analysis by Sales Channel', 'Production Analysis by Segment', 'Production Analysis by Source', 'Production Analysis by State/Country/Nationality'];
+
+const DIGITAL_DOCUMENT_ICON = 'https://hms1.hotelx.asia/static/media/business%20insight.2321199b.svg';
 
 const frontDeskMenu = [
   {
@@ -220,6 +223,7 @@ function HomeContent({ store }: { store: TransportData }) {
     | 'reporting'
     | 'transportlisting'
     | 'guestprofile'
+    | 'digitaldocument'
   >('booking');
   const [rateSetupSection, setRateSetupSection] = useState<RateSetupSection | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -705,6 +709,14 @@ function HomeContent({ store }: { store: TransportData }) {
               </div>
             )}
             <button
+              className={view === 'digitaldocument' ? 'active' : ''}
+              aria-current={view === 'digitaldocument' ? 'page' : undefined}
+              onClick={() => setView('digitaldocument')}
+            >
+              <img src={DIGITAL_DOCUMENT_ICON} alt="" aria-hidden="true" width={24} height={24} style={{ display: 'block', objectFit: 'contain', flex: '0 0 auto' }} />
+              Digital Document
+            </button>
+            <button
               className={view === 'reporting' ? 'active' : ''}
               aria-current={view === 'reporting' ? 'page' : undefined}
               onClick={() => setView('reporting')}
@@ -794,6 +806,8 @@ function HomeContent({ store }: { store: TransportData }) {
               <>... <ChevronRight size={14} /> Check In</>
             ) : view === 'transportlisting' ? (
               <span>Transport <ChevronRight size={14} /> Listing</span>
+            ) : view === 'digitaldocument' ? (
+              <>Business Insight <ChevronRight size={14} /> Digital Document</>
             ) : view === 'reporting' ? (
               <span>Digital Reporting</span>
             ) : view === 'hotelsettings' ? (
@@ -983,6 +997,8 @@ function HomeContent({ store }: { store: TransportData }) {
           </div>
         ) : view === 'transportlisting' ? (
           <TransportListingReport trips={trips} setup={setup} bookingLegs={bookingLegs} bookings={bookings} />
+        ) : view === 'digitaldocument' ? (
+          <DigitalDocument bookings={bookings} />
         ) : view === 'reporting' ? (
           <section className="digital-report-catalog" aria-label="Digital Reporting">
             {!selectedReport ? <><div className="digital-report-tools"><label><Search size={21} /><input placeholder="Search here..." value={reportSearch} onChange={(event) => setReportSearch(event.target.value)} /></label><select value={reportCategory} onChange={(event) => setReportCategory(event.target.value)}><option>All</option><option>Finance</option><option>Booking</option></select></div><div className="digital-report-list">{digitalReports.filter((report) => report.toLowerCase().includes(reportSearch.toLowerCase())).map((report) => <button type="button" className="digital-report-card" key={report} onClick={() => ['Booking Status', 'Manager Report', 'Hotel Historical & Forecast Report', 'Production Analysis by Corp/Govt/Travel Agent', 'Production Analysis by Rate Code', 'Production Analysis by Rate Type', 'Production Analysis by Room No', 'Production Analysis by Room Type', 'Production Analysis by Sales Channel', 'Production Analysis by Segment', 'Production Analysis by Source', 'Production Analysis by State/Country/Nationality'].includes(report) && setSelectedReport(report)}><span><strong>{report}</strong><small>{report === 'Booking Status' ? 'View booking status by date' : report === 'Manager Report' ? 'View manager statistics from booking data' : report === 'Hotel Historical & Forecast Report' ? 'View historical and forecast occupancy' : report === 'Production Analysis by Corp/Govt/Travel Agent' ? 'View production by market source' : report === 'Production Analysis by Rate Code' ? 'View production by rate code' : report === 'Production Analysis by Rate Type' ? 'View production by rate type' : report === 'Production Analysis by Room No' ? 'View production by room number' : report === 'Production Analysis by Room Type' ? 'View production by room type' : report === 'Production Analysis by Sales Channel' ? 'View production by sales channel' : report === 'Production Analysis by Segment' ? 'View production by segment' : report === 'Production Analysis by Source' ? 'View production by source' : report === 'Production Analysis by State/Country/Nationality' ? 'View production by guest state' : 'Description'}</small></span><Star size={23} /></button>)}</div></> : selectedReport === 'Manager Report' ? <ManagerReport hotelMasters={hotelMasters} bookings={bookings} date={reportFrom} onDate={setReportFrom} onBack={() => setSelectedReport(null)} /> : selectedReport === 'Hotel Historical & Forecast Report' ? <HistoricalForecastReport hotelMasters={hotelMasters} bookings={bookings} from={reportFrom} to={reportTo} onFrom={setReportFrom} onTo={setReportTo} onBack={() => setSelectedReport(null)} /> : selectedReport === 'Production Analysis by Corp/Govt/Travel Agent' ? <ProductionAnalysisTAGov hotelMasters={hotelMasters} bookings={bookings} date={reportFrom} onDate={setReportFrom} onBack={() => setSelectedReport(null)} /> : selectedReport === 'Production Analysis by Rate Code' ? <ProductionAnalysisRateCode hotelMasters={hotelMasters} bookings={bookings} date={reportFrom} onDate={setReportFrom} onBack={() => setSelectedReport(null)} /> : selectedReport === 'Production Analysis by Rate Type' ? <ProductionAnalysisRateType hotelMasters={hotelMasters} rateSetup={rateSetup} bookings={bookings} date={reportFrom} onDate={setReportFrom} onBack={() => setSelectedReport(null)} /> : selectedReport === 'Production Analysis by Room No' ? <ProductionAnalysisRoomNo hotelMasters={hotelMasters} bookings={bookings} date={reportFrom} onDate={setReportFrom} onBack={() => setSelectedReport(null)} /> : selectedReport === 'Production Analysis by Room Type' ? <ProductionAnalysisRoomType hotelMasters={hotelMasters} bookings={bookings} date={reportFrom} onDate={setReportFrom} onBack={() => setSelectedReport(null)} /> : selectedReport === 'Production Analysis by Sales Channel' ? <ProductionAnalysisSalesChannel hotelMasters={hotelMasters} bookings={bookings} date={reportFrom} onDate={setReportFrom} onBack={() => setSelectedReport(null)} /> : selectedReport === 'Production Analysis by Segment' ? <ProductionAnalysisSegment hotelMasters={hotelMasters} bookings={bookings} date={reportFrom} onDate={setReportFrom} onBack={() => setSelectedReport(null)} /> : selectedReport === 'Production Analysis by Source' ? <ProductionAnalysisSource hotelMasters={hotelMasters} bookings={bookings} date={reportFrom} onDate={setReportFrom} onBack={() => setSelectedReport(null)} /> : selectedReport === 'Production Analysis by State/Country/Nationality' ? <ProductionAnalysisState hotelMasters={hotelMasters} profiles={guestProfiles} bookings={bookings} date={reportFrom} onDate={setReportFrom} onBack={() => setSelectedReport(null)} /> : <BookingStatusReport profiles={guestProfiles} hotelName={hotelMasters.profile.hotelName} bookings={bookings} from={reportFrom} to={reportTo} onFrom={setReportFrom} onTo={setReportTo} onBack={() => setSelectedReport(null)} />}
