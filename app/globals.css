@@ -1061,17 +1061,17 @@ p {
   min-width: 0;
 }
 .frontdesk-body strong {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #292929;
 }
 .frontdesk-body small {
-  font-size: 11px;
+  font-size: 10px;
   color: #7a7c84;
 }
 .frontdesk-body em {
   font-style: normal;
-  font-size: 11px;
+  font-size: 10px;
   color: #b16906;
   font-weight: 600;
 }
