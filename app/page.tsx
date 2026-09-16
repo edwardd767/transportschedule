@@ -70,6 +70,7 @@ import { Bookings } from '@/components/bookings';
 import { GuestProfiles } from '@/components/guest-profiles';
 import { DigitalDocument } from '@/components/digital-document';
 import { Checkout } from '@/components/checkout';
+import { StayView } from '@/components/stay-view';
 import { CheckIn } from '@/components/check-in';
 import { SegmentModule } from '@/components/segment-module';
 import type { Booking } from '@/lib/bookings';
@@ -157,6 +158,7 @@ const frontDeskMenu = [
     label: 'Stay View',
     detail: 'Guest Room Location',
     svg: stayViewSvg,
+    view: 'stayview' as const,
   },
   {
     key: 'inhouse-guest',
@@ -227,6 +229,7 @@ function HomeContent({ store }: { store: TransportData }) {
     | 'guestprofile'
     | 'digitaldocument'
     | 'checkout'
+    | 'stayview'
   >('booking');
   const [rateSetupSection, setRateSetupSection] = useState<RateSetupSection | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -784,7 +787,7 @@ function HomeContent({ store }: { store: TransportData }) {
                 }}
               />
             )}
-            {(view === 'checkin' || view === 'checkout') && (
+            {(view === 'checkin' || view === 'checkout' || view === 'stayview') && (
               <HotelxBackButton className="booking-back" label="Back to Front Desk" onClick={() => setView('frontdesk')} />
             )}
             {view === 'segment' && (
@@ -809,6 +812,8 @@ function HomeContent({ store }: { store: TransportData }) {
               <>... <ChevronRight size={14} /> Check In</>
             ) : view === 'checkout' ? (
               <>... <ChevronRight size={14} /> Check Out</>
+            ) : view === 'stayview' ? (
+              <>... <ChevronRight size={14} /> Stay View</>
             ) : view === 'transportlisting' ? (
               <span>Transport <ChevronRight size={14} /> Listing</span>
             ) : view === 'digitaldocument' ? (
@@ -1052,6 +1057,8 @@ function HomeContent({ store }: { store: TransportData }) {
               })}
             </div>
           </div>
+        ) : view === 'stayview' ? (
+          <StayView />
         ) : view === 'checkout' ? (
           <Checkout bookings={bookings} />
         ) : view === 'checkin' ? (

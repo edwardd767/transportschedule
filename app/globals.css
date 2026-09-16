@@ -6238,6 +6238,38 @@ p {
 .booking-room-subtotal>strong{text-align:right;font-weight:600}
 @media(max-width:639px){.booking-room-stay-head small{font-size:10px}.booking-room-subtotal{min-width:680px;gap:9px;font-size:11px}}
 
+/* Stay View: room-by-date timeline. */
+.stay-view{flex:1;min-height:0;overflow-y:auto;padding-bottom:20px;font-size:12px;color:#212121}
+.stay-view-ranges{display:flex;gap:8px;padding:16px;background:#fff;border-radius:4px;margin-bottom:16px;box-shadow:0 2px 1px -1px #0003,0 1px 1px 0 #00000024,0 1px 3px 0 #0000001f}
+.stay-view-ranges button{padding:8px 16px;border:1px solid transparent;border-radius:4px;background:transparent;color:#212121;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.stay-view-ranges button.active{background:#fff5e8;border-color:#ffd9a8;color:#ff9500}
+.stay-view-card{background:#fff;border-radius:4px;box-shadow:0 2px 1px -1px #0003,0 1px 1px 0 #00000024,0 1px 3px 0 #0000001f}
+.stay-view-toolbar{display:flex;align-items:center;margin-bottom:8px}
+.stay-view-nav{display:flex;align-items:center;gap:4px;padding:8px 12px;width:268px;flex:none}
+.stay-view-nav button{display:grid;place-items:center;width:30px;height:30px;border:0;background:transparent;color:#212121;cursor:pointer}
+.stay-view-date{flex:1;text-align:center;color:#ff9500;font-size:12px;font-weight:700}
+.stay-view-days{flex:1;display:flex;min-width:0}
+.stay-view-day{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;font-size:12px;font-weight:500;color:#212121}
+.stay-view-day small{color:#9a9a9a;font-size:11px;font-weight:400}
+.stay-view-day b{font-size:12px;font-weight:700}
+.stay-view-day b.today{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#ff9500;color:#fff}
+.stay-view-legend{display:flex;gap:16px;padding:6px 0;font-size:12px}
+.stay-view-legend span{display:flex;align-items:center;gap:8px;color:#666}
+.stay-view-legend i{width:10px;height:10px;flex:none;border-radius:50%}
+.stay-view-legend-bottom{gap:24px;padding:12px 16px}
+.stay-view-rooms-title{padding:6px 0;font-size:12px;font-weight:700;line-height:18px}
+.stay-view-grid{max-height:519px;overflow:auto}
+.stay-view-grid table,.stay-view-summary table{width:100%;border-collapse:collapse}
+.stay-view-room{width:268px;padding:8px;font-size:14px;color:#212121;text-align:left;white-space:nowrap;border-bottom:1px solid #f2f2f2}
+.stay-view-cell{position:relative;height:40px;padding:8px;background:#fff;border-left:1px solid #f2f2f2;border-bottom:1px solid #f2f2f2;vertical-align:middle}
+.stay-view-stay{display:block;height:40px}
+.stay-view-stay svg{display:block;color:#000}
+.stay-view-guest{display:block;height:20px;overflow:hidden;font-size:12px;text-overflow:ellipsis;white-space:nowrap}
+.stay-view-bar{display:block;width:100%;height:5px;border-radius:1px}
+.stay-view-summary{margin-top:12px}
+.stay-view-summary td{padding:8px;font-size:12px;color:#212121;text-align:left;border-bottom:1px solid #f2f2f2}
+.stay-view-summary-label{width:268px}
+
 /* Digital Document: the HotelX core-list cards. */
 .digital-document{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:5px;padding:10px 0 20px}
 .digital-document-card{display:block;width:100%;padding:12px;text-align:left;border:0;border-radius:5px;background:#fff;color:#111;cursor:pointer;box-shadow:0 3px 1px -2px transparent,0 1px 10px 2px #0000000d,0 0 5px 0 #0000001a}
