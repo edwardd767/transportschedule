@@ -476,12 +476,6 @@ function InhouseDetail({ row: sourceRow, hotelName, store, onBack }: { row: Inho
     await store.run({ type: 'bookingUpdate', value });
   };
 
-  if (panel === 'specialRequest' && booking)
-    return <SpecialRequest booking={booking} onSave={saveBooking} onBack={() => setPanel('menu')} />;
-
-  if (panel === 'billingInstruction' && booking)
-    return <BillingInstruction booking={booking} onSave={saveBooking} onBack={() => setPanel('menu')} />;
-
   if (panel === 'attachments' && booking)
     return (
       <div className="inhouse-screen">
@@ -561,6 +555,13 @@ function InhouseDetail({ row: sourceRow, hotelName, store, onBack }: { row: Inho
           </button>
         ))}
       </div>
+
+      {panel === 'specialRequest' && booking && (
+        <SpecialRequest booking={booking} onSave={saveBooking} onBack={() => setPanel('menu')} />
+      )}
+      {panel === 'billingInstruction' && booking && (
+        <BillingInstruction booking={booking} onSave={saveBooking} onBack={() => setPanel('menu')} />
+      )}
     </section>
   );
 }
