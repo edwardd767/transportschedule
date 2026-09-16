@@ -222,6 +222,15 @@ function HomeContent({ store }: { store: TransportData }) {
     | 'guestprofile'
   >('booking');
   const [rateSetupSection, setRateSetupSection] = useState<RateSetupSection | null>(null);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  useEffect(() => {
+    if (!profileMenuOpen) return;
+    const closeProfileMenu = (event: MouseEvent) => {
+      if (!(event.target as HTMLElement | null)?.closest('.profile-menu-wrap')) setProfileMenuOpen(false);
+    };
+    document.addEventListener('mousedown', closeProfileMenu);
+    return () => document.removeEventListener('mousedown', closeProfileMenu);
+  }, [profileMenuOpen]);
   const [bookingReference, setBookingReference] = useState<string | null>(null);
   const [bookingEditing, setBookingEditing] = useState(false);
   const { setup, trips, templates, bookingLegs, hotelMasters, bookings, rateSetup, guestProfiles } = store.state;
@@ -611,6 +620,30 @@ function HomeContent({ store }: { store: TransportData }) {
             <div className="avatar">ED</div>
             <div className="profile-name">Edward Durai</div>
             <div className="profile-role">Hotel administrator</div>
+            <div className="profile-menu-wrap">
+              <button
+                type="button"
+                className="profile-menu-button"
+                aria-label="Account menu"
+                aria-haspopup="menu"
+                aria-expanded={profileMenuOpen}
+                onClick={() => setProfileMenuOpen((current) => !current)}
+              >
+                <svg viewBox="0 0 24 24" width={24} height={24} fill="currentColor" aria-hidden="true" focusable="false"><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z" /></svg>
+              </button>
+              {profileMenuOpen && (
+                <div className="profile-menu" role="menu">
+                  <button type="button" role="menuitem" className="profile-menu-item" onClick={() => setProfileMenuOpen(false)}>
+                    <span className="profile-menu-icon"><svg viewBox="0 0 24 24" width={20} height={20} fill="currentColor" aria-hidden="true" focusable="false"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg></span>
+                    Profile
+                  </button>
+                  <button type="button" role="menuitem" className="profile-menu-item" onClick={() => setProfileMenuOpen(false)}>
+                    <span className="profile-menu-icon"><svg viewBox="0 0 24 24" width={20} height={20} fill="currentColor" aria-hidden="true" focusable="false"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" /></svg></span>
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
           <nav className="main-nav" aria-label="Main navigation">
             <button
