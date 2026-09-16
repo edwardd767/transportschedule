@@ -5285,6 +5285,7 @@ p {
 .rate-row-list {
   display: grid;
   gap: 6px;
+  grid-template-columns: minmax(0, 1fr);
   padding: 0 8px 74px;
 }
 .rate-list-row {

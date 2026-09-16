@@ -253,6 +253,10 @@ function FloatingAdd({ onClick, label }: { onClick: () => void; label: string })
   );
 }
 
+function updatedStamp() {
+  return new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date());
+}
+
 function SearchHeader({
   title,
   count,
@@ -654,13 +658,18 @@ function RateSetupPage({ items, rateTypes, validityItems, seasons, roomTypes, el
 
   const save = () => {
     if (!draft || !draft.code.trim() || !draft.description.trim()) return;
+    const stamp = updatedStamp();
     void onChange(items.some((item) => item.id === draft.id)
-      ? items.map((item) => item.id === draft.id ? { ...draft, code: draft.code.trim(), description: draft.description.trim(), updated: '05 Sep 2026' } : item)
-      : [...items, { ...draft, code: draft.code.trim(), description: draft.description.trim(), updated: '05 Sep 2026' }]);
+      ? items.map((item) => item.id === draft.id ? { ...draft, code: draft.code.trim(), description: draft.description.trim(), updated: stamp } : item)
+      : [...items, { ...draft, code: draft.code.trim(), description: draft.description.trim(), updated: stamp }]);
     setDraft(null);
   };
 
-  if (validity && validityPage) return <ValidityEditor item={validityPage} validity={validity} seasons={seasons} roomTypes={roomTypes} elements={elements} addOns={addOns} onCancel={() => setValidity(null)} onSave={async (value) => { await onValidityChange([...validityItems.filter((row) => row.id !== value.id), value]); setValidity(null); }} />;
+  if (validity && validityPage) return <ValidityEditor item={validityPage} validity={validity} seasons={seasons} roomTypes={roomTypes} elements={elements} addOns={addOns} onCancel={() => setValidity(null)} onSave={async (value) => {
+    await onValidityChange([...validityItems.filter((row) => row.id !== value.id), value]);
+    await onChange(items.map((item) => item.id === validityPage.id ? { ...item, updated: updatedStamp() } : item));
+    setValidity(null);
+  }} />;
   if (validityPage) return <div className="rate-section-page"><div className="rate-subpage-backline"><button type="button" onClick={() => setValidityPage(null)}><ChevronLeft size={17} /> Rate Setup</button></div><SearchHeader title={validityPage.code} count={validityItems.filter((row) => row.rateSetupId === validityPage.id).length} query="" onQuery={() => {}} /><div className="rate-row-list">{validityItems.filter((row) => row.rateSetupId === validityPage.id).map((row) => <ValidityRow key={row.id} row={row} onEdit={() => setValidity(row)} />)}</div><FloatingAdd label="Add validity period" onClick={() => setValidity({ id: crypto.randomUUID(), rateSetupId: validityPage.id, from: '2026-09-01', to: '2026-12-31', active: true, seasonalRates: {} })} /></div>;
 
   return (
@@ -683,7 +692,7 @@ function RateSetupPage({ items, rateTypes, validityItems, seasons, roomTypes, el
           </div>
         ))}
       </div>
-      <FloatingAdd label="Add rate setup" onClick={() => setDraft({ id: crypto.randomUUID(), code: '', description: '', rateTypeId: rateTypes.find((type) => type.active)?.id ?? '', rateFrequency: 'Daily', updated: '05 Sep 2026', active: true })} />
+      <FloatingAdd label="Add rate setup" onClick={() => setDraft({ id: crypto.randomUUID(), code: '', description: '', rateTypeId: rateTypes.find((type) => type.active)?.id ?? '', rateFrequency: 'Daily', updated: updatedStamp(), active: true })} />
       {draft && (
         <EditorModal title={items.some((item) => item.id === draft.id) ? 'Edit Rate Setup' : 'New Rate Setup'} onCancel={() => setDraft(null)} onSave={save}>
           <label className="rate-editor-field">Rate Code<input value={draft.code} onChange={(event) => setDraft({ ...draft, code: event.target.value })} /></label>
