@@ -171,9 +171,9 @@ export function DepartmentModule({ departments, bookings = [], onChange, onBack 
             {menu === d.id && (
               <div className="department-menu">
                 <button onClick={() => openDepartmentEdit(d)}>Edit</button>
-                <button onClick={() => showCharges(d)}>Incidental Charges</button>
-                <button>Reason</button>
-                <button onClick={() => showSalesChannels(d)}>Sales Channel</button>
+                {(d.allowIncidentalCharges ?? d.incidentalCharges.length > 0) && <button onClick={() => showCharges(d)}>Incidental Charges</button>}
+                {(d.allowReason ?? d.reasons.length > 0) && <button>Reason</button>}
+                {(d.allowSalesChannel ?? cleanSalesChannels(d.salesChannels).length > 0) && <button onClick={() => showSalesChannels(d)}>Sales Channel</button>}
                 <button>Inactive</button>
                 <button
                   className="department-menu-delete"
