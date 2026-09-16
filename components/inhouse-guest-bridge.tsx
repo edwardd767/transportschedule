@@ -556,11 +556,13 @@ function InhouseDetail({ row: sourceRow, hotelName, store, onBack }: { row: Inho
         ))}
       </div>
 
-      {panel === 'specialRequest' && booking && (
-        <SpecialRequest booking={booking} onSave={saveBooking} onBack={() => setPanel('menu')} />
+      {panel === 'specialRequest' && booking && createPortal(
+        <SpecialRequest booking={booking} onSave={saveBooking} onBack={() => setPanel('menu')} />,
+        document.body,
       )}
-      {panel === 'billingInstruction' && booking && (
-        <BillingInstruction booking={booking} onSave={saveBooking} onBack={() => setPanel('menu')} />
+      {panel === 'billingInstruction' && booking && createPortal(
+        <BillingInstruction booking={booking} onSave={saveBooking} onBack={() => setPanel('menu')} />,
+        document.body,
       )}
     </section>
   );
