@@ -5331,6 +5331,7 @@ p {
 }
 .rate-row-actions {
   position: relative;
+  grid-column: -1;
   justify-self: end;
 }
 .rate-row-actions > button,
