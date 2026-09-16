@@ -156,6 +156,7 @@ export function BookingCreate({
   const roomDiscount = nights * Math.max(1, roomQty) * Math.max(0, discountPerNight);
   const roomTax = 0;
   const roomTotal = Math.max(0, roomSubtotal - roomDiscount + roomTax);
+  const roomQtySafe = Math.max(1, roomQty);
 
   const roomTypeItems = useMemo(
     () => activeRoomTypes.map((item) => ({ value: item.code, label: `${item.code} - ${item.description}` })),
@@ -448,7 +449,22 @@ export function BookingCreate({
             <label className="booking-line-field"><span>Disc (Per Night)</span><input type="number" min="0" step="0.01" value={discountPerNight} onChange={(event) => setDiscountPerNight(Number(event.target.value))} /></label>
           </div>
           <div className="booking-room-summary">
-            <div className="booking-room-summary-head"><strong>Summary</strong><strong>MYR</strong></div>
+            <div className="booking-room-summary-head">
+              <strong>Summary<span className="billing-info" tabIndex={0} aria-label={`Summary breakdown: room rate ${money.format(nights * roomQtySafe * roomRate)}, extra pax ${money.format(nights * roomQtySafe * extraAdultCount * extraAdultRate)}, child ${money.format(childCharge)}, add ons ${money.format(addOnTotal)}, subtotal ${money.format(roomSubtotal)}, discount ${money.format(roomDiscount)}, tax ${money.format(roomTax)}, total ${money.format(roomTotal)}`}>
+                <svg className="billing-info-icon" viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="8" fill="currentColor" /><rect x="7.1" y="6.7" width="1.8" height="5" rx=".9" fill="#fff" /><circle cx="8" cy="4.4" r="1.05" fill="#fff" /></svg>
+                <span className="billing-info-tip" role="tooltip"><b>Summary</b>
+                  <span className="billing-info-row"><span>Room Rate ({nights} Night(s) x {roomQtySafe} Room(s))</span><span>{money.format(nights * roomQtySafe * roomRate)}</span></span>
+                  {extraAdultCount > 0 && extraAdultRate > 0 ? <span className="billing-info-row"><span>Extra Pax ({extraAdultCount} x {money.format(extraAdultRate)})</span><span>{money.format(nights * roomQtySafe * extraAdultCount * extraAdultRate)}</span></span> : null}
+                  {children > 0 && extraChildRate > 0 ? <span className="billing-info-row"><span>Child ({children} x {money.format(extraChildRate)})</span><span>{money.format(childCharge)}</span></span> : null}
+                  {applicableAddOns.map((item) => <span className="billing-info-row" key={item.name}><span>{item.name} x {roomQtySafe}</span><span>{money.format(item.amount * roomQtySafe)}</span></span>)}
+                  <span className="billing-info-row billing-info-total"><span>Subtotal</span><span>{money.format(roomSubtotal)}</span></span>
+                  <span className="billing-info-row is-muted"><span>Less : Disc {nights} Night(s) x {roomQtySafe} Room(s)</span><span>-{money.format(roomDiscount)}</span></span>
+                  <span className="billing-info-row is-muted"><span>Tax</span><span>{money.format(roomTax)}</span></span>
+                  <span className="billing-info-row billing-info-total"><span>Total</span><span>{money.format(roomTotal)}</span></span>
+                </span>
+              </span></strong>
+              <strong>MYR</strong>
+            </div>
             <div><span>{nights} Night(s) x {roomQty} Room(s)</span><span>{money.format(roomSubtotal)}</span></div>
             {childCharge > 0 && <div><span>Child</span><span>{money.format(childCharge)}</span></div>}
             <div><span>Less : Disc {nights} Night(s) x {roomQty} Room(s)</span><span>{money.format(roomDiscount)}</span></div>
