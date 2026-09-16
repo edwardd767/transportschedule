@@ -6,9 +6,6 @@ import { TransportDataContext } from '@/components/transport-connection';
 
 const ASSIGNMENT_KEY = '_roomAssignments';
 
-// TODO(HotelX): source these from the incidental-charge masters once they are exposed on hotelMasters.
-const INCIDENTAL_CHARGES = ['Laundry', 'Mini Bar', 'Telephone', 'Room Service', 'Damage / Loss', 'Miscellaneous'];
-
 type MiscCharge = {
   id: string;
   roomNo: string;
@@ -49,18 +46,29 @@ export function MiscCharges({ onBack }: { onBack: () => void }) {
   const [discount, setDiscount] = useState('0.00');
 
   const currency = store?.state.hotelMasters.profile.currencyCode || 'MYR';
-  const chargeTitles = INCIDENTAL_CHARGES;
+  const charges = useMemo(() => {
+    const department = (store?.state.hotelMasters.departments ?? []).find((item) => item.name.trim().toLowerCase() === 'housekeeping');
+    return (department?.incidentalCharges ?? []).map((item) => ({ title: item.title, amount: item.amount }));
+  }, [store?.state.hotelMasters.departments]);
   const rooms = useMemo(() => {
-    const bookings = store?.state.bookings ?? [];
+    const masterRooms = (store?.state.hotelMasters.rooms ?? []).filter((room) => room.active).sort((a, b) => a.roomNo.localeCompare(b.roomNo, undefined, { numeric: true }));
+    const byType = new Map<string, string[]>();
+    for (const room of masterRooms) byType.set(room.roomTypeCode, [...(byType.get(room.roomTypeCode) ?? []), room.roomNo]);
+    const cursor = new Map<string, number>();
     const occupied = new Map<string, string>();
-    for (const booking of bookings) {
+    for (const booking of store?.state.bookings ?? []) {
       if (booking.status !== 'Inhouse') continue;
-      for (const roomNo of assignedRoomsByBooking(booking)) occupied.set(roomNo, booking.guest);
+      const explicit = assignedRoomsByBooking(booking);
+      const roomNos = explicit.length ? explicit : booking.rooms.flatMap((room) => {
+        const available = byType.get(room.code) ?? [];
+        const from = cursor.get(room.code) ?? 0;
+        const count = Math.max(1, room.count);
+        cursor.set(room.code, from + count);
+        return available.slice(from, from + count);
+      });
+      for (const roomNo of roomNos) occupied.set(roomNo, booking.guest);
     }
-    return (store?.state.hotelMasters.rooms ?? [])
-      .filter((room) => room.active)
-      .sort((a, b) => a.roomNo.localeCompare(b.roomNo, undefined, { numeric: true }))
-      .map((room) => ({ roomNo: room.roomNo, guest: occupied.get(room.roomNo) ?? '' }));
+    return masterRooms.map((room) => ({ roomNo: room.roomNo, guest: occupied.get(room.roomNo) ?? '' }));
   }, [store?.state.bookings, store?.state.hotelMasters.rooms]);
 
   const guestName = rooms.find((room) => room.roomNo === roomNo)?.guest ?? '';
@@ -158,9 +166,16 @@ export function MiscCharges({ onBack }: { onBack: () => void }) {
                 {field('Room No. *', roomNo, setRoomNo, rooms.map((room) => room.roomNo))}
                 <label className="misc-charge-field"><span>Guest Name</span><span className="misc-charge-readonly">{guestName}</span></label>
                 <label className="misc-charge-field misc-charge-wide"><span>Incidental Charges</span>
-                  <select value={charge} onChange={(event) => setCharge(event.target.value)}>
+                  <select
+                    value={charge}
+                    onChange={(event) => {
+                      setCharge(event.target.value);
+                      const amount = charges.find((item) => item.title === event.target.value)?.amount ?? 0;
+                      if (amount) setUnitPrice(amount.toFixed(2));
+                    }}
+                  >
                     <option value="" />
-                    {chargeTitles.map((title) => <option key={title}>{title}</option>)}
+                    {charges.map((item) => <option key={item.title}>{item.title}</option>)}
                   </select>
                 </label>
                 <label className="misc-charge-field misc-charge-wide"><span>Description</span>
