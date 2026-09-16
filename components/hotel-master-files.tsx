@@ -382,9 +382,19 @@ function RoomTypeMaster({
               className="room-type-row"
               key={item.code}
               draggable
-              onDragStart={() => setDragCode(item.code)}
-              onDragOver={(event) => event.preventDefault()}
-              onDrop={() => void reorder(index)}
+              onDragStart={(event) => {
+                setDragCode(item.code);
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('text/plain', item.code);
+              }}
+              onDragOver={(event) => {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = 'move';
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                void reorder(index);
+              }}
             >
               <div>
                 <strong>{item.code} | {item.description}</strong>
