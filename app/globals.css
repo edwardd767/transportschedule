@@ -6240,7 +6240,7 @@ p {
 
 /* Booking listing Sort By menu. */
 .booking-sort-wrap{position:relative}
-.booking-sort-menu{position:absolute;right:0;top:36px;z-index:120;width:212px;max-height:330px;overflow-y:auto;padding:5px;border:1px solid #ddd;border-radius:4px;background:#fff;box-shadow:0 8px 22px #0000002e}
+.booking-sort-menu{position:absolute;right:0;top:36px;z-index:120;width:212px;padding:5px;border:1px solid #ddd;border-radius:4px;background:#fff;box-shadow:0 8px 22px #0000002e}
 .booking-sort-head{display:block;padding:7px 8px 5px;font-size:11px;font-weight:600;color:#a95600}
 .booking-sort-option{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:3px;font-size:11px;cursor:pointer}
 .booking-sort-option:hover{background:#fff0dd}
