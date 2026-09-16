@@ -1,5 +1,5 @@
 'use client';
-import { MoreVertical, Plus, Search } from 'lucide-react';
+import { Mic, MoreVertical, Plus, Search, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { initialSegments, type HotelSegment } from '@/lib/hotel-masters';
 import type { Booking } from '@/lib/bookings';
@@ -79,26 +79,23 @@ export function SegmentModule({ segments, bookings = [], onChange, onBack: _onBa
 
   return (
     <section className="master-page segment-page">
-      <div className="master-list-head segment-list-head">
-        <h1>Segments <em>({shown.length})</em></h1>
-      </div>
       {searchOpen ? (
         <div className="segment-search-row">
           <input
             autoFocus
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            onBlur={() => { if (!query) setSearchOpen(false); }}
-            placeholder="Search Here..."
+            placeholder="Search here.."
             aria-label="Search segments"
           />
-          <button type="button" aria-label="Close search" onClick={() => { setQuery(''); setSearchOpen(false); }}><Search size={18} /></button>
+          <button type="button" aria-label="Voice search"><Mic size={18} /></button>
+          <button type="button" aria-label="Close search" onClick={() => { setQuery(''); setSearchOpen(false); }}><X size={18} /></button>
         </div>
       ) : (
-        <button type="button" className="segment-search-row segment-search-trigger" onClick={() => setSearchOpen(true)}>
-          <span>Search Here...</span>
-          <Search size={18} />
-        </button>
+        <div className="master-list-head segment-list-head">
+          <h1>Segments <em>({shown.length})</em></h1>
+          <button type="button" className="segment-search-button" aria-label="Search segments" onClick={() => setSearchOpen(true)}><Search size={21} /></button>
+        </div>
       )}
       <div className="segment-list">
         {shown.map((item) => (

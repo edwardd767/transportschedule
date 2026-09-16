@@ -6249,12 +6249,12 @@ p {
 .segment-field:focus-within > span{color:#ff9800}
 .segment-field input{width:100%;min-height:30px;padding:2px 0;border:0;border-bottom:1px solid #999;border-radius:0;outline:0;background:transparent;color:#07182a;font:inherit;font-size:16px}
 .segment-field:focus-within input{border-bottom-color:#ff9800}
-.segment-search-row{display:flex;align-items:center;gap:8px;width:100%;min-height:38px;flex:none;padding:8px 12px;border:0;background:#fff;color:#000;font:inherit;font-size:12px;font-weight:700;text-align:left}
-.segment-search-trigger{cursor:pointer}
-.segment-search-row > span{flex:1}
-.segment-search-row > svg{flex:none;color:#111}
-.segment-search-row input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#000;font:inherit;font-size:12px;font-weight:700}
-.segment-search-row button{display:grid;place-items:center;flex:none;border:0;background:transparent;color:#111;cursor:pointer}
+.segment-search-button{display:grid;place-items:center;width:30px;height:30px;flex:none;border:0;border-radius:3px;background:transparent;color:#111;cursor:pointer}
+.segment-search-button:hover{background:#f4f4f4}
+.segment-search-row{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;flex:none;padding:8px 12px;background:#fff}
+.segment-search-row input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#111;font:inherit;font-size:16px}
+.segment-search-row input::placeholder{color:#9a9a9a}
+.segment-search-row button{display:grid;place-items:center;width:28px;height:28px;flex:none;border:0;background:transparent;color:#111;cursor:pointer}
 .segment-icon-field{padding:12px 0 4px}
 .segment-icon-title{display:block;margin-bottom:12px;color:#111;font-size:14px;font-weight:600}
 .segment-icon-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px 10px}
