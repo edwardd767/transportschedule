@@ -102,30 +102,37 @@ export function SegmentModule({ segments, bookings = [], onChange, onBack: _onBa
       {confirm && <ConfirmDialog title={confirm.title} message={confirm.message} confirmLabel={confirm.confirmLabel} onCancel={() => setConfirm(null)} onConfirm={() => { const run = confirm.action; setConfirm(null); void run(); }} />}
       {dialogOpen && (
         <div className="billing-instruction-overlay">
-          <div className="billing-instruction-card segment-dialog">
-            <h2>{editing ? 'Edit Segment' : 'Add Segment'}</h2>
-            <label>Description *<input value={description} onChange={(event) => setDescription(event.target.value)} /></label>
-            <label>Display Sequence<input type="number" min="1" value={sequence} onChange={(event) => setSequence(Number(event.target.value))} /></label>
-            <fieldset className="segment-icon-field">
-              <span>Stay View Icon Mapping</span>
-              <div className="segment-icon-grid">
-                {STAY_VIEW_ICONS.map((option) => (
-                  <label className="segment-icon-option" key={option.id}>
-                    <input type="radio" name="segment-icon" checked={icon === option.id} onChange={() => setIcon(option.id)} />
-                    <img src={option.src} alt={option.id} width={25} height={25} />
-                  </label>
-                ))}
+          <div className="segment-dialog">
+            <div className="segment-dialog-head"><strong>{editing ? 'Edit Segment' : 'Add Segment'}</strong></div>
+            <div className="segment-dialog-body">
+              <label className="segment-field"><span>Description *</span><input value={description} onChange={(event) => setDescription(event.target.value)} /></label>
+              <label className="segment-field"><span>Display Sequence</span><input type="number" min="1" value={sequence} onChange={(event) => setSequence(Number(event.target.value))} /></label>
+              <div className="segment-icon-field">
+                <span className="segment-icon-title">Stay View Icon Mapping</span>
+                <div className="segment-icon-grid">
+                  {STAY_VIEW_ICONS.map((option) => (
+                    <label className="segment-icon-option" key={option.id}>
+                      <input type="radio" name="segment-icon" checked={icon === option.id} onChange={() => setIcon(option.id)} />
+                      <svg className="segment-icon-radio" viewBox="0 0 24 24" width={18} height={18} fill="currentColor" aria-hidden="true" focusable="false">
+                        {icon === option.id
+                          ? <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0-5C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />
+                          : <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />}
+                      </svg>
+                      <img src={option.src} alt={option.id} width={25} height={25} />
+                    </label>
+                  ))}
+                </div>
               </div>
-            </fieldset>
-            {!editing && (
-              <label className="segment-active-row">
-                <span>Active</span>
-                <input type="checkbox" checked={active} onChange={(event) => setActive(event.target.checked)} />
-              </label>
-            )}
-            <div className="billing-instruction-actions">
-              <button className="secondary-button" onClick={() => { setDialogOpen(false); setEditing(null); }}>Cancel</button>
-              <button className="primary-button" disabled={!description.trim()} onClick={save}>Save</button>
+              {!editing && (
+                <div className="segment-active-row">
+                  <span>Active</span>
+                  <button type="button" className={`segment-active-switch ${active ? 'is-on' : ''}`} aria-label="Active" aria-pressed={active} onClick={() => setActive((current) => !current)}><i /></button>
+                </div>
+              )}
+            </div>
+            <div className="segment-dialog-actions">
+              <button type="button" className="segment-cancel" onClick={() => { setDialogOpen(false); setEditing(null); }}>Cancel</button>
+              <button type="button" className="segment-save" disabled={!description.trim()} onClick={save}>Save</button>
             </div>
           </div>
         </div>

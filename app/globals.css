@@ -5880,7 +5880,7 @@ p {
 .confirm-dialog{width:min(600px,calc(100vw - 32px));background:#fff;border-radius:4px;box-shadow:0 8px 30px #0004;overflow:hidden}
 .confirm-dialog h2{margin:0;padding:13px 16px;background:#fdf3e7;color:#f68a13;font-size:16px;font-weight:700}
 .confirm-dialog p{margin:0;padding:30px 16px;font-size:16px;color:#333}
-.confirm-dialog-actions{display:flex;justify-content:flex-end;gap:10px;padding:10px 16px 16px}.segment-add{position:fixed;right:22px;bottom:22px;width:56px;height:56px;border-radius:50%;border:0;background:#ff9414;color:#fff}.segment-dialog{width:min(600px,calc(100vw - 32px));padding:20px}.segment-dialog h2{color:#f68a13}.segment-dialog label{display:block;margin:16px 0}.segment-dialog input{display:block;width:100%;border:0;border-bottom:1px solid #aaa;padding:10px 0;font-size:16px}
+.confirm-dialog-actions{display:flex;justify-content:flex-end;gap:10px;padding:10px 16px 16px}.segment-add{position:fixed;right:22px;bottom:22px;width:56px;height:56px;border-radius:50%;border:0;background:#ff9414;color:#fff}
 .sales-channel-dialog{width:min(600px,calc(100vw - 32px));padding:0}.sales-channel-dialog h2{margin:0;padding:12px;background:#fff7ed;color:#f68a13;font-size:16px}.sales-channel-dialog label{display:block;padding:28px 12px 12px;color:#777}.sales-channel-dialog input{display:block;width:100%;border:0;border-bottom:1px solid #999;padding:10px 0;font-size:16px;outline:0}
 .segment-add{position:fixed;right:22px;bottom:22px;display:grid;place-items:center;z-index:20}
 .availability-card{width:min(620px,calc(100vw - 32px));background:#fff;border-radius:4px;overflow:hidden;box-shadow:0 12px 32px #0004}.availability-head{display:flex;align-items:center;gap:18px;padding:14px 12px;background:#fff8ef;color:#111}.availability-head strong{color:#f58b12;font-size:16px}.availability-head span{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:13px}.availability-head button{border:0;background:none}.availability-scroll{overflow:auto;padding:8px 12px}.availability-card table{border-collapse:collapse;width:100%;font-size:12px;white-space:nowrap}.availability-card th,.availability-card td{padding:7px 9px;text-align:center}.availability-card thead th{color:#777;font-weight:600}.availability-card tbody tr:nth-child(odd){background:#fff8ef}.availability-card tbody th{text-align:left;color:#ed8a00}.availability-actions{display:flex;justify-content:flex-end;padding:10px 12px}.availability-actions .primary-button{min-width:64px}
@@ -6239,15 +6239,30 @@ p {
 @media(max-width:639px){.booking-room-stay-head small{font-size:10px}.booking-room-subtotal{min-width:680px;gap:9px;font-size:11px}}
 
 /* Segment dialog: stay view icon mapping. */
-.segment-icon-field{margin:10px 0 0;padding:0;border:0}
-.segment-icon-field > span{display:block;margin-bottom:6px;color:#85909d;font-size:12px}
-.segment-icon-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-.segment-icon-option{display:grid;place-items:center;min-height:46px;border:1px solid #e5e5e5;border-radius:4px;background:#fff;cursor:pointer}
+.segment-dialog{width:min(600px,calc(100vw - 32px));max-height:calc(100dvh - 40px);display:flex;flex-direction:column;overflow:hidden;border-radius:4px;background:#fff;box-shadow:0 12px 38px #00000052}
+.segment-dialog-head{flex:none;padding:14px 16px;background:#fff8ef}
+.segment-dialog-head strong{color:#f28c00;font-size:14px;font-weight:700}
+.segment-dialog-body{flex:1;min-height:0;overflow-y:auto;padding:2px 16px 6px}
+.segment-field{display:block;padding:12px 0}
+.segment-field > span{display:block;color:#85909d;font-size:12px;line-height:18px}
+.segment-field input{width:100%;min-height:30px;padding:2px 0;border:0;border-bottom:1px solid #999;border-radius:0;outline:0;background:transparent;color:#07182a;font:inherit;font-size:16px}
+.segment-icon-field{padding:12px 0 4px}
+.segment-icon-title{display:block;margin-bottom:12px;color:#111;font-size:14px;font-weight:600}
+.segment-icon-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px 10px}
+.segment-icon-option{display:flex;align-items:center;gap:10px;cursor:pointer}
 .segment-icon-option input{position:absolute;opacity:0;pointer-events:none}
+.segment-icon-radio{flex:none;color:#9aa0a6}
+.segment-icon-option input:checked + .segment-icon-radio{color:#ff8c12}
 .segment-icon-option img{display:block;object-fit:contain}
-.segment-icon-option:has(input:checked){border-color:#ff9800;box-shadow:0 0 0 1px #ff9800 inset}
-.segment-active-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;color:#555;font-size:13px}
-.segment-active-row input{width:18px;height:18px;accent-color:#ff9800}
+.segment-active-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0;color:#111;font-size:14px}
+.segment-active-switch{position:relative;width:36px;height:20px;flex:none;border:0;border-radius:10px;background:#ccc;cursor:pointer;transition:.2s}
+.segment-active-switch i{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.2s}
+.segment-active-switch.is-on{background:#ffb52c}
+.segment-active-switch.is-on i{left:18px;background:#ff8d00}
+.segment-dialog-actions{flex:none;display:flex;justify-content:flex-end;gap:10px;padding:14px 16px}
+.segment-dialog-actions button{min-width:88px;min-height:36px;border:0;border-radius:4px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.segment-cancel,.segment-save{background:#ff9400;color:#fff;box-shadow:0 1px 3px #0002}
+.segment-save:disabled{background:#e6e6e6;color:#aaa;cursor:default;box-shadow:none}
 
 /* Housekeeping Misc Charges. */
 .misc-charges{position:relative;display:flex;flex:1;min-height:0;flex-direction:column;background:#f4f4f4;overflow:hidden}
