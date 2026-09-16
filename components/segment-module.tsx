@@ -28,8 +28,11 @@ function formatPostedDate(value: string) {
 
 export function SegmentModule({ segments, bookings = [], onChange, onBack: _onBack }: { segments: HotelSegment[]; bookings?: Booking[]; onChange: (value: HotelSegment[]) => Promise<void>; onBack: () => void }) {
   const source = segments.length ? segments : initialSegments;
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState('');
   const inUse = (item: HotelSegment) => bookings.some((booking) => (booking.segment || '').trim().toLowerCase() === item.description.trim().toLowerCase());
   const [draft, setDraft] = useState(source);
+  const shown = draft.filter((item) => item.description.toLowerCase().includes(query.trim().toLowerCase()));
   const [menu, setMenu] = useState<string | null>(null);
   const [editing, setEditing] = useState<HotelSegment | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -77,11 +80,23 @@ export function SegmentModule({ segments, bookings = [], onChange, onBack: _onBa
   return (
     <section className="master-page segment-page">
       <div className="master-list-head segment-list-head">
-        <h1>Segments <em>({draft.length})</em></h1>
-        <Search size={21} />
+        <h1>Segments <em>({shown.length})</em></h1>
+        {searchOpen ? (
+          <input
+            autoFocus
+            className="segment-search-input"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            onBlur={() => { if (!query) setSearchOpen(false); }}
+            placeholder="Search Here..."
+            aria-label="Search segments"
+          />
+        ) : (
+          <button type="button" className="segment-search-button" aria-label="Search segments" onClick={() => setSearchOpen(true)}><Search size={21} /></button>
+        )}
       </div>
       <div className="segment-list">
-        {draft.map((item) => (
+        {shown.map((item) => (
           <article className={`segment-row${item.active ? '' : ' is-inactive'}`} key={item.id}>
             <div>
               <strong>{item.description}</strong>

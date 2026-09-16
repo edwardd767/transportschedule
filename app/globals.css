@@ -6249,6 +6249,9 @@ p {
 .segment-field:focus-within > span{color:#ff9800}
 .segment-field input{width:100%;min-height:30px;padding:2px 0;border:0;border-bottom:1px solid #999;border-radius:0;outline:0;background:transparent;color:#07182a;font:inherit;font-size:16px}
 .segment-field:focus-within input{border-bottom-color:#ff9800}
+.segment-search-button{display:grid;place-items:center;width:30px;height:30px;flex:none;border:0;border-radius:3px;background:transparent;color:#111;cursor:pointer}
+.segment-search-button:hover{background:#f4f4f4}
+.segment-search-input{width:190px;min-height:28px;padding:2px 0;border:0;border-bottom:1px solid #999;border-radius:0;outline:0;background:transparent;color:#111;font:inherit;font-size:13px}
 .segment-icon-field{padding:12px 0 4px}
 .segment-icon-title{display:block;margin-bottom:12px;color:#111;font-size:14px;font-weight:600}
 .segment-icon-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px 10px}
