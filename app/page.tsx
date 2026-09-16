@@ -69,6 +69,7 @@ import { HotelMasterFiles } from '@/components/hotel-master-files';
 import { Bookings } from '@/components/bookings';
 import { GuestProfiles } from '@/components/guest-profiles';
 import { DigitalDocument } from '@/components/digital-document';
+import { Checkout } from '@/components/checkout';
 import { CheckIn } from '@/components/check-in';
 import { SegmentModule } from '@/components/segment-module';
 import type { Booking } from '@/lib/bookings';
@@ -143,6 +144,7 @@ const frontDeskMenu = [
     label: 'Check Out',
     detail: 'Check-Out: 1 out of 8',
     svg: checkoutSvg,
+    view: 'checkout' as const,
   },
   {
     key: 'room-assignment',
@@ -224,6 +226,7 @@ function HomeContent({ store }: { store: TransportData }) {
     | 'transportlisting'
     | 'guestprofile'
     | 'digitaldocument'
+    | 'checkout'
   >('booking');
   const [rateSetupSection, setRateSetupSection] = useState<RateSetupSection | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -804,6 +807,8 @@ function HomeContent({ store }: { store: TransportData }) {
               <span>Front Desk</span>
             ) : view === 'checkin' ? (
               <>... <ChevronRight size={14} /> Check In</>
+            ) : view === 'checkout' ? (
+              <>... <ChevronRight size={14} /> Check Out</>
             ) : view === 'transportlisting' ? (
               <span>Transport <ChevronRight size={14} /> Listing</span>
             ) : view === 'digitaldocument' ? (
@@ -1047,6 +1052,8 @@ function HomeContent({ store }: { store: TransportData }) {
               })}
             </div>
           </div>
+        ) : view === 'checkout' ? (
+          <Checkout bookings={bookings} />
         ) : view === 'checkin' ? (
           <CheckIn bookings={bookings} />
         ) : (
