@@ -1,7 +1,7 @@
 'use client';
 
 import { useContext, useMemo, useState } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { TransportDataContext } from '@/components/transport-connection';
 
 const ASSIGNMENT_KEY = '_roomAssignments';
@@ -114,10 +114,22 @@ export function MiscCharges({ onBack }: { onBack: () => void }) {
 
   return (
     <section className="misc-charges" aria-label="Misc Charges">
+      <div className="misc-charges-banner">
+        <div className="misc-charges-banner-main">
+          <button type="button" className="misc-charges-back" aria-label="Back to Room Management" onClick={onBack}>‹</button>
+          <div className="misc-charges-banner-copy">
+            <small>HMS</small>
+            <strong>{store?.state.hotelMasters.profile.hotelName || 'HOTEL PARADISE'}</strong>
+          </div>
+          <span className="misc-charges-switch" aria-hidden="true">↔</span>
+        </div>
+        <div className="misc-charges-crumb">... / ... / Incidental Charges</div>
+      </div>
       <div className="misc-charges-head">
-        <button type="button" className="misc-charges-back" aria-label="Back to Room Management" onClick={onBack}>‹</button>
         <strong>Misc Charges</strong>
-        <button type="button" className="misc-charges-add" aria-label="Add misc charge" onClick={() => setOpen(true)}><Plus size={20} /></button>
+        <button type="button" aria-label="Add misc charge" onClick={() => setOpen(true)}>
+          <svg viewBox="0 0 24 24" width={26} height={26} fill="currentColor" aria-hidden="true" focusable="false"><path d="M19 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z" /></svg>
+        </button>
       </div>
       <label className="misc-charges-search">
         <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search Here..." aria-label="Search misc charges" />

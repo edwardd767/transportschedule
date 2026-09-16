@@ -6239,19 +6239,27 @@ p {
 @media(max-width:639px){.booking-room-stay-head small{font-size:10px}.booking-room-subtotal{min-width:680px;gap:9px;font-size:11px}}
 
 /* Housekeeping Misc Charges. */
-.misc-charges{position:relative;display:flex;flex:1;min-height:0;flex-direction:column;background:#f4f4f4}
-.misc-charges-head{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;background:#fff8ef;border-bottom:1px solid #f0e6da}
-.misc-charges-head strong{flex:1;font-size:12px;font-weight:700;color:#111}
-.misc-charges-back{display:grid;place-items:center;width:26px;height:26px;border:0;border-radius:3px;background:#fff;color:#e98a08;font-size:20px;line-height:1;cursor:pointer}
-.misc-charges-add{display:grid;place-items:center;width:28px;height:28px;border:0;border-radius:3px;background:#ff9400;color:#fff;cursor:pointer}
-.misc-charges-search{display:flex;align-items:center;gap:8px;min-height:42px;padding:0 12px;background:#fff;box-shadow:0 1px 4px #00000014}
-.misc-charges-search input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#111;font-size:12px;font-weight:600}
+.misc-charges{position:relative;display:flex;flex:1;min-height:0;flex-direction:column;background:#f4f4f4;overflow:hidden}
+.misc-charges-banner{flex:none;background:linear-gradient(110deg,#f89912,#ffa524 65%,#f67e1b)}
+.misc-charges-banner-main{position:relative;display:flex;align-items:center;gap:9px;min-height:52px;padding:6px 12px}
+.misc-charges-banner-copy{min-width:0;line-height:1.08}
+.misc-charges-banner-copy small{display:block;color:#fff;font-size:11px;font-weight:600}
+.misc-charges-banner-copy strong{display:block;color:#111;font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.misc-charges-back{display:grid;place-items:center;width:30px;height:30px;flex:none;border:0;border-radius:3px;background:#fff;color:#ef8615;font-size:26px;line-height:20px;cursor:pointer}
+.misc-charges-switch{display:grid;place-items:center;width:24px;height:24px;flex:none;margin-left:auto;border-radius:50%;background:#fff;color:#f79400;font-size:14px;box-shadow:0 1px 4px #00000038}
+.misc-charges-crumb{min-height:22px;padding:4px 12px;border-top:1px solid #ffffff6b;background:#f0801319;color:#151515;font-size:11px}
+.misc-charges-head{display:flex;align-items:center;justify-content:space-between;flex:none;padding:8px 12px;background:#faf2e8}
+.misc-charges-head strong{font-size:14px;font-weight:700;color:#000}
+.misc-charges-head button{display:grid;place-items:center;width:48px;height:48px;padding:0;border:0;border-radius:50%;background:transparent;color:#ff9800;cursor:pointer}
+.misc-charges-search{display:flex;align-items:center;gap:8px;min-height:38px;flex:none;padding:8px 12px;background:#fff}
+.misc-charges-search input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#000;font-size:12px;font-weight:700}
+.misc-charges-search svg{color:#111;flex:none}
 .misc-charges-list{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:5px;padding:10px 12px}
 .misc-charge-row{display:flex;flex-direction:column;gap:2px;padding:12px;border-radius:5px;background:#fff;box-shadow:0 3px 1px -2px transparent,0 1px 10px 2px #0000000d,0 0 5px 0 #0000001a}
 .misc-charge-row strong{font-size:12px;font-weight:700}
 .misc-charge-row small{font-size:11px;color:#454545}
 .misc-charge-row b{font-size:12px;color:#ff4568}
-.misc-charges-empty{flex:1;display:grid;place-items:center;color:#111;font-size:12px;font-weight:700}
+.misc-charges-empty{flex:1;display:grid;place-items:start center;padding:50px 12px;color:#000;font-size:14px;font-weight:700}
 .misc-charge-overlay{position:fixed;inset:0;z-index:1200;display:grid;place-items:center;padding:16px;background:#00000073}
 .misc-charge-card{width:min(600px,calc(100vw - 32px));max-height:calc(100dvh - 48px);display:flex;flex-direction:column;border-radius:4px;background:#fff;box-shadow:0 12px 38px #00000052;overflow:hidden}
 .misc-charge-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;background:#fff8ef}
