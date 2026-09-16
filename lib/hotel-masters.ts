@@ -47,7 +47,15 @@ export type HotelDepartment = {
 export type RoomStatusPolicy = { checkIn: string; checkOut: string; transfer: string; cancelCheckIn: string; cancelCheckOut: string; blockRoomRelease: string };
 export type AdvancePaymentPolicy = { taxSchemeForfeitedRevenue: string };
 export type EInvoicePolicy = { classificationRoomCharges: string; classificationServiceCharges: string; classificationAdvancePaymentForfeit: string; classificationDepositForfeit: string; classificationStateTax: string; useSubmissionDateAsDocDate: boolean };
-export type HotelOperationalPolicy = { standardCheckInTime: string; standardCheckOutTime: string; nightAuditCutOffTime: string; postpaid: boolean; floorPlan: boolean; cashierClosure: boolean; occupancy: { houseUse: boolean; dayUse: boolean; complimentary: boolean; ooo: boolean; ooi: boolean }; roomStatusPolicy?: RoomStatusPolicy; advancePaymentPolicy?: AdvancePaymentPolicy; eInvoicePolicy?: EInvoicePolicy };
+export type TermConditionKey = 'onlineBooking' | 'registrationCard' | 'regulationClause' | 'pdpaPolicy' | 'onlinePayment' | 'invoiceRemark' | 'soaFooter';
+export type TermsConditions = {
+  clauses: Record<TermConditionKey, string>;
+  guestNotice: boolean;
+  transferDescription: boolean;
+  extendStayDescription: boolean;
+  splitDescription: boolean;
+};
+export type HotelOperationalPolicy = { standardCheckInTime: string; standardCheckOutTime: string; nightAuditCutOffTime: string; postpaid: boolean; floorPlan: boolean; cashierClosure: boolean; occupancy: { houseUse: boolean; dayUse: boolean; complimentary: boolean; ooo: boolean; ooi: boolean }; roomStatusPolicy?: RoomStatusPolicy; advancePaymentPolicy?: AdvancePaymentPolicy; eInvoicePolicy?: EInvoicePolicy; termsConditions?: TermsConditions };
 export type HotelProfile = { hotelName: string; address: string; postcode: string; country: string; city: string; state: string; hotelType: string; companyName: string; companyRegNo: string; sstRegNo: string; ttxRegNo: string; onlineBookingUrl: string; liveRunDate: string; contactPerson: string; phoneNo: string; mobileNo: string; reservationEmail: string; businessEmail: string; bookingCancellationDays: number; currencyCode: string; floatAmount: number; paxCount: string; childRatesApplied: boolean; childAgePolicy: number; operationalPolicy: HotelOperationalPolicy };
 export type IncidentalCharge = { id: string; title: string; amount: number; taxScheme: string; outletCode: string; rateElement: boolean; guestAppFb: boolean; guestAppOnlineShop: boolean; posInterface: boolean; eventInterface: boolean; allowNegative: boolean; packageRedemption: boolean; kiosk: boolean; thirdPartyPos: boolean; eInvoice: boolean; msicCode: string; classification: string };
 

@@ -16,9 +16,10 @@ import { RateSetupModule, type RateSetupSection } from '@/components/rate-setup'
 import { initialRateSetupData, type RateSetupData } from '@/lib/rate-setup-data';
 import { RoomStatusModule } from '@/components/room-status-module';
 import { DepartmentModule } from '@/components/department-module-polished';
-import { initialHotelProfile, type HotelDepartment, type HotelRoomType, type RoomStatus, type HotelProfile, type HotelOperationalPolicy, type RoomStatusPolicy, type AdvancePaymentPolicy, type EInvoicePolicy } from '@/lib/hotel-masters';
+import { initialHotelProfile, type HotelDepartment, type HotelRoomType, type RoomStatus, type HotelProfile, type HotelOperationalPolicy, type RoomStatusPolicy, type AdvancePaymentPolicy, type EInvoicePolicy, type TermsConditions, type TermConditionKey } from '@/lib/hotel-masters';
 import { HotelSetupModule as HotelSetupModuleV2 } from '@/components/hotel-setup-module';
 import { TimePicker } from '@/components/time-picker';
+import { RichTextEditor } from '@/components/rich-text-editor';
 
 
 function StandardPolicyModule({ onBack, profile, onProfileChange, roomStatuses }: { onBack: () => void; profile: HotelProfile; onProfileChange: (value: HotelProfile) => void | Promise<void>; roomStatuses: RoomStatus[] }) {
@@ -38,8 +39,97 @@ function StandardPolicyModule({ onBack, profile, onProfileChange, roomStatuses }
   if (policy === 'Room Status Policy') return <RoomStatusPolicyModule profile={profile} roomStatuses={roomStatuses} onProfileChange={onProfileChange} onBack={() => setPolicy(null)} />;
   if (policy === 'Advance Payment Policy') return <AdvancePaymentPolicyModule profile={profile} onProfileChange={onProfileChange} onBack={() => setPolicy(null)} />;
   if (policy === 'e-Invoice Policy') return <EInvoicePolicyModule profile={profile} onProfileChange={onProfileChange} onBack={() => setPolicy(null)} />;
+  if (policy === 'Terms & Conditions') return <TermConditionModule profile={profile} onProfileChange={onProfileChange} onBack={() => setPolicy(null)} />;
   const policies = ['Hotel Operational Policy', 'Security Deposit Policy', 'State & Tourism Tax', 'Room Status Policy', 'General Policy', 'Terms & Conditions', 'Advance Payment Policy', 'e-Invoice Policy'];
-  return <section className="master-page standard-policy-page" aria-label="Standard Policy & Guidelines"><div className="standard-policy-list">{policies.map((item) => <button className="standard-policy-row" type="button" key={item} onClick={() => (item === 'General Policy' || item === 'Hotel Operational Policy' || item === 'Security Deposit Policy' || item === 'Room Status Policy' || item === 'Advance Payment Policy' || item === 'e-Invoice Policy') && setPolicy(item)}><strong>{item}</strong>{item === 'State & Tourism Tax' ? <MoreVertical size={18} /> : <ChevronRight size={18} />}</button>)}</div><button className="secondary-button master-page-back" type="button" onClick={onBack}><ArrowLeft size={16} /> Back to Hotel Settings</button></section>;
+  return <section className="master-page standard-policy-page" aria-label="Standard Policy & Guidelines"><div className="standard-policy-list">{policies.map((item) => <button className="standard-policy-row" type="button" key={item} onClick={() => (item === 'General Policy' || item === 'Hotel Operational Policy' || item === 'Security Deposit Policy' || item === 'Room Status Policy' || item === 'Advance Payment Policy' || item === 'e-Invoice Policy' || item === 'Terms & Conditions') && setPolicy(item)}><strong>{item}</strong>{item === 'State & Tourism Tax' ? <MoreVertical size={18} /> : <ChevronRight size={18} />}</button>)}</div><button className="secondary-button master-page-back" type="button" onClick={onBack}><ArrowLeft size={16} /> Back to Hotel Settings</button></section>;
+}
+
+const TERM_CONDITION_ITEMS = [
+  { key: 'onlineBooking', label: 'Online Booking' },
+  { key: 'registrationCard', label: 'Registration Card' },
+  { key: 'regulationClause', label: 'Regulation Clause' },
+  { key: 'pdpaPolicy', label: 'PDPA Policy' },
+  { key: 'onlinePayment', label: 'Online Payment Gateway Terms & Conditions' },
+  { key: 'invoiceRemark', label: 'Invoice Remark' },
+  { key: 'soaFooter', label: 'SOA Footer' },
+] as const;
+
+function emptyTermsConditions(): TermsConditions {
+  return {
+    clauses: { onlineBooking: '', registrationCard: '', regulationClause: '', pdpaPolicy: '', onlinePayment: '', invoiceRemark: '', soaFooter: '' },
+    guestNotice: true,
+    transferDescription: false,
+    extendStayDescription: false,
+    splitDescription: false,
+  };
+}
+
+function readTermsConditions(profile: HotelProfile): TermsConditions {
+  const fallback = emptyTermsConditions();
+  const stored = profile.operationalPolicy.termsConditions;
+  if (!stored) return fallback;
+  return { ...fallback, ...stored, clauses: { ...fallback.clauses, ...(stored.clauses ?? {}) } };
+}
+
+function TermConditionModule({ onBack, profile, onProfileChange }: { onBack: () => void; profile: HotelProfile; onProfileChange: (value: HotelProfile) => void | Promise<void> }) {
+  const [termKey, setTermKey] = useState<TermConditionKey | null>(null);
+  useEffect(() => {
+    const handleBack = (event: Event) => {
+      if (!termKey) return;
+      event.preventDefault();
+      setTermKey(null);
+    };
+    window.addEventListener('hotelx-standard-policy-back', handleBack);
+    return () => window.removeEventListener('hotelx-standard-policy-back', handleBack);
+  }, [termKey]);
+  if (termKey) return <TermConditionEditModule termKey={termKey} profile={profile} onProfileChange={onProfileChange} onBack={() => setTermKey(null)} />;
+  return <section className="master-page standard-policy-page" aria-label="Terms & Conditions">
+    <div className="standard-policy-list">
+      {TERM_CONDITION_ITEMS.map((item) => <button className="standard-policy-row" type="button" key={item.key} onClick={() => setTermKey(item.key)}><strong>{item.label}</strong><ChevronRight size={18} /></button>)}
+    </div>
+    <button className="secondary-button master-page-back" type="button" onClick={onBack}><ArrowLeft size={16} /> Back to Standard Policy</button>
+  </section>;
+}
+
+function TermConditionEditModule({ termKey, profile, onProfileChange, onBack }: { termKey: TermConditionKey; profile: HotelProfile; onProfileChange: (value: HotelProfile) => void | Promise<void>; onBack: () => void }) {
+  const saved = readTermsConditions(profile);
+  const [text, setText] = useState(saved.clauses[termKey] ?? '');
+  const [guestNotice, setGuestNotice] = useState(saved.guestNotice);
+  const [transferDescription, setTransferDescription] = useState(saved.transferDescription);
+  const [extendStayDescription, setExtendStayDescription] = useState(saved.extendStayDescription);
+  const [splitDescription, setSplitDescription] = useState(saved.splitDescription);
+  const label = TERM_CONDITION_ITEMS.find((item) => item.key === termKey)?.label ?? 'Terms & Conditions';
+  const toggle = (title: string, checked: boolean, onChange: (next: boolean) => void) => <label className="term-condition-toggle"><span>{title}</span><input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} /><i /></label>;
+  return <section className="master-page term-condition-page" aria-label={label}>
+    <p className="term-condition-description">Maintain the wording printed on the hotel&apos;s registration card, invoice and online documents.</p>
+    <div className="term-condition-editor">
+      <RichTextEditor key={termKey} value={text} onChange={setText} placeholder="Enter text here" />
+    </div>
+    {termKey === 'regulationClause' && toggle('Guest Notice', guestNotice, setGuestNotice)}
+    {termKey === 'invoiceRemark' && <>
+      {toggle('Show Transfer Description', transferDescription, setTransferDescription)}
+      {toggle('Show Extend Stay Description', extendStayDescription, setExtendStayDescription)}
+      {toggle('Show Split Description', splitDescription, setSplitDescription)}
+    </>}
+    <div className="master-page-actions term-condition-actions">
+      <button className="primary-button" type="button" onClick={async () => {
+        await onProfileChange({
+          ...profile,
+          operationalPolicy: {
+            ...profile.operationalPolicy,
+            termsConditions: {
+              clauses: { ...saved.clauses, [termKey]: text },
+              guestNotice,
+              transferDescription,
+              extendStayDescription,
+              splitDescription,
+            },
+          },
+        });
+        onBack();
+      }}>Save</button>
+    </div>
+  </section>;
 }
 
 type SecurityDepositPolicyState = {

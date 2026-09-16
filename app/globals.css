@@ -6238,6 +6238,23 @@ p {
 .booking-room-subtotal>strong{text-align:right;font-weight:600}
 @media(max-width:639px){.booking-room-stay-head small{font-size:10px}.booking-room-subtotal{min-width:680px;gap:9px;font-size:11px}}
 
+/* Terms & Conditions editor. */
+.term-condition-page{padding:0 12px 78px;background:#f5f5f5;overflow:auto}
+.term-condition-description{margin:12px 0 10px;color:#878787;font-size:10px;font-weight:500;line-height:15px}
+.term-condition-editor{background:#fff;border-radius:4px;overflow:hidden;box-shadow:0 2px 5px #00000012}
+.term-condition-editor .ql-toolbar.ql-snow{border:0;border-bottom:1px solid #eee;background:#fafafa}
+.hotelx-quill.ql-container.ql-snow{border:0;font-family:inherit;font-size:14px}
+.hotelx-quill .ql-editor{min-height:320px}
+.term-condition-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;color:#555;font-size:13px}
+.term-condition-toggle input{position:absolute;opacity:0;pointer-events:none}
+.term-condition-toggle i{position:relative;width:34px;height:18px;flex:none;border-radius:12px;background:#ccc;transition:.2s}
+.term-condition-toggle i:after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:.2s}
+.term-condition-toggle input:checked + i{background:#ffb52c}
+.term-condition-toggle input:checked + i:after{left:18px;background:#ff8d00}
+.term-condition-page>.master-page-actions.term-condition-actions{position:fixed;left:197px;right:0;bottom:0;height:52px;margin:0;padding:7px 20px;background:#fff;box-shadow:0 -2px 7px #0002;z-index:20;display:flex;align-items:center;justify-content:center}
+.term-condition-actions .primary-button{min-width:126px;height:36px;border-radius:4px;font-size:13px}
+@media(max-width:700px){.term-condition-page>.master-page-actions.term-condition-actions{left:0}}
+
 /* Booking listing Sort By menu. */
 .booking-sort-wrap{position:relative}
 .booking-sort-menu{position:absolute;right:0;top:36px;z-index:120;width:212px;padding:5px;border:1px solid #ddd;border-radius:4px;background:#fff;box-shadow:0 8px 22px #0000002e}
