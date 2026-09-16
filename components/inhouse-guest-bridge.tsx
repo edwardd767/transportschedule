@@ -98,7 +98,12 @@ type InhouseRow = {
   billingRemark: string;
   remark: string;
   roomKey: string;
+  status: { code: string; description: string; color: string };
+  locationName: string;
+  maxGuest: number;
 };
+
+type OperationalPolicyWithHousekeeping = { housekeepingRoomStatuses?: Record<string, string> };
 
 const SORT_OPTIONS = [
   { key: 'arrival-asc', label: 'Arrival Date (A-Z)' },
@@ -148,6 +153,7 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
   const [advance, setAdvance] = useState(emptyAdvance);
   const [appliedAdvance, setAppliedAdvance] = useState(emptyAdvance);
   const [selected, setSelected] = useState<InhouseRow | null>(null);
+  const [hoverRoom, setHoverRoom] = useState<InhouseRow | null>(null);
   const resetAdvance = () => setAdvance(emptyAdvance);
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
   const { bookings, hotelMasters } = store.state;
@@ -204,6 +210,8 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
   const rows = useMemo<InhouseRow[]>(() => {
     const roomCursor = new Map<string, number>();
     const activeRoomsByType = new Map<string, typeof hotelMasters.rooms>();
+    const statusMap = new Map(hotelMasters.roomStatuses.map((item) => [item.code, item]));
+    const persistedStatuses = (hotelMasters.profile.operationalPolicy as OperationalPolicyWithHousekeeping).housekeepingRoomStatuses ?? {};
 
     hotelMasters.roomTypes
       .filter((type) => type.active)
@@ -252,6 +260,13 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
               billingRemark: billing.remark,
               remark: booking.specialRequests?.__bookingInternalRemarks ?? '',
               roomKey,
+              status: (() => {
+                const code = persistedStatuses[assigned?.roomNo ?? ''] || 'OD';
+                const entry = statusMap.get(code);
+                return { code, description: entry?.description ?? code, color: entry?.color ?? '#a5001b' };
+              })(),
+              locationName: hotelMasters.locations.find((item) => item.code === assigned?.locationCode)?.description || assigned?.locationCode || 'N/A',
+              maxGuest: assigned?.maxGuest ?? 0,
             };
           }),
         ),
@@ -378,10 +393,10 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
       <div className="inhouse-list">
         {shownRows.length ? (
           shownRows.map((row) => (
-            <button type="button" className="inhouse-card" key={row.key} onClick={() => setSelected(row)}>
+            <button type="button" className="inhouse-card" key={row.key} onClick={() => setSelected(row)} onMouseLeave={() => setHoverRoom(null)}>
               <div className="inhouse-card-copy">
                 <div className="inhouse-room-line">
-                  <b>{row.roomNo}</b>
+                  <b className="inhouse-room-no" onMouseEnter={() => setHoverRoom(row)} onMouseLeave={() => setHoverRoom(null)}>{row.roomNo}</b>
                   <strong>{row.roomType}</strong>
                   <span className="inhouse-divider" />
                   <svg viewBox="0 0 24 24" width={12} height={12} fill="currentColor" aria-hidden="true" focusable="false"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z" /></svg>
@@ -396,6 +411,14 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
               </div>
               <span className="inhouse-ref">{row.reference}</span>
               <ChevronRight size={18} className="inhouse-chevron" />
+              {hoverRoom?.key === row.key && (
+                <span className="inhouse-room-tip" role="tooltip">
+                  <strong>Room {row.roomNo} · {row.roomType}</strong>
+                  <span className="inhouse-room-tip-status"><i style={{ background: row.status.color }} />{row.status.description}</span>
+                  <small>Location: {row.locationName}</small>
+                  {row.maxGuest ? <small>Max Guest: {row.maxGuest}</small> : null}
+                </span>
+              )}
             </button>
           ))
         ) : (

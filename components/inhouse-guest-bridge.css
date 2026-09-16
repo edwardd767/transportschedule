@@ -282,6 +282,7 @@
 }
 
 .inhouse-card {
+  position: relative;
   display: flex;
   align-items: center;
   width: 100%;
@@ -366,6 +367,55 @@
 .inhouse-guest-line span {
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.inhouse-room-no {
+  cursor: help;
+}
+
+.inhouse-room-tip {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% - 4px);
+  left: 12px;
+  min-width: 186px;
+  padding: 8px 10px;
+  border: 1px solid #e6e6e9;
+  border-radius: 4px;
+  background: #fff;
+  color: #111;
+  box-shadow: 0 6px 20px #0000002e;
+  text-align: left;
+  pointer-events: none;
+}
+
+.inhouse-room-tip strong {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.inhouse-room-tip-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.inhouse-room-tip-status i {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  border-radius: 50%;
+}
+
+.inhouse-room-tip small {
+  display: block;
+  margin-top: 5px;
+  color: #555;
+  font-size: 10px;
 }
 
 .inhouse-ref {
