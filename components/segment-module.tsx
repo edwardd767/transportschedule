@@ -93,7 +93,7 @@ export function SegmentModule({ segments, bookings = [], onChange, onBack: _onBa
         </div>
       ) : (
         <div className="master-list-head segment-list-head">
-          <h1>Segments <em>({shown.length})</em></h1>
+          <h1>Segments (<em>{shown.length}</em>)</h1>
           <button type="button" className="segment-search-button" aria-label="Search segments" onClick={() => setSearchOpen(true)}><Search size={21} /></button>
         </div>
       )}
