@@ -111,7 +111,7 @@ export function SegmentModule({ segments, bookings = [], onChange, onBack: _onBa
                 <span className="segment-icon-title">Stay View Icon Mapping</span>
                 <div className="segment-icon-grid">
                   {STAY_VIEW_ICONS.map((option) => (
-                    <label className="segment-icon-option" key={option.id} title={option.id}>
+                    <label className="segment-icon-option" key={option.id} data-label={option.id}>
                       <input type="radio" name="segment-icon" checked={icon === option.id} onChange={() => setIcon(option.id)} />
                       <svg className="segment-icon-radio" viewBox="0 0 24 24" width={18} height={18} fill="currentColor" aria-hidden="true" focusable="false">
                         {icon === option.id
