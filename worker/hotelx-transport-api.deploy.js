@@ -1531,7 +1531,10 @@ function applyTransportAction(state, input) {
         houseLimit: number(v.houseLimit, "house limit", 0, 50),
         housekeepingPoints: number(v.housekeepingPoints, "housekeeping points", 0, 1e4),
         totalRoom: normalized.hotelMasters.rooms.filter((room) => room.roomTypeCode === code).length,
-        active: boolean(v.active)
+        active: boolean(v.active),
+        overbookingAllowed: boolean(v.overbookingAllowed),
+        amenities: list(v.amenities).map((item) => String(item ?? "").trim()).filter(Boolean),
+        photos: list(v.photos).map((item) => String(item ?? "").trim()).filter(Boolean)
       };
       const exists = normalized.hotelMasters.roomTypes.some((item) => item.code === code);
       return {
@@ -1543,6 +1546,17 @@ function applyTransportAction(state, input) {
             (room) => room.roomTypeCode === code ? { ...room, maxGuest: value.maxGuest, roomSize: value.roomSize } : room
           )
         }
+      };
+    }
+    case "hotelRoomTypesReorder": {
+      const normalized = normalizeTransportState(state);
+      const codes = list(action.value).map((item) => String(object(item).code ?? "").trim().toUpperCase());
+      const byCode = new Map(normalized.hotelMasters.roomTypes.map((item) => [item.code, item]));
+      const ordered = codes.map((code) => byCode.get(code)).filter((item) => Boolean(item));
+      const rest = normalized.hotelMasters.roomTypes.filter((item) => !codes.includes(item.code));
+      return {
+        ...normalized,
+        hotelMasters: { ...normalized.hotelMasters, roomTypes: [...ordered, ...rest] }
       };
     }
     case "hotelRoomSave": {
