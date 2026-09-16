@@ -7,6 +7,7 @@ import {
   ChevronRight,
   DoorOpen,
   FileImage,
+  Info,
   MapPin,
   Mic,
   MoreVertical,
@@ -384,7 +385,7 @@ function RoomTypeMaster({
             <button type="button" className="room-type-search-button" aria-label="Search room types" onClick={() => setSearchOpen(true)}><Search size={18} /></button>
           </div>
         )}
-        <div className="room-type-hint">Drag and drop the room type to re-sequence.</div>
+        <div className="room-type-hint"><Info size={15} /><span>Drag and drop the room type to re-sequence.</span></div>
         <div className="room-type-list">
           {visible.map((item, index) => (
             <article

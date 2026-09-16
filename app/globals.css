@@ -6257,7 +6257,8 @@ p {
 .room-type-search input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#111;font:inherit;font-size:16px}
 .room-type-search input::placeholder{color:#9a9a9a}
 .room-type-search button{display:grid;place-items:center;width:28px;height:28px;flex:none;border:0;background:transparent;color:#111;cursor:pointer}
-.room-type-hint{margin:8px 0;padding:9px 12px;background:#fff8ef;color:#7a6a58;font-size:11px}
+.room-type-hint{display:flex;align-items:center;gap:8px;margin:8px 0;padding:9px 12px;border:1px solid #f2dfae;border-radius:4px;background:#fdf6d8;color:#4a3b1f;font-size:12px}
+.room-type-hint svg{flex:none;color:#c99a12}
 .room-type-list{display:flex;flex-direction:column;gap:5px}
 .room-type-row{position:relative;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:57px;padding:8px 12px;border-radius:5px;background:#fff;box-shadow:0 1px 5px #0000001d;cursor:grab}
 .room-type-row strong{display:block;font-size:12px;font-weight:700;color:#171717}
