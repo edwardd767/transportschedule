@@ -68,7 +68,8 @@ export function MiscCharges({ onBack }: { onBack: () => void }) {
       });
       for (const roomNo of roomNos) occupied.set(roomNo, booking.guest);
     }
-    return masterRooms.map((room) => ({ roomNo: room.roomNo, guest: occupied.get(room.roomNo) ?? '' }));
+    // Only rooms currently occupied by an in-house booking can take a misc charge.
+    return masterRooms.map((room) => ({ roomNo: room.roomNo, guest: occupied.get(room.roomNo) ?? '' })).filter((room) => room.guest);
   }, [store?.state.bookings, store?.state.hotelMasters.rooms]);
 
   const guestName = rooms.find((room) => room.roomNo === roomNo)?.guest ?? '';
