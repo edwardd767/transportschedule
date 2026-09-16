@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import {
   ArrowRightLeft,
@@ -154,6 +154,16 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
   const [appliedAdvance, setAppliedAdvance] = useState(emptyAdvance);
   const [selected, setSelected] = useState<InhouseRow | null>(null);
   const [hoverRoom, setHoverRoom] = useState<InhouseRow | null>(null);
+  const sortWrap = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!sortOpen) return;
+    const closeSort = (event: MouseEvent) => {
+      if (!sortWrap.current?.contains(event.target as Node)) setSortOpen(false);
+    };
+    document.addEventListener('mousedown', closeSort);
+    return () => document.removeEventListener('mousedown', closeSort);
+  }, [sortOpen]);
   const resetAdvance = () => setAdvance(emptyAdvance);
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
   const { bookings, hotelMasters } = store.state;
@@ -352,7 +362,7 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
           >
             <svg viewBox="0 0 24 24" width={20} height={20} fill="currentColor" aria-hidden="true" focusable="false"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z" /></svg>
           </button>
-          <div className="inhouse-filter-wrap">
+          <div className="inhouse-filter-wrap" ref={sortWrap}>
             <button
               type="button"
               aria-label="Sort listing"
