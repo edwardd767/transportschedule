@@ -640,9 +640,7 @@ function HomeContent({ store }: { store: TransportData }) {
                   setProfileMenuPos({ top: rect.bottom + 6, left: Math.max(8, rect.right - 186) });
                   setProfileMenuOpen(true);
                 }}
-              >
-                <span className="profile-menu-caret" aria-hidden="true" />
-              </button>
+              />
               {profileMenuOpen && profileMenuPos && createPortal(
                 <div className="profile-menu" role="menu" style={{ position: 'fixed', top: profileMenuPos.top, left: profileMenuPos.left }}>
                   <button type="button" role="menuitem" className="profile-menu-item" onClick={() => setProfileMenuOpen(false)}>
