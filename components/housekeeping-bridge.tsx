@@ -7,7 +7,6 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
-  Grid2X2,
   List,
   Pencil,
   RotateCcw,
@@ -503,7 +502,7 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
           onClick={toggleGroupedView}
           className="grid min-w-[48px] place-items-center bg-white text-[#ff8a00] shadow-sm"
         >
-          {groupedView ? <List size={23} /> : <Grid2X2 size={22} />}
+          {groupedView ? <List size={23} /> : <svg viewBox="0 0 24 24" width={22} height={22} fill="currentColor" aria-hidden="true" focusable="false"><path d="M19 5v2h-4V5h4M9 5v6H5V5h4m10 8v6h-4v-6h4M9 17v2H5v-2h4M21 3h-8v6h8V3zm-10 0H3v6h8V3zm10 8h-8v6h8v-6zm-10 0H3v6h8v-6z" /></svg>}
         </button>
       </div>
 
