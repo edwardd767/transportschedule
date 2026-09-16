@@ -234,6 +234,9 @@ const schemaStatements = [
     active boolean NOT NULL DEFAULT true,
     PRIMARY KEY (property_id, code)
   )`,
+  `ALTER TABLE public.hotelx_room_type_master ADD COLUMN IF NOT EXISTS overbooking_allowed boolean NOT NULL DEFAULT false`,
+  `ALTER TABLE public.hotelx_room_type_master ADD COLUMN IF NOT EXISTS amenities jsonb NOT NULL DEFAULT '[]'::jsonb`,
+  `ALTER TABLE public.hotelx_room_type_master ADD COLUMN IF NOT EXISTS photos jsonb NOT NULL DEFAULT '[]'::jsonb`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_room_master (
     property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
     room_no text NOT NULL,
@@ -702,7 +705,8 @@ const schemaStatements = [
 
     INSERT INTO public.hotelx_room_type_master (
       property_id, code, sort_order, description, property_type, measure_type,
-      room_size, max_guest, house_limit, housekeeping_points, total_room, active
+      room_size, max_guest, house_limit, housekeeping_points, total_room, active,
+      overbooking_allowed, amenities, photos
     )
     SELECT p_property_id, item.value->>'code', item.ordinality::integer,
       COALESCE(item.value->>'description', ''), COALESCE(item.value->>'propertyType', 'Room'),
@@ -712,7 +716,10 @@ const schemaStatements = [
       COALESCE(NULLIF(item.value->>'houseLimit', ''), '0')::integer,
       COALESCE(NULLIF(item.value->>'housekeepingPoints', ''), '0')::integer,
       COALESCE(NULLIF(item.value->>'totalRoom', ''), '0')::integer,
-      COALESCE((item.value->>'active')::boolean, true)
+      COALESCE((item.value->>'active')::boolean, true),
+      COALESCE((item.value->>'overbookingAllowed')::boolean, false),
+      COALESCE(item.value->'amenities', '[]'::jsonb),
+      COALESCE(item.value->'photos', '[]'::jsonb)
     FROM jsonb_array_elements(COALESCE(p_state #> '{hotelMasters,roomTypes}', '[]'::jsonb))
       WITH ORDINALITY AS item(value, ordinality);
 
@@ -1286,7 +1293,10 @@ const schemaStatements = [
             'houseLimit', room_type.house_limit,
             'housekeepingPoints', room_type.housekeeping_points,
             'totalRoom', room_type.total_room,
-            'active', room_type.active
+            'active', room_type.active,
+            'overbookingAllowed', room_type.overbooking_allowed,
+            'amenities', room_type.amenities,
+            'photos', room_type.photos
           ) ORDER BY room_type.sort_order)
           FROM public.hotelx_room_type_master AS room_type
           WHERE room_type.property_id = meta.property_id

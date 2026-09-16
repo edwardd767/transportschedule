@@ -18,7 +18,15 @@ export type HotelRoomType = {
   housekeepingPoints: number;
   totalRoom: number;
   active: boolean;
+  overbookingAllowed?: boolean;
+  amenities?: string[];
+  photos?: string[];
 };
+
+export const platformAmenities = [
+  'Air Conditioning', 'Bath Tub', 'Coffee Maker', 'Hair Dryer', 'Iron & Ironing Board',
+  'Kitchenette', 'Mini Bar', 'Non-Smoking', 'Safe Box', 'Shower', 'Television', 'Wi-Fi',
+];
 
 export type HotelRoom = {
   roomNo: string;

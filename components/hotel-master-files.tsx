@@ -19,6 +19,7 @@ import type {
   HotelRoom,
   HotelRoomType,
 } from '@/lib/hotel-masters';
+import { platformAmenities } from '@/lib/hotel-masters';
 
 export type HotelMasterKind = 'location' | 'roomType' | 'room';
 
@@ -358,8 +359,45 @@ function RoomTypeMaster({
           <Field label="Max Guest" required><input type="number" min="1" value={draft.maxGuest} readOnly={!editing} onChange={(e) => setDraft({ ...draft, maxGuest: Number(e.target.value) })} /></Field>
           <Field label="House Limit"><input type="number" min="0" value={draft.houseLimit} readOnly={!editing} onChange={(e) => setDraft({ ...draft, houseLimit: Number(e.target.value) })} /></Field>
           <Field label="Housekeeping Points"><input type="number" min="0" value={draft.housekeepingPoints} readOnly={!editing} onChange={(e) => setDraft({ ...draft, housekeepingPoints: Number(e.target.value) })} /></Field>
+          <Field label="Overbooking Allowed"><input type="checkbox" checked={Boolean(draft.overbookingAllowed)} disabled={!editing} onChange={(e) => setDraft({ ...draft, overbookingAllowed: e.target.checked })} /></Field>
         </div>
         {error && <p className="form-error">{error}</p>}
+      </div>
+
+      <div className="master-detail-card">
+        <div className="master-section-label">Amenities</div>
+        <div className="master-amenities">
+          {platformAmenities.map((amenity) => (
+            <label key={amenity}>
+              <input
+                type="checkbox"
+                checked={(draft.amenities ?? []).includes(amenity)}
+                disabled={!editing}
+                onChange={(e) => setDraft({ ...draft, amenities: e.target.checked ? [...(draft.amenities ?? []), amenity] : (draft.amenities ?? []).filter((item) => item !== amenity) })}
+              />
+              {amenity}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div className="master-detail-card">
+        <div className="master-section-label">Photos</div>
+        <div className="master-photos">
+          {(draft.photos ?? []).map((photo) => (
+            <span className="master-photo" key={photo}>
+              {photo}
+              {editing && <button type="button" aria-label={`Remove ${photo}`} onClick={() => setDraft({ ...draft, photos: (draft.photos ?? []).filter((item) => item !== photo) })}>×</button>}
+            </span>
+          ))}
+          {editing && (
+            <label className="master-photo-upload">
+              <input type="file" accept="image/*" multiple onChange={(e) => setDraft({ ...draft, photos: [...(draft.photos ?? []), ...Array.from(e.target.files ?? []).map((file) => file.name)] })} />
+              Upload Photos
+            </label>
+          )}
+          {!editing && !(draft.photos ?? []).length && <span className="master-photos-empty">No photo uploaded.</span>}
+        </div>
       </div>
       <SaveBar editing={editing} saving={saving} onSave={save} />
     </section>

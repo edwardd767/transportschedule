@@ -6242,6 +6242,17 @@ p {
 .booking-room-subtotal>strong{text-align:right;font-weight:600}
 @media(max-width:639px){.booking-room-stay-head small{font-size:10px}.booking-room-subtotal{min-width:680px;gap:9px;font-size:11px}}
 
+/* Room Type master: amenities and photos sections. */
+.master-amenities{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px 16px;padding:4px 0 12px}
+.master-amenities label{display:flex;align-items:center;gap:8px;color:#333;font-size:12px}
+.master-amenities input{width:16px;height:16px;accent-color:#ff9800}
+.master-photos{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:4px 0 12px}
+.master-photo{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid #e2e2e2;border-radius:4px;background:#fff;color:#333;font-size:12px}
+.master-photo button{border:0;background:transparent;color:#d10024;font-size:14px;line-height:1;cursor:pointer}
+.master-photo-upload{display:inline-flex;align-items:center;padding:7px 12px;border:1px dashed #ffb249;border-radius:4px;background:#fff8ef;color:#f28c00;font-size:12px;font-weight:600;cursor:pointer}
+.master-photo-upload input{display:none}
+.master-photos-empty{color:#9a9a9a;font-size:12px}
+
 /* Segment dialog: stay view icon mapping. */
 .segment-dialog{width:min(600px,calc(100vw - 32px));max-height:calc(100dvh - 40px);display:flex;flex-direction:column;overflow:hidden;border-radius:4px;background:#fff;box-shadow:0 12px 38px #00000052}
 .segment-dialog-head{flex:none;padding:14px 16px;background:#fff8ef}
