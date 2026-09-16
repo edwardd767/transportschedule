@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   BedDouble,
   ChevronLeft,
@@ -8,10 +8,14 @@ import {
   DoorOpen,
   FileImage,
   MapPin,
+  Mic,
+  MoreVertical,
   Pencil,
   Plus,
   Save,
+  Search,
   Upload,
+  X,
 } from 'lucide-react';
 import type {
   HotelLocation,
@@ -28,6 +32,7 @@ type Props = {
   masters: HotelMasters;
   onSaveLocation: (value: HotelLocation) => Promise<void>;
   onSaveRoomType: (value: HotelRoomType) => Promise<void>;
+  onReorderRoomTypes: (value: HotelRoomType[]) => Promise<void>;
   onSaveRoom: (value: HotelRoom) => Promise<void>;
   onBack: () => void;
   onNotice: (message: string) => void;
@@ -272,11 +277,13 @@ function LocationMaster({
 function RoomTypeMaster({
   masters,
   onSave,
+  onReorder,
   onBack,
   onNotice,
 }: {
   masters: HotelMasters;
   onSave: (value: HotelRoomType) => Promise<void>;
+  onReorder: (value: HotelRoomType[]) => Promise<void>;
   onBack: () => void;
   onNotice: (message: string) => void;
 }) {
@@ -285,7 +292,35 @@ function RoomTypeMaster({
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [menu, setMenu] = useState<string | null>(null);
+  const [dragCode, setDragCode] = useState<string | null>(null);
+  const currency = masters.profile.currencyCode || 'MYR';
+  const visible = masters.roomTypes.filter((item) => `${item.code} ${item.description}`.toLowerCase().includes(query.trim().toLowerCase()));
   const source = masters.roomTypes.find((item) => item.code === selected);
+
+  useEffect(() => {
+    if (!menu) return;
+    const onDocumentClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest('.room-type-menu') || target?.closest('.room-type-menu-trigger')) return;
+      setMenu(null);
+    };
+    document.addEventListener('mousedown', onDocumentClick);
+    return () => document.removeEventListener('mousedown', onDocumentClick);
+  }, [menu]);
+
+  async function reorder(targetIndex: number) {
+    if (!dragCode) return;
+    const from = masters.roomTypes.findIndex((item) => item.code === dragCode);
+    setDragCode(null);
+    if (from < 0 || from === targetIndex) return;
+    const next = [...masters.roomTypes];
+    const [moved] = next.splice(from, 1);
+    next.splice(targetIndex, 0, moved);
+    await onReorder(next);
+  }
   const [draft, setDraft] = useState<HotelRoomType>({
     code: '', description: '', propertyType: 'Room', measureType: 'Square Metre',
     roomSize: 0, maxGuest: 1, houseLimit: 1, housekeepingPoints: 1, totalRoom: 0, active: true,
@@ -327,18 +362,55 @@ function RoomTypeMaster({
 
   if (!selected) {
     return (
-      <section className="master-page">
-        <SectionTitle title="Room Type" detail="Room Type Setup. Room types are used when creating bookings and rooms." onAdd={add} />
-        <div className="master-list">
-          <div className="master-list-row master-list-header roomtype-row"><span>Code</span><span>Description</span><span>Total Room</span><span>Max Guest</span><span>Room Size</span><span /></div>
-          {masters.roomTypes.map((item) => (
-            <button key={item.code} className="master-list-row roomtype-row" onClick={() => open(item)}>
-              <strong>{item.code}</strong><span>{item.description}</span>
-              <span>{masters.rooms.filter((room) => room.roomTypeCode === item.code).length}</span>
-              <span>{item.maxGuest}</span><span>{item.roomSize}</span><ChevronRight size={18} />
-            </button>
+      <section className="master-page room-type-page">
+        {searchOpen ? (
+          <div className="room-type-search">
+            <input autoFocus placeholder="Search here.." value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search room types" />
+            <button type="button" aria-label="Voice search"><Mic size={18} /></button>
+            <button type="button" aria-label="Close search" onClick={() => { setQuery(''); setSearchOpen(false); }}><X size={18} /></button>
+          </div>
+        ) : (
+          <div className="room-type-list-head">
+            <h1>Room Type (<em>{visible.length}</em>)</h1>
+            <button type="button" className="room-type-search-button" aria-label="Search room types" onClick={() => setSearchOpen(true)}><Search size={18} /></button>
+          </div>
+        )}
+        <div className="room-type-hint">Drag and drop the room type to re-sequence.</div>
+        <div className="room-type-list">
+          {visible.map((item, index) => (
+            <article
+              className="room-type-row"
+              key={item.code}
+              draggable
+              onDragStart={() => setDragCode(item.code)}
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={() => void reorder(index)}
+            >
+              <div>
+                <strong>{item.code} | {item.description}</strong>
+                <small>
+                  Room(s): {masters.rooms.filter((room) => room.roomTypeCode === item.code).length} | House Limit: {currency}{' '}
+                  {Number(item.houseLimit ?? 0).toFixed(2)}
+                </small>
+              </div>
+              <button type="button" className="room-type-menu-trigger" aria-label="Room type options" onClick={() => setMenu(menu === item.code ? null : item.code)}><MoreVertical size={21} /></button>
+              {menu === item.code && (
+                <div className="room-type-menu">
+                  <button onClick={() => open(item)}>Edit</button>
+                  <button
+                    disabled={masters.rooms.some((room) => room.roomTypeCode === item.code)}
+                    title={masters.rooms.some((room) => room.roomTypeCode === item.code) ? 'Cannot delete a room type that has rooms.' : undefined}
+                    onClick={() => { setMenu(null); onNotice('Deleting a room type is not connected yet.'); }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
+            </article>
           ))}
+          {!visible.length && <p className="room-type-empty">No Record Found</p>}
         </div>
+        <button type="button" className="room-type-add" aria-label="Add room type" onClick={add}><Plus size={24} /></button>
         <button className="secondary-button master-page-back" onClick={onBack}>Back to Hotel Settings</button>
       </section>
     );
@@ -506,7 +578,7 @@ export function HotelMasterFiles(props: Props) {
     return <LocationMaster masters={props.masters} onSave={props.onSaveLocation} onBack={props.onBack} onNotice={props.onNotice} />;
   }
   if (props.kind === 'roomType') {
-    return <RoomTypeMaster masters={props.masters} onSave={props.onSaveRoomType} onBack={props.onBack} onNotice={props.onNotice} />;
+    return <RoomTypeMaster masters={props.masters} onSave={props.onSaveRoomType} onReorder={props.onReorderRoomTypes} onBack={props.onBack} onNotice={props.onNotice} />;
   }
   return <RoomMaster masters={props.masters} onSave={props.onSaveRoom} onBack={props.onBack} onNotice={props.onNotice} />;
 }

@@ -89,6 +89,7 @@ export type TransportAction =
   | { type: 'bookingTransportUpdate'; bookingReference: string; legId: string; adults: number; children: number; infants: number; adultRate: number; childRate: number; infantRate: number }
   | { type: 'hotelLocationSave'; value: HotelLocation }
   | { type: 'hotelRoomTypeSave'; value: HotelRoomType }
+  | { type: 'hotelRoomTypesReorder'; value: HotelRoomType[] }
   | { type: 'hotelRoomSave'; value: HotelRoom }
   | { type: 'roomStatusSave'; value: RoomStatus[] }
   | { type: 'departmentSave'; value: HotelDepartment[] }
@@ -655,6 +656,9 @@ export function applyTransportAction(
         housekeepingPoints: number(v.housekeepingPoints, 'housekeeping points', 0, 10000),
         totalRoom: normalized.hotelMasters.rooms.filter((room) => room.roomTypeCode === code).length,
         active: boolean(v.active),
+        overbookingAllowed: boolean(v.overbookingAllowed),
+        amenities: list(v.amenities).map((item) => String(item ?? '').trim()).filter(Boolean),
+        photos: list(v.photos).map((item) => String(item ?? '').trim()).filter(Boolean),
       };
       const exists = normalized.hotelMasters.roomTypes.some((item) => item.code === code);
       return {
@@ -670,6 +674,17 @@ export function applyTransportAction(
               : room,
           ),
         },
+      };
+    }
+    case 'hotelRoomTypesReorder': {
+      const normalized = normalizeTransportState(state);
+      const codes = list(action.value).map((item) => String(object(item).code ?? '').trim().toUpperCase());
+      const byCode = new Map(normalized.hotelMasters.roomTypes.map((item) => [item.code, item]));
+      const ordered = codes.map((code) => byCode.get(code)).filter((item): item is HotelRoomType => Boolean(item));
+      const rest = normalized.hotelMasters.roomTypes.filter((item) => !codes.includes(item.code));
+      return {
+        ...normalized,
+        hotelMasters: { ...normalized.hotelMasters, roomTypes: [...ordered, ...rest] },
       };
     }
     case 'hotelRoomSave': {

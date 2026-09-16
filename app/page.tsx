@@ -976,6 +976,9 @@ function HomeContent({ store }: { store: TransportData }) {
               onSaveRoomType={async (value) => {
                 await store.run({ type: 'hotelRoomTypeSave', value });
               }}
+              onReorderRoomTypes={async (value) => {
+                await store.run({ type: 'hotelRoomTypesReorder', value });
+              }}
               onSaveRoom={async (value) => {
                 await store.run({ type: 'hotelRoomSave', value });
               }}
