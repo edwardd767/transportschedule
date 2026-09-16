@@ -485,14 +485,20 @@ function InhouseDetail({ row: sourceRow, hotelName, store, onBack }: { row: Inho
   if (panel === 'attachments' && booking)
     return (
       <div className="inhouse-screen">
-        <BookingAttachments booking={booking} onSave={saveBooking} onBack={() => setPanel('menu')} />
+        <InhousePropertyHeader hotelName={hotelName} segments={['Front Desk', 'In House', 'Attachments']} reference={row.reference} onBack={() => setPanel('menu')} />
+        <div className="inhouse-subpage-scroll">
+          <BookingAttachments booking={booking} onSave={saveBooking} onBack={() => setPanel('menu')} />
+        </div>
       </div>
     );
 
   if (panel === 'billingSchedule' && booking)
     return (
       <div className="inhouse-screen">
-        <BillingSchedule booking={booking} bookingLegs={store.state.bookingLegs} rateSetup={store.state.rateSetup} onSave={saveBooking} onBack={() => setPanel('menu')} />
+        <InhousePropertyHeader hotelName={hotelName} segments={['Front Desk', 'In House', 'Billing Schedule']} reference={row.reference} onBack={() => setPanel('menu')} />
+        <div className="inhouse-subpage-scroll">
+          <BillingSchedule booking={booking} bookingLegs={store.state.bookingLegs} rateSetup={store.state.rateSetup} onSave={saveBooking} onBack={() => setPanel('menu')} />
+        </div>
       </div>
     );
 
