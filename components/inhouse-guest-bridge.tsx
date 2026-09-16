@@ -633,6 +633,7 @@ function InhouseBookingInfo({ row, hotelName, store, onBack }: { row: InhouseRow
           void confirm();
         }}
       >
+        <div className="inhouse-form-scroll">
         <section className="inhouse-form-section">
           <h2 className="inhouse-form-head">Stay Information</h2>
           <div className="inhouse-form-body">
@@ -714,6 +715,7 @@ function InhouseBookingInfo({ row, hotelName, store, onBack }: { row: InhouseRow
         </section>
 
         {error && <p className="inhouse-form-error" role="alert">{error}</p>}
+        </div>
 
         <footer className="inhouse-form-footer">
           <button type="submit" className="inhouse-form-confirm" disabled={busy || !valid || !dirty}>Confirm</button>
