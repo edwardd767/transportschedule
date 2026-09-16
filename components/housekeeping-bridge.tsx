@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import type { Booking } from '@/lib/bookings';
 import type { TransportData } from '@/lib/use-transport-data';
+import { MiscCharges } from '@/components/misc-charges';
 
 type HousekeepingStatus = string;
 type AssignmentMap = Record<string, string[]>;
@@ -171,6 +172,7 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
   const [savingRoomNo, setSavingRoomNo] = useState<string | null>(null);
   const [statusError, setStatusError] = useState('');
   const [snackbar, setSnackbar] = useState<{ message: string } | null>(null);
+  const [miscOpen, setMiscOpen] = useState(false);
 
   const statusLegend = useMemo<StatusLegendItem[]>(
     () =>
@@ -459,6 +461,7 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
             key={label}
             type="button"
             className="flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-[5px] border border-[#ddd] bg-white text-[9px] leading-[10px] font-bold shadow-sm hover:bg-[#fff8ef]"
+            onClick={() => { if (label === 'Misc Charges') setMiscOpen(true); }}
           >
             <img src={icon} alt="" aria-hidden="true" className="h-[22px] w-[22px] object-contain" />
             <strong className="font-bold" style={{ fontSize: 10, lineHeight: '11px' }}>{label}</strong>
@@ -807,6 +810,12 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
           </div>
         </div>,
         document.body,
+      )}
+
+      {miscOpen && (
+        <div className="absolute inset-0 z-[60] flex flex-col bg-[#f4f4f4]">
+          <MiscCharges onBack={() => setMiscOpen(false)} />
+        </div>
       )}
     </section>
   );
