@@ -779,7 +779,7 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
         </>
       )}
 
-      {snackbar && (
+      {snackbar && createPortal(
         <div className="pointer-events-none fixed bottom-6 left-6 z-[140] max-w-[calc(100vw-48px)]">
           <div
             className="pointer-events-auto flex min-h-[76px] w-[340px] max-w-full items-center justify-between gap-5 rounded-[3px] bg-[#303030] px-4 py-3 text-white shadow-2xl"
@@ -797,7 +797,8 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
               Dismiss
             </button>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </section>
   );
