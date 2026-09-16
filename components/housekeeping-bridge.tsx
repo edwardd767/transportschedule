@@ -185,6 +185,12 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
     [store.state.hotelMasters.roomStatuses],
   );
 
+  // Out of Order / Out of Inventory are set elsewhere, never from the status picker.
+  const statusOptions = useMemo(
+    () => statusLegend.filter((item) => item.code !== 'OOO' && item.code !== 'OOI'),
+    [statusLegend],
+  );
+
   const baseRows = useMemo(
     () => buildRows(store),
     [
@@ -589,8 +595,8 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
                           aria-label={`Room ${room.roomNo} housekeeping statuses`}
                           data-housekeeping-status-ui="true"
                         >
-                          {statusLegend.length ? (
-                            statusLegend.map((item) => {
+                          {statusOptions.length ? (
+                            statusOptions.map((item) => {
                               const selected = room.status === item.code;
                               const saving = savingRoomNo === room.roomNo;
                               return (
@@ -745,7 +751,7 @@ function HousekeepingScreen({ store }: { store: TransportData }) {
                 aria-label="Update selected room status"
                 data-housekeeping-status-ui="true"
               >
-                {statusLegend.map((item) => (
+                {statusOptions.map((item) => (
                   <button
                     key={item.code}
                     type="button"
