@@ -6503,11 +6503,11 @@ p {
 
 .hotel-setup-page{padding-bottom:70px}
 .hotel-setup-tabs{display:flex;align-items:center;min-height:48px;background:#fff;border-bottom:1px solid #e0e0e0}
-.hotel-setup-tabs button{min-width:160px;max-width:264px;min-height:48px;padding:6px 12px;border:0;border-bottom:2px solid transparent;background:transparent;color:#0019d8;font-size:14px;font-weight:500;cursor:pointer}
+.hotel-setup-tabs button{min-width:160px;max-width:264px;min-height:48px;padding:6px 12px;border:0;border-bottom:2px solid transparent;background:transparent;color:#0019d8;font-size:14px;font-weight:600;text-transform:capitalize;cursor:pointer}
 .hotel-setup-tabs button.active{color:#212121;border-bottom-color:#ff9800}
 .hotel-setup-card{margin:0 0 4px;border-radius:4px;background:#fff;overflow:hidden}
 .hotel-setup-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:57px;padding:10px;background:#faf2e8}
-.hotel-setup-card-head strong{color:#ff9800;font-size:14px;font-weight:700}
+.hotel-setup-card-head strong{color:#ff9800;font-size:14px;font-weight:700;line-height:16px}
 .hotel-setup-card-actions{display:flex;align-items:center;gap:6px}
 .hotel-setup-card-actions button{display:grid;place-items:center;border:0;background:transparent;color:#ff9800;cursor:pointer}
 .hotel-setup-card-body{display:flex;flex-wrap:wrap;padding:8px 12px 0}
