@@ -83,8 +83,8 @@ export function HotelSetupModule({
         {edit === 'hotel' && (
           <div className="hotel-setup-edit-card">
             <div className="hotel-setup-edit-grid">
-              <label className="hotel-setup-field"><span>Hotel Name *</span><input required value={draft.hotelName} onChange={(e) => set('hotelName', e.target.value)} /></label>
-              <label className="hotel-setup-field"><span>Hotel Code *</span><input required value={extras.hotelCode} onChange={(e) => setExtras((c) => ({ ...c, hotelCode: e.target.value }))} /></label>
+              <label className="hotel-setup-field full"><span>Hotel Name *</span><input required value={draft.hotelName} onChange={(e) => set('hotelName', e.target.value)} /></label>
+              <label className="hotel-setup-field full"><span>Hotel Code *</span><input required value={extras.hotelCode} onChange={(e) => setExtras((c) => ({ ...c, hotelCode: e.target.value }))} /></label>
               <label className="hotel-setup-field full"><span>Address</span><input value={draft.address} onChange={(e) => set('address', e.target.value)} /></label>
               <label className="hotel-setup-field"><span>Postcode</span><input type="tel" value={draft.postcode} onChange={(e) => set('postcode', e.target.value)} /></label>
               <label className="hotel-setup-field"><span>Country *</span><input required value={draft.country} onChange={(e) => set('country', e.target.value)} /></label>
@@ -97,9 +97,6 @@ export function HotelSetupModule({
                 </select>
               </label>
               <label className="hotel-setup-field"><span>Company</span><input value={draft.companyName} onChange={(e) => set('companyName', e.target.value)} /></label>
-              <label className="hotel-setup-field"><span>Company Reg. No</span><input value={draft.companyRegNo} onChange={(e) => set('companyRegNo', e.target.value)} /></label>
-              <label className="hotel-setup-field"><span>SST Reg. No</span><input value={draft.sstRegNo} onChange={(e) => set('sstRegNo', e.target.value)} /></label>
-              <label className="hotel-setup-field"><span>TTx Reg. No</span><input value={draft.ttxRegNo} onChange={(e) => set('ttxRegNo', e.target.value)} /></label>
               <label className="hotel-setup-field full">
                 <span>Upload Logo Attachment</span>
                 <span className="hotel-setup-upload">
@@ -109,9 +106,9 @@ export function HotelSetupModule({
                 </span>
               </label>
               <label className="hotel-setup-field full"><span>Online Booking URL</span><input value={draft.onlineBookingUrl} disabled={!extras.enableOnlineBooking} onChange={(e) => set('onlineBookingUrl', e.target.value)} /></label>
-              <label className="hotel-setup-check">
+              <label className="hotel-setup-switch">
+                <span>Enable Online Booking:</span>
                 <input type="checkbox" checked={extras.enableOnlineBooking} onChange={(e) => setExtras((c) => ({ ...c, enableOnlineBooking: e.target.checked }))} />
-                <span>Enable Online Booking</span>
               </label>
             </div>
           </div>
@@ -257,10 +254,6 @@ export function HotelSetupModule({
           </div>
         </div>
       )}
-
-      <div className="master-page-actions">
-        <button type="button" className="secondary-button" onClick={onBack}>Back to Hotel Settings</button>
-      </div>
     </section>
   );
 }
