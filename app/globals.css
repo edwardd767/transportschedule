@@ -6511,7 +6511,7 @@ p {
 .hotel-setup-card-actions{display:flex;align-items:center;gap:6px}
 .hotel-setup-card-actions button{display:grid;place-items:center;border:0;background:transparent;color:#ff9800;cursor:pointer}
 .hotel-setup-card-body{display:flex;flex-wrap:wrap;padding:8px 12px 0}
-.hotel-setup-row{display:block;width:50%;margin-bottom:12px;min-width:0;padding-right:12px}
+.hotel-setup-row{display:block;width:50%;margin-bottom:12px;min-width:0}
 .hotel-setup-row.full{width:100%}
 .hotel-setup-row .desc{display:inline;color:#454545;font-size:11px;font-weight:500;line-height:16px}
 .hotel-setup-row .value{color:#212121;font-size:12px;font-weight:700;line-height:18px;white-space:pre-line;word-break:break-word}
@@ -6521,16 +6521,26 @@ p {
 .hotel-setup-edit-head strong{color:#ff9800;font-size:14px;font-weight:700}
 .hotel-setup-edit-head small{margin-left:auto;color:#878787;font-size:12px}
 .hotel-setup-edit-card{border-radius:4px;background:#fff}
-.hotel-setup-edit-grid{display:flex;flex-wrap:wrap;padding:8px 12px 0}
-.hotel-setup-field{display:block;width:50%;margin-bottom:12px;min-width:0;padding-right:12px;color:#878787;font-size:16px;font-weight:400}
-.hotel-setup-field.full{width:100%}
-.hotel-setup-field > input,.hotel-setup-field > select,.hotel-setup-field > textarea{display:block;width:100%;padding:6px 0 7px;border:0;border-bottom:1px solid #bdbdbd;border-radius:0;background:transparent;color:#212121;font:inherit;font-size:16px}
-.hotel-setup-field > textarea{min-height:140px;padding:10px;border:1px solid #bdbdbd;border-radius:4px;resize:vertical}
-.hotel-setup-field > input:disabled{color:#a5a5a5}
-.hotel-setup-upload{position:relative;display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:6px 0 7px;border-bottom:1px solid #bdbdbd;color:#212121;font-size:16px}
-.hotel-setup-upload input{position:absolute;inset:0;opacity:0;cursor:pointer}
-.hotel-setup-upload b{font-weight:400}
-.hotel-setup-hint{color:#878787;font-size:12px}
+.hotel-setup-edit-grid{display:flex;flex-wrap:wrap;padding:8px 6px 0}
+.hotel-setup-field{position:relative;display:block;box-sizing:border-box;width:50%;min-width:0;padding:18px 6px 0;margin-bottom:12px}
+.hotel-setup-field[data-full='true']{width:100%}
+.hotel-setup-field > .label{position:absolute;top:18px;left:6px;color:#878787;font-size:16px;font-weight:400;line-height:16px;pointer-events:none;transform-origin:top left;transition:transform .15s ease}
+.hotel-setup-field[data-filled='true'] > .label{transform:translateY(-18px) scale(.75)}
+.hotel-setup-field > input,.hotel-setup-field > select{display:block;box-sizing:border-box;width:100%;height:32px;padding:6px 0 7px;border:0;border-bottom:1px solid #949494;border-radius:0;background:transparent;color:#212121;font-size:16px;font-weight:400}
+.hotel-setup-field > select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,#5f6368 50%),linear-gradient(135deg,#5f6368 50%,transparent 50%);background-position:calc(100% - 9px) 15px,calc(100% - 4px) 15px;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:20px}
+.hotel-setup-field > textarea{display:block;box-sizing:border-box;width:100%;min-height:140px;padding:10px;border:1px solid #949494;border-radius:4px;background:transparent;color:#212121;font-size:16px;font-weight:400;resize:vertical}
+.hotel-setup-field > input:disabled{color:rgba(0,0,0,.38)}
+.hotel-setup-field > input:focus,.hotel-setup-field > select:focus,.hotel-setup-field > textarea:focus{outline:0;border-bottom-color:#212121}
+.hotel-setup-upload{position:relative;display:flex;align-items:center;justify-content:flex-end;height:32px;border-bottom:1px solid #949494;color:#212121}
+.hotel-setup-upload input{position:absolute;inset:0;width:100%;opacity:0;cursor:pointer}
+.hotel-setup-hint{display:block;color:#878787;font-size:12px}
+.hotel-setup-thumbs{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px}
+.hotel-setup-thumb{position:relative;display:grid;place-items:center;width:74px;height:74px;border:1px solid #e5e5e5;border-radius:4px;background:#fff}
+.hotel-setup-thumb img{max-width:100%;max-height:100%;object-fit:contain}
+.hotel-setup-thumb button{position:absolute;top:-7px;right:-7px;display:grid;place-items:center;width:18px;height:18px;border:0;border-radius:50%;background:#e53935;color:#fff;cursor:pointer}
+.hotel-setup-footer{display:flex;justify-content:center;padding:8px 24px}
+.hotel-setup-save{min-width:126px;padding:6px 16px;border:0;border-radius:4px;background:#ff9800;color:#fff;font-size:14px;font-weight:500;cursor:pointer}
+.hotel-setup-save:disabled{background:rgba(0,0,0,.12);color:rgba(0,0,0,.26);cursor:default}
 .hotel-setup-switch{display:flex;align-items:center;gap:10px;width:100%;margin-bottom:12px;color:#454545;font-size:14px}
 .hotel-setup-switch input{position:relative;appearance:none;flex:none;width:34px;height:18px;margin:0;border-radius:9px;background:#cfcfcf;cursor:pointer;transition:background .15s ease}
 .hotel-setup-switch input::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .15s ease}

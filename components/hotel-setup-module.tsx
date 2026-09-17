@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { ArrowLeft, Pencil, QrCode, Upload } from 'lucide-react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { ArrowLeft, Pencil, QrCode, Upload, X } from 'lucide-react';
 import { initialHotelProfile, type HotelProfile } from '@/lib/hotel-masters';
+import { fallbackGeography } from '@/lib/geography';
 
 const HOTEL_TYPE_OPTIONS = ['Apartment', 'Bungalow', 'Cabin', 'Campsite', 'Cottage', 'Dorm', 'Room', 'Villa'];
 
@@ -13,18 +14,24 @@ type HotelSetupExtras = {
   hotelCode: string;
   hotelWebsiteUrl: string;
   enableOnlineBooking: boolean;
+  msicCode: string;
   aboutHotel: string;
   logoName: string;
+  logoPreview: string;
   galleryNames: string[];
+  galleryPreviews: string[];
 };
 
 const emptyExtras: HotelSetupExtras = {
   hotelCode: '',
   hotelWebsiteUrl: '',
   enableOnlineBooking: false,
+  msicCode: '',
   aboutHotel: '',
   logoName: '',
+  logoPreview: '',
   galleryNames: [],
+  galleryPreviews: [],
 };
 
 function Row({ label, value, full = false }: { label: string; value: string; full?: boolean }) {
@@ -36,24 +43,52 @@ function Row({ label, value, full = false }: { label: string; value: string; ful
   );
 }
 
+function Field({
+  label,
+  value,
+  required,
+  full,
+  children,
+}: {
+  label: string;
+  value: string;
+  required?: boolean;
+  full?: boolean;
+  children?: ReactNode;
+}) {
+  return (
+    <label className="hotel-setup-field" data-filled={value ? 'true' : 'false'} data-full={full ? 'true' : undefined}>
+      <span className="label">{label}{required ? ' *' : ''}</span>
+      {children}
+    </label>
+  );
+}
+
 export function HotelSetupModule({
   profile,
   onChange,
-  onBack,
 }: {
   profile: HotelProfile;
   onChange: (value: HotelProfile) => void | Promise<void>;
-  onBack: () => void;
+  onBack?: () => void;
 }) {
   const [draft, setDraft] = useState<HotelProfile>(profile?.hotelName ? profile : initialHotelProfile);
   const [extras, setExtras] = useState<HotelSetupExtras>(emptyExtras);
   const [tab, setTab] = useState<Tab>('Profile');
   const [edit, setEdit] = useState<EditScreen | null>(null);
   const [saving, setSaving] = useState(false);
+  const baseline = useRef<string | null>(null);
 
   useEffect(() => setDraft(profile?.hotelName ? profile : initialHotelProfile), [profile]);
+  useEffect(() => {
+    baseline.current = edit ? JSON.stringify({ draft, extras }) : null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [edit]);
 
   const set = (key: keyof HotelProfile, value: string) => setDraft((current) => ({ ...current, [key]: value }));
+  const countries = fallbackGeography.countries;
+  const states = fallbackGeography.states[draft.country] ?? [];
+  const dirty = baseline.current !== null && JSON.stringify({ draft, extras }) !== baseline.current;
 
   const saveEdit = async () => {
     if (edit === 'hotel' || edit === 'contact') {
@@ -67,9 +102,22 @@ export function HotelSetupModule({
     setEdit(null);
   };
 
+  const pickLogo = (file: File | undefined) => {
+    if (!file) return;
+    setExtras((current) => ({ ...current, logoName: file.name, logoPreview: URL.createObjectURL(file) }));
+  };
+  const pickGallery = (files: FileList | null) => {
+    const list = Array.from(files ?? []);
+    if (!list.length) return;
+    setExtras((current) => ({
+      ...current,
+      galleryNames: list.map((file) => file.name),
+      galleryPreviews: list.map((file) => URL.createObjectURL(file)),
+    }));
+  };
+
   if (edit) {
-    const title =
-      edit === 'hotel' ? 'Hotel Information' : edit === 'contact' ? 'Contact' : edit === 'about' ? 'Hotel Description' : 'Gallery';
+    const title = edit === 'hotel' ? 'Hotel Information' : edit === 'contact' ? 'Contact' : edit === 'about' ? 'Hotel Description' : 'Gallery';
     return (
       <section className="master-page hotel-setup-edit-page" aria-label={title}>
         <div className="hotel-setup-edit-head">
@@ -83,29 +131,71 @@ export function HotelSetupModule({
         {edit === 'hotel' && (
           <div className="hotel-setup-edit-card">
             <div className="hotel-setup-edit-grid">
-              <label className="hotel-setup-field full"><span>Hotel Name *</span><input required value={draft.hotelName} onChange={(e) => set('hotelName', e.target.value)} /></label>
-              <label className="hotel-setup-field full"><span>Hotel Code *</span><input required value={extras.hotelCode} onChange={(e) => setExtras((c) => ({ ...c, hotelCode: e.target.value }))} /></label>
-              <label className="hotel-setup-field full"><span>Address</span><input value={draft.address} onChange={(e) => set('address', e.target.value)} /></label>
-              <label className="hotel-setup-field"><span>Postcode</span><input type="tel" value={draft.postcode} onChange={(e) => set('postcode', e.target.value)} /></label>
-              <label className="hotel-setup-field"><span>Country *</span><input required value={draft.country} onChange={(e) => set('country', e.target.value)} /></label>
-              <label className="hotel-setup-field"><span>City</span><input value={draft.city} onChange={(e) => set('city', e.target.value)} /></label>
-              <label className="hotel-setup-field"><span>State</span><input value={draft.state} onChange={(e) => set('state', e.target.value)} /></label>
-              <label className="hotel-setup-field"><span>Hotel Type</span>
+              <Field label="Hotel Name" value={draft.hotelName} required full>
+                <input value={draft.hotelName} onChange={(e) => set('hotelName', e.target.value)} />
+              </Field>
+              <Field label="Hotel Code" value={extras.hotelCode} required full>
+                <input value={extras.hotelCode} onChange={(e) => setExtras((c) => ({ ...c, hotelCode: e.target.value }))} />
+              </Field>
+              <Field label="Address" value={draft.address} full>
+                <input value={draft.address} onChange={(e) => set('address', e.target.value)} />
+              </Field>
+              <Field label="Postcode" value={draft.postcode}>
+                <input type="tel" value={draft.postcode} onChange={(e) => set('postcode', e.target.value)} />
+              </Field>
+              <Field label="Country" value={draft.country} required>
+                <select value={draft.country} onChange={(e) => setDraft((c) => ({ ...c, country: e.target.value, state: '' }))}>
+                  <option value="" />
+                  {countries.map((country) => <option key={country} value={country}>{country}</option>)}
+                </select>
+              </Field>
+              <Field label="City" value={draft.city}>
+                <input value={draft.city} onChange={(e) => set('city', e.target.value)} />
+              </Field>
+              <Field label="State" value={draft.state} required>
+                <select value={draft.state} onChange={(e) => set('state', e.target.value)}>
+                  <option value="" />
+                  {states.map((state) => <option key={state} value={state}>{state}</option>)}
+                </select>
+              </Field>
+              <Field label="Hotel Type" value={draft.hotelType}>
                 <select value={draft.hotelType} onChange={(e) => set('hotelType', e.target.value)}>
-                  <option value="">Select hotel type</option>
+                  <option value="" />
                   {HOTEL_TYPE_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
                 </select>
-              </label>
-              <label className="hotel-setup-field"><span>Company</span><input value={draft.companyName} onChange={(e) => set('companyName', e.target.value)} /></label>
-              <label className="hotel-setup-field full">
-                <span>Upload Logo Attachment</span>
+              </Field>
+              <Field label="Company" value={draft.companyName}>
+                <select value={draft.companyName} onChange={(e) => set('companyName', e.target.value)}>
+                  <option value="" />
+                  {draft.companyName ? <option value={draft.companyName}>{draft.companyName}</option> : null}
+                </select>
+              </Field>
+              <Field label="MSIC Code" value={extras.msicCode} required>
+                <input value={extras.msicCode} onChange={(e) => setExtras((c) => ({ ...c, msicCode: e.target.value }))} />
+              </Field>
+              <Field label="MSIC Description" value={extras.msicCode === '55101' ? 'Hotels and resort hotels' : ''}>
+                <input value={extras.msicCode === '55101' ? 'Hotels and resort hotels' : ''} readOnly disabled />
+              </Field>
+
+              <div className="hotel-setup-field" data-filled={extras.logoName ? 'true' : 'false'} data-full="true">
+                <span className="label">Upload Logo Attachment</span>
                 <span className="hotel-setup-upload">
-                  <input type="file" accept="image/*" onChange={(e) => setExtras((c) => ({ ...c, logoName: e.target.files?.[0]?.name ?? '' }))} />
-                  <Upload size={18} />
-                  <b>{extras.logoName || 'Choose file'}</b>
+                  <input type="file" accept="image/*" onChange={(e) => pickLogo(e.target.files?.[0])} />
+                  <Upload size={20} />
                 </span>
-              </label>
-              <label className="hotel-setup-field full"><span>Online Booking URL</span><input value={draft.onlineBookingUrl} disabled={!extras.enableOnlineBooking} onChange={(e) => set('onlineBookingUrl', e.target.value)} /></label>
+                {extras.logoPreview ? (
+                  <div className="hotel-setup-thumb">
+                    <img src={extras.logoPreview} alt={extras.logoName} />
+                    <button type="button" aria-label="Remove logo" onClick={() => setExtras((c) => ({ ...c, logoName: '', logoPreview: '' }))}>
+                      <X size={12} />
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+
+              <Field label="Online Booking URL" value={draft.onlineBookingUrl} full>
+                <input value={draft.onlineBookingUrl} disabled={!extras.enableOnlineBooking} onChange={(e) => set('onlineBookingUrl', e.target.value)} />
+              </Field>
               <label className="hotel-setup-switch">
                 <span>Enable Online Booking:</span>
                 <input type="checkbox" checked={extras.enableOnlineBooking} onChange={(e) => setExtras((c) => ({ ...c, enableOnlineBooking: e.target.checked }))} />
@@ -117,12 +207,24 @@ export function HotelSetupModule({
         {edit === 'contact' && (
           <div className="hotel-setup-edit-card">
             <div className="hotel-setup-edit-grid">
-              <label className="hotel-setup-field"><span>Contact Person *</span><input required value={draft.contactPerson} onChange={(e) => set('contactPerson', e.target.value)} /></label>
-              <label className="hotel-setup-field"><span>Phone No.</span><input type="tel" value={draft.phoneNo} onChange={(e) => set('phoneNo', e.target.value)} /></label>
-              <label className="hotel-setup-field"><span>Mobile No.</span><input type="tel" value={draft.mobileNo} onChange={(e) => set('mobileNo', e.target.value)} /></label>
-              <label className="hotel-setup-field"><span>Reservation Email</span><input type="email" value={draft.reservationEmail} onChange={(e) => set('reservationEmail', e.target.value)} /></label>
-              <label className="hotel-setup-field"><span>Business Email</span><input type="email" value={draft.businessEmail} onChange={(e) => set('businessEmail', e.target.value)} /></label>
-              <label className="hotel-setup-field"><span>Hotel Website URL</span><input type="url" value={extras.hotelWebsiteUrl} onChange={(e) => setExtras((c) => ({ ...c, hotelWebsiteUrl: e.target.value }))} /></label>
+              <Field label="Contact Person" value={draft.contactPerson} required>
+                <input value={draft.contactPerson} onChange={(e) => set('contactPerson', e.target.value)} />
+              </Field>
+              <Field label="Phone No." value={draft.phoneNo}>
+                <input type="tel" value={draft.phoneNo} onChange={(e) => set('phoneNo', e.target.value)} />
+              </Field>
+              <Field label="Mobile No." value={draft.mobileNo}>
+                <input type="tel" value={draft.mobileNo} onChange={(e) => set('mobileNo', e.target.value)} />
+              </Field>
+              <Field label="Reservation Email" value={draft.reservationEmail}>
+                <input type="email" value={draft.reservationEmail} onChange={(e) => set('reservationEmail', e.target.value)} />
+              </Field>
+              <Field label="Business Email" value={draft.businessEmail}>
+                <input type="email" value={draft.businessEmail} onChange={(e) => set('businessEmail', e.target.value)} />
+              </Field>
+              <Field label="Hotel Website URL" value={extras.hotelWebsiteUrl}>
+                <input type="url" value={extras.hotelWebsiteUrl} onChange={(e) => setExtras((c) => ({ ...c, hotelWebsiteUrl: e.target.value }))} />
+              </Field>
             </div>
           </div>
         )}
@@ -130,15 +232,17 @@ export function HotelSetupModule({
         {edit === 'about' && (
           <div className="hotel-setup-edit-card">
             <div className="hotel-setup-edit-grid">
-              <label className="hotel-setup-field full">
-                <span>Upload About Hotel Attachment</span>
+              <div className="hotel-setup-field" data-filled={extras.aboutHotel ? 'true' : 'false'} data-full="true">
+                <span className="label">Upload About Hotel Attachment</span>
                 <span className="hotel-setup-upload">
-                  <input type="file" onChange={(e) => setExtras((c) => ({ ...c, logoName: e.target.files?.[0]?.name ?? c.logoName }))} />
-                  <Upload size={18} />
-                  <b>Choose file</b>
+                  <input type="file" onChange={(e) => { const f = e.target.files?.[0]; if (f) setExtras((c) => ({ ...c, logoName: f.name })); }} />
+                  <Upload size={20} />
                 </span>
+              </div>
+              <label className="hotel-setup-field" data-filled={extras.aboutHotel ? 'true' : 'false'} data-full="true">
+                <span className="label">About Hotel</span>
+                <textarea rows={8} value={extras.aboutHotel} onChange={(e) => setExtras((c) => ({ ...c, aboutHotel: e.target.value }))} />
               </label>
-              <label className="hotel-setup-field full"><span>About Hotel</span><textarea rows={8} value={extras.aboutHotel} onChange={(e) => setExtras((c) => ({ ...c, aboutHotel: e.target.value }))} /></label>
             </div>
           </div>
         )}
@@ -146,21 +250,42 @@ export function HotelSetupModule({
         {edit === 'gallery' && (
           <div className="hotel-setup-edit-card">
             <div className="hotel-setup-edit-grid">
-              <label className="hotel-setup-field full">
-                <span>Upload Gallery Attachment</span>
+              <div className="hotel-setup-field" data-filled={extras.galleryNames.length ? 'true' : 'false'} data-full="true">
+                <span className="label">Upload Gallery Attachment</span>
                 <span className="hotel-setup-upload">
-                  <input type="file" accept="image/*" multiple onChange={(e) => setExtras((c) => ({ ...c, galleryNames: Array.from(e.target.files ?? []).map((f) => f.name) }))} />
-                  <Upload size={18} />
-                  <b>{extras.galleryNames.length ? `${extras.galleryNames.length} file(s) selected` : 'Choose files'}</b>
+                  <input type="file" accept="image/*" multiple onChange={(e) => pickGallery(e.target.files)} />
+                  <Upload size={20} />
                 </span>
                 <small className="hotel-setup-hint">Cannot upload more than the maximum file size (100mb)</small>
-              </label>
+                {extras.galleryPreviews.length ? (
+                  <div className="hotel-setup-thumbs">
+                    {extras.galleryPreviews.map((src, index) => (
+                      <div className="hotel-setup-thumb" key={src}>
+                        <img src={src} alt={extras.galleryNames[index]} />
+                        <button
+                          type="button"
+                          aria-label={`Remove ${extras.galleryNames[index]}`}
+                          onClick={() => setExtras((c) => ({
+                            ...c,
+                            galleryNames: c.galleryNames.filter((_, i) => i !== index),
+                            galleryPreviews: c.galleryPreviews.filter((_, i) => i !== index),
+                          }))}
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
         )}
 
-        <div className="master-page-actions">
-          <button type="button" className="primary-button" disabled={saving} onClick={saveEdit}>{saving ? 'Saving…' : 'Save'}</button>
+        <div className="hotel-setup-footer">
+          <button type="button" className="hotel-setup-save" disabled={!dirty || saving} onClick={saveEdit}>
+            {saving ? 'Saving…' : 'Save'}
+          </button>
         </div>
       </section>
     );
