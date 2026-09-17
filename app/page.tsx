@@ -63,6 +63,7 @@ import {
 import { Choice } from '@/components/hotel-choice';
 import { TransportSetup } from '@/components/transport-setup';
 import { HotelSettingsMenu } from '@/components/hotel-settings-menu';
+import { CommonSettingsMenu } from '@/components/common-settings-menu';
 import { HotelSettingsDetail } from '@/components/hotel-settings-detail';
 import { moduleItems, type RateSetupSection } from '@/components/rate-setup';
 import { HotelMasterFiles } from '@/components/hotel-master-files';
@@ -211,6 +212,7 @@ function HomeContent({ store }: { store: TransportData }) {
     | 'schedule'
     | 'setup'
     | 'hotelsettings'
+    | 'commonsettings'
     | 'hotelsetup'
     | 'department'
     | 'location'
@@ -745,6 +747,14 @@ function HomeContent({ store }: { store: TransportData }) {
                 </button>
               </div>
             )}
+            <button
+              className={view === 'commonsettings' ? 'active' : ''}
+              aria-current={view === 'commonsettings' ? 'page' : undefined}
+              onClick={() => setView('commonsettings')}
+            >
+              <Settings />
+              Common Settings
+            </button>
             <button disabled title="Not connected to a hotel session">
               <LogOut />
               Sign Out
@@ -799,7 +809,7 @@ function HomeContent({ store }: { store: TransportData }) {
               <HotelxBackButton className="booking-back" label="Back to Hotel Settings" onClick={() => setView('hotelsettings')} />
             )}
             <div>
-              <small>{['setup', 'hotelsettings', 'hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy', 'standardpolicy', 'segment'].includes(view) ? 'HMS' : 'PMS'}</small>
+              <small>{['setup', 'hotelsettings', 'commonsettings', 'hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy', 'standardpolicy', 'segment'].includes(view) ? 'HMS' : 'PMS'}</small>
               <strong>HOTEL PARADISE</strong>
             </div>
           </div>
@@ -825,6 +835,8 @@ function HomeContent({ store }: { store: TransportData }) {
               <>Business Insight <ChevronRight size={14} /> Digital Document</>
             ) : view === 'reporting' ? (
               <span>Digital Reporting</span>
+            ) : view === 'commonsettings' ? (
+              <span>Common Settings</span>
             ) : view === 'hotelsettings' ? (
               <span>Hotel Settings</span>
             ) : view === 'standardpolicy' ? (
@@ -922,6 +934,10 @@ function HomeContent({ store }: { store: TransportData }) {
             onGuestProfilesSave={async (value) => { await store.run({ type: 'guestProfilesSave', value }); setNotice('Guest profile saved.'); }}
             onOpenTransport={setTransferBooking}
           />
+        ) : view === 'commonsettings' ? (
+          <div className="settings-scroll hotel-settings-scroll" key="commonsettings">
+            <CommonSettingsMenu />
+          </div>
         ) : view === 'hotelsettings' ? (
           <div className="settings-scroll hotel-settings-scroll" key="hotelsettings">
             <HotelSettingsMenu
