@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Mic, MoreVertical, Plus, Search, X } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, Mic, MoreVertical, Plus, Search, X } from 'lucide-react';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import type { HotelUser } from '@/lib/transport-state';
 
@@ -40,15 +40,6 @@ function PopupMenu({ items, onClose }: { items: { label: string; onClick: () => 
   );
 }
 
-function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) {
-  return (
-    <label className="system-user-toggle">
-      <span>{label}</span>
-      <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
-    </label>
-  );
-}
-
 export function SystemAdminUser({
   users,
   onChange,
@@ -62,6 +53,9 @@ export function SystemAdminUser({
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuId, setMenuId] = useState<string | null>(null);
   const [draft, setDraft] = useState<HotelUser | null>(null);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [confirm, setConfirm] = useState<{ title: string; message: string; confirmLabel: string; action: () => void } | null>(null);
@@ -83,9 +77,11 @@ export function SystemAdminUser({
 
   const save = async () => {
     if (!draft) return;
-    if (!draft.name.trim()) { setError('Enter a name.'); return; }
-    if (!draft.loginName.trim()) { setError('Enter a login name.'); return; }
-    const duplicate = users.some((user) => user.id !== draft.id && user.loginName.trim().toLowerCase() === draft.loginName.trim().toLowerCase());
+    if (!draft.password.trim()) { setError('Enter a password.'); return; }
+    if (draft.password !== confirmPassword) { setError('Passwords do not match.'); return; }
+    if (!draft.mobile.trim()) { setError('Enter a mobile number.'); return; }
+    const login = draft.loginName.trim().toLowerCase();
+    const duplicate = login !== '' && users.some((user) => user.id !== draft.id && user.loginName.trim().toLowerCase() === login);
     if (duplicate) { setError('That login name is already used.'); return; }
     setError('');
     const next = users.some((user) => user.id === draft.id)
@@ -96,6 +92,7 @@ export function SystemAdminUser({
   };
 
   if (draft) {
+    const editing = users.some((user) => user.id === draft.id);
     return (
       <section className="master-page" aria-label="User">
         <div className="department-editor-head">
@@ -105,25 +102,58 @@ export function SystemAdminUser({
           <strong>User</strong>
         </div>
         <div className="master-detail-card">
-          <div className="master-section-label">{users.some((user) => user.id === draft.id) ? draft.name || 'Edit user' : 'New user'}</div>
-          <div className="master-form-grid">
-            <label className="master-field"><span>Name *</span><input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /></label>
-            <label className="master-field"><span>Login Name</span><input value={draft.loginName} onChange={(event) => setDraft({ ...draft, loginName: event.target.value })} /></label>
-            <label className="master-field"><span>Email Address</span><input type="email" value={draft.email} onChange={(event) => setDraft({ ...draft, email: event.target.value })} /></label>
-            <label className="master-field"><span>Password</span><input type="password" value={draft.password} onChange={(event) => setDraft({ ...draft, password: event.target.value })} /></label>
-            <label className="master-field"><span>Mobile No</span><input type="tel" value={draft.mobile} onChange={(event) => setDraft({ ...draft, mobile: event.target.value })} /></label>
-            <div className="master-field system-user-flags-field">
-              <span>Access</span>
-              <Toggle label="Super User" checked={draft.superUser} onChange={(value) => setDraft({ ...draft, superUser: value })} />
-              <Toggle label="Collaborative User" checked={draft.collaborativeUser} onChange={(value) => setDraft({ ...draft, collaborativeUser: value })} />
-              <Toggle label="Active" checked={draft.active} onChange={(value) => setDraft({ ...draft, active: value })} />
+          <div className="system-user-form">
+            <label className="hotel-setup-field" data-filled={draft.name ? 'true' : 'false'} data-full="true">
+              <span className="label">Name</span>
+              <input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} />
+            </label>
+            <label className="hotel-setup-field" data-filled={draft.loginName ? 'true' : 'false'} data-full="true">
+              <span className="label">Login name</span>
+              <input value={draft.loginName} onChange={(event) => setDraft({ ...draft, loginName: event.target.value })} />
+            </label>
+            <label className="hotel-setup-field" data-filled={draft.email ? 'true' : 'false'} data-full="true">
+              <span className="label">Email Address</span>
+              <input type="email" value={draft.email} onChange={(event) => setDraft({ ...draft, email: event.target.value })} />
+            </label>
+            <label className="hotel-setup-field" data-filled={draft.password ? 'true' : 'false'} data-full="true">
+              <span className="label">Password *</span>
+              <span className="system-user-secret">
+                <input type={showPassword ? 'text' : 'password'} value={draft.password} onChange={(event) => setDraft({ ...draft, password: event.target.value })} />
+                <button type="button" aria-label={showPassword ? 'Hide password' : 'Show password'} onClick={() => setShowPassword((value) => !value)}>
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </span>
+            </label>
+            <label className="hotel-setup-field" data-filled={confirmPassword ? 'true' : 'false'} data-full="true">
+              <span className="label">Confirm Password *</span>
+              <span className="system-user-secret">
+                <input type={showConfirm ? 'text' : 'password'} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} />
+                <button type="button" aria-label={showConfirm ? 'Hide password' : 'Show password'} onClick={() => setShowConfirm((value) => !value)}>
+                  {showConfirm ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </span>
+            </label>
+            <label className="hotel-setup-field" data-filled={draft.mobile ? 'true' : 'false'} data-full="true">
+              <span className="label">Mobile No. *</span>
+              <span className="booking-phone-line"><b>🇲🇾</b><span>+60</span><input inputMode="tel" value={draft.mobile} onChange={(event) => setDraft({ ...draft, mobile: event.target.value })} /></span>
+            </label>
+            <div className="system-user-toggle-row">
+              <span>Super User</span>
+              <input type="checkbox" checked={draft.superUser} aria-label="Super User" onChange={(event) => setDraft({ ...draft, superUser: event.target.checked })} />
+            </div>
+            <div className="system-user-toggle-row">
+              <span>Collaborative User</span>
+              <input type="checkbox" checked={draft.collaborativeUser} aria-label="Collaborative User" onChange={(event) => setDraft({ ...draft, collaborativeUser: event.target.checked })} />
+            </div>
+            <div className="system-user-toggle-row">
+              <span>Active</span>
+              <input type="checkbox" checked={draft.active} aria-label="Active" onChange={(event) => setDraft({ ...draft, active: event.target.checked })} />
             </div>
           </div>
         </div>
         {error && <p className="master-error">{error}</p>}
-        <div className="department-save-bar">
-          <button type="button" className="secondary-button" onClick={() => { setDraft(null); setError(''); }}>Cancel</button>
-          <button type="button" className="primary-button" disabled={saving} onClick={save}>{saving ? 'Saving…' : 'Save'}</button>
+        <div className="hotel-setup-footer">
+          <button type="button" className="hotel-setup-save" disabled={saving} onClick={save}>{saving ? 'Saving…' : 'Save'}</button>
         </div>
       </section>
     );
@@ -164,7 +194,7 @@ export function SystemAdminUser({
                 <PopupMenu
                   onClose={() => setMenuId(null)}
                   items={[
-                    { label: 'Edit', onClick: () => { setError(''); setDraft({ ...user }); } },
+                    { label: 'Edit', onClick: () => { setError(''); setConfirmPassword(user.password); setDraft({ ...user }); } },
                     {
                       label: user.active ? 'Block' : 'Activate',
                       onClick: () => setConfirm({
@@ -202,7 +232,7 @@ export function SystemAdminUser({
         />
       )}
 
-      <button type="button" className="rate-floating-add" aria-label="Add user" onClick={() => { setError(''); setDraft(blankUser()); }}>
+      <button type="button" className="rate-floating-add" aria-label="Add user" onClick={() => { setError(''); setConfirmPassword(''); setShowPassword(false); setShowConfirm(false); setDraft(blankUser()); }}>
         <Plus size={28} />
       </button>
     </section>

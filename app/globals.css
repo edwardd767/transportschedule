@@ -6550,12 +6550,17 @@ p {
 .system-user-flags{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-right:12px}
 .system-user-flags em{padding:2px 8px;border-radius:10px;background:#eef2fb;color:#3b5bdb;font-size:11px;font-style:normal;font-weight:500;white-space:nowrap}
 .system-user-flags em.is-blocked{background:#fdecec;color:#d64545}
-.system-user-flags-field{gap:10px}
-.system-user-toggle{display:flex;align-items:center;gap:10px;color:#454545;font-size:13px}
-.system-user-toggle input{position:relative;appearance:none;flex:none;width:34px;height:18px;margin:0;border-radius:9px;background:#cfcfcf;cursor:pointer;transition:background .15s ease}
-.system-user-toggle input::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .15s ease}
-.system-user-toggle input:checked{background:#ff9800}
-.system-user-toggle input:checked::after{transform:translateX(16px)}
+.system-user-form{padding:8px 6px 4px}
+.system-user-form .hotel-setup-field{width:100%;padding-right:6px}
+.system-user-secret{position:relative;display:block}
+.system-user-secret input{display:block;box-sizing:border-box;width:100%;height:32px;padding:6px 30px 7px 0;border:0;border-bottom:1px solid #949494;border-radius:0;background:transparent;color:#212121;font-size:16px;font-weight:400}
+.system-user-secret input:focus{outline:0;border-bottom-color:#212121}
+.system-user-secret button{position:absolute;top:0;right:0;display:grid;place-items:center;width:28px;height:32px;border:0;background:transparent;color:#5f6368;cursor:pointer}
+.system-user-toggle-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:11px 0 11px 6px;color:#212121;font-size:16px}
+.system-user-toggle-row input{position:relative;appearance:none;flex:none;width:42px;height:22px;margin:0;border-radius:11px;background:#cfcfcf;cursor:pointer;transition:background .15s ease}
+.system-user-toggle-row input::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #0003;transition:transform .15s ease}
+.system-user-toggle-row input:checked{background:#ff9800}
+.system-user-toggle-row input:checked::after{transform:translateX(20px)}
 .master-error{margin:10px 4px;padding:10px 12px;border:1px solid #efc1c1;border-radius:5px;background:#fff2f2;color:#a13030;font-size:13px}
 @media (max-width:900px){
   .hotel-setup-row,.hotel-setup-field{width:100%}
