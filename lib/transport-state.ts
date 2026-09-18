@@ -46,6 +46,19 @@ import { initialRateSetupData, type RateSetupData } from './rate-setup-data';
 export type GuestProfile = GuestProfileDetails & { id: string; name: string; mobile: string; email: string; nationality: string; identityNo: string; address: string; country: string; state: string; city: string; postcode: string; birthDate: string; occupation: string; accountName: string; guestType: string; adultChild: 'Adult' | 'Child' | 'Infant'; remark: string; newsletter: boolean; tourismTax: boolean; visits: number; updated: string };
 
 export type GuestProfileDetails = { vehicle?: string; paymentRemark1?: string; paymentRemark2?: string; taxExemptReason?: string };
+
+export type HotelUser = {
+  id: string;
+  name: string;
+  loginName: string;
+  email: string;
+  password: string;
+  mobile: string;
+  superUser: boolean;
+  collaborativeUser: boolean;
+  active: boolean;
+  updated: string;
+};
 export type TransportState = {
   setup: TransportSetup;
   trips: Trip[];
@@ -56,6 +69,7 @@ export type TransportState = {
   bookings: Booking[];
   rateSetup: RateSetupData;
   guestProfiles: GuestProfile[];
+  users: HotelUser[];
 };
 export type DepartureInput = {
   id: string;
@@ -100,6 +114,7 @@ export type TransportAction =
   | { type: 'bookingUpdate'; value: Booking }
   | { type: 'rateSetup'; value: RateSetupData }
   | { type: 'guestProfilesSave'; value: GuestProfile[] }
+  | { type: 'usersSave'; value: HotelUser[] }
   | {
       type: 'transfers';
       bookingReference: string;
@@ -117,6 +132,7 @@ export function newTransportState(): TransportState {
     bookings: initialBookings,
     rateSetup: initialRateSetupData,
     guestProfiles: [],
+    users: [],
   });
 }
 
@@ -182,6 +198,7 @@ export function normalizeTransportState(state: TransportState): TransportState {
     bookings,
     rateSetup,
     guestProfiles: Array.isArray(state.guestProfiles) ? state.guestProfiles : [],
+    users: Array.isArray(state.users) ? state.users : [],
   };
 }
 
@@ -487,6 +504,25 @@ export function applyTransportAction(
       return { ...state, hotelMasters: { ...state.hotelMasters, profile: action.value } };
     case 'guestProfilesSave':
       return { ...state, guestProfiles: action.value };
+    case 'usersSave': {
+      const value = list(action.value).map((item) => {
+        const row = object(item);
+        return {
+          id: text(row.id, 'user ID', true, 60),
+          name: text(row.name, 'name', true, 120),
+          loginName: text(row.loginName, 'login name', false, 120),
+          email: text(row.email, 'email', false, 160),
+          password: text(row.password, 'password', false, 200),
+          mobile: text(row.mobile, 'mobile', false, 40),
+          superUser: boolean(row.superUser),
+          collaborativeUser: boolean(row.collaborativeUser),
+          active: boolean(row.active),
+          updated: text(row.updated, 'updated date', false, 30),
+        };
+      });
+      if (new Set(value.map((item) => item.id)).size !== value.length) throw new Error('Duplicate user IDs.');
+      return { ...state, users: value };
+    }
     case 'templates': {
       const templates = list(action.value).map(template);
       unique(templates);

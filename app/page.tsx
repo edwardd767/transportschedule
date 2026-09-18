@@ -65,6 +65,8 @@ import { TransportSetup } from '@/components/transport-setup';
 import { HotelSettingsMenu } from '@/components/hotel-settings-menu';
 import { CommonSettingsMenu } from '@/components/common-settings-menu';
 import { SystemAdminMenu } from '@/components/system-admin-menu';
+import { SystemAdminUser } from '@/components/system-admin-user';
+import type { SystemAdminSection } from '@/components/system-admin-menu';
 import { HotelSettingsDetail } from '@/components/hotel-settings-detail';
 import { moduleItems, type RateSetupSection } from '@/components/rate-setup';
 import { HotelMasterFiles } from '@/components/hotel-master-files';
@@ -237,6 +239,7 @@ function HomeContent({ store }: { store: TransportData }) {
     | 'stayview'
   >('booking');
   const [rateSetupSection, setRateSetupSection] = useState<RateSetupSection | null>(null);
+  const [systemAdminSection, setSystemAdminSection] = useState<SystemAdminSection | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [profileMenuPos, setProfileMenuPos] = useState<{ top: number; left: number } | null>(null);
   const profileButtonRef = useRef<HTMLButtonElement>(null);
@@ -250,7 +253,7 @@ function HomeContent({ store }: { store: TransportData }) {
   }, [profileMenuOpen]);
   const [bookingReference, setBookingReference] = useState<string | null>(null);
   const [bookingEditing, setBookingEditing] = useState(false);
-  const { setup, trips, templates, bookingLegs, hotelMasters, bookings, rateSetup, guestProfiles } = store.state;
+  const { setup, trips, templates, bookingLegs, hotelMasters, bookings, rateSetup, guestProfiles, users } = store.state;
   const activeBooking =
     bookings.find((booking) => booking.reference === bookingReference) ?? null;
   const frontDeskDetails = useMemo<Record<string, string>>(() => {
@@ -761,7 +764,7 @@ function HomeContent({ store }: { store: TransportData }) {
             <button
               className={view === 'systemadmin' ? 'active' : ''}
               aria-current={view === 'systemadmin' ? 'page' : undefined}
-              onClick={() => setView('systemadmin')}
+              onClick={() => { setSystemAdminSection(null); setView('systemadmin'); }}
             >
               <img src={SYSTEM_ADMIN_ICON} alt="" aria-hidden="true" width={24} height={24} style={{ display: 'block', objectFit: 'contain', flex: '0 0 auto' }} />
               System Admin
@@ -849,7 +852,9 @@ function HomeContent({ store }: { store: TransportData }) {
             ) : view === 'commonsettings' ? (
               <span>Common Settings</span>
             ) : view === 'systemadmin' ? (
-              <span>System Admin</span>
+              systemAdminSection === 'user'
+                ? <>System Admin <ChevronRight size={14} /> User</>
+                : <span>System Admin</span>
             ) : view === 'hotelsettings' ? (
               <span>Hotel Settings</span>
             ) : view === 'standardpolicy' ? (
@@ -953,7 +958,15 @@ function HomeContent({ store }: { store: TransportData }) {
           </div>
         ) : view === 'systemadmin' ? (
           <div className="settings-scroll hotel-settings-scroll" key="systemadmin">
-            <SystemAdminMenu />
+            {systemAdminSection === 'user' ? (
+              <SystemAdminUser
+                users={users}
+                onChange={async (value) => { await store.run({ type: 'usersSave', value }); setNotice('User saved.'); }}
+                onBack={() => setSystemAdminSection(null)}
+              />
+            ) : (
+              <SystemAdminMenu onOpen={setSystemAdminSection} />
+            )}
           </div>
         ) : view === 'hotelsettings' ? (
           <div className="settings-scroll hotel-settings-scroll" key="hotelsettings">

@@ -33,6 +33,20 @@ const schemaStatements = [
     PRIMARY KEY (property_id, id)
   )`,
   `ALTER TABLE public.hotelx_guestprofile ADD COLUMN IF NOT EXISTS vehicle text NOT NULL DEFAULT '', ADD COLUMN IF NOT EXISTS payment_remark1 text NOT NULL DEFAULT '', ADD COLUMN IF NOT EXISTS payment_remark2 text NOT NULL DEFAULT '', ADD COLUMN IF NOT EXISTS tax_exempt_reason text NOT NULL DEFAULT '', ADD COLUMN IF NOT EXISTS adult_child text NOT NULL DEFAULT 'Adult'`,
+  `CREATE TABLE IF NOT EXISTS public.hotelx_user (
+    property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
+    id uuid NOT NULL,
+    name text NOT NULL DEFAULT '',
+    login_name text NOT NULL DEFAULT '',
+    email text NOT NULL DEFAULT '',
+    password text NOT NULL DEFAULT '',
+    mobile text NOT NULL DEFAULT '',
+    super_user boolean NOT NULL DEFAULT false,
+    collaborative_user boolean NOT NULL DEFAULT false,
+    active boolean NOT NULL DEFAULT true,
+    updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (property_id, id)
+  )`,
   `DO $hotelx_root$
     DECLARE
       col record;
@@ -664,7 +678,11 @@ const schemaStatements = [
   AS $$
   BEGIN
     DELETE FROM public.hotelx_guestprofile WHERE property_id = p_property_id;
+    DELETE FROM public.hotelx_user WHERE property_id = p_property_id;
     DELETE FROM public.hotelx_rate_setup_validity WHERE property_id = p_property_id;
+    INSERT INTO public.hotelx_user (property_id, id, name, login_name, email, password, mobile, super_user, collaborative_user, active, updated_at)
+    SELECT p_property_id, (item.value->>'id')::uuid, COALESCE(item.value->>'name',''), COALESCE(item.value->>'loginName',''), COALESCE(item.value->>'email',''), COALESCE(item.value->>'password',''), COALESCE(item.value->>'mobile',''), COALESCE((item.value->>'superUser')::boolean,false), COALESCE((item.value->>'collaborativeUser')::boolean,false), COALESCE((item.value->>'active')::boolean,true), COALESCE(NULLIF(item.value->>'updated','')::timestamptz,CURRENT_TIMESTAMP)
+    FROM jsonb_array_elements(COALESCE(p_state->'users','[]'::jsonb)) AS item(value);
     INSERT INTO public.hotelx_guestprofile (property_id, id, guest_name, mobile, email, nationality, identity_no, address, country, state, city, postcode, birth_date, occupation, account_name, guest_type, adult_child, remark, newsletter, tourism_tax, visits, updated_at)
     SELECT p_property_id, (item.value->>'id')::uuid, COALESCE(item.value->>'name',''), COALESCE(item.value->>'mobile',''), COALESCE(item.value->>'email',''), COALESCE(item.value->>'nationality',''), COALESCE(item.value->>'identityNo',''), COALESCE(item.value->>'address',''), COALESCE(item.value->>'country',''), COALESCE(item.value->>'state',''), COALESCE(item.value->>'city',''), COALESCE(item.value->>'postcode',''), NULLIF(item.value->>'birthDate','')::date, COALESCE(item.value->>'occupation',''), COALESCE(item.value->>'accountName',''), COALESCE(item.value->>'guestType','Normal'), COALESCE(item.value->>'adultChild','Adult'), COALESCE(item.value->>'remark',''), COALESCE((item.value->>'newsletter')::boolean,false), COALESCE((item.value->>'tourismTax')::boolean,false), COALESCE(NULLIF(item.value->>'visits','')::integer,0), COALESCE(NULLIF(item.value->>'updated','')::timestamptz,CURRENT_TIMESTAMP)
     FROM jsonb_array_elements(COALESCE(p_state->'guestProfiles','[]'::jsonb)) AS item(value);
@@ -1375,6 +1393,7 @@ const schemaStatements = [
         'segments', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', segment.segment_id, 'description', segment.description, 'displaySequence', segment.sort_order, 'icon', segment.icon, 'active', segment.active, 'updatedAt', segment.updated_at) ORDER BY segment.sort_order) FROM public.hotelx_segments AS segment WHERE segment.property_id = meta.property_id), '[]'::jsonb)
       ),
       'guestProfiles', COALESCE((SELECT jsonb_agg(jsonb_build_object('vehicle', g.vehicle, 'paymentRemark1', g.payment_remark1, 'paymentRemark2', g.payment_remark2, 'taxExemptReason', g.tax_exempt_reason, 'id', g.id, 'name', g.guest_name, 'mobile', g.mobile, 'email', g.email, 'nationality', g.nationality, 'identityNo', g.identity_no, 'address', g.address, 'country', g.country, 'state', g.state, 'city', g.city, 'postcode', g.postcode, 'birthDate', COALESCE(to_char(g.birth_date, 'YYYY-MM-DD'), ''), 'occupation', g.occupation, 'accountName', g.account_name, 'guestType', g.guest_type, 'adultChild', g.adult_child, 'remark', g.remark, 'newsletter', g.newsletter, 'tourismTax', g.tourism_tax, 'visits', g.visits, 'updated', to_char(g.updated_at, 'YYYY-MM-DD')) ORDER BY g.guest_name) FROM public.hotelx_guestprofile g WHERE g.property_id = meta.property_id), '[]'::jsonb),
+      'users', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', u.id, 'name', u.name, 'loginName', u.login_name, 'email', u.email, 'password', u.password, 'mobile', u.mobile, 'superUser', u.super_user, 'collaborativeUser', u.collaborative_user, 'active', u.active, 'updated', to_char(u.updated_at, 'YYYY-MM-DD')) ORDER BY u.name) FROM public.hotelx_user u WHERE u.property_id = meta.property_id), '[]'::jsonb),
       'bookings', COALESCE((
         SELECT jsonb_agg(jsonb_build_object(
           'reference', booking.booking_no,

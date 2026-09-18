@@ -6546,6 +6546,17 @@ p {
 .hotel-setup-switch input::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .15s ease}
 .hotel-setup-switch input:checked{background:#ff9800}
 .hotel-setup-switch input:checked::after{transform:translateX(16px)}
+
+.system-user-flags{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-right:12px}
+.system-user-flags em{padding:2px 8px;border-radius:10px;background:#eef2fb;color:#3b5bdb;font-size:11px;font-style:normal;font-weight:500;white-space:nowrap}
+.system-user-flags em.is-blocked{background:#fdecec;color:#d64545}
+.system-user-flags-field{gap:10px}
+.system-user-toggle{display:flex;align-items:center;gap:10px;color:#454545;font-size:13px}
+.system-user-toggle input{position:relative;appearance:none;flex:none;width:34px;height:18px;margin:0;border-radius:9px;background:#cfcfcf;cursor:pointer;transition:background .15s ease}
+.system-user-toggle input::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .15s ease}
+.system-user-toggle input:checked{background:#ff9800}
+.system-user-toggle input:checked::after{transform:translateX(16px)}
+.master-error{margin:10px 4px;padding:10px 12px;border:1px solid #efc1c1;border-radius:5px;background:#fff2f2;color:#a13030;font-size:13px}
 @media (max-width:900px){
   .hotel-setup-row,.hotel-setup-field{width:100%}
   .hotel-setup-tabs button{min-width:0;flex:1;font-size:13px}
