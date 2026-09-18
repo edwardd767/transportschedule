@@ -64,6 +64,7 @@ import { Choice } from '@/components/hotel-choice';
 import { TransportSetup } from '@/components/transport-setup';
 import { HotelSettingsMenu } from '@/components/hotel-settings-menu';
 import { CommonSettingsMenu } from '@/components/common-settings-menu';
+import { SystemAdminMenu } from '@/components/system-admin-menu';
 import { HotelSettingsDetail } from '@/components/hotel-settings-detail';
 import { moduleItems, type RateSetupSection } from '@/components/rate-setup';
 import { HotelMasterFiles } from '@/components/hotel-master-files';
@@ -126,6 +127,7 @@ function SvgIcon({ size = 24, markup }: { size?: number; markup: string }) {
 const digitalReports = ['Booking Status', 'Manager Report', 'Hotel Historical & Forecast Report', 'Production Analysis by Corp/Govt/Travel Agent', 'Production Analysis by Rate Code', 'Production Analysis by Rate Type', 'Production Analysis by Room No', 'Production Analysis by Room Type', 'Production Analysis by Sales Channel', 'Production Analysis by Segment', 'Production Analysis by Source', 'Production Analysis by State/Country/Nationality'];
 
 const DIGITAL_DOCUMENT_ICON = 'https://hms1.hotelx.asia/static/media/business%20insight.2321199b.svg';
+const SYSTEM_ADMIN_ICON = 'https://hms1.hotelx.asia/static/media/sys-admin.d68a2b74.svg';
 
 const frontDeskMenu = [
   {
@@ -213,6 +215,7 @@ function HomeContent({ store }: { store: TransportData }) {
     | 'setup'
     | 'hotelsettings'
     | 'commonsettings'
+    | 'systemadmin'
     | 'hotelsetup'
     | 'department'
     | 'location'
@@ -755,6 +758,14 @@ function HomeContent({ store }: { store: TransportData }) {
               <Settings />
               Common Settings
             </button>
+            <button
+              className={view === 'systemadmin' ? 'active' : ''}
+              aria-current={view === 'systemadmin' ? 'page' : undefined}
+              onClick={() => setView('systemadmin')}
+            >
+              <img src={SYSTEM_ADMIN_ICON} alt="" aria-hidden="true" width={24} height={24} style={{ display: 'block', objectFit: 'contain', flex: '0 0 auto' }} />
+              System Admin
+            </button>
             <button disabled title="Not connected to a hotel session">
               <LogOut />
               Sign Out
@@ -809,7 +820,7 @@ function HomeContent({ store }: { store: TransportData }) {
               <HotelxBackButton className="booking-back" label="Back to Hotel Settings" onClick={() => setView('hotelsettings')} />
             )}
             <div>
-              <small>{['setup', 'hotelsettings', 'commonsettings', 'hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy', 'standardpolicy', 'segment'].includes(view) ? 'HMS' : 'PMS'}</small>
+              <small>{['setup', 'hotelsettings', 'commonsettings', 'systemadmin', 'hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy', 'standardpolicy', 'segment'].includes(view) ? 'HMS' : 'PMS'}</small>
               <strong>HOTEL PARADISE</strong>
             </div>
           </div>
@@ -837,6 +848,8 @@ function HomeContent({ store }: { store: TransportData }) {
               <span>Digital Reporting</span>
             ) : view === 'commonsettings' ? (
               <span>Common Settings</span>
+            ) : view === 'systemadmin' ? (
+              <span>System Admin</span>
             ) : view === 'hotelsettings' ? (
               <span>Hotel Settings</span>
             ) : view === 'standardpolicy' ? (
@@ -937,6 +950,10 @@ function HomeContent({ store }: { store: TransportData }) {
         ) : view === 'commonsettings' ? (
           <div className="settings-scroll hotel-settings-scroll" key="commonsettings">
             <CommonSettingsMenu />
+          </div>
+        ) : view === 'systemadmin' ? (
+          <div className="settings-scroll hotel-settings-scroll" key="systemadmin">
+            <SystemAdminMenu />
           </div>
         ) : view === 'hotelsettings' ? (
           <div className="settings-scroll hotel-settings-scroll" key="hotelsettings">
