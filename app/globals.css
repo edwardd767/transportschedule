@@ -6524,7 +6524,7 @@ p {
 .hotel-setup-edit-grid{display:flex;flex-wrap:wrap;padding:8px 6px 0}
 .hotel-setup-field{position:relative;display:block;box-sizing:border-box;width:50%;min-width:0;padding:18px 6px 0;margin-bottom:12px}
 .hotel-setup-field[data-full='true']{width:100%}
-.hotel-setup-field > .label{position:absolute;top:18px;left:6px;color:#878787;font-size:16px;font-weight:400;line-height:16px;pointer-events:none;transform-origin:top left;transition:transform .15s ease}
+.hotel-setup-field > .label{position:absolute;top:18px;left:6px;color:#878787;font-size:16px;font-weight:400;line-height:16px;pointer-events:none;transform:translateY(8px);transform-origin:top left;transition:transform .15s ease}
 .hotel-setup-field[data-filled='true'] > .label{transform:translateY(-18px) scale(.75)}
 .hotel-setup-field > input,.hotel-setup-field > select{display:block;box-sizing:border-box;width:100%;height:32px;padding:6px 0 7px;border:0;border-bottom:1px solid #949494;border-radius:0;background:transparent;color:#212121;font-size:16px;font-weight:400}
 .hotel-setup-field > select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,#5f6368 50%),linear-gradient(135deg,#5f6368 50%,transparent 50%);background-position:calc(100% - 9px) 15px,calc(100% - 4px) 15px;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:20px}
@@ -6539,7 +6539,7 @@ p {
 .hotel-setup-thumb img{max-width:100%;max-height:100%;object-fit:contain}
 .hotel-setup-thumb button{position:absolute;top:-7px;right:-7px;display:grid;place-items:center;width:18px;height:18px;border:0;border-radius:50%;background:#e53935;color:#fff;cursor:pointer}
 .hotel-setup-footer{display:flex;justify-content:center;padding:8px 24px}
-.hotel-setup-save{min-width:126px;padding:6px 16px;border:0;border-radius:4px;background:#ff9800;color:#fff;font-size:14px;font-weight:500;cursor:pointer}
+.hotel-setup-save{min-width:126px;padding:6px 16px;border:0;border-radius:4px;background:#ff9800;color:#fff;font-size:14px;font-weight:500;cursor:pointer;box-shadow:0 3px 1px -2px rgba(0,0,0,.2),0 2px 2px 0 rgba(0,0,0,.14),0 1px 5px 0 rgba(0,0,0,.12)}
 .hotel-setup-save:disabled{background:rgba(0,0,0,.12);color:rgba(0,0,0,.26);cursor:default}
 .hotel-setup-switch{display:flex;align-items:center;gap:10px;width:100%;margin-bottom:12px;color:#454545;font-size:14px}
 .hotel-setup-switch input{position:relative;appearance:none;flex:none;width:34px;height:18px;margin:0;border-radius:9px;background:#cfcfcf;cursor:pointer;transition:background .15s ease}
@@ -6549,19 +6549,21 @@ p {
 
 .system-user-flags{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-right:12px}
 .system-user-flags em{padding:2px 8px;border-radius:10px;background:#eef2fb;color:#3b5bdb;font-size:11px;font-style:normal;font-weight:500;white-space:nowrap}
-.breadcrumb-new{margin-left:auto;padding:1px 12px;border-radius:10px;background:#fff;color:#ff9800;font-size:11px;font-weight:600;line-height:16px}
+.breadcrumb-new{margin-left:auto;color:#212121;font-size:10px;font-weight:600;line-height:14px}
 .system-user-flags em.is-blocked{background:#fdecec;color:#d64545}
-.system-user-form{padding:8px 6px 4px}
-.system-user-form .hotel-setup-field{width:100%;padding-right:6px}
+.system-user-form{padding:8px 12px 0}
+.system-user-form .hotel-setup-field{width:100%;margin-top:16px;margin-bottom:12px;padding-left:0;padding-right:0}
+.system-user-form .hotel-setup-field > .label{left:0}
 .system-user-secret{position:relative;display:block}
 .system-user-secret input{display:block;box-sizing:border-box;width:100%;height:32px;padding:6px 30px 7px 0;border:0;border-bottom:1px solid #949494;border-radius:0;background:transparent;color:#212121;font-size:16px;font-weight:400}
 .system-user-secret input:focus{outline:0;border-bottom-color:#212121}
 .system-user-secret button{position:absolute;top:0;right:0;display:grid;place-items:center;width:28px;height:32px;border:0;background:transparent;color:#5f6368;cursor:pointer}
 .system-user-toggle-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:11px 0 11px 6px;color:#212121;font-size:16px}
-.system-user-toggle-row input{position:relative;appearance:none;flex:none;width:42px;height:22px;margin:0;border-radius:11px;background:#cfcfcf;cursor:pointer;transition:background .15s ease}
-.system-user-toggle-row input::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #0003;transition:transform .15s ease}
-.system-user-toggle-row input:checked{background:#ff9800}
-.system-user-toggle-row input:checked::after{transform:translateX(20px)}
+.system-user-toggle-row input{position:relative;appearance:none;flex:none;width:58px;height:38px;margin:0;border:0;background:transparent;cursor:pointer}
+.system-user-toggle-row input::before{content:'';position:absolute;top:12px;left:12px;width:34px;height:14px;border-radius:7px;background:#000;opacity:.38;transition:background .15s ease,opacity .15s ease}
+.system-user-toggle-row input::after{content:'';position:absolute;top:9px;left:9px;width:20px;height:20px;border-radius:50%;background:#fafafa;box-shadow:0 2px 2px #0003;transition:transform .15s ease,background .15s ease}
+.system-user-toggle-row input:checked::before{background:#ff9800;opacity:.5}
+.system-user-toggle-row input:checked::after{transform:translateX(20px);background:#ff9800}
 .master-error{margin:10px 4px;padding:10px 12px;border:1px solid #efc1c1;border-radius:5px;background:#fff2f2;color:#a13030;font-size:13px}
 @media (max-width:900px){
   .hotel-setup-row,.hotel-setup-field{width:100%}
