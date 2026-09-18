@@ -889,6 +889,7 @@ function HomeContent({ store }: { store: TransportData }) {
                 {view === 'setup' ? 'Transport Setup' : 'Schedule'}
               </>
             )}
+            {view === 'systemadmin' && systemAdminSection === 'user' ? <span className="breadcrumb-new">New</span> : null}
           </div>
         </div>
         {view === 'guestprofile' ? (

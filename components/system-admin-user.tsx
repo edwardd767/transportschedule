@@ -120,7 +120,7 @@ export function SystemAdminUser({
               <span className="system-user-secret">
                 <input type={showPassword ? 'text' : 'password'} value={draft.password} onChange={(event) => setDraft({ ...draft, password: event.target.value })} />
                 <button type="button" aria-label={showPassword ? 'Hide password' : 'Show password'} onClick={() => setShowPassword((value) => !value)}>
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  {showPassword ? <Eye size={20} /> : <EyeOff size={20} />}
                 </button>
               </span>
             </label>
@@ -129,11 +129,11 @@ export function SystemAdminUser({
               <span className="system-user-secret">
                 <input type={showConfirm ? 'text' : 'password'} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} />
                 <button type="button" aria-label={showConfirm ? 'Hide password' : 'Show password'} onClick={() => setShowConfirm((value) => !value)}>
-                  {showConfirm ? <EyeOff size={20} /> : <Eye size={20} />}
+                  {showConfirm ? <Eye size={20} /> : <EyeOff size={20} />}
                 </button>
               </span>
             </label>
-            <label className="hotel-setup-field" data-filled={draft.mobile ? 'true' : 'false'} data-full="true">
+            <label className="hotel-setup-field" data-filled="true" data-full="true">
               <span className="label">Mobile No. *</span>
               <span className="booking-phone-line"><b>🇲🇾</b><span>+60</span><input inputMode="tel" value={draft.mobile} onChange={(event) => setDraft({ ...draft, mobile: event.target.value })} /></span>
             </label>

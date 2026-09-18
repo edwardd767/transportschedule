@@ -6549,6 +6549,7 @@ p {
 
 .system-user-flags{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-right:12px}
 .system-user-flags em{padding:2px 8px;border-radius:10px;background:#eef2fb;color:#3b5bdb;font-size:11px;font-style:normal;font-weight:500;white-space:nowrap}
+.breadcrumb-new{margin-left:auto;padding:1px 12px;border-radius:10px;background:#fff;color:#ff9800;font-size:11px;font-weight:600;line-height:16px}
 .system-user-flags em.is-blocked{background:#fdecec;color:#d64545}
 .system-user-form{padding:8px 6px 4px}
 .system-user-form .hotel-setup-field{width:100%;padding-right:6px}
