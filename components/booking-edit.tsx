@@ -17,6 +17,7 @@ import {
 import type { Booking, BookingRoom } from '@/lib/bookings';
 import { initialRateSetupData, type RateSetupData } from '@/lib/rate-setup-data';
 import { defaultSalesChannels, type HotelRoomType } from '@/lib/hotel-masters';
+import { PhoneField } from '@/components/phone-field';
 
 const money = new Intl.NumberFormat('en-MY', {
   minimumFractionDigits: 2,
@@ -297,7 +298,7 @@ export function BookingEdit({
           <div className="booking-section-heading">Contact Information</div>
           <div className="booking-contact-grid">
             <label className="booking-line-field booking-full-field"><span>Book by *</span><input value={bookBy} onChange={(event) => setBookBy(event.target.value)} required /></label>
-            <label className="booking-line-field booking-full-field"><span>Phone No. (Optional)</span><span className="booking-phone-line"><b>🇲🇾</b><span>+60</span><input value={phone} onChange={(event) => setPhone(event.target.value)} inputMode="tel" /></span></label>
+            <label className="booking-line-field booking-full-field"><span>Phone No. (Optional)</span><PhoneField value={phone} onChange={setPhone} /></label>
             <label className="booking-line-field"><span>Account Name (If applicable)</span><input value={accountName} onChange={(event) => setAccountName(event.target.value)} /></label>
             <label className="booking-line-field"><span>Credit Limit</span><input type="number" min="0" step="0.01" value={creditLimit} onChange={(event) => setCreditLimit(Number(event.target.value))} /></label>
           </div>

@@ -8,6 +8,7 @@ import { bookingRate } from '@/lib/booking-rate';
 import { rateAddOnsForNight } from '@/lib/pax-billing';
 import { Choice } from '@/components/hotel-choice';
 import { HotelDatePicker } from '@/components/hotel-date-picker';
+import { PhoneField } from '@/components/phone-field';
 import {
   Dialog,
   DialogContent,
@@ -330,7 +331,7 @@ export function BookingCreate({
             </label>
             <label className="booking-line-field booking-full-field">
               <span>Phone No. (Optional)</span>
-              <span className="booking-phone-line"><b>🇲🇾</b><span>+60</span><input name="phone" inputMode="tel" /></span>
+              <PhoneField name="phone" />
             </label>
             <label className="booking-line-field">
               <span>Account Name (If applicable)</span>

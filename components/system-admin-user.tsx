@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, Eye, EyeOff, Mic, MoreVertical, Plus, Search, X } from 'lucide-react';
 import { ConfirmDialog } from '@/components/confirm-dialog';
+import { PhoneField } from '@/components/phone-field';
 import type { HotelUser } from '@/lib/transport-state';
 
 function blankUser(): HotelUser {
@@ -135,7 +136,7 @@ export function SystemAdminUser({
             </label>
             <label className="hotel-setup-field" data-filled="true" data-full="true">
               <span className="label">Mobile No. *</span>
-              <span className="booking-phone-line"><b>🇲🇾</b><span>+60</span><input inputMode="tel" value={draft.mobile} onChange={(event) => setDraft({ ...draft, mobile: event.target.value })} /></span>
+              <PhoneField value={draft.mobile} onChange={(value) => setDraft({ ...draft, mobile: value })} />
             </label>
             <div className="system-user-toggle-row">
               <span>Super User</span>
