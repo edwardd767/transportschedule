@@ -110,6 +110,7 @@ export function SearchChoice({
                 role="option"
                 aria-selected={item.value === value}
                 className={item.value === value ? 'selected' : ''}
+                onMouseDown={(event) => event.preventDefault()}
                 onClick={() => { onChange(item.value); setOpen(false); setQuery(''); setTyped(false); }}
               >
                 {item.label}
