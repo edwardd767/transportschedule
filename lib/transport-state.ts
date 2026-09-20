@@ -47,6 +47,14 @@ export type GuestProfile = GuestProfileDetails & { id: string; name: string; mob
 
 export type GuestProfileDetails = { vehicle?: string; paymentRemark1?: string; paymentRemark2?: string; taxExemptReason?: string };
 
+export type PaymentType = {
+  id: string;
+  sortOrder: number;
+  description: string;
+  active: boolean;
+  auditDate: string;
+};
+
 export type HotelUser = {
   id: string;
   name: string;
@@ -70,6 +78,7 @@ export type TransportState = {
   rateSetup: RateSetupData;
   guestProfiles: GuestProfile[];
   users: HotelUser[];
+  paymentTypes: PaymentType[];
 };
 export type DepartureInput = {
   id: string;
@@ -133,6 +142,7 @@ export function newTransportState(): TransportState {
     rateSetup: initialRateSetupData,
     guestProfiles: [],
     users: [],
+    paymentTypes: [],
   });
 }
 
@@ -199,6 +209,7 @@ export function normalizeTransportState(state: TransportState): TransportState {
     rateSetup,
     guestProfiles: Array.isArray(state.guestProfiles) ? state.guestProfiles : [],
     users: Array.isArray(state.users) ? state.users : [],
+    paymentTypes: Array.isArray(state.paymentTypes) ? state.paymentTypes : [],
   };
 }
 

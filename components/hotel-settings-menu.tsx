@@ -1,10 +1,12 @@
 'use client';
 
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, CreditCard, type LucideIcon } from 'lucide-react';
 
 const HOTELX_ICON_BASE = 'https://hms1.hotelx.asia/static/media';
 
-const items = [
+type MenuItem = { key: string; label: string; detail: string; iconSrc?: string; Icon?: LucideIcon };
+
+const items: MenuItem[] = [
   {
     key: 'hotel',
     label: 'Hotel Setup',
@@ -71,7 +73,13 @@ const items = [
     detail: 'Transport Services, Routes and Schedule Setup.',
     iconSrc: 'https://dev.hotelx.asia/static/media/transport.3cf761c5.svg',
   },
-] as const;
+  {
+    key: 'payment-type',
+    label: 'Payment Type',
+    detail: 'Payment Type Setup.',
+    Icon: CreditCard,
+  },
+];
 
 export function HotelSettingsMenu({
   onOpenHotelSetup,
@@ -85,6 +93,7 @@ export function HotelSettingsMenu({
   onOpenStandardPolicy,
   onOpenTransportSetup,
   onOpenSegment,
+  onOpenPaymentType,
 }: {
   onOpenHotelSetup: () => void;
   onOpenDepartment: () => void;
@@ -97,6 +106,7 @@ export function HotelSettingsMenu({
   onOpenStandardPolicy: () => void;
   onOpenTransportSetup: () => void;
   onOpenSegment: () => void;
+  onOpenPaymentType: () => void;
 }) {
   const actions: Record<string, () => void> = {
     hotel: onOpenHotelSetup,
@@ -110,6 +120,7 @@ export function HotelSettingsMenu({
     'standard-policy': onOpenStandardPolicy,
     transport: onOpenTransportSetup,
     segment: onOpenSegment,
+    'payment-type': onOpenPaymentType,
   };
 
   return (
@@ -142,14 +153,18 @@ export function HotelSettingsMenu({
                 border: 'none',
               }}
             >
-              <img
-                src={item.iconSrc}
-                alt=""
-                width={32}
-                height={32}
-                loading="eager"
-                style={{ display: 'block', width: 32, height: 32, objectFit: 'contain' }}
-              />
+              {item.iconSrc ? (
+                <img
+                  src={item.iconSrc}
+                  alt=""
+                  width={32}
+                  height={32}
+                  loading="eager"
+                  style={{ display: 'block', width: 32, height: 32, objectFit: 'contain' }}
+                />
+              ) : item.Icon ? (
+                <item.Icon size={30} style={{ display: 'block', color: '#2f53e6' }} />
+              ) : null}
             </span>
             <span className="hotel-settings-card-copy" style={{ gap: 1 }}>
               <strong style={{ fontSize: 13, lineHeight: 1.2 }}>{item.label}</strong>

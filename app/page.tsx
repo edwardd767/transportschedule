@@ -66,6 +66,7 @@ import { HotelSettingsMenu } from '@/components/hotel-settings-menu';
 import { CommonSettingsMenu } from '@/components/common-settings-menu';
 import { SystemAdminMenu } from '@/components/system-admin-menu';
 import { SystemAdminUser } from '@/components/system-admin-user';
+import { PaymentTypeModule } from '@/components/payment-type-module';
 import type { SystemAdminSection } from '@/components/system-admin-menu';
 import { HotelSettingsDetail } from '@/components/hotel-settings-detail';
 import { moduleItems, type RateSetupSection } from '@/components/rate-setup';
@@ -228,6 +229,7 @@ function HomeContent({ store }: { store: TransportData }) {
     | 'ratepolicy'
     | 'standardpolicy'
     | 'segment'
+    | 'paymenttype'
     | 'booking'
     | 'frontdesk'
     | 'checkin'
@@ -253,7 +255,7 @@ function HomeContent({ store }: { store: TransportData }) {
   }, [profileMenuOpen]);
   const [bookingReference, setBookingReference] = useState<string | null>(null);
   const [bookingEditing, setBookingEditing] = useState(false);
-  const { setup, trips, templates, bookingLegs, hotelMasters, bookings, rateSetup, guestProfiles, users } = store.state;
+  const { setup, trips, templates, bookingLegs, hotelMasters, bookings, rateSetup, guestProfiles, users, paymentTypes } = store.state;
   const activeBooking =
     bookings.find((booking) => booking.reference === bookingReference) ?? null;
   const frontDeskDetails = useMemo<Record<string, string>>(() => {
@@ -797,7 +799,7 @@ function HomeContent({ store }: { store: TransportData }) {
                 }}
               />
             )}
-            {['hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy', 'standardpolicy', 'setup'].includes(view) && (
+            {['hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy', 'standardpolicy', 'paymenttype', 'setup'].includes(view) && (
               <HotelxBackButton
                 className="booking-back"
                 label={view === 'ratepolicy' && rateSetupSection ? 'Back to Rate Setup' : view === 'standardpolicy' ? 'Back' : 'Back to Hotel Settings'}
@@ -823,7 +825,7 @@ function HomeContent({ store }: { store: TransportData }) {
               <HotelxBackButton className="booking-back" label="Back to Hotel Settings" onClick={() => setView('hotelsettings')} />
             )}
             <div>
-              <small>{['setup', 'hotelsettings', 'commonsettings', 'systemadmin', 'hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy', 'standardpolicy', 'segment'].includes(view) ? 'HMS' : 'PMS'}</small>
+              <small>{['setup', 'hotelsettings', 'commonsettings', 'systemadmin', 'hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy', 'standardpolicy', 'segment', 'paymenttype'].includes(view) ? 'HMS' : 'PMS'}</small>
               <strong>HOTEL PARADISE</strong>
             </div>
           </div>
@@ -857,6 +859,8 @@ function HomeContent({ store }: { store: TransportData }) {
                 : <span>System Admin</span>
             ) : view === 'hotelsettings' ? (
               <span>Hotel Settings</span>
+            ) : view === 'paymenttype' ? (
+              <>Hotel Settings <ChevronRight size={14} /> Payment Type</>
             ) : view === 'standardpolicy' ? (
               <>Hotel Settings <ChevronRight size={14} /> Standard Policy &amp; Guidelines</>
             ) : ['hotelsetup', 'department', 'location', 'floorplan', 'roomtype', 'room', 'roomstatus', 'ratepolicy'].includes(view) ? (
@@ -880,7 +884,7 @@ function HomeContent({ store }: { store: TransportData }) {
                                 ? <>Rate Setup <ChevronRight size={14} /> {moduleItems.find((item) => item.key === rateSetupSection)?.label ?? 'Rate Setup'}</>
                                 : 'Rate Setup'}
               </>
-            ) : view === 'segment' ? (
+        ) : view === 'segment' ? (
               <>Segment</>
             ) : (
               <>
@@ -983,8 +987,11 @@ function HomeContent({ store }: { store: TransportData }) {
               onOpenStandardPolicy={() => setView('standardpolicy')}
               onOpenTransportSetup={() => setView('setup')}
               onOpenSegment={() => setView('segment')}
+              onOpenPaymentType={() => setView('paymenttype')}
             />
           </div>
+        ) : view === 'paymenttype' ? (
+          <div className="settings-scroll hotel-master-scroll" key="paymenttype"><PaymentTypeModule paymentTypes={paymentTypes} /></div>
         ) : view === 'segment' ? (
           <div className="settings-scroll hotel-master-scroll" key="segment"><SegmentModule segments={hotelMasters.segments || []} bookings={bookings} onChange={async (value) => { await store.run({ type: 'segmentSave', value }); setNotice('Segment saved.'); }} onBack={() => setView('hotelsettings')} /></div>
         ) : ['hotelsetup', 'department', 'floorplan', 'roomstatus', 'ratepolicy', 'standardpolicy'].includes(view) ? (
