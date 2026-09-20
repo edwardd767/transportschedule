@@ -2389,9 +2389,11 @@ var schemaStatements = [
     description text NOT NULL,
     active boolean NOT NULL DEFAULT true,
     createddate timestamptz NOT NULL DEFAULT now(),
+    audit_date timestamptz NOT NULL DEFAULT now(),
     PRIMARY KEY (property_id, payment_type_id),
     UNIQUE (property_id, description)
   )`,
+  `ALTER TABLE public.hotelx_payment_type ADD COLUMN IF NOT EXISTS audit_date timestamptz NOT NULL DEFAULT now()`,
   `INSERT INTO public.hotelx_payment_type (property_id, sort_order, description)
     SELECT meta.property_id, item.sort_order, item.description
     FROM public.hotelx_hotel_setup AS meta
