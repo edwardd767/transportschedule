@@ -2736,19 +2736,21 @@ p {
   color: #355cff;
 }
 .booking-add {
-  position: absolute;
-  right: 12px;
-  bottom: 14px;
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 30;
   display: grid;
   place-items: center;
-  width: 60px;
-  height: 60px;
+  width: 56px;
+  height: 56px;
   border: 0;
   border-radius: 50%;
   color: #fff;
   background: #ff9800;
-  box-shadow: 0 5px 12px #0003;
+  box-shadow: 0 3px 5px -1px rgba(0,0,0,.2), 0 6px 10px 0 rgba(0,0,0,.14), 0 1px 18px 0 rgba(0,0,0,.12);
 }
+.booking-add:disabled { background:#e0e0e0; color:rgba(0,0,0,.87); }
 .booking-add:hover {
   background: #e88a00;
 }
@@ -3100,9 +3102,21 @@ p {
     padding: 10px;
   }
   .booking-add {
-    width: 54px;
-    height: 54px;
-  }
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border: 0;
+  border-radius: 50%;
+  color: #fff;
+  background: #ff9800;
+  box-shadow: 0 3px 5px -1px rgba(0,0,0,.2), 0 6px 10px 0 rgba(0,0,0,.14), 0 1px 18px 0 rgba(0,0,0,.12);
+}
+.booking-add:disabled { background:#e0e0e0; color:rgba(0,0,0,.87); }
 }
 @media (max-height: 480px) {
   .booking-workspace {
@@ -5085,11 +5099,21 @@ p {
     margin-top: 2px;
   }
   .booking-add {
-    right: 10px;
-    bottom: 12px;
-    width: 52px;
-    height: 52px;
-  }
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border: 0;
+  border-radius: 50%;
+  color: #fff;
+  background: #ff9800;
+  box-shadow: 0 3px 5px -1px rgba(0,0,0,.2), 0 6px 10px 0 rgba(0,0,0,.14), 0 1px 18px 0 rgba(0,0,0,.12);
+}
+.booking-add:disabled { background:#e0e0e0; color:rgba(0,0,0,.87); }
 
   .booking-detail-summary {
     padding: 8px 12px;
@@ -5182,7 +5206,22 @@ p {
   .booking-occupancy, .booking-occupancy > span,
   .booking-guest, .booking-price-room, .booking-amount { font-size: 12px; }
   .booking-occupancy svg { width: 15px; height: 15px; }
-  .booking-add { width: 46px; height: 46px; right: 9px; bottom: 10px; }
+  .booking-add {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border: 0;
+  border-radius: 50%;
+  color: #fff;
+  background: #ff9800;
+  box-shadow: 0 3px 5px -1px rgba(0,0,0,.2), 0 6px 10px 0 rgba(0,0,0,.14), 0 1px 18px 0 rgba(0,0,0,.12);
+}
+.booking-add:disabled { background:#e0e0e0; color:rgba(0,0,0,.87); }
   .booking-detail-summary { padding: 6px 10px; }
   .booking-detail-scroll { gap: 5px; margin-top: 8px; }
   .booking-section-card { min-height: 56px; padding: 9px 13px; }
