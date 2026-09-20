@@ -6,6 +6,7 @@ import { BookingAvailability } from '@/components/booking-availability';
 import { bookingRate } from '@/lib/booking-rate';
 import { rateAddOnsForNight } from '@/lib/pax-billing';
 import { Choice } from '@/components/hotel-choice';
+import { SearchChoice } from '@/components/search-choice';
 import { HotelDatePicker } from '@/components/hotel-date-picker';
 import {
   Dialog,
@@ -309,9 +310,9 @@ export function BookingEdit({
           </div>
           <div className="booking-contact-grid booking-contact-lower">
             <label className="booking-line-field booking-full-field"><span>Email Address</span><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} /></label>
-            <label className="booking-line-field booking-choice-field"><span>Sales Channel</span><Choice label="Sales Channel" value={salesChannel} onChange={setSalesChannel} items={salesChannelItems} /></label>
-            <label className="booking-line-field booking-choice-field"><span>Source *</span><Choice label="Source" value={source} onChange={setSource} items={[{ value: 'Booking', label: 'Booking' }, { value: 'Walk-In', label: 'Walk-In' }, { value: 'OTA', label: 'OTA' }, { value: 'Corporate', label: 'Corporate' }]} /></label>
-            <label className="booking-line-field booking-choice-field"><span>Segment *</span><Choice label="Segment" value={segment} onChange={setSegment} items={[{ value: 'Leisure', label: 'Leisure' }, { value: 'Corporate', label: 'Corporate' }, { value: 'Group', label: 'Group' }, { value: 'OTA', label: 'OTA' }]} /></label>
+            <label className="booking-line-field booking-choice-field"><span>Sales Channel</span><SearchChoice label="Sales Channel" value={salesChannel} onChange={setSalesChannel} items={salesChannelItems} /></label>
+            <label className="booking-line-field booking-choice-field"><span>Source *</span><SearchChoice label="Source" value={source} onChange={setSource} items={[{ value: 'Booking', label: 'Booking' }, { value: 'Walk-In', label: 'Walk-In' }, { value: 'OTA', label: 'OTA' }, { value: 'Corporate', label: 'Corporate' }]} /></label>
+            <label className="booking-line-field booking-choice-field"><span>Segment *</span><SearchChoice label="Segment" value={segment} onChange={setSegment} items={[{ value: 'Leisure', label: 'Leisure' }, { value: 'Corporate', label: 'Corporate' }, { value: 'Group', label: 'Group' }, { value: 'OTA', label: 'OTA' }]} /></label>
             <label className="booking-line-field"><span>Reference No</span><input value={referenceNo} onChange={(event) => setReferenceNo(event.target.value)} /></label>
           </div>
         </div>

@@ -7,6 +7,7 @@ import { BookingAvailability } from '@/components/booking-availability';
 import { bookingRate } from '@/lib/booking-rate';
 import { rateAddOnsForNight } from '@/lib/pax-billing';
 import { Choice } from '@/components/hotel-choice';
+import { SearchChoice } from '@/components/search-choice';
 import { HotelDatePicker } from '@/components/hotel-date-picker';
 import { PhoneField } from '@/components/phone-field';
 import {
@@ -356,11 +357,11 @@ export function BookingCreate({
             </label>
             <label className="booking-line-field booking-choice-field">
               <span>Sales Channel</span>
-              <Choice label="Sales Channel" value={salesChannel} onChange={setSalesChannel} items={salesChannelItems} />
+              <SearchChoice label="Sales Channel" value={salesChannel} onChange={setSalesChannel} items={salesChannelItems} />
             </label>
             <label className="booking-line-field booking-choice-field">
               <span>Source *</span>
-              <Choice label="Source" value={source} onChange={setSource} items={[
+              <SearchChoice label="Source" value={source} onChange={setSource} items={[
                 { value: 'Booking', label: 'Booking' },
                 { value: 'Walk-In', label: 'Walk-In' },
                 { value: 'OTA', label: 'OTA' },
@@ -369,7 +370,7 @@ export function BookingCreate({
             </label>
             <label className="booking-line-field booking-choice-field">
               <span>Segment *</span>
-              <Choice label="Segment" value={segment} onChange={setSegment} items={segments.filter((item) => item.active).sort((a, b) => a.displaySequence - b.displaySequence).map((item) => ({ value: item.description, label: item.description }))} />
+              <SearchChoice label="Segment" value={segment} onChange={setSegment} items={segments.filter((item) => item.active).sort((a, b) => a.displaySequence - b.displaySequence).map((item) => ({ value: item.description, label: item.description }))} />
             </label>
             <label className="booking-line-field">
               <span>Reference No</span>
