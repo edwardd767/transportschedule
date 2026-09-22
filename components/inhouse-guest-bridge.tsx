@@ -505,6 +505,7 @@ function InhouseDetail({ row: sourceRow, hotelName, store, onBack }: { row: Inho
       <div className="inhouse-screen">
         <RoomingList
           paxCountPolicy={store.state.hotelMasters.profile.paxCount}
+          childAgePolicy={store.state.hotelMasters.profile.childAgePolicy}
           rateSetup={store.state.rateSetup}
           booking={booking}
           profiles={store.state.guestProfiles}
