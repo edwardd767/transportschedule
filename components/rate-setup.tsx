@@ -450,6 +450,34 @@ function RateElementPage({ items, validity = [], onChange }: { items: RateElemen
   const filtered = useMemo(() => items.filter((item) => item.name.toLowerCase().includes(query.toLowerCase())), [items, query]);
   const inUse = (item: RateElementItem) => validity.some((row) => [...(row.inclusiveElements ?? []), ...(row.addOnElements ?? [])].includes(item.id));
   const [confirm, setConfirm] = useState<{ title: string; message: string; confirmLabel: string; action: () => void } | null>(null);
+  const store = useContext(TransportDataContext);
+  const [selectedChargeKey, setSelectedChargeKey] = useState('');
+  const incidentalCharges = useMemo(
+    () => (store?.state.hotelMasters.departments ?? []).flatMap((department) =>
+      department.incidentalCharges.map((charge) => ({
+        key: `${department.id}:${charge.id}`,
+        title: charge.title,
+        amount: charge.amount,
+        department: department.name,
+      })),
+    ),
+    [store?.state.hotelMasters.departments],
+  );
+
+  const beginDraft = (item?: RateElementItem) => {
+    const next: RateElementItem = item
+      ? { ...item }
+      : { id: crypto.randomUUID(), name: '', basis: 'Per Person', postingRhythm: 'Daily', min: 1, max: 1, amount: 0, active: true };
+    const matchedCharge = incidentalCharges.find((charge) => charge.title === next.name);
+    setSelectedChargeKey(matchedCharge?.key ?? (next.name ? `legacy:${next.name}` : ''));
+    setDraft(next);
+  };
+
+  const selectIncidentalCharge = (key: string) => {
+    setSelectedChargeKey(key);
+    const charge = incidentalCharges.find((entry) => entry.key === key);
+    if (charge && draft) setDraft({ ...draft, name: charge.title, amount: charge.amount });
+  };
 
   const save = () => {
     if (!draft || !draft.name.trim()) return;
@@ -457,6 +485,7 @@ function RateElementPage({ items, validity = [], onChange }: { items: RateElemen
       ? items.map((item) => item.id === draft.id ? { ...draft, name: draft.name.trim() } : item)
       : [...items, { ...draft, name: draft.name.trim() }]);
     setDraft(null);
+    setSelectedChargeKey('');
   };
 
   return (
@@ -471,7 +500,7 @@ function RateElementPage({ items, validity = [], onChange }: { items: RateElemen
               <button type="button" aria-label={`Options for ${item.name}`} onClick={() => setMenuId(menuId === item.id ? null : item.id)}><MoreVertical size={24} /></button>
               {menuId === item.id && (
                 <PopupMenu onClose={() => setMenuId(null)} items={[
-                  { label: 'Edit', onClick: () => setDraft({ ...item }) },
+                  { label: 'Edit', onClick: () => beginDraft(item) },
                   { label: item.active ? 'Inactive' : 'Active', onClick: () => setConfirm({ title: `${item.active ? 'Inactive' : 'Active'} ${item.name}`, message: `Do you want to set ${item.name} to ${item.active ? 'inactive' : 'active'} ?`, confirmLabel: item.active ? 'Inactive' : 'Active', action: () => { void onChange(items.map((row) => row.id === item.id ? { ...row, active: !row.active } : row)); } }) },
                   { label: 'Delete', disabled: inUse(item), onClick: () => setConfirm({ title: `Delete ${item.name}`, message: `Do you want to delete ${item.name} ?`, confirmLabel: 'Delete', action: () => { void onChange(items.filter((row) => row.id !== item.id)); } }) },
                 ]} />
@@ -481,10 +510,19 @@ function RateElementPage({ items, validity = [], onChange }: { items: RateElemen
         ))}
       </div>
       {confirm && <ConfirmDialog title={confirm.title} message={confirm.message} confirmLabel={confirm.confirmLabel} onCancel={() => setConfirm(null)} onConfirm={() => { const run = confirm.action; setConfirm(null); run(); }} />}
-      <FloatingAdd label="Add rate element" onClick={() => setDraft({ id: crypto.randomUUID(), name: '', basis: 'Per Person', postingRhythm: 'Daily', min: 1, max: 1, amount: 0, active: true })} />
+      <FloatingAdd label="Add rate element" onClick={() => beginDraft()} />
       {draft && (
-        <EditorModal title={items.some((item) => item.id === draft.id) ? 'Edit Rate Element' : 'New Rate Element'} onCancel={() => setDraft(null)} onSave={save}>
-          <label className="rate-editor-field">Rate Element<input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /></label>
+        <EditorModal title={items.some((item) => item.id === draft.id) ? 'Edit Rate Element' : 'New Rate Element'} onCancel={() => { setDraft(null); setSelectedChargeKey(''); }} onSave={save}>
+          <label className="rate-editor-field">Rate Element
+            <select value={selectedChargeKey} onChange={(event) => selectIncidentalCharge(event.target.value)}>
+              <option value="">Select Incidental Charge</option>
+              {selectedChargeKey.startsWith('legacy:') && <option value={selectedChargeKey}>{draft.name}</option>}
+              {(store?.state.hotelMasters.departments ?? []).map((department) => {
+                const charges = department.incidentalCharges.filter((charge) => incidentalCharges.some((entry) => entry.key === `${department.id}:${charge.id}`));
+                return charges.length ? <optgroup key={department.id} label={department.name}>{charges.map((charge) => <option key={`${department.id}:${charge.id}`} value={`${department.id}:${charge.id}`}>{charge.title}</option>)}</optgroup> : null;
+              })}
+            </select>
+          </label>
           <label className="rate-editor-field">Charge Basis<select value={draft.basis} onChange={(event) => setDraft({ ...draft, basis: event.target.value })}><option>Flat Rate</option><option>Per Person</option><option>Per Adult</option><option>Per Child</option><option>Per Infant</option></select></label>
           <label className="rate-editor-field">Posting Rhythm<select value={draft.postingRhythm} onChange={(event) => setDraft({ ...draft, postingRhythm: event.target.value as RateElementItem['postingRhythm'] })}><option>Daily</option><option>First Night</option><option>Last Night</option></select></label>
           <div className="rate-editor-grid"><label className="rate-editor-field">Minimum<input type="number" min="0" value={draft.min} onChange={(event) => setDraft({ ...draft, min: Number(event.target.value) })} /></label><label className="rate-editor-field">Maximum<input type="number" min="0" value={draft.max} onChange={(event) => setDraft({ ...draft, max: Number(event.target.value) })} /></label></div>
