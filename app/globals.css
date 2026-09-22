@@ -6136,6 +6136,7 @@ p {
 .booking-edit-room-row small { display:block; color:#6f737a; font-size:10px; }
 .booking-edit-room-row > span:first-child small { display:flex; align-items:center; gap:5px; color:#f28b00; font-size:12px; font-weight:700; white-space:nowrap; }
 .booking-edit-room-row > span:first-child small svg { flex:none; }
+.booking-edit-room-row > span:nth-child(3) small,.booking-edit-room-row > span:nth-child(4) small { font-weight:700; }
 .booking-edit-room-row b { color:#171717; }
 .booking-edit-room-row button { width:34px; height:34px; display:grid; place-items:center; border:0; background:transparent; color:#333; }
 .booking-edit-room-row button:last-child { color:#777; }
