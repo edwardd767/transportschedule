@@ -252,7 +252,7 @@ export function useTransportData() {
       countries: [...countries].sort((a, b) => a.name.localeCompare(b.name)).map((item) => item.name),
       states: statesByCountry,
       cities: cityCache,
-      nationalities: Array.from(new Set(countries.map((item) => item.nationality).filter(Boolean))).sort(),
+      nationalities: Array.from(new Set([...countries.map((item) => item.nationality).filter(Boolean), ...fallbackGeography.nationalities])).sort(),
       loadCities,
     };
   }, [countries, stateEntries, cityCache, loadCities]);
