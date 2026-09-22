@@ -1,6 +1,6 @@
 'use client';
 
-import { Baby, ClipboardList, Eye, Pencil, Plus, ScanLine, ContactRound, UserRound, UserRoundPen } from 'lucide-react';
+import { Baby, ClipboardList, Pencil, Plus, ScanLine, ContactRound, UserRound, UserRoundPen } from 'lucide-react';
 import { useContext, useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { stayDates } from '@/lib/bookings';
@@ -119,7 +119,7 @@ export function RoomingList({ booking, profiles, onProfilesSave, onBookingSave, 
   return <section className="rooming-page" aria-label="Rooming list">
     <RoomingHeader booking={booking} label="Rooming List" onBack={onBack} />
     <div className="rooming-booking-line"><strong>{booking.reference} | {booking.guest}</strong><small>{booking.rooms.map(item => `${item.code} ${item.count}`).join(' | ')}</small></div>
-    {error && <p role="alert">{error}</p>}<div className="rooming-room-card"><div className="rooming-table-head rooming-room-head"><span>No.</span><span>Room Type</span><span><UserRound size={14} /></span><span>Guest Name(s)</span></div>{booking.rooms.map((item, index) => { const guests = (item.guestProfileIds ?? []).map(id => profiles.find(profile => profile.id === id)).filter(Boolean) as GuestProfile[]; return <div className="rooming-room-row" key={`${item.code}-${index}`}><strong>{index + 1}.</strong><div><strong>{item.code}</strong><small>{item.rateCode ?? 'BAR'} Room Only</small></div><span>{Math.max(1, (item.adults ?? booking.guests ?? 1) + (item.children ?? 0))}</span><div><strong>{guests.map(profile => profile.name).join(', ') || booking.guest}</strong><small>{guests.length ? `${guests.length} guest profile${guests.length === 1 ? '' : 's'}` : 'No guest profile assigned'}</small></div><button type="button" className="rooming-view-button" disabled={busy} aria-label={`View ${item.code} guest list`} title="View guest list" onClick={() => openGuests(index)}><Eye size={20} /></button></div>; })}</div>
+    {error && <p role="alert">{error}</p>}<div className="rooming-room-card"><div className="rooming-table-head rooming-room-head"><span>No.</span><span>Room Type</span><span><UserRound size={14} /></span><span>Guest Name(s)</span></div>{booking.rooms.map((item, index) => { const guests = (item.guestProfileIds ?? []).map(id => profiles.find(profile => profile.id === id)).filter(Boolean) as GuestProfile[]; return <div className="rooming-room-row" key={`${item.code}-${index}`}><strong>{index + 1}.</strong><div><strong>{item.code}</strong><small>{item.rateCode ?? 'BAR'} Room Only</small></div><span>{Math.max(1, (item.adults ?? booking.guests ?? 1) + (item.children ?? 0))}</span><div><strong>{guests.map(profile => profile.name).join(', ') || booking.guest}</strong><small>{guests.length ? `${guests.length} guest profile${guests.length === 1 ? '' : 's'}` : 'No guest profile assigned'}</small></div><button type="button" className="rooming-view-button" disabled={busy} aria-label={`View ${item.code} guest list`} title="View guest list" onClick={() => openGuests(index)}><img src="https://hms1.hotelx.asia/static/media/view_edit_icon.cb90a368.svg" alt="" aria-hidden="true" width={22} height={22} style={{ display: 'block', objectFit: 'contain' }} /></button></div>; })}</div>
   </section>;
 }
 
