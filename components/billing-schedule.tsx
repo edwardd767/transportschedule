@@ -246,7 +246,7 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
                   const roomCharge = Math.max(0, line.amount - elementTotal - addOnTotal);
                   const sortDirection = breakdownSort[line.id];
                   const standardBreakdown: { key: string; name: string; amount: number; info?: { title: string; lines: { label: string; amount: number; muted?: boolean }[]; total?: number } }[] = [
-                    { key: 'room-charge', name: 'Room Charge', amount: roomCharge, info: line.extraPax > 0 ? { title: 'Room Charge breakdown', lines: [{ label: 'Room Charge', amount: Math.max(0, roomCharge - line.extraPax) }, { label: 'Extra Pax', amount: line.extraPax }, ...line.extraPaxLines.map((entry) => ({ ...entry, muted: true }))], total: roomCharge } : undefined },
+                    { key: 'room-charge', name: 'Room Charge', amount: roomCharge, info: line.extraPax > 0 ? { title: 'Breakdown', lines: [{ label: 'Room Charge', amount: Math.max(0, roomCharge - line.extraPax) }, { label: 'Extra Pax', amount: line.extraPax }, ...line.extraPaxLines.map((entry) => ({ ...entry, muted: true }))], total: roomCharge } : undefined },
                     ...line.elements.map((item, index) => ({ key: `element-${index}`, name: item.name, amount: item.amount })),
                     ...line.addOns.map((item, index) => ({ key: `addon-${index}`, name: `Add On - ${item.name}`, amount: item.amount })),
                   ];
