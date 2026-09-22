@@ -4858,8 +4858,8 @@ p {
 /* Compact Room Type dialog at 100% browser zoom */
 @media (min-width: 761px) {
   .booking-room-dialog {
-    width: min(780px, calc(100vw - 32px)) !important;
-    max-width: 780px !important;
+    width: min(680px, calc(100vw - 32px)) !important;
+    max-width: 680px !important;
     max-height: calc(100dvh - 24px) !important;
     display: flex !important;
     flex-direction: column !important;
@@ -4867,7 +4867,7 @@ p {
   }
   .booking-room-dialog [data-slot='dialog-header'] {
     flex: 0 0 auto;
-    padding: 10px 16px 4px !important;
+    padding: 10px 44px 4px 16px !important;
   }
   .booking-room-dialog [data-slot='dialog-description'] {
     display: none;
@@ -4880,8 +4880,8 @@ p {
     min-height: 0;
     overflow-y: auto;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px 24px;
-    padding: 12px 16px 8px;
+    gap: 8px 22px;
+    padding: 10px 16px 8px;
   }
   .booking-room-dialog .booking-line-field {
     gap: 3px;
@@ -4950,6 +4950,24 @@ p {
     min-height: 34px;
     padding: 5px 14px;
     font-size: 13px;
+  }
+  .booking-room-dialog .booking-guests-field {
+    gap: 10px;
+    padding: 6px 12px;
+  }
+  .booking-room-dialog .booking-guests-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+  .booking-room-dialog .booking-guests-label {
+    font-size: 13px;
+  }
+  .booking-room-dialog .booking-guests-steppers .booking-stepper {
+    padding: 0 6px;
+    min-width: 0;
+  }
+  .booking-room-dialog .booking-guests-steppers .booking-stepper-row {
+    gap: 5px;
   }
 }
 
