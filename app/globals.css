@@ -16,6 +16,7 @@ select option:checked,select option:hover{background:#e5e5e5 linear-gradient(0de
 .rooming-pax-dialog>small{background:#fcf3e8;padding:0 12px 12px}
 .rooming-pax-dialog label{display:block;color:#88909c;padding:12px}
 .rooming-pax-dialog input{display:block;width:100%;border:0;border-bottom:1px solid #999;padding:8px 0;color:#222}
+.rooming-pax-dialog input:focus,.rooming-pax-dialog input:focus-visible{outline:0}
 .rooming-pax-dialog footer{display:flex;justify-content:flex-end;gap:8px;padding:10px 0}
 .rooming-pax-dialog footer button{background:#ff9400;color:white;border-radius:4px;padding:8px 12px}
 @custom-variant dark (&:is(.dark *));
