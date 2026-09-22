@@ -63,14 +63,13 @@ function MalaysiaFlag({ size = 16 }: { size?: number }) {
   );
 }
 
+const STAY_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
 function formatStayDate(value: string) {
-  const date = new Date(`${value}T00:00:00Z`);
-  return new Intl.DateTimeFormat('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(date);
+  if (!value) return '';
+  const [year, month, day] = value.split('-').map((part) => parseInt(part, 10));
+  if (!year || !month || !day) return value;
+  return `${String(day).padStart(2, '0')} ${STAY_MONTHS[month - 1]} ${String(year).slice(-2)}`;
 }
 
 type InhouseRow = {

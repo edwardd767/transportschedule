@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, type FormEvent } from 'react';
-import { User, Baby, CalendarDays, Minus, Plus, Users } from 'lucide-react';
+import { User, Baby, CalendarDays, Footprints, Minus, Plus, Users } from 'lucide-react';
 import { BookingAvailability } from '@/components/booking-availability';
 import { bookingRate } from '@/lib/booking-rate';
 import { rateAddOnsForNight } from '@/lib/pax-billing';
@@ -45,7 +45,7 @@ function shortDate(value: string) {
   if (!value) return '';
   const [year, month, day] = value.split('-').map(Number);
   if (!year || !month || !day) return value;
-  return `${String(day).padStart(2, '0')} ${SHORT_MONTHS[month - 1]} ${year}`;
+  return `${String(day).padStart(2, '0')} ${SHORT_MONTHS[month - 1]} ${String(year).slice(-2)}`;
 }
 
 function initialRooms(booking: Booking): BookingRoom[] {
@@ -332,8 +332,8 @@ export function BookingEdit({
             <div className="booking-edit-room-head"><span>No.</span><span>Room Type</span><span>Rate Code</span><span>No. of Room</span><span aria-hidden="true" /><span aria-hidden="true" /></div>
             {roomLines.map((room, index) => (
               <div className="booking-edit-room-row" key={`${room.code}-${index}`}>
-                <span><small><svg viewBox="0 0 24 24" width={11} height={11} fill="currentColor" aria-hidden="true"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.9.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z" /></svg> {shortDate(arrival)} - {shortDate(departure)}</small><b>{index + 1}</b></span>
-                <span><b>{room.code}</b><small className="booking-pax-count"><span className="booking-pax-icon" title="Adult"><User size={13} aria-label="Adults" /></span><b title="Adult">{room.adults ?? 0}</b><span className="booking-pax-icon" title="Child"><Baby size={13} aria-label="Children" /></span><b title="Child">{room.children ?? 0}</b></small></span>
+                <span><small><svg viewBox="0 0 24 24" width={14} height={14} fill="currentColor" aria-hidden="true"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.9.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z" /></svg> {shortDate(arrival)} - {shortDate(departure)}</small><b>{index + 1}</b></span>
+                <span><b>{room.code}</b><small className="booking-pax-count"><span className="booking-pax-icon billing-pax-tip" data-tip="Adult"><User size={13} aria-label="Adults" /></span><b>{room.adults ?? 0}</b><span className="booking-pax-icon billing-pax-tip" data-tip="Child"><Baby size={13} aria-label="Children" /></span><b>{room.children ?? 0}</b><span className="booking-pax-icon billing-pax-tip" data-tip="Infant"><Footprints size={13} aria-label="Infants" /></span><b>{room.infants ?? 0}</b></small></span>
                 <span><b>{room.rateCode || 'BAR'}</b><small>Subtotal</small></span>
                 <span><b>{room.count}</b><small>{money.format(room.total ?? 0)}</small></span>
                 <button type="button" aria-label={`Edit room type ${room.code}`} onClick={() => openEditRoom(index)}><img src="https://hms1.hotelx.asia/static/media/view_edit_icon.cb90a368.svg" alt="" aria-hidden="true" width={22} height={22} style={{ display: 'block', objectFit: 'contain' }} /></button>

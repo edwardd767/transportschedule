@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { User, Baby, CalendarDays, Minus, Plus, Users, X } from 'lucide-react';
+import { User, Baby, CalendarDays, Footprints, Minus, Plus, Users, X } from 'lucide-react';
 import { BookingAvailability } from '@/components/booking-availability';
 import { bookingRate } from '@/lib/booking-rate';
 import { rateAddOnsForNight } from '@/lib/pax-billing';
@@ -38,12 +38,14 @@ type RoomLine = {
   total: number;
 };
 
-const stayDateFormatter = new Intl.DateTimeFormat('en-GB', {
-  day: '2-digit',
-  month: 'short',
-  year: '2-digit',
-  timeZone: 'UTC',
-});
+const STAY_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function stayDate(value: string) {
+  if (!value) return '';
+  const [year, month, day] = value.split('-').map((part) => parseInt(part, 10));
+  if (!year || !month || !day) return value;
+  return `${String(day).padStart(2, '0')} ${STAY_MONTHS[month - 1]} ${String(year).slice(-2)}`;
+}
 const money = new Intl.NumberFormat('en-MY', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
@@ -128,7 +130,7 @@ export function BookingCreate({
   const [error, setError] = useState('');
 
   const nights = nightsBetween(arrival, departure);
-  const stayLabel = `${stayDateFormatter.format(new Date(`${arrival}T00:00:00Z`))} - ${stayDateFormatter.format(new Date(`${departure}T00:00:00Z`))}`;
+  const stayLabel = `${stayDate(arrival)} - ${stayDate(departure)}`;
   const bookingTotal = roomLines.reduce((total, line) => total + line.total, 0);
   const selectedRoom = activeRoomTypes.find((item) => item.code === roomType);
   const configuredPaxRate = bookingRate(rateSetup, rateCode, roomType, arrival);
@@ -389,14 +391,14 @@ export function BookingCreate({
           <div className="booking-room-table">
             <div className="booking-room-table-head">
               <span>No.</span>
-              <span className="booking-room-stay-head">Room Type<small><svg viewBox="0 0 24 24" width={11} height={11} fill="currentColor" aria-hidden="true" focusable="false"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.9.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z" /></svg> {stayLabel}</small></span>
+              <span className="booking-room-stay-head">Room Type<small><svg viewBox="0 0 24 24" width={14} height={14} fill="currentColor" aria-hidden="true" focusable="false"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.9.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z" /></svg> {stayLabel}</small></span>
               <span>Rate Code</span><span>No. of Room</span><span>Amount</span>
             </div>
             {roomLines.map((line, index) => (
               <div className="booking-room-line" key={line.id}>
                 <div className="booking-room-table-row">
                   <span>{index + 1}</span>
-                  <span>{line.code}<small className="booking-pax-count"><span className="booking-pax-icon" title="Adult"><User size={13} aria-label="Adults" /></span><b title="Adult">{line.adults}</b><span className="booking-pax-icon" title="Child"><Baby size={13} aria-label="Children" /></span><b title="Child">{line.children}</b></small></span>
+                  <span>{line.code}<small className="booking-pax-count"><span className="booking-pax-icon billing-pax-tip" data-tip="Adult"><User size={13} aria-label="Adults" /></span><b>{line.adults}</b><span className="booking-pax-icon billing-pax-tip" data-tip="Child"><Baby size={13} aria-label="Children" /></span><b>{line.children}</b><span className="booking-pax-icon billing-pax-tip" data-tip="Infant"><Footprints size={13} aria-label="Infants" /></span><b>{line.infants}</b></small></span>
                   <span>{line.rateCode}</span>
                   <span>{line.count}</span>
                   <span>{money.format(line.total)}</span>
