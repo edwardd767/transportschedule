@@ -3756,6 +3756,8 @@ p {
 .billing-total { display: flex; justify-content: space-between; align-items: center; background: #fff6eb; border-radius: 8px; padding: 14px 18px; font-size: 16px; }
 .billing-total strong { color: #f06f1f; font-size: 20px; }
 .billing-schedule-page{position:relative;min-height:100%;padding:0 14px 78px;background:#f3f3f3;align-content:start;gap:0;overflow:auto}
+.workspace:has(.billing-schedule-page){display:flex;flex-direction:column;overflow:hidden}
+.workspace:has(.billing-schedule-page)>.billing-schedule-page{flex:1 1 auto;min-height:0}
 .workspace:has(.billing-schedule-page) > .property-banner{min-height:58px;padding-bottom:8px}
 .workspace:has(.billing-schedule-page) > .property-banner .breadcrumb{display:none}
 .billing-schedule-breadcrumb{height:26px;background:#ff8a19;display:flex;align-items:center;gap:4px;padding:0 12px;font-size:11px}
