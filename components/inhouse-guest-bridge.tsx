@@ -24,7 +24,7 @@ function HotelxIcon({ src, size }: { src: string; size: number }) {
 }
 
 function CalendarIcon({ size = 12 }: { size?: number }) {
-  return <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true" focusable="false"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z" /></svg>;
+  return <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true" focusable="false"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.9.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z" /></svg>;
 }
 
 function QrIcon({ size = 17 }: { size?: number }) {
@@ -409,7 +409,7 @@ export function InhouseGuestBridge({ store }: { store: TransportData }) {
                   <b className="inhouse-room-no" onMouseEnter={() => setHoverRoom(row)} onMouseLeave={() => setHoverRoom(null)}>{row.roomNo}</b>
                   <strong>{row.roomType}</strong>
                   <span className="inhouse-divider" />
-                  <svg viewBox="0 0 24 24" width={12} height={12} fill="currentColor" aria-hidden="true" focusable="false"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z" /></svg>
+                  <svg viewBox="0 0 24 24" width={12} height={12} fill="currentColor" aria-hidden="true" focusable="false"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.9.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z" /></svg>
                   <span>
                     {formatStayDate(row.arrival)} - {formatStayDate(row.departure)}
                   </span>
