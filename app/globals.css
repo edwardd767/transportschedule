@@ -4392,6 +4392,31 @@ p {
 .hotel-calendar-grid > button.selected {
   background: var(--orange);
   color: #fff;
+}.hotel-calendar-grid > button.selected:hover:not(:disabled) {
+  background: var(--orange);
+  color: #fff;
+}
+.hotel-calendar-grid > button.in-range {
+  background: #fff1dc;
+  color: #292929;
+  border-radius: 0;
+}
+.hotel-date-range-field {
+  gap: 8px;
+}
+.hotel-date-range-field > span {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+.hotel-date-range-field > span:nth-of-type(2) {
+  text-align: right;
+}
+.hotel-date-range-field > svg {
+  flex: 0 0 auto;
 }
 .hotel-calendar-grid > button:disabled {
   color: #c7c7c7;

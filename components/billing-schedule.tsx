@@ -7,7 +7,7 @@ import { paxNight } from '@/lib/pax-billing';
 import { bookingRate } from '@/lib/booking-rate';
 import type { BookingTransportLeg } from '@/lib/booking-transport';
 import type { RateSetupData } from '@/lib/rate-setup-data';
-import { HotelDatePicker } from '@/components/hotel-date-picker';
+import { HotelDateRangePicker } from '@/components/hotel-date-range-picker';
 
 const money = (value: number) => value.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const dayLabel = (value: string) => new Date(`${value}T00:00:00Z`).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
@@ -238,7 +238,7 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
                 <span><strong>Room {copyIndex + 1}</strong><small>{booking.guest}{assignedRoomNo ? ` | ${assignedRoomNo}` : ''} | {money(dailyLines.reduce((total, line) => total + line.amount, 0))}</small></span>{isRoomOpen ? <ChevronUp size={17} /> : <ChevronDown size={17} />}
               </button>
               {isRoomOpen && <div className="billing-room-detail">
-                <div className="billing-date-range"><HotelDatePicker value={fromDate} min={booking.arrival} max={toDate || addDays(booking.departure, -1)} onChange={setFromDate} ariaLabel="Select billing schedule start date" className="billing-date-field" /><ChevronRight size={20} /><HotelDatePicker value={toDate} min={fromDate || booking.arrival} max={addDays(booking.departure, -1)} onChange={setToDate} ariaLabel="Select billing schedule end date" className="billing-date-field" /></div>
+                <div className="billing-date-range"><HotelDateRangePicker from={fromDate} to={toDate} min={booking.arrival} max={addDays(booking.departure, -1)} onChange={(nextFrom, nextTo) => { setFromDate(nextFrom); setToDate(nextTo); }} ariaLabel="Select billing schedule date range" className="billing-date-field" /></div>
                 <label className="billing-select-all"><input type="checkbox" checked={allSelected} onChange={() => setSelected(allSelected ? selected.filter((id) => !visibleIds.includes(id)) : Array.from(new Set([...selected, ...visibleIds])))} /> Select All</label>
                 {dailyLines.map((line) => {
                   const elementTotal = line.elements.reduce((sum, item) => sum + item.amount, 0);
