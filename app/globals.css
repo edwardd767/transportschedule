@@ -3787,6 +3787,7 @@ p {
 .billing-info-tip{display:block;position:absolute;left:0;bottom:calc(100% + 9px);z-index:40;min-width:172px;padding:9px 11px;background:#111827;color:#fff;border-radius:8px;box-shadow:0 10px 26px #00000045;font-size:11px;font-weight:400;font-style:normal;line-height:1.4;text-align:left;white-space:nowrap;pointer-events:none;opacity:0;visibility:hidden;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease,visibility .15s}
 .billing-info-tip::after{content:'';position:absolute;left:12px;top:100%;border:6px solid transparent;border-top-color:#111827}
 .billing-info-tip b{display:block;margin-bottom:6px;font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:#ff8c12;font-weight:700}
+.billing-info-note{display:block;margin:-2px 0 6px;color:#d1d5db;font-size:10px;font-style:normal;line-height:14px;white-space:nowrap}
 .billing-info-row{display:flex;justify-content:space-between;gap:16px}
 .billing-info-row+.billing-info-row{margin-top:2px}
 .billing-info-row.is-muted{padding-left:10px;color:#9ca3af;font-size:10px}
