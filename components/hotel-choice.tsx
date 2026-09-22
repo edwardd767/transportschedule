@@ -1,4 +1,5 @@
 'use client';
+import type { ReactNode } from 'react';
 import {
   Select,
   SelectTrigger,
@@ -14,9 +15,10 @@ export function Choice({
 }: {
   value: string;
   onChange: (value: string) => void;
-  items: { value: string; label: string }[];
+  items: { value: string; label: string; icon?: ReactNode }[];
   label: string;
 }) {
+  const selected = items.find((i) => i.value === value);
   return (
     <Select
       value={value || null}
@@ -24,12 +26,14 @@ export function Choice({
       items={items}
     >
       <SelectTrigger className="hotel-select" aria-label={label}>
+        {selected?.icon ? <span className="hotel-select-icon">{selected.icon}</span> : null}
         <SelectValue placeholder="Select an option" />
       </SelectTrigger>
       <SelectContent>
         {items.length ? (
           items.map((i) => (
             <SelectItem key={i.value} value={i.value}>
+              {i.icon ? <span className="hotel-select-icon">{i.icon}</span> : null}
               {i.label}
             </SelectItem>
           ))

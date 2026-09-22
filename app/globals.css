@@ -5836,6 +5836,29 @@ p {
   color: #111;
   font: inherit;
   font-size: 14px;
+  accent-color: #ff9200;
+}
+.rate-editor-field .hotel-select[data-slot='select-trigger'] {
+  width: 100%;
+  min-height: 36px;
+  height: 36px;
+  padding: 6px 8px;
+  border: 0;
+  border-bottom: 1px solid #aaa;
+  border-radius: 0;
+  background: #fff;
+  color: #111;
+  font-size: 14px;
+  box-shadow: none;
+}
+.hotel-select-icon {
+  display: inline-flex;
+  align-items: center;
+  color: #6b7280;
+}
+.hotel-select-icon svg {
+  width: 14px;
+  height: 14px;
 }
 .rate-editor-field input[type='color'] {
   width: 70px;

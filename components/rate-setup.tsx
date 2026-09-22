@@ -13,12 +13,30 @@ import {
   Plus,
   Mic,
   Search,
+  Tag,
+  Users,
+  Footprints,
   X,
 } from 'lucide-react';
 import { HotelDatePicker } from '@/components/hotel-date-picker';
 import { ConfirmDialog } from '@/components/confirm-dialog';
+import { Choice } from '@/components/hotel-choice';
 import { TransportDataContext } from '@/components/transport-connection';
 import type { AddOnItem, RateSetupData, RateValidityItem } from '@/lib/rate-setup-data';
+
+const CHARGE_BASIS_ITEMS = [
+  { value: 'Flat Rate', label: 'Flat Rate', icon: <Tag size={14} /> },
+  { value: 'Per Person', label: 'Per Person', icon: <Users size={14} /> },
+  { value: 'Per Adult', label: 'Per Adult', icon: <User size={14} /> },
+  { value: 'Per Child', label: 'Per Child', icon: <Baby size={14} /> },
+  { value: 'Per Infant', label: 'Per Infant', icon: <Footprints size={14} /> },
+];
+
+const POSTING_RHYTHM_ITEMS = [
+  { value: 'Daily', label: 'Daily' },
+  { value: 'First Night', label: 'First Night' },
+  { value: 'Last Night', label: 'Last Night' },
+];
 
 export type RateSetupSection =
   | 'season-setup'
@@ -522,8 +540,8 @@ function RateElementPage({ items, validity = [], onChange }: { items: RateElemen
               })}
             </select>
           </label>
-          <label className="rate-editor-field">Charge Basis<select value={draft.basis} onChange={(event) => setDraft({ ...draft, basis: event.target.value })}><option>Flat Rate</option><option>Per Person</option><option>Per Adult</option><option>Per Child</option><option>Per Infant</option></select></label>
-          <label className="rate-editor-field">Posting Rhythm<select value={draft.postingRhythm} onChange={(event) => setDraft({ ...draft, postingRhythm: event.target.value as RateElementItem['postingRhythm'] })}><option>Daily</option><option>First Night</option><option>Last Night</option></select></label>
+          <label className="rate-editor-field">Charge Basis<Choice label="Charge Basis" value={draft.basis} onChange={(value) => setDraft({ ...draft, basis: value })} items={CHARGE_BASIS_ITEMS} /></label>
+          <label className="rate-editor-field">Posting Rhythm<Choice label="Posting Rhythm" value={draft.postingRhythm} onChange={(value) => setDraft({ ...draft, postingRhythm: value as RateElementItem['postingRhythm'] })} items={POSTING_RHYTHM_ITEMS} /></label>
           <div className="rate-editor-grid"><label className="rate-editor-field">Minimum<input type="number" min="0" value={draft.min} onChange={(event) => setDraft({ ...draft, min: Number(event.target.value) })} /></label><label className="rate-editor-field">Maximum<input type="number" min="0" value={draft.max} onChange={(event) => setDraft({ ...draft, max: Number(event.target.value) })} /></label></div>
           <label className="rate-editor-field">Amount (MYR)<input type="number" min="0" step="0.01" value={draft.amount} onChange={(event) => setDraft({ ...draft, amount: Number(event.target.value) })} /></label>
         </EditorModal>
@@ -610,8 +628,8 @@ function AddOnPage({ items, onChange }: { items: AddOnItem[]; onChange: (value: 
               })}
             </select>
           </label>
-          <label className="rate-editor-field">Charge Basis<select value={draft.basis} onChange={(event) => setDraft({ ...draft, basis: event.target.value })}><option>Flat Rate</option><option>Per Person</option><option>Per Adult</option><option>Per Child</option><option>Per Infant</option></select></label>
-          <label className="rate-editor-field">Posting Rhythm<select value={draft.postingRhythm} onChange={(event) => setDraft({ ...draft, postingRhythm: event.target.value as AddOnItem['postingRhythm'] })}><option>Daily</option><option>First Night</option><option>Last Night</option></select></label>
+          <label className="rate-editor-field">Charge Basis<Choice label="Charge Basis" value={draft.basis} onChange={(value) => setDraft({ ...draft, basis: value })} items={CHARGE_BASIS_ITEMS} /></label>
+          <label className="rate-editor-field">Posting Rhythm<Choice label="Posting Rhythm" value={draft.postingRhythm} onChange={(value) => setDraft({ ...draft, postingRhythm: value as AddOnItem['postingRhythm'] })} items={POSTING_RHYTHM_ITEMS} /></label>
           <div className="rate-editor-grid"><label className="rate-editor-field">Minimum<input type="number" min="0" value={draft.min} onChange={(event) => setDraft({ ...draft, min: Number(event.target.value) })} /></label><label className="rate-editor-field">Maximum<input type="number" min="0" value={draft.max} onChange={(event) => setDraft({ ...draft, max: Number(event.target.value) })} /></label></div>
           <label className="rate-editor-field">Amount (MYR)<input type="number" min="0" step="0.01" value={draft.amount} onChange={(event) => setDraft({ ...draft, amount: Number(event.target.value) })} /></label>
         </EditorModal>
