@@ -2590,16 +2590,26 @@ p {
 .booking-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 10px;
+  gap: 6px 18px;
   flex-shrink: 0;
   padding: 14px 5px;
   font-size: 14px;
 }
-.booking-legend > span {
+.booking-legend > span,
+.booking-legend > button {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
   white-space: nowrap;
+  cursor: pointer;
+}
+.booking-legend > button.is-active {
+  font-weight: 700;
 }
 .booking-status-booked {
   --booking-status-color: #244ac0;
@@ -5153,7 +5163,7 @@ p {
     height: 32px;
   }
   .booking-legend {
-    gap: 5px 9px;
+    gap: 6px 18px;
     padding: 10px 4px;
     font-size: 13px;
   }

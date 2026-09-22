@@ -10,7 +10,6 @@ import {
   RotateCw,
   Search,
   SlidersHorizontal,
-  X,
 } from 'lucide-react';
 import { HotelDatePicker } from '@/components/hotel-date-picker';
 import {
@@ -321,6 +320,7 @@ export function Bookings({
   const sortRef = useRef<HTMLDivElement>(null);
   const [advance, setAdvance] = useState(emptyAdvanceSearch);
   const [appliedAdvance, setAppliedAdvance] = useState(emptyAdvanceSearch);
+  const [statusFilter, setStatusFilter] = useState('');
   const listRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const previousScroll = useRef(0);
@@ -328,6 +328,7 @@ export function Bookings({
   const hasFilters = Boolean(query || Object.values(appliedAdvance).some(Boolean));
   const filtered = bookings.filter((item) => {
     if (query.trim() && !`${item.reference} ${item.guest}`.toLowerCase().includes(query.trim().toLowerCase())) return false;
+    if (statusFilter && item.status !== statusFilter) return false;
     if (appliedAdvance.arrivalStart && item.arrival < appliedAdvance.arrivalStart) return false;
     if (appliedAdvance.arrivalEnd && item.arrival > appliedAdvance.arrivalEnd) return false;
     if (appliedAdvance.departureStart && item.departure < appliedAdvance.departureStart) return false;
@@ -412,6 +413,7 @@ export function Bookings({
   }
   function resetFilters() {
     setQuery('');
+    setStatusFilter('');
     setAdvance(emptyAdvanceSearch);
     setAppliedAdvance(emptyAdvanceSearch);
   }
@@ -573,7 +575,6 @@ export function Bookings({
           {(searchOpen || query) && (
             <label className="search-field"><Search size={17} /><input autoFocus={searchOpen} aria-label="Search booking reference or guest" placeholder="Search reference or guest" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
           )}
-          {hasFilters && <button className="secondary-button" onClick={resetFilters}><X size={15} /> Clear filters</button>}
         </div>
       )}
       {advanceOpen && (
@@ -654,7 +655,9 @@ export function Bookings({
         </div>
       )}
       <div className="booking-legend" aria-label="Booking statuses">
-        {bookingStatuses.map((item) => <span key={item}><i className={bookingStatusClass(item)} />{item}</span>)}
+        {bookingStatuses.map((item) => (
+          <button type="button" key={item} className={statusFilter === item ? 'is-active' : ''} aria-pressed={statusFilter === item} title={`Filter ${item}`} onClick={() => setStatusFilter((current) => current === item ? '' : item)}><i className={bookingStatusClass(item)} />{item}</button>
+        ))}
       </div>
       <div className="booking-list-scroll" ref={listRef}>
         <div className="booking-list">
