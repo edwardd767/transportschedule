@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { User, Baby, CalendarDays, Plus, X } from 'lucide-react';
+import { User, Baby, CalendarDays, Minus, Plus, Users, X } from 'lucide-react';
 import { BookingAvailability } from '@/components/booking-availability';
 import { bookingRate } from '@/lib/booking-rate';
 import { rateAddOnsForNight } from '@/lib/pax-billing';
@@ -428,10 +428,37 @@ export function BookingCreate({
             <label className="booking-line-field"><span>Departure Date *</span><HotelDatePicker value={departure} onChange={setDeparture} ariaLabel="Departure date" /></label>
             <label className="booking-line-field booking-choice-field"><span>Room Type *</span><Choice label="Room Type" value={roomType} onChange={setRoomType} items={roomTypeItems} /></label>
             <label className="booking-line-field"><span>No. of Room *</span><input type="number" min="1" value={roomQty} onChange={(event) => setRoomQty(Number(event.target.value))} /></label>
-            <div className="booking-room-occupancy-entry">
-              <label className="booking-line-field"><span>No. of Adult *</span><input type="number" min="1" value={adults} onChange={(event) => setAdults(Number(event.target.value))} /></label>
-              <label className="booking-line-field"><span>No. of Child</span><input type="number" min="0" value={children} onChange={(event) => setChildren(Number(event.target.value))} />{childAgePolicy > INFANT_MAX_AGE && <small className="booking-child-age-note">Age {INFANT_MAX_AGE + 1} - {childAgePolicy} years</small>}</label>
-              <label className="booking-line-field"><span>No. of Infant</span><input type="number" min="0" value={infants} onChange={(event) => setInfants(Number(event.target.value))} />{childAgePolicy > INFANT_MAX_AGE && <small className="booking-child-age-note">Age 0 - {INFANT_MAX_AGE} years</small>}</label>
+            <div className="booking-guests-field">
+              <span className="booking-guests-icon" aria-hidden="true"><Users size={30} /></span>
+              <strong className="booking-guests-label">Guests <em>*</em></strong>
+              <div className="booking-guests-steppers">
+                <div className="booking-stepper">
+                  <div className="booking-stepper-row">
+                    <span className="booking-stepper-label">Adult</span>
+                    <button type="button" aria-label="Decrease adults" disabled={adults <= 1} onClick={() => setAdults(Math.max(1, adults - 1))}><Minus size={16} /></button>
+                    <input className="booking-stepper-value" type="number" min={1} aria-label="Adults" value={adults} onChange={(event) => setAdults(Math.max(1, Math.floor(Number(event.target.value) || 0)))} />
+                    <button type="button" aria-label="Increase adults" onClick={() => setAdults(adults + 1)}><Plus size={16} /></button>
+                  </div>
+                </div>
+                <div className="booking-stepper">
+                  <div className="booking-stepper-row">
+                    <span className="booking-stepper-label">Child</span>
+                    <button type="button" aria-label="Decrease children" disabled={children <= 0} onClick={() => setChildren(Math.max(0, children - 1))}><Minus size={16} /></button>
+                    <input className="booking-stepper-value" type="number" min={0} aria-label="Children" value={children} onChange={(event) => setChildren(Math.max(0, Math.floor(Number(event.target.value) || 0)))} />
+                    <button type="button" aria-label="Increase children" onClick={() => setChildren(children + 1)}><Plus size={16} /></button>
+                  </div>
+                  {childAgePolicy > INFANT_MAX_AGE && <small className="booking-child-age-note">Age {INFANT_MAX_AGE + 1} - {childAgePolicy} years</small>}
+                </div>
+                <div className="booking-stepper">
+                  <div className="booking-stepper-row">
+                    <span className="booking-stepper-label">Infant</span>
+                    <button type="button" aria-label="Decrease infants" disabled={infants <= 0} onClick={() => setInfants(Math.max(0, infants - 1))}><Minus size={16} /></button>
+                    <input className="booking-stepper-value" type="number" min={0} aria-label="Infants" value={infants} onChange={(event) => setInfants(Math.max(0, Math.floor(Number(event.target.value) || 0)))} />
+                    <button type="button" aria-label="Increase infants" onClick={() => setInfants(infants + 1)}><Plus size={16} /></button>
+                  </div>
+                  {childAgePolicy > INFANT_MAX_AGE && <small className="booking-child-age-note">Age 0 - {INFANT_MAX_AGE} years</small>}
+                </div>
+              </div>
             </div>
             <label className="booking-line-field booking-choice-field"><span>Rate Code *</span><Choice label="Rate Code" value={rateCode} onChange={(value) => { setRateCode(value); setRoomRate(rateAmount(value)); }} items={rateItems.length ? rateItems : [{ value: 'BAR', label: 'BAR - Best Available Rate' }]} /></label>
             <label className="booking-line-field"><span>Room Rate</span><input type="number" min="0" step="0.01" value={roomRate} readOnly /></label>

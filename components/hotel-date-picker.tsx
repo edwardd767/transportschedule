@@ -127,6 +127,17 @@ export function HotelDatePicker({
     ];
   }, [cursor]);
 
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target && target.closest('.hotel-calendar-dialog')) return;
+      setOpen(false);
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    return () => document.removeEventListener('mousedown', onPointerDown);
+  }, [open]);
+
   function openPicker() {
     const next = normaliseDate(currentValue, mode);
     const selectedDate = parseKey(next);

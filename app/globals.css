@@ -4497,6 +4497,9 @@ p {
   font-size: 30px !important;
   line-height: 1.08 !important;
   letter-spacing: 0 !important;
+}.hotel-calendar-header.range strong {
+  font-size: 21px !important;
+  white-space: nowrap !important;
 }
 .hotel-calendar-monthbar {
   min-height: 54px !important;
@@ -5850,12 +5853,105 @@ p {
 
 
 /* Booking room occupancy belongs inside Room Type selection */
-.booking-room-occupancy-entry {
+.booking-guests-field {
   grid-column: 1 / -1;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin: 4px 0 6px;
+  padding: 9px 16px;
+  border: 1px solid #f0a95c;
+  border-radius: 8px;
+  background: #fdf6ea;
+}
+.booking-guests-icon {
+  flex: none;
+  display: flex;
+  color: #f58220;
+}
+.booking-guests-label {
+  flex: none;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1f1f1f;
+}
+.booking-guests-label em {
+  font-style: normal;
+  color: #e53935;
+}
+.booking-guests-steppers {
+  display: flex;
+  align-items: flex-start;
+  margin-left: auto;
+}
+.booking-stepper {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 0 14px;
+  border-left: 1px solid #e6d6bb;
+}
+.booking-stepper:first-child {
+  border-left: 0;
+}
+.booking-stepper-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.booking-stepper-label {
+  font-size: 14px;
+  color: #333;
+}
+.booking-stepper .booking-child-age-note {
+  font-size: 11px;
+  line-height: 14px;
+}
+.booking-stepper button {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
-  padding: 2px 0 4px;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: #ececec;
+  color: #6b6b6b;
+  cursor: pointer;
+}
+.booking-stepper button:disabled {
+  color: #b5b5b5;
+  cursor: default;
+}
+.booking-stepper button:last-child {
+  border-color: #f58220;
+  background: #fff;
+  color: #f58220;
+}
+.booking-stepper button:last-child:disabled {
+  border-color: #e2e2e2;
+  color: #b5b5b5;
+}
+.booking-stepper-value {
+  display: block;
+  width: 52px;
+  min-width: 0;
+  height: 30px;
+  padding: 0;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+  color: #222;
+  font-family: inherit;
+  font-size: 15px;
+  text-align: center;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.booking-stepper-value::-webkit-outer-spin-button,
+.booking-stepper-value::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 .booking-room-occupancy-entry .booking-line-field {
   min-width: 0;

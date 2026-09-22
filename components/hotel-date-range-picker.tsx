@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 function pad(value: number) {
   return String(value).padStart(2, '0');
 }
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function dateKey(year: number, month: number, day: number) {
   return `${year}-${pad(month + 1)}-${pad(day)}`;
@@ -24,6 +26,12 @@ function displayValue(value: string) {
     month: '2-digit',
     year: 'numeric',
   });
+}
+
+function headerValue(value: string) {
+  if (!value) return 'Start date';
+  const date = parseKey(value);
+  return `${pad(date.getDate())} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
 }
 
 function CalendarIcon({ size = 18 }: { size?: number }) {
@@ -72,6 +80,17 @@ export function HotelDateRangePicker({
     ...Array.from({ length: firstDay }, () => null),
     ...Array.from({ length: dayCount }, (_, index) => index + 1),
   ];
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target && target.closest('.hotel-calendar-dialog')) return;
+      setOpen(false);
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    return () => document.removeEventListener('mousedown', onPointerDown);
+  }, [open]);
 
   const openPicker = () => {
     setDraftFrom(from);
@@ -125,13 +144,9 @@ export function HotelDateRangePicker({
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="hotel-calendar-dialog" showCloseButton={false}>
-          <div className="hotel-calendar-header">
+          <div className="hotel-calendar-header range">
             <small>{cursor.year}</small>
-            <strong>
-              {draftFrom ? displayValue(draftFrom) : 'Start date'}
-              {'  →  '}
-              {draftTo ? displayValue(draftTo) : 'End date'}
-            </strong>
+            <strong>{headerValue(draftFrom)} → {headerValue(draftTo)}</strong>
           </div>
 
           <div className="hotel-calendar-monthbar">
