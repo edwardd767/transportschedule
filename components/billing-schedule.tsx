@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, ChevronUp } from 'lucide-react';
+import { Baby, ChevronDown, ChevronRight, ChevronUp, Footprints, User } from 'lucide-react';
 import type { BillingScheduleAdjustment, Booking, BookingRoom } from '@/lib/bookings';
 import { paxNight } from '@/lib/pax-billing';
 import { bookingRate } from '@/lib/booking-rate';
@@ -235,7 +235,7 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
             const assignedRoomNo = assignedRoomNumbers[room.code]?.[sameTypeOffset + copyIndex];
             return <div className="billing-room-block" key={roomKey}>
               <button className="billing-room-head" type="button" onClick={() => setExpandedRoom(isRoomOpen ? '' : roomKey)}>
-                <span><strong>Room {copyIndex + 1}</strong><small>{booking.guest}{assignedRoomNo ? ` | ${assignedRoomNo}` : ''} | {money(dailyLines.reduce((total, line) => total + line.amount, 0))}</small></span>{isRoomOpen ? <ChevronUp size={17} /> : <ChevronDown size={17} />}
+                <span><span className="billing-room-title"><strong>Room {copyIndex + 1}</strong><small className="booking-pax-count"><span className="booking-pax-icon" title="Adult"><User size={13} aria-label="Adults" /></span><b title="Adult">{room.adults ?? 0}</b><span className="booking-pax-icon" title="Child"><Baby size={13} aria-label="Children" /></span><b title="Child">{room.children ?? 0}</b><span className="booking-pax-icon" title="Infant"><Footprints size={13} aria-label="Infants" /></span><b title="Infant">{room.infants ?? 0}</b></small></span><small>{booking.guest}{assignedRoomNo ? ` | ${assignedRoomNo}` : ''} | {money(dailyLines.reduce((total, line) => total + line.amount, 0))}</small></span>{isRoomOpen ? <ChevronUp size={17} /> : <ChevronDown size={17} />}
               </button>
               {isRoomOpen && <div className="billing-room-detail">
                 <div className="billing-date-range"><HotelDateRangePicker from={fromDate} to={toDate} min={booking.arrival} max={addDays(booking.departure, -1)} onChange={(nextFrom, nextTo) => { setFromDate(nextFrom); setToDate(nextTo); }} ariaLabel="Select billing schedule date range" className="billing-date-field" /></div>

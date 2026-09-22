@@ -3766,6 +3766,8 @@ p {
 .billing-room-block:last-child{border-bottom:0}
 .billing-room-head{padding:8px 36px 8px 46px;color:#ff810f}
 .billing-room-head strong{display:block;font-size:14px}
+.billing-room-title{display:flex;align-items:center;gap:12px}
+.billing-room-title .booking-pax-count{margin-top:0;color:#4a4a4a;font-weight:400}
 .billing-room-detail{padding:10px 32px 12px 46px}
 .billing-date-range{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;margin-bottom:14px}
 .billing-date-range label{position:relative;height:38px;border:1px solid #d0d0d0;border-radius:4px;background:#fff;padding:10px 42px 9px 12px;font-size:13px}
