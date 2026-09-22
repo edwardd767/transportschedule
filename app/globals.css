@@ -6394,6 +6394,7 @@ p {
 .billing-date-range .hotel-date-field{width:100%!important;min-width:0!important;min-height:40px!important;display:flex!important;align-items:center!important;justify-content:space-between!important;padding:0 12px!important;border:1px solid #cfd0d3!important;border-radius:5px!important;background:#fff!important;color:#242424!important;font-size:14px!important;line-height:1!important;box-shadow:none!important}
 .billing-date-range .hotel-date-field:hover{border-color:#f79400!important;background:#fffaf3!important}
 .billing-date-range .hotel-date-field>svg{width:18px!important;height:18px!important;color:#666!important}
+.billing-date-range > .hotel-date-range-field{grid-column:1 / -1}
 @media(max-width:720px){.billing-date-range{grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr)!important;gap:4px!important}.billing-date-range .hotel-date-field{min-height:40px!important;padding:0 10px!important;font-size:13px!important}}
 
 
