@@ -145,7 +145,22 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
     .map((leg) => {
       const charge = leg.incidentalCharge!;
       const amount = (leg.adults ?? leg.passengers) * charge.adultRate + (leg.children ?? 0) * charge.childRate + (leg.infants ?? 0) * charge.infantRate;
-      return { id: leg.id, direction: leg.direction, title: charge.chargeTitle || leg.serviceName, date: leg.date, time: leg.time, amount };
+      return {
+        id: leg.id,
+        direction: leg.direction,
+        title: charge.chargeTitle || leg.serviceName,
+        date: leg.date,
+        time: leg.time,
+        amount,
+        serviceName: leg.serviceName,
+        serviceType: leg.serviceType,
+        operatorName: leg.operatorName,
+        pickup: leg.pickup,
+        dropoff: leg.dropoff,
+        adults: leg.adults ?? leg.passengers,
+        children: leg.children ?? 0,
+        infants: leg.infants ?? 0,
+      };
     });
   const transportTotal = transportLines.reduce((total, line) => total + line.amount, 0);
   const roomTotal = lines.reduce((total, line) => total + line.amount, 0);
@@ -235,7 +250,7 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
             const assignedRoomNo = assignedRoomNumbers[room.code]?.[sameTypeOffset + copyIndex];
             return <div className="billing-room-block" key={roomKey}>
               <button className="billing-room-head" type="button" onClick={() => setExpandedRoom(isRoomOpen ? '' : roomKey)}>
-                <span><span className="billing-room-title"><strong>Room {copyIndex + 1}</strong><small className="booking-pax-count"><span className="booking-pax-icon billing-pax-tip" data-tip="Adult"><User size={13} aria-label="Adults" /></span><b>{room.adults ?? 0}</b><span className="booking-pax-icon billing-pax-tip" data-tip="Child"><Baby size={13} aria-label="Children" /></span><b>{room.children ?? 0}</b><span className="booking-pax-icon billing-pax-tip" data-tip="Infant"><Footprints size={13} aria-label="Infants" /></span><b>{room.infants ?? 0}</b></small></span><small>{booking.guest}{assignedRoomNo ? ` | ${assignedRoomNo}` : ''} | {money(dailyLines.reduce((total, line) => total + line.amount, 0))}</small></span>{isRoomOpen ? <ChevronUp size={17} /> : <ChevronDown size={17} />}
+                <span><span className="billing-room-title"><strong>Room {copyIndex + 1}</strong><small className="booking-pax-count"><span className="booking-pax-icon billing-pax-tip" data-tip="Adult"><User size={17} aria-label="Adults" /></span><b>{room.adults ?? 0}</b><span className="booking-pax-icon billing-pax-tip" data-tip="Child"><Baby size={17} aria-label="Children" /></span><b>{room.children ?? 0}</b><span className="booking-pax-icon billing-pax-tip" data-tip="Infant"><Footprints size={17} aria-label="Infants" /></span><b>{room.infants ?? 0}</b></small></span><small>{booking.guest}{assignedRoomNo ? ` | ${assignedRoomNo}` : ''} | {money(dailyLines.reduce((total, line) => total + line.amount, 0))}</small></span>{isRoomOpen ? <ChevronUp size={17} /> : <ChevronDown size={17} />}
               </button>
               {isRoomOpen && <div className="billing-room-detail">
                 <div className="billing-date-range"><HotelDateRangePicker from={fromDate} to={toDate} min={booking.arrival} max={addDays(booking.departure, -1)} onChange={(nextFrom, nextTo) => { setFromDate(nextFrom); setToDate(nextTo); }} ariaLabel="Select billing schedule date range" className="billing-date-field" /></div>
@@ -259,8 +274,8 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
                   <div className="billing-daily-line" key={line.id}>
                     <span aria-hidden="true" />
                     <span>
-                      <strong>Transport | {line.title}</strong>
-                      <span className="billing-breakdown-labels"><small>{line.direction === 'arrival' ? 'Arrival' : 'Departure'} · {dayLabel(line.date)}{line.time ? ` · ${line.time}` : ''}</small></span>
+                      <strong>{dayLabel(line.date)} | {line.title}<span className="billing-info" tabIndex={0} aria-label={`Boat information: ${line.serviceName}, ${line.serviceType}, operator ${line.operatorName}, ${line.pickup} to ${line.dropoff}, ${dayLabel(line.date)} ${line.time}, ${line.adults} adult ${line.children} child ${line.infants} infant`}><svg className="billing-info-icon" viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="8" fill="currentColor" /><rect x="7.1" y="6.7" width="1.8" height="5" rx=".9" fill="#fff" /><circle cx="8" cy="4.4" r="1.05" fill="#fff" /></svg><span className="billing-info-tip" role="tooltip"><b>Boat Information</b><span className="billing-info-row"><span>Boat</span><span>{line.serviceName}</span></span><span className="billing-info-row"><span>Type</span><span>{line.serviceType}</span></span><span className="billing-info-row"><span>Operator</span><span>{line.operatorName}</span></span><span className="billing-info-row"><span>Route</span><span>{line.pickup} → {line.dropoff}</span></span><span className="billing-info-row"><span>Departure</span><span>{dayLabel(line.date)}, {line.time}</span></span><span className="billing-info-row billing-info-total"><span>Passengers</span><span>{line.adults} Adult, {line.children} Child, {line.infants} Infant</span></span></span></span></strong>
+                      <span className="billing-breakdown-labels"><small>Transport | {line.direction === 'arrival' ? 'Arrival' : 'Departure'} - {dayLabel(line.date)}{line.time ? ` - ${line.time}` : ''}</small></span>
                     </span>
                     <span><strong>{money(line.amount)}</strong></span>
                   </div>
