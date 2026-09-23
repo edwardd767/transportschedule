@@ -255,7 +255,23 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
               {isRoomOpen && <div className="billing-room-detail">
                 <div className="billing-date-range"><HotelDateRangePicker from={fromDate} to={toDate} min={booking.arrival} max={addDays(booking.departure, -1)} onChange={(nextFrom, nextTo) => { setFromDate(nextFrom); setToDate(nextTo); }} ariaLabel="Select billing schedule date range" className="billing-date-field" /></div>
                 <label className="billing-select-all"><input type="checkbox" ref={(element) => { if (element) element.indeterminate = !allSelected && visibleIds.some((id) => selected.includes(id)); }} data-indeterminate={!allSelected && visibleIds.some((id) => selected.includes(id)) ? 'true' : 'false'} checked={allSelected} onChange={() => setSelected(allSelected ? selected.filter((id) => !visibleIds.includes(id)) : Array.from(new Set([...selected, ...visibleIds])))} /> Select All</label>
-                {dailyLines.map((line) => {
+                {(() => {
+                  const roomRows = dailyLines.map((line) => ({ date: line.date, kind: 'room' as const, line }));
+                  const transportRows = roomIndex === 0 && copyIndex === 0 ? transportLines.map((line) => ({ date: line.date, kind: 'transport' as const, line })) : [];
+                  return [...roomRows, ...transportRows].sort((a, b) => a.date.localeCompare(b.date)).map((entry) => {
+                    if (entry.kind === 'transport') {
+                      const line = entry.line;
+                      return <div className="billing-daily-line" key={line.id}>
+                        <span aria-hidden="true" />
+                        <span>
+                          <strong>{dayLabel(line.date)} | {line.title}<span className="billing-info" tabIndex={0} aria-label={`Boat information: ${line.serviceName}, ${line.serviceType}, operator ${line.operatorName}, ${line.pickup} to ${line.dropoff}, ${dayLabel(line.date)} ${line.time}, ${line.adults} adult ${line.children} child ${line.infants} infant`}><svg className="billing-info-icon" viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="8" fill="currentColor" /><rect x="7.1" y="6.7" width="1.8" height="5" rx=".9" fill="#fff" /><circle cx="8" cy="4.4" r="1.05" fill="#fff" /></svg><span className="billing-info-tip" role="tooltip"><b>Boat Information</b><span className="billing-info-row"><span>Boat</span><span>{line.serviceName}</span></span><span className="billing-info-row"><span>Type</span><span>{line.serviceType}</span></span><span className="billing-info-row"><span>Operator</span><span>{line.operatorName}</span></span><span className="billing-info-row"><span>Route</span><span>{line.pickup} → {line.dropoff}</span></span><span className="billing-info-row"><span>Departure</span><span>{dayLabel(line.date)}, {line.time}</span></span><span className="billing-info-row billing-info-total"><span>Passengers</span><span>{line.adults} Adult, {line.children} Child, {line.infants} Infant</span></span></span></span></strong>
+                          <span className="billing-breakdown-labels"><small>Transport | {line.direction === 'arrival' ? 'Arrival' : 'Departure'} - {dayLabel(line.date)}{line.time ? ` - ${line.time}` : ''}</small></span>
+                        </span>
+                        <span><strong>{money(line.amount)}</strong></span>
+                      </div>;
+                    }
+                    const line = entry.line;
+
                   const elementTotal = line.elements.reduce((sum, item) => sum + item.amount, 0);
                   const addOnTotal = line.addOns.reduce((sum, item) => sum + item.amount, 0);
                   const roomCharge = Math.max(0, line.amount - elementTotal - addOnTotal);
@@ -276,17 +292,8 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
                     ? [...standardBreakdown].sort((a, b) => sortDirection === 'asc' ? a.amount - b.amount : b.amount - a.amount)
                     : standardBreakdown;
                   return <label className="billing-daily-line" key={line.id}><input type="checkbox" data-indeterminate="false" checked={selected.includes(line.id)} onChange={() => toggleLine(line.id)} /><span><strong>{dayLabel(line.date)} | <button type="button" title="Sort breakdown by amount" aria-label={`Sort ${line.date} ${line.rateCode} breakdown by amount ${sortDirection === 'asc' ? 'descending' : 'ascending'}`} onClick={(event) => { event.preventDefault(); event.stopPropagation(); toggleBreakdownSort(line.id); }} style={{ border: 0, padding: 0, background: 'transparent', font: 'inherit', fontWeight: 'inherit', cursor: 'pointer', color: 'inherit' }}>{line.rateCode}{sortDirection ? ` ${sortDirection === 'asc' ? '↑' : '↓'}` : ''}</button></strong><span className="billing-breakdown-labels">{sortedBreakdown.map((item) => <small key={item.key}>{item.name}{item.info ? <span className="billing-info" tabIndex={0} aria-label={`${item.info.title}: ${item.info.lines.map((entry) => `${entry.label} ${money(entry.amount)}`).join(', ')}`}><svg className="billing-info-icon" viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="8" fill="currentColor" /><rect x="7.1" y="6.7" width="1.8" height="5" rx=".9" fill="#fff" /><circle cx="8" cy="4.4" r="1.05" fill="#fff" /></svg><span className="billing-info-tip" role="tooltip"><b>{item.info.title}</b>{item.info.note ? <span className="billing-info-note">{item.info.note}</span> : null}{item.info.lines.map((entry, index) => <span className={`billing-info-row${entry.muted ? ' is-muted' : ''}`} key={index}><span>{entry.label}</span><span>{money(entry.amount)}</span></span>)}{item.info.total !== undefined ? <span className="billing-info-row billing-info-total"><span>Total</span><span>{money(item.info.total)}</span></span> : null}</span></span> : null}</small>)}</span></span><span><strong>{money(line.amount)}</strong><span className="billing-breakdown-values">{sortedBreakdown.map((item) => <small key={item.key}>{money(item.amount)}</small>)}</span></span></label>;
-                })}
-                {roomIndex === 0 && copyIndex === 0 && transportLines.map((line) => (
-                  <div className="billing-daily-line" key={line.id}>
-                    <span aria-hidden="true" />
-                    <span>
-                      <strong>{dayLabel(line.date)} | {line.title}<span className="billing-info" tabIndex={0} aria-label={`Boat information: ${line.serviceName}, ${line.serviceType}, operator ${line.operatorName}, ${line.pickup} to ${line.dropoff}, ${dayLabel(line.date)} ${line.time}, ${line.adults} adult ${line.children} child ${line.infants} infant`}><svg className="billing-info-icon" viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="8" fill="currentColor" /><rect x="7.1" y="6.7" width="1.8" height="5" rx=".9" fill="#fff" /><circle cx="8" cy="4.4" r="1.05" fill="#fff" /></svg><span className="billing-info-tip" role="tooltip"><b>Boat Information</b><span className="billing-info-row"><span>Boat</span><span>{line.serviceName}</span></span><span className="billing-info-row"><span>Type</span><span>{line.serviceType}</span></span><span className="billing-info-row"><span>Operator</span><span>{line.operatorName}</span></span><span className="billing-info-row"><span>Route</span><span>{line.pickup} → {line.dropoff}</span></span><span className="billing-info-row"><span>Departure</span><span>{dayLabel(line.date)}, {line.time}</span></span><span className="billing-info-row billing-info-total"><span>Passengers</span><span>{line.adults} Adult, {line.children} Child, {line.infants} Infant</span></span></span></span></strong>
-                      <span className="billing-breakdown-labels"><small>Transport | {line.direction === 'arrival' ? 'Arrival' : 'Departure'} - {dayLabel(line.date)}{line.time ? ` - ${line.time}` : ''}</small></span>
-                    </span>
-                    <span><strong>{money(line.amount)}</strong></span>
-                  </div>
-                ))}
+                  });
+                })()}
               </div>}
             </div>;
           })}
