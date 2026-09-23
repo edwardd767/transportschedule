@@ -2793,140 +2793,128 @@ p {
   position: fixed;
   inset: 0;
   z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
 }
 .advance-search-scrim {
   position: absolute;
   inset: 0;
   border: 0;
   padding: 0;
-  background: transparent;
+  background: rgba(0, 0, 0, 0.32);
   cursor: default;
 }
 .advance-search-panel {
-  position: absolute;
-  top: 58px;
-  left: 12px;
-  width: min(600px, calc(100vw - 24px));
-  max-height: calc(100vh - 76px);
+  position: relative;
+  width: min(600px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
   margin: 0;
   padding: 0;
   border: 0;
-  border-radius: 10px;
-  overflow: auto;
+  border-radius: 4px;
+  overflow: hidden;
   background: #fff;
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 11px 15px -7px rgba(0, 0, 0, .2), 0 24px 38px 3px rgba(0, 0, 0, .14), 0 9px 46px 8px rgba(0, 0, 0, .12);
+  display: flex;
+  flex-direction: column;
 }
 .advance-search-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 11px 14px;
-  background: #fff8ef;
-  border-bottom: 1px solid #f2e3cf;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #faf2e8;
 }
 .advance-search-head strong {
-  font-size: 16px;
-  font-weight: 700;
-  color: #f58220;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 18px;
+  color: #ff9800;
 }
 .advance-search-reset {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border: 1px solid #f79400;
-  border-radius: 6px;
+  gap: 8px;
+  padding: 3px 9px;
+  border: 1px solid #ff9800;
+  border-radius: 4px;
   background: #fff;
-  color: #f79400;
-  font-weight: 600;
+  color: #ff9800;
+  font-weight: 500;
   font-size: 13px;
   cursor: pointer;
 }
 .advance-search-body {
-  display: grid;
-  gap: 2px;
-  padding: 4px 14px 8px;
+  padding: 8px 12px 12px;
+  overflow-y: auto;
 }
 .advance-search-group {
-  padding-top: 6px;
+  padding-top: 0;
 }
 .advance-search-group-label {
   display: block;
-  margin-bottom: 6px;
-  font-size: 13px;
-  font-weight: 700;
-  color: #333;
+  margin: 10px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 14px;
+  color: #212121;
 }
 .advance-search-pair {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 18px;
+  gap: 6px;
 }
 .advance-search-field {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 6px 0;
-  border-bottom: 1px solid #ddd;
+  display: block;
+  position: relative;
+  height: 45px;
+  margin: 8px 0 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.42);
 }
 .advance-search-field > span {
-  font-size: 12px;
-  color: #8a94a6;
+  position: absolute;
+  left: 0;
+  top: 29px;
+  transform: translateY(-50%);
+  font-size: 16px;
+  line-height: 16px;
+  color: #878787;
+  transition: top .15s ease, font-size .15s ease, color .15s ease;
+  pointer-events: none;
 }
 .advance-search-field:has(> input) {
-  position: relative;
   display: block;
-  padding: 16px 0 7px;
-}
-.advance-search-field:has(> input) > span {
-  position: absolute;
-  left: 0;
-  top: 24px;
-  transform: translateY(-50%);
-  font-size: 15px;
-  color: #9aa0a6;
-  transition: top .15s ease, font-size .15s ease, color .15s ease;
-  pointer-events: none;
 }
 .advance-search-field:has(> input):has(> input:not(:placeholder-shown)) > span {
-  top: 2px;
+  top: 4px;
   transform: none;
-  font-size: 11px;
-  color: #8a94a6;
+  font-size: 12px;
+  color: #878787;
 }
 .advance-search-field:has(> input):focus-within > span {
-  top: 2px;
+  top: 4px;
   transform: none;
-  font-size: 11px;
-  color: #f58220;
+  font-size: 12px;
+  color: #ff9800;
 }
 .advance-search-field:has(> input):focus-within {
-  border-bottom-color: #f58220;
+  border-bottom-color: #ff9800;
 }
 .advance-search-field:has(.hotel-date-field) {
-  position: relative;
   display: block;
-  padding: 16px 0 7px;
-}
-.advance-search-field:has(.hotel-date-field) > span {
-  position: absolute;
-  left: 0;
-  top: 24px;
-  transform: translateY(-50%);
-  font-size: 15px;
-  color: #9aa0a6;
-  transition: top .15s ease, font-size .15s ease, color .15s ease;
-  pointer-events: none;
 }
 .advance-search-field:has(.hotel-date-field):has(.hotel-date-field input:not(:placeholder-shown)) > span,
 .advance-search-field:has(.hotel-date-field):focus-within > span {
-  top: 2px;
+  top: 4px;
   transform: none;
-  font-size: 11px;
-  color: #f58220;
+  font-size: 12px;
+  color: #ff9800;
 }
 .advance-search-field:has(.hotel-date-field):focus-within {
-  border-bottom-color: #f58220;
+  border-bottom-color: #ff9800;
 }
 .advance-search-field input:focus,
 .advance-search-field input:focus-visible,
@@ -2934,16 +2922,20 @@ p {
 .advance-search-field .hotel-date-field input:focus-visible {
   outline: none;
 }
-.advance-search-field input,
-.advance-search-field select {
+.advance-search-field > input,
+.advance-search-field > select {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
   width: 100%;
-  height: 26px;
-  padding: 0;
+  height: 29px;
+  padding: 3px 0 7px;
   border: 0;
   background: transparent;
   font: inherit;
-  font-size: 15px;
-  color: #222;
+  font-size: 16px;
+  color: #212121;
 }
 .advance-search-field select {
   appearance: none;
@@ -2951,19 +2943,82 @@ p {
   background-repeat: no-repeat;
   background-position: right 2px center;
 }
-.advance-search-field .hotel-date-field {
+.advance-search-field > .hotel-date-field {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
   width: 100%;
   min-height: 0;
-  padding: 0;
+  height: 29px;
+  padding: 3px 0 7px;
   border: 0;
   border-radius: 0;
   background: transparent;
-  font-size: 15px;
-  color: #222;
+  font-size: 16px;
+  color: #212121;
 }
 .advance-search-field .hotel-date-field:hover {
   border-color: transparent;
   background: transparent;
+}
+.advance-search-field.advance-search-select {
+  display: block;
+}
+.advance-search-field.advance-search-select[data-filled='true'] > span,
+.advance-search-field.advance-search-select:focus-within > span {
+  top: 4px;
+  transform: none;
+  font-size: 12px;
+  color: #ff9800;
+}
+.advance-search-field > .advance-search-select-trigger {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  height: 29px;
+  min-height: 0;
+  padding: 3px 0 7px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #212121;
+  font: inherit;
+  font-size: 16px;
+  text-align: left;
+}
+.advance-search-select-menu {
+  position: absolute;
+  z-index: 120;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  max-height: 230px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  background: #fff;
+  box-shadow: 0 5px 16px rgba(0, 0, 0, .18);
+}
+.advance-search-select-menu button {
+  display: block;
+  width: 100%;
+  padding: 9px 11px;
+  border: 0;
+  background: #fff;
+  color: #212121;
+  text-align: left;
+  font: inherit;
+}
+.advance-search-select-menu button:hover,
+.advance-search-select-menu button.is-active {
+  background: #f1f1f1;
 }
 .hotel-date-field.is-editable {
   display: flex;
@@ -2996,9 +3051,26 @@ p {
 .advance-search-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  padding: 10px 14px 12px;
-  border-top: 1px solid #eee;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px 12px;
+  background: #fff;
+}
+.advance-search-cancel,
+.advance-search-confirm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 29px;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 4px;
+  background: #ff9800;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 3px 1px -2px rgba(0, 0, 0, .2), 0 2px 2px 0 rgba(0, 0, 0, .14), 0 1px 5px 0 rgba(0, 0, 0, .12);
 }
 .booking-detail-summary {
   flex-shrink: 0;
