@@ -66,6 +66,16 @@ type BillingLine = {
   addOns: { name: string; amount: number }[];
 };
 
+function roomTypeGroups(rooms: BookingRoom[]) {
+  const groups: { code: string; entries: { index: number; room: BookingRoom }[] }[] = [];
+  rooms.forEach((room, index) => {
+    const group = groups.find((item) => item.code === room.code);
+    if (group) group.entries.push({ index, room });
+    else groups.push({ code: room.code, entries: [{ index, room }] });
+  });
+  return groups;
+}
+
 function lineAdjustment(booking: Booking, line: BillingLine) {
   return booking.billingSchedule?.find((item) => item.id === line.id);
 }
@@ -217,22 +227,24 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
       <div className="booking-detail-bottom"><span>{booking.reference} <span className="booking-divider">|</span> {booking.guest}</span></div>
     </div>
     <div className="billing-schedule-scroll">
-      {booking.rooms.map((room, roomIndex) => {
-        const roomLines = lines.filter((line) => line.roomTypeCode === room.code);
-        const isRoomTypeOpen = expandedRoomType === room.code;
-        return <article className="billing-room-type-card" key={`${room.code}-${roomIndex}`}>
-          <button className="billing-room-type-head" type="button" onClick={() => setExpandedRoomType(isRoomTypeOpen ? '' : room.code)}>
-            <span><strong>{room.code}</strong><small><RoomIcon size={14} /> {room.count} | {money(roomLines.reduce((total, line) => total + line.amount, 0))}</small></span>{isRoomTypeOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+      {roomTypeGroups(booking.rooms).map((group) => {
+        const roomLines = lines.filter((line) => line.roomTypeCode === group.code);
+        const isRoomTypeOpen = expandedRoomType === group.code;
+        const typeRoomTotal = group.entries.reduce((sum, entry) => sum + Math.max(1, entry.room.count), 0);
+        let roomNumber = 0;
+        return <article className="billing-room-type-card" key={group.code}>
+          <button className="billing-room-type-head" type="button" onClick={() => setExpandedRoomType(isRoomTypeOpen ? '' : group.code)}>
+            <span><strong>{group.code}</strong><small><RoomIcon size={14} /> {typeRoomTotal} | {money(roomLines.reduce((total, line) => total + line.amount, 0))}</small></span>{isRoomTypeOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
           </button>
-          {isRoomTypeOpen && Array.from({ length: room.count }, (_, copyIndex) => {
+          {isRoomTypeOpen && group.entries.flatMap(({ index: roomIndex, room }) => Array.from({ length: Math.max(1, room.count) }, (_, copyIndex) => {
+            roomNumber += 1;
             const roomKey = `${roomIndex}-${copyIndex}`;
             const isRoomOpen = expandedRoom === roomKey;
             const dailyLines = roomLines.filter((line) => line.roomKey === roomKey);
-            const sameTypeOffset = booking.rooms.slice(0, roomIndex).filter((item) => item.code === room.code).reduce((total, item) => total + item.count, 0);
-            const assignedRoomNo = assignedRoomNumbers[room.code]?.[sameTypeOffset + copyIndex];
+            const assignedRoomNo = assignedRoomNumbers[group.code]?.[roomNumber - 1];
             return <div className="billing-room-block" key={roomKey}>
               <button className="billing-room-head" type="button" onClick={() => setExpandedRoom(isRoomOpen ? '' : roomKey)}>
-                <span><span className="billing-room-title"><strong>Room {copyIndex + 1}</strong><small className="booking-pax-count"><span className="booking-pax-icon billing-pax-tip" data-tip="Adult"><User size={17} aria-label="Adults" /></span><b>{room.adults ?? 0}</b><span className="booking-pax-icon billing-pax-tip" data-tip="Child"><Baby size={17} aria-label="Children" /></span><b>{room.children ?? 0}</b><span className="booking-pax-icon billing-pax-tip" data-tip="Infant"><InfantIcon size={17} label="Infants" /></span><b>{room.infants ?? 0}</b></small></span><small>{booking.guest}{assignedRoomNo ? ` | ${assignedRoomNo}` : ''} | {money(dailyLines.reduce((total, line) => total + line.amount, 0))}</small></span>{isRoomOpen ? <ChevronUp size={17} /> : <ChevronDown size={17} />}
+                <span><span className="billing-room-title"><strong>Room {roomNumber}</strong><small className="booking-pax-count"><span className="booking-pax-icon billing-pax-tip" data-tip="Adult"><User size={17} aria-label="Adults" /></span><b>{room.adults ?? 0}</b><span className="booking-pax-icon billing-pax-tip" data-tip="Child"><Baby size={17} aria-label="Children" /></span><b>{room.children ?? 0}</b><span className="booking-pax-icon billing-pax-tip" data-tip="Infant"><InfantIcon size={17} label="Infants" /></span><b>{room.infants ?? 0}</b></small></span><small>{booking.guest}{assignedRoomNo ? ` | ${assignedRoomNo}` : ''} | {money(dailyLines.reduce((total, line) => total + line.amount, 0))}</small></span>{isRoomOpen ? <ChevronUp size={17} /> : <ChevronDown size={17} />}
               </button>
               {isRoomOpen && <div className="billing-room-detail">
                 <div className="billing-date-range"><HotelDateRangePicker from={fromDate} to={toDate} min={booking.arrival} max={addDays(booking.departure, -1)} onChange={(nextFrom, nextTo) => { setFromDate(nextFrom); setToDate(nextTo); }} ariaLabel="Select billing schedule date range" className="billing-date-field" /></div>
@@ -278,7 +290,7 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
                 })()}
               </div>}
             </div>;
-          })}
+          }))}
         </article>;
       })}
     </div>
