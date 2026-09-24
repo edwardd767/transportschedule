@@ -230,3 +230,21 @@ export function roomCount(booking: Booking) {
 export function bookingStatusClass(status: BookingStatus) {
   return `booking-status-${status.toLowerCase().replaceAll(' ', '-')}`;
 }
+export function roomAssignments(booking: Booking): Record<string, string[]> {
+  const raw = booking.specialRequests?._roomAssignments;
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    return Object.fromEntries(
+      Object.entries(parsed).map(([roomType, roomNos]) => [
+        roomType,
+        Array.isArray(roomNos)
+          ? roomNos.filter((roomNo): roomNo is string => typeof roomNo === 'string' && Boolean(roomNo.trim())).map((roomNo) => roomNo.trim())
+          : [],
+      ]),
+    );
+  } catch {
+    return {};
+  }
+}

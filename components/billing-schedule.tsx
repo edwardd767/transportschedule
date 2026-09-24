@@ -1,8 +1,9 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Baby, ChevronDown, ChevronRight, ChevronUp, Footprints, User } from 'lucide-react';
-import type { BillingScheduleAdjustment, Booking, BookingRoom } from '@/lib/bookings';
+import { Baby, ChevronDown, ChevronRight, ChevronUp, User } from 'lucide-react';
+import { InfantIcon } from '@/components/infant-icon';
+import { roomAssignments, type BillingScheduleAdjustment, type Booking, type BookingRoom } from '@/lib/bookings';
 import { paxNight } from '@/lib/pax-billing';
 import { bookingRate } from '@/lib/booking-rate';
 import type { BookingTransportLeg } from '@/lib/booking-transport';
@@ -65,25 +66,6 @@ type BillingLine = {
   addOns: { name: string; amount: number }[];
 };
 
-function billingRoomAssignments(booking: Booking): Record<string, string[]> {
-  const raw = booking.specialRequests?._roomAssignments;
-  if (!raw) return {};
-  try {
-    const parsed = JSON.parse(raw) as Record<string, unknown>;
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
-    return Object.fromEntries(
-      Object.entries(parsed).map(([roomType, roomNos]) => [
-        roomType,
-        Array.isArray(roomNos)
-          ? roomNos.filter((roomNo): roomNo is string => typeof roomNo === 'string' && Boolean(roomNo.trim())).map((roomNo) => roomNo.trim())
-          : [],
-      ]),
-    );
-  } catch {
-    return {};
-  }
-}
-
 function lineAdjustment(booking: Booking, line: BillingLine) {
   return booking.billingSchedule?.find((item) => item.id === line.id);
 }
@@ -137,7 +119,7 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
     return rows;
   }, [booking, fromDate, rateSetup, toDate]);
 
-  const assignedRoomNumbers = useMemo(() => billingRoomAssignments(booking), [booking]);
+  const assignedRoomNumbers = useMemo(() => roomAssignments(booking), [booking]);
   const activeRateCodes = rateSetup.ratePlans.filter((plan) => plan.active);
   const selectedLines = lines.filter((line) => selected.includes(line.id));
   const transportLines = bookingLegs
@@ -250,7 +232,7 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
             const assignedRoomNo = assignedRoomNumbers[room.code]?.[sameTypeOffset + copyIndex];
             return <div className="billing-room-block" key={roomKey}>
               <button className="billing-room-head" type="button" onClick={() => setExpandedRoom(isRoomOpen ? '' : roomKey)}>
-                <span><span className="billing-room-title"><strong>Room {copyIndex + 1}</strong><small className="booking-pax-count"><span className="booking-pax-icon billing-pax-tip" data-tip="Adult"><User size={17} aria-label="Adults" /></span><b>{room.adults ?? 0}</b><span className="booking-pax-icon billing-pax-tip" data-tip="Child"><Baby size={17} aria-label="Children" /></span><b>{room.children ?? 0}</b><span className="booking-pax-icon billing-pax-tip" data-tip="Infant"><Footprints size={17} aria-label="Infants" /></span><b>{room.infants ?? 0}</b></small></span><small>{booking.guest}{assignedRoomNo ? ` | ${assignedRoomNo}` : ''} | {money(dailyLines.reduce((total, line) => total + line.amount, 0))}</small></span>{isRoomOpen ? <ChevronUp size={17} /> : <ChevronDown size={17} />}
+                <span><span className="billing-room-title"><strong>Room {copyIndex + 1}</strong><small className="booking-pax-count"><span className="booking-pax-icon billing-pax-tip" data-tip="Adult"><User size={17} aria-label="Adults" /></span><b>{room.adults ?? 0}</b><span className="booking-pax-icon billing-pax-tip" data-tip="Child"><Baby size={17} aria-label="Children" /></span><b>{room.children ?? 0}</b><span className="booking-pax-icon billing-pax-tip" data-tip="Infant"><InfantIcon size={17} label="Infants" /></span><b>{room.infants ?? 0}</b></small></span><small>{booking.guest}{assignedRoomNo ? ` | ${assignedRoomNo}` : ''} | {money(dailyLines.reduce((total, line) => total + line.amount, 0))}</small></span>{isRoomOpen ? <ChevronUp size={17} /> : <ChevronDown size={17} />}
               </button>
               {isRoomOpen && <div className="billing-room-detail">
                 <div className="billing-date-range"><HotelDateRangePicker from={fromDate} to={toDate} min={booking.arrival} max={addDays(booking.departure, -1)} onChange={(nextFrom, nextTo) => { setFromDate(nextFrom); setToDate(nextTo); }} ariaLabel="Select billing schedule date range" className="billing-date-field" /></div>

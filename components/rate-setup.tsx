@@ -15,9 +15,9 @@ import {
   Search,
   Tag,
   Users,
-  Footprints,
   X,
 } from 'lucide-react';
+import { InfantIcon } from '@/components/infant-icon';
 import { HotelDatePicker } from '@/components/hotel-date-picker';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { Choice } from '@/components/hotel-choice';
@@ -29,7 +29,7 @@ const CHARGE_BASIS_ITEMS = [
   { value: 'Per Person', label: 'Per Person', icon: <Users size={14} /> },
   { value: 'Per Adult', label: 'Per Adult', icon: <User size={14} /> },
   { value: 'Per Child', label: 'Per Child', icon: <Baby size={14} /> },
-  { value: 'Per Infant', label: 'Per Infant', icon: <Footprints size={14} /> },
+  { value: 'Per Infant', label: 'Per Infant', icon: <InfantIcon size={14} /> },
 ];
 
 const POSTING_RHYTHM_ITEMS = [

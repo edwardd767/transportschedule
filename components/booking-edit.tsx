@@ -1,7 +1,8 @@
 'use client';
 
 import { useMemo, useState, type FormEvent } from 'react';
-import { User, Baby, CalendarDays, Footprints, Minus, Plus, Users } from 'lucide-react';
+import { User, Baby, CalendarDays, ChevronDown, ChevronUp, Plus } from 'lucide-react';
+import { InfantIcon } from '@/components/infant-icon';
 import { BookingAvailability } from '@/components/booking-availability';
 import { bookingRate } from '@/lib/booking-rate';
 import { rateAddOnsForNight } from '@/lib/pax-billing';
@@ -333,7 +334,7 @@ export function BookingEdit({
             {roomLines.map((room, index) => (
               <div className="booking-edit-room-row" key={`${room.code}-${index}`}>
                 <span><small><svg viewBox="0 0 24 24" width={14} height={14} fill="currentColor" aria-hidden="true"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.9.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z" /></svg> {shortDate(arrival)} - {shortDate(departure)}</small><b>{index + 1}</b></span>
-                <span><b>{room.code}</b><small className="booking-pax-count"><span className="booking-pax-icon billing-pax-tip" data-tip="Adult"><User size={13} aria-label="Adults" /></span><b>{room.adults ?? 0}</b><span className="booking-pax-icon billing-pax-tip" data-tip="Child"><Baby size={13} aria-label="Children" /></span><b>{room.children ?? 0}</b><span className="booking-pax-icon billing-pax-tip" data-tip="Infant"><Footprints size={13} aria-label="Infants" /></span><b>{room.infants ?? 0}</b></small></span>
+                <span><b>{room.code}</b><small className="booking-pax-count"><span className="booking-pax-icon billing-pax-tip" data-tip="Adult"><User size={13} aria-label="Adults" /></span><b>{room.adults ?? 0}</b><span className="booking-pax-icon billing-pax-tip" data-tip="Child"><Baby size={13} aria-label="Children" /></span><b>{room.children ?? 0}</b><span className="booking-pax-icon billing-pax-tip" data-tip="Infant"><InfantIcon size={13} label="Infants" /></span><b>{room.infants ?? 0}</b></small></span>
                 <span><b>{room.rateCode || 'BAR'}</b><small>Subtotal</small></span>
                 <span><b>{room.count}</b><small>{money.format(room.total ?? 0)}</small></span>
                 <button type="button" aria-label={`Edit room type ${room.code}`} onClick={() => openEditRoom(index)}><img src="https://hms1.hotelx.asia/static/media/view_edit_icon.cb90a368.svg" alt="" aria-hidden="true" width={22} height={22} style={{ display: 'block', objectFit: 'contain' }} /></button>
@@ -360,32 +361,36 @@ export function BookingEdit({
             <label className="booking-line-field booking-choice-field"><span>Room Type *</span><Choice label="Room Type" value={roomType} onChange={setRoomType} items={roomTypeItems} /></label>
             <label className="booking-line-field"><span>No. of Room *</span><input type="number" min="1" value={roomQty} onChange={(event) => setRoomQty(Number(event.target.value))} /></label>
             <div className="booking-guests-field">
-              <span className="booking-guests-icon" aria-hidden="true"><Users size={30} /></span>
-              <strong className="booking-guests-label">Guests <em>*</em></strong>
               <div className="booking-guests-steppers">
                 <div className="booking-stepper">
                   <div className="booking-stepper-row">
                     <span className="booking-stepper-label">Adult</span>
-                    <button type="button" aria-label="Decrease adults" disabled={adults <= 1} onClick={() => setAdults(Math.max(1, adults - 1))}><Minus size={16} /></button>
                     <input className="booking-stepper-value" type="number" min={1} aria-label="Adults" value={adults} onChange={(event) => setAdults(Math.max(1, Math.floor(Number(event.target.value) || 0)))} />
-                    <button type="button" aria-label="Increase adults" onClick={() => setAdults(adults + 1)}><Plus size={16} /></button>
+                    <span className="booking-stepper-arrows">
+                      <button type="button" aria-label="Increase adults" onClick={() => setAdults(adults + 1)}><ChevronUp size={14} /></button>
+                      <button type="button" aria-label="Decrease adults" disabled={adults <= 1} onClick={() => setAdults(Math.max(1, adults - 1))}><ChevronDown size={14} /></button>
+                    </span>
                   </div>
                 </div>
                 <div className="booking-stepper">
                   <div className="booking-stepper-row">
                     <span className="booking-stepper-label">Child</span>
-                    <button type="button" aria-label="Decrease children" disabled={children <= 0} onClick={() => setChildren(Math.max(0, children - 1))}><Minus size={16} /></button>
                     <input className="booking-stepper-value" type="number" min={0} aria-label="Children" value={children} onChange={(event) => setChildren(Math.max(0, Math.floor(Number(event.target.value) || 0)))} />
-                    <button type="button" aria-label="Increase children" onClick={() => setChildren(children + 1)}><Plus size={16} /></button>
+                    <span className="booking-stepper-arrows">
+                      <button type="button" aria-label="Increase children" onClick={() => setChildren(children + 1)}><ChevronUp size={14} /></button>
+                      <button type="button" aria-label="Decrease children" disabled={children <= 0} onClick={() => setChildren(Math.max(0, children - 1))}><ChevronDown size={14} /></button>
+                    </span>
                   </div>
                   {childAgePolicy > INFANT_MAX_AGE && <small className="booking-child-age-note">Age {INFANT_MAX_AGE + 1} - {childAgePolicy} years</small>}
                 </div>
                 <div className="booking-stepper">
                   <div className="booking-stepper-row">
                     <span className="booking-stepper-label">Infant</span>
-                    <button type="button" aria-label="Decrease infants" disabled={infants <= 0} onClick={() => setInfants(Math.max(0, infants - 1))}><Minus size={16} /></button>
                     <input className="booking-stepper-value" type="number" min={0} aria-label="Infants" value={infants} onChange={(event) => setInfants(Math.max(0, Math.floor(Number(event.target.value) || 0)))} />
-                    <button type="button" aria-label="Increase infants" onClick={() => setInfants(infants + 1)}><Plus size={16} /></button>
+                    <span className="booking-stepper-arrows">
+                      <button type="button" aria-label="Increase infants" onClick={() => setInfants(infants + 1)}><ChevronUp size={14} /></button>
+                      <button type="button" aria-label="Decrease infants" disabled={infants <= 0} onClick={() => setInfants(Math.max(0, infants - 1))}><ChevronDown size={14} /></button>
+                    </span>
                   </div>
                   {childAgePolicy > INFANT_MAX_AGE && <small className="booking-child-age-note">Age 0 - {INFANT_MAX_AGE} years</small>}
                 </div>
