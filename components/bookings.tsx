@@ -68,6 +68,12 @@ function compareBookings(a: Booking, b: Booking, sortKey: string) {
 
 const emptyAdvanceSearch = { arrivalStart: '', arrivalEnd: '', departureStart: '', departureEnd: '', bookingDate: '', status: '', roomType: '', bookingNo: '', guestName: '', accountName: '', referenceNo: '', groupName: '' };
 
+function roomSummary(rooms: Booking['rooms']) {
+  const totals = new Map<string, number>();
+  rooms.forEach((room) => totals.set(room.code, (totals.get(room.code) ?? 0) + room.count));
+  return Array.from(totals, ([code, count]) => ({ code, count }));
+}
+
 const HOTELX_ROOM_ICON = 'https://hms1.hotelx.asia/static/media/room.7cce94dd.svg';
 
 function RoomIcon({ size = 18 }: { size?: number }) {
@@ -404,7 +410,7 @@ export function Bookings({
     if (specialRequestOpen) return <SpecialRequest booking={booking} onSave={onUpdate} onBack={() => setSpecialRequestOpen(false)} />;
     if (attachmentsOpen) return <BookingAttachments booking={booking} onSave={onUpdate} onBack={() => setAttachmentsOpen(false)} />;
     if (billingOpen) return <BillingSchedule booking={booking} bookingLegs={bookingLegs} rateSetup={rateSetup} onSave={onUpdate} onBack={() => setBillingOpen(false)} />;
-    const rooms = booking.rooms.map((room) => `${room.code} : ${room.count}`).join('   ');
+    const rooms = roomSummary(booking.rooms).map((room) => `${room.code} : ${room.count}`).join('   ');
     const assignedTotal = Math.min(Array.from(new Set(Object.values(roomAssignments(booking)).flat())).length, roomCount(booking));
     const assignments =
       booking.rooms.length === 1
@@ -588,7 +594,7 @@ export function Bookings({
               </div>
               <div className="booking-price-room">
                 <strong className="booking-amount">{totalWithTransport(item)}</strong>
-                <span>{item.rooms.map((room) => <span key={room.code}>{room.code}/<b>{room.count}</b></span>)}</span>
+                <span>{roomSummary(item.rooms).map((room) => <span key={room.code}>{room.code}/<b>{room.count}</b></span>)}</span>
               </div>
               <ChevronRight size={22} aria-hidden="true" />
             </button>
