@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { Baby, ChevronDown, ChevronRight, ChevronUp, User } from 'lucide-react';
 import { InfantIcon } from '@/components/infant-icon';
-import { roomAssignments, type BillingScheduleAdjustment, type Booking, type BookingRoom } from '@/lib/bookings';
+import { roomAssignments, roomCount, type BillingScheduleAdjustment, type Booking, type BookingRoom } from '@/lib/bookings';
 import { paxNight } from '@/lib/pax-billing';
 import { bookingRate } from '@/lib/booking-rate';
 import type { BookingTransportLeg } from '@/lib/booking-transport';
@@ -130,6 +130,10 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
   }, [booking, fromDate, rateSetup, toDate]);
 
   const assignedRoomNumbers = useMemo(() => roomAssignments(booking), [booking]);
+  const totalRoomCount = roomCount(booking);
+  const inhouse = booking.status === 'Inhouse';
+  const checkedInRooms = inhouse ? Math.min(booking.assignedRooms, totalRoomCount) : 0;
+  const checkedInGuests = inhouse ? Math.min(booking.checkedInGuests, booking.guests) : 0;
   const activeRateCodes = rateSetup.ratePlans.filter((plan) => plan.active);
   const selectedLines = lines.filter((line) => selected.includes(line.id));
   const transportLines = bookingLegs
@@ -223,7 +227,7 @@ export function BillingSchedule({ booking, bookingLegs, rateSetup, onSave, onBac
   return <section className="booking-workspace billing-schedule billing-schedule-page" aria-label="Billing schedule">
     <div className="billing-schedule-breadcrumb"><button type="button" onClick={onBack} aria-label="Back to booking">‹</button><span>... / ... / Billing Schedule</span></div>
     <div className="booking-detail-summary billing-schedule-summary">
-      <div className="booking-detail-top"><div className="booking-stay"><strong>{stayLabel(booking.arrival)} - {stayLabel(booking.departure)}</strong><span><RoomIcon size={14} /> 0/1&nbsp;&nbsp; <PersonIcon size={14} /> 0/1</span></div><strong className="booking-amount">{money(roomTotal + transportTotal)}</strong></div>
+      <div className="booking-detail-top"><div className="booking-stay"><strong>{stayLabel(booking.arrival)} - {stayLabel(booking.departure)}</strong><span><RoomIcon size={14} /> {checkedInRooms}/{totalRoomCount}&nbsp;&nbsp; <PersonIcon size={14} /> {checkedInGuests}/{booking.guests}</span></div><strong className="booking-amount">{money(roomTotal + transportTotal)}</strong></div>
       <div className="booking-detail-bottom"><span>{booking.reference} <span className="booking-divider">|</span> {booking.guest}</span></div>
     </div>
     <div className="billing-schedule-scroll">

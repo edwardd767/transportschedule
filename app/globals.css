@@ -6449,6 +6449,8 @@ p {
 .booking-room-rates table{border-collapse:collapse;min-width:740px;width:100%;font-size:10px;text-align:center}
 .booking-room-rates th,.booking-room-rates td{padding:5px 8px;white-space:nowrap}
 .booking-room-rates thead th{color:#999;font-size:10px}
+.booking-room-rates thead small{font-size:10px}
+.booking-room-rates thead b{font-size:10px}
 .booking-room-rates thead b,.booking-room-rates thead small{display:block}
 .booking-room-rates tbody th{text-align:left;color:#ff8200;font-weight:500;min-width:180px;position:sticky;left:0;background:#fff}
 .booking-room-rates tbody td{color:#8973bb;font-weight:700}
