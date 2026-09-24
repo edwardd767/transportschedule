@@ -339,7 +339,7 @@ export function BookingRoomAssignmentBridge({ store }: { store: TransportData })
       };
       const nextBooking: Booking = {
         ...booking,
-        assignedRooms: assignmentCount(normalized),
+        assignedRooms: Math.min(assignmentCount(normalized), roomCount(booking)),
         specialRequests: {
           ...(booking.specialRequests ?? {}),
           [ASSIGNMENT_KEY]: JSON.stringify(normalized),
@@ -560,7 +560,7 @@ export function BookingRoomAssignmentBridge({ store }: { store: TransportData })
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <strong className="text-[12px]">{stayDates(booking).replace('–', '-')}</strong>
-                <span className="inline-flex items-center gap-1 text-[10px]"><DoorClosed size={14} /> <span className={booking.assignedRooms < roomCount(booking) ? 'text-[#d90029]' : ''}>{booking.assignedRooms}</span>/{roomCount(booking)}</span>
+                <span className="inline-flex items-center gap-1 text-[10px]"><DoorClosed size={14} /> <span className={Math.min(booking.assignedRooms, roomCount(booking)) < roomCount(booking) ? 'text-[#d90029]' : ''}>{Math.min(booking.assignedRooms, roomCount(booking))}</span>/{roomCount(booking)}</span>
                 <span className="inline-flex items-center gap-1 text-[10px]"><UserRound size={14} /> <span className={booking.checkedInGuests < booking.guests ? 'text-[#d90029]' : ''}>{booking.checkedInGuests}</span>/{booking.guests}</span>
               </div>
               <strong className="text-[11px] text-[#ff174f]">{booking.amount.toFixed(2)}</strong>

@@ -139,7 +139,8 @@ export function BookingCreate({
   const extraChildRate = childRatesApplied ? configuredPaxRate?.extraChild ?? 0 : 0;
   const basePax = configuredPaxRate?.basePax ?? 2;
   const extraAdultCount = Math.max(0, adults - basePax);
-  const childCharge = children * extraChildRate * nights * Math.max(1, roomQty);
+  const extraChildCount = Math.max(0, children - Math.max(0, basePax - adults));
+  const childCharge = extraChildCount * extraChildRate * nights * Math.max(1, roomQty);
   const applicableAddOns = useMemo(() => {
     const room = { code: roomType, count: 1, adults, children, infants, rateCode, roomRate };
     const totals = new Map<string, number>();
@@ -154,7 +155,7 @@ export function BookingCreate({
     return Array.from(totals, ([name, amount]) => ({ name, amount }));
   }, [arrival, departure, roomType, adults, children, infants, rateCode, roomRate, effectiveRateSetup]);
   const addOnTotal = applicableAddOns.reduce((sum, item) => sum + item.amount, 0) * Math.max(1, roomQty);
-  const roomSubtotal = nights * Math.max(1, roomQty) * Math.max(0, roomRate + extraAdultCount * extraAdultRate + children * extraChildRate) + addOnTotal;
+  const roomSubtotal = nights * Math.max(1, roomQty) * Math.max(0, roomRate + extraAdultCount * extraAdultRate + extraChildCount * extraChildRate) + addOnTotal;
   const roomDiscount = nights * Math.max(1, roomQty) * Math.max(0, discountPerNight);
   const roomTax = 0;
   const roomTotal = Math.max(0, roomSubtotal - roomDiscount + roomTax);
@@ -488,7 +489,7 @@ export function BookingCreate({
                 <span className="billing-info-tip" role="tooltip"><b>Summary</b>
                   <span className="billing-info-row"><span>Room Rate ({nights} Night(s) x {roomQtySafe} Room(s))</span><span>{money.format(nights * roomQtySafe * roomRate)}</span></span>
                   {extraAdultCount > 0 && extraAdultRate > 0 ? <span className="billing-info-row"><span>Extra Pax ({extraAdultCount} x {money.format(extraAdultRate)})</span><span>{money.format(nights * roomQtySafe * extraAdultCount * extraAdultRate)}</span></span> : null}
-                  {children > 0 && extraChildRate > 0 ? <span className="billing-info-row"><span>Child ({children} x {money.format(extraChildRate)})</span><span>{money.format(childCharge)}</span></span> : null}
+                  {extraChildCount > 0 && extraChildRate > 0 ? <span className="billing-info-row"><span>Child ({extraChildCount} x {money.format(extraChildRate)})</span><span>{money.format(childCharge)}</span></span> : null}
                   {applicableAddOns.map((item) => <span className="billing-info-row" key={item.name}><span>{item.name} x {roomQtySafe}</span><span>{money.format(item.amount * roomQtySafe)}</span></span>)}
                   <span className="billing-info-row billing-info-total"><span>Subtotal</span><span>{money.format(roomSubtotal)}</span></span>
                   <span className="billing-info-row is-muted"><span>Less : Disc {nights} Night(s) x {roomQtySafe} Room(s)</span><span>-{money.format(roomDiscount)}</span></span>
@@ -498,7 +499,7 @@ export function BookingCreate({
               </span></strong>
               <strong>MYR</strong>
             </div>
-            <div><span>{nights} Night(s) x {roomQty} Room(s)</span><span>{money.format(roomSubtotal)}</span></div>
+            <div><span>{nights} Night(s) x {roomQty} Room(s)</span><span>{money.format(roomSubtotal - childCharge)}</span></div>
             {childCharge > 0 && <div><span>Child</span><span>{money.format(childCharge)}</span></div>}
             <div><span>Less : Disc {nights} Night(s) x {roomQty} Room(s)</span><span>{money.format(roomDiscount)}</span></div>
             <div><span>Tax</span><span>{money.format(roomTax)}</span></div>

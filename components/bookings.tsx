@@ -15,6 +15,7 @@ import {
   bookingAmount,
   bookingStatusClass,
   bookingStatuses,
+  roomAssignments,
   roomCount,
   stayDates,
   type Booking,
@@ -404,10 +405,11 @@ export function Bookings({
     if (attachmentsOpen) return <BookingAttachments booking={booking} onSave={onUpdate} onBack={() => setAttachmentsOpen(false)} />;
     if (billingOpen) return <BillingSchedule booking={booking} bookingLegs={bookingLegs} rateSetup={rateSetup} onSave={onUpdate} onBack={() => setBillingOpen(false)} />;
     const rooms = booking.rooms.map((room) => `${room.code} : ${room.count}`).join('   ');
+    const assignedTotal = Math.min(Array.from(new Set(Object.values(roomAssignments(booking)).flat())).length, roomCount(booking));
     const assignments =
       booking.rooms.length === 1
-        ? `${booking.rooms[0].code} : ${booking.assignedRooms}/${roomCount(booking)}`
-        : `${booking.assignedRooms}/${roomCount(booking)} rooms assigned`;
+        ? `${booking.rooms[0].code} : ${assignedTotal}/${roomCount(booking)}`
+        : `${assignedTotal}/${roomCount(booking)} rooms assigned`;
     if (editing) {
       return (
         <section className="booking-workspace booking-edit-workspace" aria-label="Edit booking">
