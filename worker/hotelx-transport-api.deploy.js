@@ -2334,9 +2334,7 @@ var schemaStatements = [
   )`,
   `CREATE INDEX IF NOT EXISTS hotelx_sales_channel_department_idx
     ON public.hotelx_sales_channel(property_id, department_id, sort_order)`,
-  `DO $$
-    BEGIN
-      IF EXISTS (
+  `IF EXISTS (
         SELECT 1 FROM information_schema.columns
         WHERE table_schema = 'public'
           AND table_name = 'hotelx_department'
@@ -2359,8 +2357,7 @@ var schemaStatements = [
           )
           ON CONFLICT DO NOTHING
         $sql$;
-      END IF;
-    END $$`,
+      END IF`,
   `ALTER TABLE public.hotelx_department DROP COLUMN IF EXISTS sales_channels`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_segments (
     property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
@@ -2372,9 +2369,7 @@ var schemaStatements = [
     updated_at text NOT NULL DEFAULT '',
     PRIMARY KEY (property_id, segment_id)
   )`,
-  `DO $$
-    BEGIN
-      IF EXISTS (
+  `IF EXISTS (
         SELECT 1 FROM information_schema.tables
         WHERE table_schema = 'public' AND table_name = 'hotelx_payment_type'
       ) AND NOT EXISTS (
@@ -2382,8 +2377,7 @@ var schemaStatements = [
         WHERE table_schema = 'public' AND table_name = 'hotelx_payment_type' AND column_name = 'property_id'
       ) THEN
         DROP TABLE public.hotelx_payment_type;
-      END IF;
-    END $$`,
+      END IF`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_payment_type (
     property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
     payment_type_id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -2440,7 +2434,7 @@ var schemaStatements = [
     FOREIGN KEY (property_id, room_type_code) REFERENCES public.hotelx_room_type_master(property_id, code)
   )`,
   `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS group_name text NOT NULL DEFAULT ''`,
-  `DO $$ BEGIN IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='hotelx_bookings' AND column_name='reference') THEN ALTER TABLE public.hotelx_bookings RENAME COLUMN reference TO booking_no; END IF; END $$`,
+  `IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='hotelx_bookings' AND column_name='reference') THEN ALTER TABLE public.hotelx_bookings RENAME COLUMN reference TO booking_no; END IF`,
   `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS phone text NOT NULL DEFAULT ''`,
   `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS account_name text NOT NULL DEFAULT ''`,
   `ALTER TABLE public.hotelx_bookings ADD COLUMN IF NOT EXISTS credit_limit numeric(14,2) NOT NULL DEFAULT 0`,
@@ -2469,6 +2463,15 @@ var schemaStatements = [
   `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS tax numeric(14,2) NOT NULL DEFAULT 0`,
   `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS total numeric(14,2) NOT NULL DEFAULT 0`,
   `ALTER TABLE public.hotelx_booking_rooms ADD COLUMN IF NOT EXISTS guest_profile_ids jsonb NOT NULL DEFAULT '[]'::jsonb`,
+  `IF EXISTS (
+    SELECT 1 FROM pg_constraint c
+    JOIN pg_class t ON t.oid = c.conrelid
+    WHERE t.relname = 'hotelx_booking_rooms' AND c.contype = 'p'
+      AND pg_get_constraintdef(c.oid) LIKE '%room_type_code%'
+  ) THEN
+    EXECUTE 'ALTER TABLE public.hotelx_booking_rooms DROP CONSTRAINT IF EXISTS hotelx_booking_rooms_pkey';
+    EXECUTE 'ALTER TABLE public.hotelx_booking_rooms ADD PRIMARY KEY (property_id, booking_reference, sort_order)';
+  END IF`,
   `CREATE TABLE IF NOT EXISTS public.hotelx_room_availability (
     property_id text NOT NULL REFERENCES public.hotelx_hotel_setup(property_id) ON DELETE CASCADE,
     availability_date date NOT NULL,
@@ -2635,9 +2638,7 @@ var schemaStatements = [
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS e_invoice_classification_deposit_forfeit text NOT NULL DEFAULT '022'`,
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS e_invoice_classification_state_tax text NOT NULL DEFAULT '022'`,
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS e_invoice_use_submission_date_as_doc_date boolean NOT NULL DEFAULT false`,
-  `DO $$
-    BEGIN
-      IF EXISTS (
+  `IF EXISTS (
         SELECT 1 FROM information_schema.columns
         WHERE table_schema = 'public' AND table_name = 'hotelx_hotel_setup' AND column_name = 'operational_policy'
       ) THEN
@@ -2658,8 +2659,7 @@ var schemaStatements = [
             tax_scheme_forfeited_revenue = COALESCE(NULLIF(operational_policy #>> '{securityDepositPolicy,taxSchemeForfeitedRevenue}', ''), tax_scheme_forfeited_revenue),
             prompt_during_walk_in = COALESCE((operational_policy #>> '{securityDepositPolicy,promptDuringWalkIn}')::boolean, prompt_during_walk_in),
             prompt_during_pre_checkin = COALESCE((operational_policy #>> '{securityDepositPolicy,promptDuringPreCheckin}')::boolean, prompt_during_pre_checkin);
-      END IF;
-    END $$`,
+      END IF`,
   `ALTER TABLE public.hotelx_hotel_setup DROP COLUMN IF EXISTS profile`,
   `CREATE INDEX IF NOT EXISTS hotelx_season_calendar_season_idx
     ON public.hotelx_season_calendar(property_id, season_id, calendar_date)`,
