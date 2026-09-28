@@ -625,7 +625,7 @@ var amountFormatter = new Intl.NumberFormat("en-MY", {
 });
 
 // lib/hotel-masters.ts
-var initialHotelProfile = { hotelName: "HOTEL PARADISE", address: "123, JALAN TUN SAMBANTHAM", postcode: "47301", country: "Malaysia", city: "Petaling Jaya", state: "Selangor", hotelType: "Room", companyName: "IFCA MSC Berhad", companyRegNo: "199701037892", sstRegNo: "29102119291", ttxRegNo: "", onlineBookingUrl: "", liveRunDate: "-", contactPerson: "Edward Jacob", phoneNo: "Member Service 03 7661 6238, Front Office 012 25...", mobileNo: "0125219931", reservationEmail: "edwarddurai@ifca.com.my", businessEmail: "arikh@ifca.com.my", bookingCancellationDays: 3, currencyCode: "MYR", floatAmount: 0, paxCount: "No. of Pax Manual Updated", childRatesApplied: false, childAgePolicy: 0, operationalPolicy: { standardCheckInTime: "01:00 PM", standardCheckOutTime: "12:00 PM", nightAuditCutOffTime: "10:00 AM", postpaid: false, floorPlan: false, cashierClosure: false, occupancy: { houseUse: true, dayUse: true, complimentary: true, ooo: false, ooi: false } } };
+var initialHotelProfile = { hotelName: "HOTEL PARADISE", address: "123, JALAN TUN SAMBANTHAM", postcode: "47301", country: "Malaysia", city: "Petaling Jaya", state: "Selangor", hotelType: "Room", companyName: "IFCA MSC Berhad", companyRegNo: "199701037892", sstRegNo: "29102119291", ttxRegNo: "", onlineBookingUrl: "", liveRunDate: "-", contactPerson: "Edward Jacob", phoneNo: "Member Service 03 7661 6238, Front Office 012 25...", mobileNo: "0125219931", reservationEmail: "edwarddurai@ifca.com.my", businessEmail: "arikh@ifca.com.my", bookingCancellationDays: 3, currencyCode: "MYR", floatAmount: 0, paxCount: "No. of Pax Manual Updated", childRatesApplied: false, childAgePolicy: 0, customBreakdown: false, operationalPolicy: { standardCheckInTime: "01:00 PM", standardCheckOutTime: "12:00 PM", nightAuditCutOffTime: "10:00 AM", postpaid: false, floorPlan: false, cashierClosure: false, occupancy: { houseUse: true, dayUse: true, complimentary: true, ooo: false, ooi: false } } };
 var defaultSalesChannels = ["Direct", "Website", "OTA", "Corporate"];
 var initialRoomStatuses = [
   { code: "OC", description: "Occupied Clean", color: "#26743a", active: true },
@@ -2608,6 +2608,7 @@ var schemaStatements = [
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS float_amount numeric(12,2) NOT NULL DEFAULT 0`,
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS pax_count text NOT NULL DEFAULT 'No. of Pax Manual Updated'`,
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS child_rates_applied boolean NOT NULL DEFAULT false`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS custom_breakdown boolean NOT NULL DEFAULT false`,
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS child_age_policy integer NOT NULL DEFAULT 0`,
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS standard_check_in_time text NOT NULL DEFAULT '01:00 PM'`,
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS standard_check_out_time text NOT NULL DEFAULT '12:00 PM'`,
@@ -2955,7 +2956,7 @@ var schemaStatements = [
     UPDATE public.hotelx_hotel_setup SET (
       hotel_name, address, postcode, country, city, state, hotel_type, company_name, company_reg_no,
       sst_reg_no, ttx_reg_no, online_booking_url, live_run_date, contact_person, phone_no, mobile_no, reservation_email,
-      business_email, booking_cancellation_days, currency_code, float_amount, pax_count, child_rates_applied, child_age_policy,
+      business_email, booking_cancellation_days, currency_code, float_amount, pax_count, child_rates_applied, child_age_policy, custom_breakdown,
       standard_check_in_time, standard_check_out_time, night_audit_cut_off_time, postpaid, floor_plan, cashier_closure,
       occupancy_house_use, occupancy_day_use, occupancy_complimentary, occupancy_ooo, occupancy_ooi,
       security_deposit_amount, key_card_deposit_amount, tax_scheme_forfeited_revenue, prompt_during_walk_in, prompt_during_pre_checkin,
@@ -2974,7 +2975,7 @@ var schemaStatements = [
       p_state #>> '{hotelMasters,profile,phoneNo}', p_state #>> '{hotelMasters,profile,mobileNo}', p_state #>> '{hotelMasters,profile,reservationEmail}',
       p_state #>> '{hotelMasters,profile,businessEmail}', COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,bookingCancellationDays}', '')::integer, 3),
       COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,currencyCode}', ''), 'MYR'), COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,floatAmount}', '')::numeric, 0),
-      COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,paxCount}', ''), 'No. of Pax Manual Updated'), COALESCE((p_state #>> '{hotelMasters,profile,childRatesApplied}')::boolean, false), COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,childAgePolicy}', '')::integer, 0),
+      COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,paxCount}', ''), 'No. of Pax Manual Updated'), COALESCE((p_state #>> '{hotelMasters,profile,childRatesApplied}')::boolean, false), COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,childAgePolicy}', '')::integer, 0), COALESCE((p_state #>> '{hotelMasters,profile,customBreakdown}')::boolean, false),
       COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,operationalPolicy,standardCheckInTime}', ''), '01:00 PM'),
       COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,operationalPolicy,standardCheckOutTime}', ''), '12:00 PM'),
       COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,operationalPolicy,nightAuditCutOffTime}', ''), '10:00 AM'),
@@ -3270,7 +3271,7 @@ var schemaStatements = [
           'ttxRegNo', ttx_reg_no, 'onlineBookingUrl', online_booking_url, 'liveRunDate', live_run_date,
           'contactPerson', contact_person, 'phoneNo', phone_no, 'mobileNo', mobile_no, 'reservationEmail', reservation_email,
           'businessEmail', business_email, 'bookingCancellationDays', booking_cancellation_days, 'currencyCode', currency_code,
-          'floatAmount', float_amount, 'paxCount', pax_count, 'childRatesApplied', child_rates_applied, 'childAgePolicy', child_age_policy,
+          'floatAmount', float_amount, 'paxCount', pax_count, 'childRatesApplied', child_rates_applied, 'childAgePolicy', child_age_policy, 'customBreakdown', custom_breakdown,
           'operationalPolicy', jsonb_build_object(
             'standardCheckInTime', standard_check_in_time,
             'standardCheckOutTime', standard_check_out_time,
