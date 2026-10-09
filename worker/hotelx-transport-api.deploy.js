@@ -41,6 +41,7 @@ async function sendSmtpMessage(config, message) {
     await expect([220], "STARTTLS");
     if (typeof socket.startTls !== "function")
       throw new Error("STARTTLS is not supported on this connection.");
+    reader.release();
     socket = socket.startTls();
     reader = new LineReader(socket);
     await write("EHLO hotelx.local\r\n");
@@ -83,6 +84,12 @@ var init_smtp_sender = __esm({
       constructor(socket) {
         this.buffer = "";
         this.reader = socket.readable.getReader();
+      }
+      release() {
+        try {
+          this.reader.releaseLock();
+        } catch {
+        }
       }
       async readLine() {
         for (; ; ) {
@@ -4185,6 +4192,35 @@ function createWorker(query = queryNeon, verifier = privateLinkSha256) {
           const body = await request.json().catch(() => ({}));
           if (!body.host || !body.port)
             throw new ApiError("PROBE_INPUT", "Provide host and port.", 400);
+          if (body.authUser && body.authPassword) {
+            try {
+              const { sendSmtpMessage: sendSmtpMessage2 } = await Promise.resolve().then(() => (init_smtp_sender(), smtp_sender_exports));
+              await sendSmtpMessage2(
+                {
+                  host: body.host,
+                  port: Number(body.port),
+                  secure: !body.starttls,
+                  user: body.authUser,
+                  password: body.authPassword
+                },
+                {
+                  from: body.authUser,
+                  to: [body.authUser],
+                  subject: "HotelX SMTP probe",
+                  html: "<p>probe</p>"
+                }
+              );
+              return reply({ ok: true, authenticated: true, sent: true });
+            } catch (error) {
+              return reply(
+                {
+                  ok: false,
+                  error: error instanceof Error ? error.message : String(error)
+                },
+                502
+              );
+            }
+          }
           try {
             const { connect } = await import("cloudflare:sockets");
             const socket = connect(
@@ -4310,23 +4346,33 @@ function createWorker(query = queryNeon, verifier = privateLinkSha256) {
             filename: String(item.filename),
             contentBase64: String(item.contentBase64)
           }));
-          const { sendSmtpMessage: sendSmtpMessage2 } = await Promise.resolve().then(() => (init_smtp_sender(), smtp_sender_exports));
-          await sendSmtpMessage2(
-            {
-              host: String(body.host),
-              port: Number(body.port),
-              secure: Boolean(body.secure),
-              user: String(body.user),
-              password: String(body.password)
-            },
-            {
-              from: String(body.user),
-              to: recipients,
-              subject: String(body.subject ?? "HotelX notification"),
-              html: String(body.html ?? ""),
-              attachments
-            }
-          );
+          try {
+            const { sendSmtpMessage: sendSmtpMessage2 } = await Promise.resolve().then(() => (init_smtp_sender(), smtp_sender_exports));
+            await sendSmtpMessage2(
+              {
+                host: String(body.host),
+                port: Number(body.port),
+                secure: Boolean(body.secure),
+                user: String(body.user),
+                password: String(body.password)
+              },
+              {
+                from: String(body.user),
+                to: recipients,
+                subject: String(body.subject ?? "HotelX notification"),
+                html: String(body.html ?? ""),
+                attachments
+              }
+            );
+          } catch (error) {
+            return reply(
+              {
+                ok: false,
+                error: error instanceof Error ? error.message : String(error)
+              },
+              502
+            );
+          }
           return reply({
             ok: true,
             to: recipients,

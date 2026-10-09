@@ -264,9 +264,40 @@ export function createWorker(
             host?: string;
             port?: number | string;
             starttls?: boolean;
+            authUser?: string;
+            authPassword?: string;
           };
           if (!body.host || !body.port)
             throw new ApiError('PROBE_INPUT', 'Provide host and port.', 400);
+          if (body.authUser && body.authPassword) {
+            try {
+              const { sendSmtpMessage } = await import('./smtp-sender.js');
+              await sendSmtpMessage(
+                {
+                  host: body.host,
+                  port: Number(body.port),
+                  secure: !body.starttls,
+                  user: body.authUser,
+                  password: body.authPassword,
+                },
+                {
+                  from: body.authUser,
+                  to: [body.authUser],
+                  subject: 'HotelX SMTP probe',
+                  html: '<p>probe</p>',
+                },
+              );
+              return reply({ ok: true, authenticated: true, sent: true });
+            } catch (error) {
+              return reply(
+                {
+                  ok: false,
+                  error: error instanceof Error ? error.message : String(error),
+                },
+                502,
+              );
+            }
+          }
           try {
             const { connect } = await import('cloudflare:sockets');
             const socket = connect(
@@ -412,23 +443,33 @@ export function createWorker(
               filename: String(item.filename),
               contentBase64: String(item.contentBase64),
             }));
-          const { sendSmtpMessage } = await import('./smtp-sender.js');
-          await sendSmtpMessage(
-            {
-              host: String(body.host),
-              port: Number(body.port),
-              secure: Boolean(body.secure),
-              user: String(body.user),
-              password: String(body.password),
-            },
-            {
-              from: String(body.user),
-              to: recipients,
-              subject: String(body.subject ?? 'HotelX notification'),
-              html: String(body.html ?? ''),
-              attachments,
-            },
-          );
+          try {
+            const { sendSmtpMessage } = await import('./smtp-sender.js');
+            await sendSmtpMessage(
+              {
+                host: String(body.host),
+                port: Number(body.port),
+                secure: Boolean(body.secure),
+                user: String(body.user),
+                password: String(body.password),
+              },
+              {
+                from: String(body.user),
+                to: recipients,
+                subject: String(body.subject ?? 'HotelX notification'),
+                html: String(body.html ?? ''),
+                attachments,
+              },
+            );
+          } catch (error) {
+            return reply(
+              {
+                ok: false,
+                error: error instanceof Error ? error.message : String(error),
+              },
+              502,
+            );
+          }
           return reply({
             ok: true,
             to: recipients,

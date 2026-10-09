@@ -37,6 +37,13 @@ class LineReader {
   constructor(socket: SocketLike) {
     this.reader = socket.readable.getReader();
   }
+  release() {
+    try {
+      this.reader.releaseLock();
+    } catch {
+      /* Already released. */
+    }
+  }
   async readLine(): Promise<string> {
     for (;;) {
       const index = this.buffer.indexOf('\r\n');
@@ -144,6 +151,7 @@ export async function sendSmtpMessage(
     await expect([220], 'STARTTLS');
     if (typeof socket.startTls !== 'function')
       throw new Error('STARTTLS is not supported on this connection.');
+    reader.release();
     socket = socket.startTls();
     reader = new LineReader(socket);
     await write('EHLO hotelx.local\r\n');
