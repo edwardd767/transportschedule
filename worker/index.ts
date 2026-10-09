@@ -259,6 +259,45 @@ export function createWorker(
             signInStatus: passwordStatus(env.TRANSPORT_PASSWORD),
           });
         }
+        if (path === '/smtp-probe' && request.method === 'POST') {
+          const body = (await request.json().catch(() => ({}))) as {
+            host?: string;
+            port?: number | string;
+            starttls?: boolean;
+          };
+          if (!body.host || !body.port)
+            throw new ApiError('PROBE_INPUT', 'Provide host and port.', 400);
+          try {
+            const { connect } = await import('cloudflare:sockets');
+            const socket = connect(
+              { hostname: body.host, port: Number(body.port) },
+              { secureTransport: (body.starttls ? 'starttls' : 'on') } as Parameters<typeof connect>[1],
+            );
+            const reader = socket.readable.getReader();
+            const decoder = new TextDecoder();
+            let banner = '';
+            const started = Date.now();
+            while (Date.now() - started < 8000 && !banner.includes('\n')) {
+              const { value, done } = await reader.read();
+              if (done) break;
+              banner += decoder.decode(value, { stream: true });
+            }
+            await reader.cancel().catch(() => {});
+            await socket.close().catch(() => {});
+            return reply({
+              ok: banner.startsWith('220'),
+              banner: banner.trim().slice(0, 200),
+            });
+          } catch (error) {
+            return reply(
+              {
+                ok: false,
+                error: error instanceof Error ? error.message : String(error),
+              },
+              502,
+            );
+          }
+        }
         if (
           ![
             '/session',
@@ -266,6 +305,7 @@ export function createWorker(
             '/action',
             '/geography',
             '/geography/cities',
+            '/night-audit-email',
           ].includes(path)
         )
           throw new ApiError('NOT_FOUND', 'Not found.', 404);
@@ -349,6 +389,51 @@ export function createWorker(
             newTransportState(),
           );
           return reply(decode(row));
+        }
+        if (path === '/night-audit-email' && request.method === 'POST') {
+          const body = (await jsonBody(request, 8 * 1024 * 1024)) as {
+            host?: string; port?: number | string; secure?: boolean;
+            user?: string; password?: string; to?: string; subject?: string; html?: string;
+            attachments?: { filename?: string; contentBase64?: string }[];
+          };
+          const recipients = String(body.to ?? '')
+            .split(/[,;]+/)
+            .map((value) => value.trim())
+            .filter(Boolean);
+          if (!body.host || !body.port || !body.user || !body.password || !recipients.length)
+            throw new ApiError(
+              'EMAIL_INPUT',
+              'Provide host, port, sender credentials and at least one recipient.',
+              400,
+            );
+          const attachments = (body.attachments ?? [])
+            .filter((item) => item?.filename && item?.contentBase64)
+            .map((item) => ({
+              filename: String(item.filename),
+              contentBase64: String(item.contentBase64),
+            }));
+          const { sendSmtpMessage } = await import('./smtp-sender.js');
+          await sendSmtpMessage(
+            {
+              host: String(body.host),
+              port: Number(body.port),
+              secure: Boolean(body.secure),
+              user: String(body.user),
+              password: String(body.password),
+            },
+            {
+              from: String(body.user),
+              to: recipients,
+              subject: String(body.subject ?? 'HotelX notification'),
+              html: String(body.html ?? ''),
+              attachments,
+            },
+          );
+          return reply({
+            ok: true,
+            to: recipients,
+            attached: attachments.map((item) => item.filename),
+          });
         }
         if (path === '/action' && request.method === 'POST') {
           const body = await jsonBody(request, 256 * 1024);

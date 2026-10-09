@@ -1,5 +1,164 @@
 // HotelX Transport API. Paste the whole file into the Cloudflare Worker editor.
 // Required secret: DATABASE_URL. Private-link verifier is included; TRANSPORT_PASSWORD supports legacy sessions only.
+var __defProp = Object.defineProperty;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __esm = (fn, res) => function __init() {
+  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+};
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+
+// worker/smtp-sender.ts
+var smtp_sender_exports = {};
+__export(smtp_sender_exports, {
+  sendSmtpMessage: () => sendSmtpMessage
+});
+async function sendSmtpMessage(config, message) {
+  const { connect } = await import("cloudflare:sockets");
+  let socket = connect(
+    { hostname: config.host, port: config.port },
+    { secureTransport: config.secure ? "on" : "starttls" }
+  );
+  let reader = new LineReader(socket);
+  const write = async (data) => {
+    const writer = socket.writable.getWriter();
+    await writer.write(encoder.encode(data));
+    writer.releaseLock();
+  };
+  const expect = async (allowed2, step) => {
+    const reply = await reader.readReply();
+    if (!allowed2.includes(reply.code))
+      throw new Error(`SMTP ${step} failed: ${reply.text}`);
+    return reply;
+  };
+  await expect([220], "greeting");
+  await write("EHLO hotelx.local\r\n");
+  await expect([250], "EHLO");
+  if (!config.secure) {
+    await write("STARTTLS\r\n");
+    await expect([220], "STARTTLS");
+    if (typeof socket.startTls !== "function")
+      throw new Error("STARTTLS is not supported on this connection.");
+    socket = socket.startTls();
+    reader = new LineReader(socket);
+    await write("EHLO hotelx.local\r\n");
+    await expect([250], "EHLO after STARTTLS");
+  }
+  await write("AUTH LOGIN\r\n");
+  await expect([334], "AUTH LOGIN");
+  await write(`${btoa(config.user)}\r
+`);
+  await expect([334], "AUTH username");
+  await write(`${btoa(config.password)}\r
+`);
+  await expect([235, 503], "AUTH password");
+  await write(`MAIL FROM:<${message.from}>\r
+`);
+  await expect([250], "MAIL FROM");
+  for (const recipient of message.to) {
+    await write(`RCPT TO:<${recipient}>\r
+`);
+    await expect([250, 251], "RCPT TO");
+  }
+  await write("DATA\r\n");
+  await expect([354], "DATA");
+  await write(`${buildMime(message)}\r
+.\r
+`);
+  await expect([250], "message body");
+  await write("QUIT\r\n");
+  await socket.close().catch(() => {
+  });
+  return { accepted: message.to.join(", ") };
+}
+var encoder, decoder, LineReader, utf8Base64, wrappedBase64, encodeHeader, buildMime;
+var init_smtp_sender = __esm({
+  "worker/smtp-sender.ts"() {
+    "use strict";
+    encoder = new TextEncoder();
+    decoder = new TextDecoder();
+    LineReader = class {
+      constructor(socket) {
+        this.buffer = "";
+        this.reader = socket.readable.getReader();
+      }
+      async readLine() {
+        for (; ; ) {
+          const index = this.buffer.indexOf("\r\n");
+          if (index >= 0) {
+            const line = this.buffer.slice(0, index);
+            this.buffer = this.buffer.slice(index + 2);
+            return line;
+          }
+          const { value, done } = await this.reader.read();
+          if (done) {
+            const rest = this.buffer;
+            this.buffer = "";
+            return rest;
+          }
+          this.buffer += decoder.decode(value, { stream: true });
+        }
+      }
+      async readReply() {
+        let code = 0;
+        const lines = [];
+        for (; ; ) {
+          const line = await this.readLine();
+          if (!line) {
+            if (code) break;
+            continue;
+          }
+          lines.push(line);
+          const match = /^(\d{3})([ -]?)/.exec(line);
+          if (!match) {
+            if (code) break;
+            continue;
+          }
+          code = Number(match[1]);
+          if (match[2] !== "-") break;
+        }
+        return { code, text: lines.join(" ") };
+      }
+    };
+    utf8Base64 = (value) => {
+      const bytes = encoder.encode(value);
+      let binary = "";
+      for (const byte of bytes) binary += String.fromCharCode(byte);
+      return btoa(binary);
+    };
+    wrappedBase64 = (value) => value.replace(/(.{76})/g, "$1\r\n");
+    encodeHeader = (value) => /^[\x20-\x7e]*$/.test(value) ? value : `=?UTF-8?B?${utf8Base64(value)}?=`;
+    buildMime = (message) => {
+      const boundary = `hotelx-${crypto.randomUUID()}`;
+      const parts = [];
+      parts.push(`From: ${message.from}`);
+      parts.push(`To: ${message.to.join(", ")}`);
+      parts.push(`Subject: ${encodeHeader(message.subject)}`);
+      parts.push(`Date: ${(/* @__PURE__ */ new Date()).toUTCString()}`);
+      parts.push(`Message-ID: <${crypto.randomUUID()}@hotelx.local>`);
+      parts.push("MIME-Version: 1.0");
+      parts.push(`Content-Type: multipart/mixed; boundary="${boundary}"`);
+      parts.push("");
+      parts.push(`--${boundary}`);
+      parts.push("Content-Type: text/html; charset=UTF-8");
+      parts.push("Content-Transfer-Encoding: base64");
+      parts.push("");
+      parts.push(wrappedBase64(utf8Base64(message.html)));
+      for (const attachment of message.attachments ?? []) {
+        parts.push(`--${boundary}`);
+        parts.push(`Content-Type: application/pdf; name="${attachment.filename}"`);
+        parts.push("Content-Transfer-Encoding: base64");
+        parts.push(`Content-Disposition: attachment; filename="${attachment.filename}"`);
+        parts.push("");
+        parts.push(wrappedBase64(attachment.contentBase64.replace(/\s+/g, "")));
+      }
+      parts.push(`--${boundary}--`);
+      return parts.join("\r\n");
+    };
+  }
+});
 
 // lib/transport.ts
 var initialSetup = {
@@ -3813,7 +3972,7 @@ function passwordStatus(password) {
   if (password.length > 256) return "too_long";
   return "ready";
 }
-var encoder = new TextEncoder();
+var encoder2 = new TextEncoder();
 var allowedOrigins = /* @__PURE__ */ new Set([
   "https://edwardd767.github.io",
   "http://localhost:3000"
@@ -3824,7 +3983,7 @@ var rate = /* @__PURE__ */ new Map();
 async function key(secret) {
   return crypto.subtle.importKey(
     "raw",
-    encoder.encode(secret),
+    encoder2.encode(secret),
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign", "verify"]
@@ -3835,13 +3994,13 @@ async function matches(provided, secret) {
   const signature = await crypto.subtle.sign(
     "HMAC",
     k,
-    encoder.encode("password:" + provided)
+    encoder2.encode("password:" + provided)
   );
   return crypto.subtle.verify(
     "HMAC",
     k,
     signature,
-    encoder.encode("password:" + secret)
+    encoder2.encode("password:" + secret)
   );
 }
 async function session(secret) {
@@ -3849,7 +4008,7 @@ async function session(secret) {
   const signature = await crypto.subtle.sign(
     "HMAC",
     await key(secret),
-    encoder.encode(payload)
+    encoder2.encode(payload)
   );
   const hex = Array.from(
     new Uint8Array(signature),
@@ -3872,14 +4031,14 @@ async function authenticated(request, secret) {
     "HMAC",
     await key(secret),
     signature,
-    encoder.encode(parts.slice(0, 3).join("."))
+    encoder2.encode(parts.slice(0, 3).join("."))
   );
 }
 async function privateAccess(request, verifier) {
   const token = request.headers.get("Authorization")?.replace(/^Bearer /, "") ?? "";
   if (!privateKeyPattern.test(token) || !/^[a-f0-9]{64}$/.test(verifier))
     return false;
-  const digest = await crypto.subtle.digest("SHA-256", encoder.encode(token));
+  const digest = await crypto.subtle.digest("SHA-256", encoder2.encode(token));
   const hash = Array.from(
     new Uint8Array(digest),
     (byte) => byte.toString(16).padStart(2, "0")
@@ -4022,12 +4181,50 @@ function createWorker(query = queryNeon, verifier = privateLinkSha256) {
             signInStatus: passwordStatus(env.TRANSPORT_PASSWORD)
           });
         }
+        if (path === "/smtp-probe" && request.method === "POST") {
+          const body = await request.json().catch(() => ({}));
+          if (!body.host || !body.port)
+            throw new ApiError("PROBE_INPUT", "Provide host and port.", 400);
+          try {
+            const { connect } = await import("cloudflare:sockets");
+            const socket = connect(
+              { hostname: body.host, port: Number(body.port) },
+              { secureTransport: body.starttls ? "starttls" : "on" }
+            );
+            const reader = socket.readable.getReader();
+            const decoder2 = new TextDecoder();
+            let banner = "";
+            const started = Date.now();
+            while (Date.now() - started < 8e3 && !banner.includes("\n")) {
+              const { value, done } = await reader.read();
+              if (done) break;
+              banner += decoder2.decode(value, { stream: true });
+            }
+            await reader.cancel().catch(() => {
+            });
+            await socket.close().catch(() => {
+            });
+            return reply({
+              ok: banner.startsWith("220"),
+              banner: banner.trim().slice(0, 200)
+            });
+          } catch (error) {
+            return reply(
+              {
+                ok: false,
+                error: error instanceof Error ? error.message : String(error)
+              },
+              502
+            );
+          }
+        }
         if (![
           "/session",
           "/state",
           "/action",
           "/geography",
-          "/geography/cities"
+          "/geography/cities",
+          "/night-audit-email"
         ].includes(path))
           throw new ApiError("NOT_FOUND", "Not found.", 404);
         if (!env.DATABASE_URL)
@@ -4100,6 +4297,42 @@ function createWorker(query = queryNeon, verifier = privateLinkSha256) {
           );
           return reply(decode(row));
         }
+        if (path === "/night-audit-email" && request.method === "POST") {
+          const body = await jsonBody(request, 8 * 1024 * 1024);
+          const recipients = String(body.to ?? "").split(/[,;]+/).map((value) => value.trim()).filter(Boolean);
+          if (!body.host || !body.port || !body.user || !body.password || !recipients.length)
+            throw new ApiError(
+              "EMAIL_INPUT",
+              "Provide host, port, sender credentials and at least one recipient.",
+              400
+            );
+          const attachments = (body.attachments ?? []).filter((item) => item?.filename && item?.contentBase64).map((item) => ({
+            filename: String(item.filename),
+            contentBase64: String(item.contentBase64)
+          }));
+          const { sendSmtpMessage: sendSmtpMessage2 } = await Promise.resolve().then(() => (init_smtp_sender(), smtp_sender_exports));
+          await sendSmtpMessage2(
+            {
+              host: String(body.host),
+              port: Number(body.port),
+              secure: Boolean(body.secure),
+              user: String(body.user),
+              password: String(body.password)
+            },
+            {
+              from: String(body.user),
+              to: recipients,
+              subject: String(body.subject ?? "HotelX notification"),
+              html: String(body.html ?? ""),
+              attachments
+            }
+          );
+          return reply({
+            ok: true,
+            to: recipients,
+            attached: attachments.map((item) => item.filename)
+          });
+        }
         if (path === "/action" && request.method === "POST") {
           const body = await jsonBody(request, 256 * 1024);
           if (!Number.isSafeInteger(body.revision) || Number(body.revision) < 1)
@@ -4129,7 +4362,7 @@ function createWorker(query = queryNeon, verifier = privateLinkSha256) {
             throw new ApiError("VALIDATION", error.message, 400);
           }
           const encoded = JSON.stringify(state);
-          if (encoder.encode(encoded).byteLength > 16 * 1024 * 1024)
+          if (encoder2.encode(encoded).byteLength > 16 * 1024 * 1024)
             throw new ApiError(
               "STORAGE_SIZE",
               "The prototype data has reached its size limit.",
