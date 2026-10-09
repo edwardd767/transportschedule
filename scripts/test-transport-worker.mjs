@@ -10,6 +10,7 @@ async function bundle(entry) {
     format: 'esm',
     target: 'es2022',
     write: false,
+    external: ['cloudflare:sockets'],
   });
   return import(
     'data:text/javascript;base64,' +
