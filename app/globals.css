@@ -6489,6 +6489,10 @@ p {
 .schedule-listing-popover button{width:100%;display:flex;align-items:center;gap:8px;border:0;background:#fff;padding:10px 12px;text-align:left;font-size:13px;color:#222;border-radius:4px}
 .schedule-listing-popover button:hover{background:#fff4e8}
 .digital-report-catalog{flex:1;min-height:0;overflow:auto;background:#f4f4f4;padding:0 24px 30px}
+.report-capture{position:fixed;left:-20000px;top:0;width:2300px;background:#fff;padding:18px;z-index:-1;pointer-events:none}
+.report-capture .report-date-filter,.report-capture .report-view-head{display:none}
+.report-capture .report-table-wrap{overflow:visible!important;max-height:none!important}
+.report-capture table th,.report-capture table td{font-size:9px!important;padding:3px 5px!important}
 .digital-report-banner{height:68px;background:linear-gradient(110deg,#ff7126,#ffbc27);display:flex;align-items:flex-end;justify-content:space-between;padding:10px 12px 8px;color:#111}.digital-report-banner small,.digital-report-banner strong{display:block;font-size:11px;line-height:15px}.digital-report-banner span{font-size:11px;font-weight:700}
 .digital-report-tools{display:grid;grid-template-columns:1fr 170px;gap:8px;background:#fff}.digital-report-tools label,.digital-report-tools select{height:40px;border:1px solid #e6e6e6;background:#fff;display:flex;align-items:center;padding:0 12px;color:#222}.digital-report-tools label{gap:10px}.digital-report-tools input{border:0;outline:0;width:100%;font-size:13px}.digital-report-tools select{font-size:13px}
 .digital-report-list{display:flex;flex-direction:column;gap:12px;padding:12px 5px}.digital-report-card{min-height:64px;border:1px solid #e1e1e1;border-radius:6px;background:#fff;box-shadow:0 2px 5px #0002;display:flex;align-items:center;justify-content:space-between;text-align:left;padding:10px 14px;color:#111}.digital-report-card strong,.digital-report-card small{display:block}.digital-report-card strong{font-size:13px}.digital-report-card small{font-size:11px;margin-top:5px}.digital-report-card svg{flex:none}

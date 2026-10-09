@@ -141,7 +141,6 @@ export default defineConfig(async () => {
       ? { watch: { useFsEvents: false, usePolling: true } }
       : undefined,
     plugins: [
-      devSmtpPlugin(),
       vinext(),
       ...(isGitHubPages ? [] : [sites(), cloudflare({
         viteEnvironment: { name: 'rsc', childEnvironments: ['ssr'] },

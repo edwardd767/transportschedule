@@ -22,6 +22,8 @@ import { initialHotelProfile, type HotelDepartment, type HotelRoomType, type Roo
 import { HotelSetupModule as HotelSetupModuleV2 } from '@/components/hotel-setup-module';
 import { TimePicker } from '@/components/time-picker';
 import { RichTextEditor } from '@/components/rich-text-editor';
+import { requestReportPdfs } from '@/lib/report-capture';
+import { getTransportSessionToken, transportApiBase } from '@/lib/transport-session';
 import type { Booking } from '@/lib/bookings';
 
 
@@ -258,16 +260,22 @@ function SmtpSettingsModule({ profile, onProfileChange, onBack }: { profile: Hot
       setTestNote('Fill in Host Name, Port, Enable SSL, Recipient Email and Sender Email before sending a test email.');
       return;
     }
-    setTestNote('Sending test email ...');
     const hotel = profile.hotelName || 'HOTEL PARADISE';
     const today = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date());
     const samples = ['Daily Revenue Report', 'Daily Occupancy Report', 'Daily Housekeeping Report', 'Daily Transport Report'];
     const fill = (text: string) => text.split('{{HotelName}}').join(hotel).split('{{ReportDate}}').join(today).split('{{ReportName1}}').join(samples[0]).split('{{ReportName2}}').join(samples[1]).split('{{ReportName3}}').join(samples[2]).split('{{ReportName4}}').join(samples[3]);
     try {
-      const response = await fetch('/__dev/send-email', {
+      setTestNote('Preparing the report PDFs ...');
+      const attachments = await requestReportPdfs(['Booking Status', 'Manager Report']);
+      setTestNote('Sending test email ...');
+      const token = getTransportSessionToken();
+      const response = await fetch(`${transportApiBase}/night-audit-email`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ host: hostName.trim(), port: port.trim(), secure: enableSsl.trim().toLowerCase() === 'yes', user: senderEmail.trim(), password: senderPassword, to: recipientEmail.trim(), subject: fill(subjectPrefix), html: fill(emailContent), attachReports: true }),
+        headers: {
+          'content-type': 'application/json',
+          ...(token ? { authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ host: hostName.trim(), port: port.trim(), secure: enableSsl.trim().toLowerCase() === 'yes', user: senderEmail.trim(), password: senderPassword, to: recipientEmail.trim(), subject: fill(subjectPrefix), html: fill(emailContent), attachments }),
       });
       const result = (await response.json().catch(() => null)) as { ok?: boolean; error?: string; attached?: string[] } | null;
       if (response.ok && result?.ok) {
@@ -275,13 +283,9 @@ function SmtpSettingsModule({ profile, onProfileChange, onBack }: { profile: Hot
         setTestNote(`Test email sent to ${recipientEmail.trim()}.${attached}`);
         return;
       }
-      if (!result) {
-        setTestNote('Test sending only works while running the app on localhost (npm run dev).');
-        return;
-      }
-      setTestNote(`Test send failed: ${result.error || 'HTTP ' + response.status}`);
-    } catch {
-      setTestNote('Test sending only works while running the app on localhost (npm run dev).');
+      setTestNote(`Test send failed: ${result?.error || 'HTTP ' + response.status}`);
+    } catch (error) {
+      setTestNote(`Test send failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
   return <section className="master-page smtp-settings-page" aria-label="SMTP Settings">

@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
 import { privateAccessFromHash } from './private-link';
+import { setTransportSessionToken } from './transport-session';
 import { fallbackGeography, type CountryEntry, type Geography, type StateEntry } from './geography';
 import {
   applyTransportAction,
@@ -160,6 +161,7 @@ export function useTransportData() {
     const access = privateAccessFromHash(window.location.hash);
     if (!access.present) return;
     tokenRef.current = access.token;
+    setTransportSessionToken(access.token);
     modeRef.current = 'cloud';
     setMode('cloud');
     markReload(true);
@@ -177,6 +179,7 @@ export function useTransportData() {
   function useDemo() {
     if (busy.current) return;
     tokenRef.current = '';
+    setTransportSessionToken('');
     window.history.replaceState(
       null,
       '',

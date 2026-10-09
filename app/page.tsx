@@ -1,6 +1,7 @@
 'use client';
 import { HotelDatePicker } from '@/components/hotel-date-picker';
 import { BookingStatusReport } from '@/components/booking-status-report';
+import { onReportPdfRequest, type ReportPdf, type ReportPdfRequest } from '@/lib/report-capture';
 import { HistoricalForecastReport } from '@/components/historical-forecast-report';
 import { ManagerReport } from '@/components/manager-report';
 import { ProductionAnalysisTAGov } from '@/components/production-analysis-ta-gov';
@@ -256,6 +257,54 @@ function HomeContent({ store }: { store: TransportData }) {
   const [bookingReference, setBookingReference] = useState<string | null>(null);
   const [bookingEditing, setBookingEditing] = useState(false);
   const { setup, trips, templates, bookingLegs, hotelMasters, bookings, rateSetup, guestProfiles, users, paymentTypes } = store.state;
+  const [reportPdfRequest, setReportPdfRequest] = useState<ReportPdfRequest | null>(null);
+  const reportCaptureRef = useRef<HTMLDivElement>(null);
+  useEffect(() => onReportPdfRequest((request) => setReportPdfRequest(request)), []);
+  useEffect(() => {
+    if (!reportPdfRequest) return;
+    let cancelled = false;
+    const run = async () => {
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        const host = reportCaptureRef.current;
+        if (!host) throw new Error('Report capture container is not ready.');
+        const { default: html2canvas } = await import('html2canvas');
+        const { jsPDF } = await import('jspdf');
+        const results: ReportPdf[] = [];
+        for (const report of reportPdfRequest.reports) {
+          const node = host.querySelector<HTMLElement>(`[data-report="${report}"]`);
+          if (!node) continue;
+          const canvas = await html2canvas(node, { scale: 2, backgroundColor: '#ffffff' });
+          const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+          const pageWidth = pdf.internal.pageSize.getWidth();
+          const pageHeight = pdf.internal.pageSize.getHeight();
+          const imageHeight = (canvas.height * pageWidth) / canvas.width;
+          const image = canvas.toDataURL('image/jpeg', 0.92);
+          for (let offset = 0; offset < imageHeight; offset += pageHeight) {
+            if (offset > 0) pdf.addPage();
+            pdf.addImage(image, 'JPEG', 0, -offset, pageWidth, imageHeight);
+          }
+          results.push({
+            filename: report === 'Booking Status' ? 'Booking Status (Arrival Next Day).pdf' : 'Manager Report (Night Audit).pdf',
+            contentBase64: pdf.output('datauristring').split(',')[1] ?? '',
+          });
+        }
+        if (!cancelled) reportPdfRequest.resolve(results);
+      } catch (error) {
+        if (!cancelled) reportPdfRequest.reject(error);
+      } finally {
+        if (!cancelled) setReportPdfRequest(null);
+      }
+    };
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [reportPdfRequest]);
+  const reportCaptureDates = useMemo(() => {
+    const iso = (offset: number) => new Date(Date.now() + offset * 86400000).toISOString().slice(0, 10);
+    return { tomorrow: iso(1), yesterday: iso(-1) };
+  }, [reportPdfRequest]);
   const activeBooking =
     bookings.find((booking) => booking.reference === bookingReference) ?? null;
   const frontDeskDetails = useMemo<Record<string, string>>(() => {
@@ -1902,6 +1951,16 @@ function HomeContent({ store }: { store: TransportData }) {
             setNotice('Departure updated. Existing passengers have been kept.');
           }}
         />
+      )}
+      {reportPdfRequest && (
+        <div className="report-capture" ref={reportCaptureRef} aria-hidden="true">
+          <div data-report="Booking Status">
+            <BookingStatusReport bookings={bookings} profiles={guestProfiles} hotelName={hotelMasters.profile.hotelName} from={reportCaptureDates.tomorrow} to={reportCaptureDates.tomorrow} onFrom={() => {}} onTo={() => {}} onBack={() => {}} />
+          </div>
+          <div data-report="Manager Report">
+            <ManagerReport bookings={bookings} hotelMasters={hotelMasters} date={reportCaptureDates.yesterday} onDate={() => {}} onBack={() => {}} />
+          </div>
+        </div>
       )}
     </SidebarProvider>
   );
