@@ -11,6 +11,7 @@
     "build:pages": "node scripts/build-pages.mjs",
     "build:worker": "node scripts/build-worker.mjs",
     "test:transport": "node scripts/test-transport-planning.mjs && node scripts/test-transport-worker.mjs",
+    "test:smtp": "node scripts/test-smtp.mjs",
     "start": "wrangler dev --config dist/server/wrangler.json",
     "lint": "oxlint",
     "format": "oxfmt"
@@ -49,6 +50,7 @@
     "@vitejs/plugin-react": "6.0.2",
     "@vitejs/plugin-rsc": "0.5.26",
     "esbuild": "0.27.3",
+    "nodemailer": "^10.0.16",
     "oxfmt": "0.61.0",
     "oxlint": "1.76.0",
     "oxlint-tsgolint": "7.0.2001",

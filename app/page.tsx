@@ -1020,7 +1020,7 @@ function HomeContent({ store }: { store: TransportData }) {
               onDepartmentsChange={async (value) => { await store.run({ type: 'departmentSave', value }); setNotice('Department saved.'); }}
               roomTypes={hotelMasters.roomTypes}
               hotelProfile={hotelMasters.profile}
-              onHotelProfileChange={async (value) => { await store.run({ type: 'hotelProfileSave', value }); setNotice('General Policy saved.'); }}
+              onHotelProfileChange={async (value, notice) => { await store.run({ type: 'hotelProfileSave', value }); setNotice(notice || 'Hotel Settings saved.'); }}
               onRateDataChange={async (value) => { await store.run({ type: 'rateSetup', value }); setNotice('Rate Setup saved.'); }}
               onBack={() => { setRateSetupSection(null); setView('hotelsettings'); }}
             />

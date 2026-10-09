@@ -7,6 +7,8 @@ import {
   Building2,
   ClipboardList,
   ChevronRight,
+  Eye,
+  EyeOff,
   MoreVertical,
   Layers3,
   Network,
@@ -16,14 +18,14 @@ import { RateSetupModule, type RateSetupSection } from '@/components/rate-setup'
 import { initialRateSetupData, type RateSetupData } from '@/lib/rate-setup-data';
 import { RoomStatusModule } from '@/components/room-status-module';
 import { DepartmentModule } from '@/components/department-module-polished';
-import { initialHotelProfile, type HotelDepartment, type HotelRoomType, type RoomStatus, type HotelProfile, type HotelOperationalPolicy, type RoomStatusPolicy, type AdvancePaymentPolicy, type EInvoicePolicy, type TermsConditions, type TermConditionKey } from '@/lib/hotel-masters';
+import { initialHotelProfile, type HotelDepartment, type HotelRoomType, type RoomStatus, type HotelProfile, type HotelOperationalPolicy, type RoomStatusPolicy, type AdvancePaymentPolicy, type EInvoicePolicy, type TermsConditions, type TermConditionKey, type SmtpSettings, type HousekeepingNotification } from '@/lib/hotel-masters';
 import { HotelSetupModule as HotelSetupModuleV2 } from '@/components/hotel-setup-module';
 import { TimePicker } from '@/components/time-picker';
 import { RichTextEditor } from '@/components/rich-text-editor';
 import type { Booking } from '@/lib/bookings';
 
 
-function StandardPolicyModule({ onBack, profile, onProfileChange, roomStatuses }: { onBack: () => void; profile: HotelProfile; onProfileChange: (value: HotelProfile) => void | Promise<void>; roomStatuses: RoomStatus[] }) {
+function StandardPolicyModule({ onBack, profile, onProfileChange, roomStatuses }: { onBack: () => void; profile: HotelProfile; onProfileChange: (value: HotelProfile, notice?: string) => void | Promise<void>; roomStatuses: RoomStatus[] }) {
   const [policy, setPolicy] = useState<string | null>(null);
   useEffect(() => {
     const handleStandardPolicyBack = (event: Event) => {
@@ -52,8 +54,22 @@ const TERM_CONDITION_ITEMS = [
   { key: 'pdpaPolicy', label: 'PDPA Policy' },
   { key: 'onlinePayment', label: 'Online Payment Gateway Terms & Conditions' },
   { key: 'invoiceRemark', label: 'Invoice Remark' },
-  { key: 'soaFooter', label: 'SOA Footer' },
+  { key: 'soaFooter', label: 'Statement Of Account Footer' },
 ] as const;
+
+const POLICY_STAMP_FORMAT = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+function policyModifiedLabel(profile: HotelProfile, key: string): string {
+  return `Last Modified on ${profile.policyModified?.[key] || '–'}`;
+}
+
+function stampedProfile(profile: HotelProfile, key: string, patch: Partial<HotelProfile>): HotelProfile {
+  return { ...profile, ...patch, policyModified: { ...(profile.policyModified || {}), [key]: POLICY_STAMP_FORMAT.format(new Date()) } };
+}
+
+function StandardPolicyRow({ label, stamp, onClick, more }: { label: string; stamp: string; onClick?: () => void; more?: boolean }) {
+  return <button className="standard-policy-row" type="button" onClick={onClick}><span className="standard-policy-copy"><strong>{label}</strong><small>{stamp}</small></span>{more ? <MoreVertical size={18} /> : <ChevronRight size={18} />}</button>;
+}
 
 function emptyTermsConditions(): TermsConditions {
   return {
@@ -72,27 +88,31 @@ function readTermsConditions(profile: HotelProfile): TermsConditions {
   return { ...fallback, ...stored, clauses: { ...fallback.clauses, ...(stored.clauses ?? {}) } };
 }
 
-function TermConditionModule({ onBack, profile, onProfileChange }: { onBack: () => void; profile: HotelProfile; onProfileChange: (value: HotelProfile) => void | Promise<void> }) {
+function TermConditionModule({ onBack, profile, onProfileChange }: { onBack: () => void; profile: HotelProfile; onProfileChange: (value: HotelProfile, notice?: string) => void | Promise<void> }) {
   const [termKey, setTermKey] = useState<TermConditionKey | null>(null);
+  const [nightAudit, setNightAudit] = useState(false);
   useEffect(() => {
     const handleBack = (event: Event) => {
+      if (nightAudit) { event.preventDefault(); setNightAudit(false); return; }
       if (!termKey) return;
       event.preventDefault();
       setTermKey(null);
     };
     window.addEventListener('hotelx-standard-policy-back', handleBack);
     return () => window.removeEventListener('hotelx-standard-policy-back', handleBack);
-  }, [termKey]);
+  }, [termKey, nightAudit]);
+  if (nightAudit) return <NightAuditAutoEmailModule profile={profile} onProfileChange={onProfileChange} onBack={() => setNightAudit(false)} />;
   if (termKey) return <TermConditionEditModule termKey={termKey} profile={profile} onProfileChange={onProfileChange} onBack={() => setTermKey(null)} />;
   return <section className="master-page standard-policy-page" aria-label="Terms & Conditions">
     <div className="standard-policy-list">
-      {TERM_CONDITION_ITEMS.map((item) => <button className="standard-policy-row" type="button" key={item.key} onClick={() => setTermKey(item.key)}><strong>{item.label}</strong><ChevronRight size={18} /></button>)}
+      {TERM_CONDITION_ITEMS.map((item) => <StandardPolicyRow key={item.key} label={item.label} stamp={policyModifiedLabel(profile, `terms:${item.key}`)} onClick={() => setTermKey(item.key)} />)}
+      <StandardPolicyRow label="SMTP Settings" stamp={policyModifiedLabel(profile, 'smtp')} onClick={() => setNightAudit(true)} />
     </div>
     <button className="secondary-button master-page-back" type="button" onClick={onBack}><ArrowLeft size={16} /> Back to Standard Policy</button>
   </section>;
 }
 
-function TermConditionEditModule({ termKey, profile, onProfileChange, onBack }: { termKey: TermConditionKey; profile: HotelProfile; onProfileChange: (value: HotelProfile) => void | Promise<void>; onBack: () => void }) {
+function TermConditionEditModule({ termKey, profile, onProfileChange, onBack }: { termKey: TermConditionKey; profile: HotelProfile; onProfileChange: (value: HotelProfile, notice?: string) => void | Promise<void>; onBack: () => void }) {
   const saved = readTermsConditions(profile);
   const [text, setText] = useState(saved.clauses[termKey] ?? '');
   const [guestNotice, setGuestNotice] = useState(saved.guestNotice);
@@ -114,8 +134,7 @@ function TermConditionEditModule({ termKey, profile, onProfileChange, onBack }: 
     </>}
     <div className="master-page-actions term-condition-actions">
       <button className="primary-button" type="button" onClick={async () => {
-        await onProfileChange({
-          ...profile,
+        await onProfileChange(stampedProfile(profile, `terms:${termKey}`, {
           operationalPolicy: {
             ...profile.operationalPolicy,
             termsConditions: {
@@ -126,7 +145,7 @@ function TermConditionEditModule({ termKey, profile, onProfileChange, onBack }: 
               splitDescription,
             },
           },
-        });
+        }), 'Terms & Conditions saved.');
         onBack();
       }}>Save</button>
     </div>
@@ -141,7 +160,7 @@ type SecurityDepositPolicyState = {
   promptDuringPreCheckin: boolean;
 };
 
-function SecurityDepositPolicyModule({ profile, onProfileChange }: { profile: HotelProfile; onProfileChange: (value: HotelProfile) => void | Promise<void> }) {
+function SecurityDepositPolicyModule({ profile, onProfileChange }: { profile: HotelProfile; onProfileChange: (value: HotelProfile, notice?: string) => void | Promise<void> }) {
   const defaults: SecurityDepositPolicyState = { securityDepositAmount: 0, keyCardDepositAmount: 0, taxSchemeForfeitedRevenue: 'SST', promptDuringWalkIn: true, promptDuringPreCheckin: false };
   const stored = (profile.operationalPolicy as HotelOperationalPolicy & { securityDepositPolicy?: SecurityDepositPolicyState }).securityDepositPolicy;
   const saved = { ...defaults, ...(stored || {}) };
@@ -162,11 +181,11 @@ function SecurityDepositPolicyModule({ profile, onProfileChange }: { profile: Ho
       {toggle('Prompt during Walk-in', promptDuringWalkIn, () => setPromptDuringWalkIn((value) => !value))}
       {toggle('Prompt during Pre Checkin', promptDuringPreCheckin, () => setPromptDuringPreCheckin((value) => !value))}
     </div>
-    <div className="master-page-actions security-deposit-actions"><button className="primary-button" type="button" disabled={!dirty} onClick={async () => { const securityDepositPolicy: SecurityDepositPolicyState = { securityDepositAmount: Number.parseFloat(securityDepositAmount || '0') || 0, keyCardDepositAmount: Number.parseFloat(keyCardDepositAmount || '0') || 0, taxSchemeForfeitedRevenue, promptDuringWalkIn, promptDuringPreCheckin }; await onProfileChange({ ...profile, operationalPolicy: { ...profile.operationalPolicy, securityDepositPolicy } }); }}>Save</button></div>
+    <div className="master-page-actions security-deposit-actions"><button className="primary-button" type="button" disabled={!dirty} onClick={async () => { const securityDepositPolicy: SecurityDepositPolicyState = { securityDepositAmount: Number.parseFloat(securityDepositAmount || '0') || 0, keyCardDepositAmount: Number.parseFloat(keyCardDepositAmount || '0') || 0, taxSchemeForfeitedRevenue, promptDuringWalkIn, promptDuringPreCheckin }; await onProfileChange(stampedProfile(profile, 'securityDeposit', { operationalPolicy: { ...profile.operationalPolicy, securityDepositPolicy } })); }}>Save</button></div>
   </section>;
 }
 
-function HotelOperationalPolicyModule({ onBack, profile, onProfileChange }: { onBack: () => void; profile: HotelProfile; onProfileChange: (value: HotelProfile) => void | Promise<void> }) {
+function HotelOperationalPolicyModule({ onBack, profile, onProfileChange }: { onBack: () => void; profile: HotelProfile; onProfileChange: (value: HotelProfile, notice?: string) => void | Promise<void> }) {
   const defaultPolicy = initialHotelProfile.operationalPolicy;
   const savedPolicy = profile.operationalPolicy || {};
   const [draft, setDraft] = useState<HotelOperationalPolicy>({ ...defaultPolicy, ...savedPolicy, occupancy: { ...defaultPolicy.occupancy, ...(savedPolicy.occupancy || {}) } });
@@ -179,12 +198,12 @@ function HotelOperationalPolicyModule({ onBack, profile, onProfileChange }: { on
     <div className="operational-policy-card">{timeField('standardCheckInTime', 'Standard Check In Time')}{timeField('standardCheckOutTime', 'Standard Check Out Time')}{timeField('nightAuditCutOffTime', 'Night Audit Cut Off Time')}{switchField('Postpaid', draft.postpaid, () => toggle('postpaid'))}{switchField('Floor Plan', draft.floorPlan, () => toggle('floorPlan'))}{switchField('Cashier Closure', draft.cashierClosure, () => toggle('cashierClosure'))}</div>
     <div className="operational-policy-card operational-occupancy-card"><div className="operational-section-head"><strong>Occupancy Calculation Formula</strong><span>⌃</span></div>{switchField('House Use', draft.occupancy.houseUse, () => occupancy('houseUse'))}{switchField('Day Use', draft.occupancy.dayUse, () => occupancy('dayUse'))}{switchField('Complimentary', draft.occupancy.complimentary, () => occupancy('complimentary'))}{switchField('OOO', draft.occupancy.ooo, () => occupancy('ooo'))}{switchField('OOI', draft.occupancy.ooi, () => occupancy('ooi'))}</div>
     <div className="operational-policy-card operational-collapsed"><strong>CMS Interface</strong><span>⌄</span></div>
-    <div className="master-page-actions operational-policy-actions"><button className="primary-button" type="button" onClick={async () => { await onProfileChange({ ...profile, operationalPolicy: draft }); }}>Save</button></div>
+    <div className="master-page-actions operational-policy-actions"><button className="primary-button" type="button" onClick={async () => { await onProfileChange(stampedProfile(profile, 'operational', { operationalPolicy: draft })); }}>Save</button></div>
     {editingTime && <TimePicker value={draft[editingTime]} onCancel={() => setEditingTime(null)} onConfirm={(value) => { setDraft({ ...draft, [editingTime]: value }); setEditingTime(null); }} />}
   </section>;
 }
 
-function GeneralPolicyModule({ onBack, profile, onProfileChange }: { onBack: () => void; profile: HotelProfile; onProfileChange: (value: HotelProfile) => void | Promise<void> }) {
+function GeneralPolicyModule({ onBack, profile, onProfileChange }: { onBack: () => void; profile: HotelProfile; onProfileChange: (value: HotelProfile, notice?: string) => void | Promise<void> }) {
   const [days, setDays] = useState(String(profile.bookingCancellationDays ?? 3));
   const [currency, setCurrency] = useState(profile.currencyCode || 'MYR');
   const [floatAmount, setFloatAmount] = useState(String(profile.floatAmount ?? 0));
@@ -205,11 +224,117 @@ function GeneralPolicyModule({ onBack, profile, onProfileChange }: { onBack: () 
       <label className="general-policy-toggle"><span>Custom Breakdown</span><input type="checkbox" checked={customBreakdown} onChange={(event) => setCustomBreakdown(event.target.checked)} /><i /></label>
       {childRatesApplied && <label>Child Age Policy *<input type="number" min="0" step="1" inputMode="numeric" value={childAgePolicy} onChange={(event) => setChildAgePolicy(event.target.value.replace(/\D/g, ''))} /></label>}
     </div>
-    <div className="master-page-actions general-policy-actions"><button className="primary-button" type="button" onClick={async () => { await onProfileChange({ ...profile, bookingCancellationDays: Number(days), currencyCode: currency, floatAmount: Number(floatAmount), paxCount, childRatesApplied, childAgePolicy: Number(childAgePolicy) || 0, customBreakdown }); }}>Save</button></div>
+    <div className="master-page-actions general-policy-actions"><button className="primary-button" type="button" onClick={async () => { await onProfileChange(stampedProfile(profile, 'general', { bookingCancellationDays: Number(days), currencyCode: currency, floatAmount: Number(floatAmount), paxCount, childRatesApplied, childAgePolicy: Number(childAgePolicy) || 0, customBreakdown }), 'General Policy saved.'); }}>Save</button></div>
   </section>;
 }
 
-function RoomStatusPolicyModule({ profile, roomStatuses, onProfileChange, onBack }: { profile: HotelProfile; roomStatuses: RoomStatus[]; onProfileChange: (value: HotelProfile) => void | Promise<void>; onBack: () => void }) {
+function NightAuditAutoEmailModule({ profile, onProfileChange, onBack }: { profile: HotelProfile; onProfileChange: (value: HotelProfile, notice?: string) => void | Promise<void>; onBack: () => void }) {
+  const [section, setSection] = useState<string | null>(null);
+  if (section === 'SMTP Settings') return <SmtpSettingsModule profile={profile} onProfileChange={onProfileChange} onBack={() => setSection(null)} />;
+  if (section === 'Housekeeping') return <HousekeepingNotificationModule profile={profile} onProfileChange={onProfileChange} onBack={() => setSection(null)} />;
+  return <section className="master-page standard-policy-page" aria-label="SMTP Settings">
+    <div className="standard-policy-list">
+      <StandardPolicyRow label="Night Audit" stamp={policyModifiedLabel(profile, 'smtp')} onClick={() => setSection('SMTP Settings')} />
+      <StandardPolicyRow label="Housekeeping" stamp={policyModifiedLabel(profile, 'housekeeping')} onClick={() => setSection('Housekeeping')} />
+    </div>
+    <button className="secondary-button master-page-back" type="button" onClick={onBack}><ArrowLeft size={16} /> Back to Terms & Conditions</button>
+  </section>;
+}
+
+function SmtpSettingsModule({ profile, onProfileChange, onBack }: { profile: HotelProfile; onProfileChange: (value: HotelProfile, notice?: string) => void | Promise<void>; onBack: () => void }) {
+  const saved = { ...(initialHotelProfile.smtpSettings as SmtpSettings), ...(profile.smtpSettings || {}) };
+  const [hostName, setHostName] = useState(saved.hostName);
+  const [port, setPort] = useState(saved.port);
+  const [enableSsl, setEnableSsl] = useState(saved.enableSsl);
+  const [recipientEmail, setRecipientEmail] = useState(saved.recipientEmail);
+  const [senderEmail, setSenderEmail] = useState(saved.senderEmail);
+  const [senderPassword, setSenderPassword] = useState(saved.senderPassword);
+  const [showPassword, setShowPassword] = useState(false);
+  const [subjectPrefix, setSubjectPrefix] = useState(saved.subjectPrefix);
+  const [emailContent, setEmailContent] = useState(saved.emailContent);
+  const [testNote, setTestNote] = useState('');
+  const testSend = async () => {
+    if (!hostName.trim() || !port.trim() || !enableSsl.trim() || !recipientEmail.trim() || !senderEmail.trim()) {
+      setTestNote('Fill in Host Name, Port, Enable SSL, Recipient Email and Sender Email before sending a test email.');
+      return;
+    }
+    setTestNote('Sending test email ...');
+    const hotel = profile.hotelName || 'HOTEL PARADISE';
+    const today = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date());
+    const samples = ['Daily Revenue Report', 'Daily Occupancy Report', 'Daily Housekeeping Report', 'Daily Transport Report'];
+    const fill = (text: string) => text.split('{{HotelName}}').join(hotel).split('{{ReportDate}}').join(today).split('{{ReportName1}}').join(samples[0]).split('{{ReportName2}}').join(samples[1]).split('{{ReportName3}}').join(samples[2]).split('{{ReportName4}}').join(samples[3]);
+    try {
+      const response = await fetch('/__dev/send-email', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ host: hostName.trim(), port: port.trim(), secure: enableSsl.trim().toLowerCase() === 'yes', user: senderEmail.trim(), password: senderPassword, to: recipientEmail.trim(), subject: fill(subjectPrefix), html: fill(emailContent), attachReports: true }),
+      });
+      const result = (await response.json().catch(() => null)) as { ok?: boolean; error?: string; attached?: string[] } | null;
+      if (response.ok && result?.ok) {
+        const attached = result.attached?.length ? ` Reports attached: ${result.attached.join(', ')}.` : '';
+        setTestNote(`Test email sent to ${recipientEmail.trim()}.${attached}`);
+        return;
+      }
+      setTestNote(`Test send failed: ${result?.error || 'HTTP ' + response.status}`);
+    } catch {
+      setTestNote('Test sending only works while running the app on localhost (npm run dev).');
+    }
+  };
+  return <section className="master-page smtp-settings-page" aria-label="SMTP Settings">
+    <div className="smtp-settings-card">
+      <div className="smtp-settings-head"><strong>SMTP Settings</strong><button className="smtp-settings-test" type="button" onClick={testSend}>TEST SEND EMAIL</button></div>
+      <div className="smtp-settings-body">
+        <label className="smtp-field"><span>Host Name *</span><input value={hostName} onChange={(event) => setHostName(event.target.value)} /></label>
+        <div className="smtp-field-row">
+          <label className="smtp-field"><span>Port *</span><input inputMode="numeric" value={port} onChange={(event) => setPort(event.target.value.replace(/\D/g, ''))} /></label>
+          <label className="smtp-field"><span>Enable SSL *</span><select value={enableSsl} onChange={(event) => setEnableSsl(event.target.value)}><option>Yes</option><option>No</option></select></label>
+        </div>
+        <label className="smtp-field"><span>Recipient Email *</span><input type="email" multiple placeholder="e.g. manager@hotel.com, owner@hotel.com" value={recipientEmail} onChange={(event) => setRecipientEmail(event.target.value)} /></label>
+        <label className="smtp-field"><span>Sender Email *</span><input type="email" value={senderEmail} onChange={(event) => setSenderEmail(event.target.value)} /></label>
+        <label className="smtp-field smtp-password-field"><span>Sender Email Password</span><input type={showPassword ? 'text' : 'password'} value={senderPassword} onChange={(event) => setSenderPassword(event.target.value)} /><button className="smtp-eye" type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></label>
+        <label className="smtp-field"><span>Subject Prefix</span><input value={subjectPrefix} onChange={(event) => setSubjectPrefix(event.target.value)} /></label>
+        <div className="smtp-content-field"><span>Email Content</span><RichTextEditor value={emailContent} onChange={setEmailContent} placeholder="Enter text here" /></div>
+      </div>
+    </div>
+    {testNote && <p className="smtp-test-note">{testNote}</p>}
+    <button className="secondary-button master-page-back" type="button" onClick={onBack}><ArrowLeft size={16} /> Back to SMTP Settings</button>
+    <div className="master-page-actions smtp-settings-actions"><button className="primary-button" type="button" onClick={async () => { await onProfileChange(stampedProfile(profile, 'smtp', { smtpSettings: { hostName, port, enableSsl, recipientEmail, senderEmail, senderPassword, subjectPrefix, emailContent } }), 'SMTP Settings saved.'); }}>Save</button></div>
+  </section>;
+}
+
+function HousekeepingNotificationModule({ profile, onProfileChange, onBack }: { profile: HotelProfile; onProfileChange: (value: HotelProfile, notice?: string) => void | Promise<void>; onBack: () => void }) {
+  const saved = { ...(initialHotelProfile.housekeepingNotification as HousekeepingNotification), ...(profile.housekeepingNotification || {}) };
+  const [hostName, setHostName] = useState(saved.hostName);
+  const [port, setPort] = useState(saved.port);
+  const [enableSsl, setEnableSsl] = useState(saved.enableSsl);
+  const [recipientEmail, setRecipientEmail] = useState(saved.recipientEmail);
+  const [senderEmail, setSenderEmail] = useState(saved.senderEmail);
+  const [senderPassword, setSenderPassword] = useState(saved.senderPassword);
+  const [showPassword, setShowPassword] = useState(false);
+  const [subjectPrefix, setSubjectPrefix] = useState(saved.subjectPrefix);
+  const [emailContent, setEmailContent] = useState(saved.emailContent);
+  return <section className="master-page smtp-settings-page" aria-label="Housekeeping Notification">
+    <div className="smtp-settings-card">
+      <div className="smtp-settings-head"><strong>Housekeeping Notification</strong></div>
+      <div className="smtp-settings-body">
+        <label className="smtp-field"><span>Host Name *</span><input value={hostName} onChange={(event) => setHostName(event.target.value)} /></label>
+        <div className="smtp-field-row">
+          <label className="smtp-field"><span>Port *</span><input inputMode="numeric" value={port} onChange={(event) => setPort(event.target.value.replace(/\D/g, ''))} /></label>
+          <label className="smtp-field"><span>Enable SSL *</span><select value={enableSsl} onChange={(event) => setEnableSsl(event.target.value)}><option>Yes</option><option>No</option></select></label>
+        </div>
+        <label className="smtp-field"><span>Recipient Email *</span><input type="email" multiple placeholder="e.g. manager@hotel.com, owner@hotel.com" value={recipientEmail} onChange={(event) => setRecipientEmail(event.target.value)} /></label>
+        <label className="smtp-field"><span>Sender Email *</span><input type="email" value={senderEmail} onChange={(event) => setSenderEmail(event.target.value)} /></label>
+        <label className="smtp-field smtp-password-field"><span>Sender Email Password</span><input type={showPassword ? 'text' : 'password'} value={senderPassword} onChange={(event) => setSenderPassword(event.target.value)} /><button className="smtp-eye" type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></label>
+        <label className="smtp-field"><span>Subject Prefix</span><input value={subjectPrefix} onChange={(event) => setSubjectPrefix(event.target.value)} /></label>
+        <div className="smtp-content-field"><span>Email Content</span><RichTextEditor value={emailContent} onChange={setEmailContent} placeholder="Enter text here" /></div>
+      </div>
+    </div>
+    <button className="secondary-button master-page-back" type="button" onClick={onBack}><ArrowLeft size={16} /> Back to SMTP Settings</button>
+    <div className="master-page-actions smtp-settings-actions"><button className="primary-button" type="button" onClick={async () => { await onProfileChange(stampedProfile(profile, 'housekeeping', { housekeepingNotification: { hostName, port, enableSsl, recipientEmail, senderEmail, senderPassword, subjectPrefix, emailContent } }), 'Housekeeping Notification saved.'); }}>Save</button></div>
+  </section>;
+}
+
+function RoomStatusPolicyModule({ profile, roomStatuses, onProfileChange, onBack }: { profile: HotelProfile; roomStatuses: RoomStatus[]; onProfileChange: (value: HotelProfile, notice?: string) => void | Promise<void>; onBack: () => void }) {
   const saved = profile.operationalPolicy.roomStatusPolicy;
   const defaults: RoomStatusPolicy = { checkIn: '', checkOut: '', transfer: '', cancelCheckIn: '', cancelCheckOut: '', blockRoomRelease: '' };
   const initial: RoomStatusPolicy = { ...defaults, ...(saved ?? {}) };
@@ -235,11 +360,11 @@ function RoomStatusPolicyModule({ profile, roomStatuses, onProfileChange, onBack
       {field('cancelCheckOut', 'Cancel Check Out')}
       {field('blockRoomRelease', 'Block Room Release')}
     </div>
-    <div className="master-page-actions room-status-policy-actions"><button className="primary-button" type="button" disabled={!dirty} onClick={async () => { await onProfileChange({ ...profile, operationalPolicy: { ...profile.operationalPolicy, roomStatusPolicy: draft } }); }}>Save</button></div>
+    <div className="master-page-actions room-status-policy-actions"><button className="primary-button" type="button" disabled={!dirty} onClick={async () => { await onProfileChange(stampedProfile(profile, 'roomStatus', { operationalPolicy: { ...profile.operationalPolicy, roomStatusPolicy: draft } })); }}>Save</button></div>
   </section>;
 }
 
-function AdvancePaymentPolicyModule({ profile, onProfileChange, onBack }: { profile: HotelProfile; onProfileChange: (value: HotelProfile) => void | Promise<void>; onBack: () => void }) {
+function AdvancePaymentPolicyModule({ profile, onProfileChange, onBack }: { profile: HotelProfile; onProfileChange: (value: HotelProfile, notice?: string) => void | Promise<void>; onBack: () => void }) {
   const saved = profile.operationalPolicy.advancePaymentPolicy;
   const initial: AdvancePaymentPolicy = { taxSchemeForfeitedRevenue: saved?.taxSchemeForfeitedRevenue ?? 'SST-5' };
   const [draft, setDraft] = useState<AdvancePaymentPolicy>(initial);
@@ -257,13 +382,13 @@ function AdvancePaymentPolicyModule({ profile, onProfileChange, onBack }: { prof
         </select>
       </label>
     </div>
-    <div className="master-page-actions advance-payment-policy-actions"><button className="primary-button" type="button" disabled={!dirty} onClick={async () => { await onProfileChange({ ...profile, operationalPolicy: { ...profile.operationalPolicy, advancePaymentPolicy: draft } }); }}>Save</button></div>
+    <div className="master-page-actions advance-payment-policy-actions"><button className="primary-button" type="button" disabled={!dirty} onClick={async () => { await onProfileChange(stampedProfile(profile, 'advancePayment', { operationalPolicy: { ...profile.operationalPolicy, advancePaymentPolicy: draft } })); }}>Save</button></div>
   </section>;
 }
 
 const EINVOICE_CLASSIFICATIONS = ['022', '021', '023', '041', '042'];
 
-function EInvoicePolicyModule({ profile, onProfileChange, onBack }: { profile: HotelProfile; onProfileChange: (value: HotelProfile) => void | Promise<void>; onBack: () => void }) {
+function EInvoicePolicyModule({ profile, onProfileChange, onBack }: { profile: HotelProfile; onProfileChange: (value: HotelProfile, notice?: string) => void | Promise<void>; onBack: () => void }) {
   const saved = profile.operationalPolicy.eInvoicePolicy;
   const initial: EInvoicePolicy = {
     classificationRoomCharges: saved?.classificationRoomCharges ?? '022',
@@ -293,7 +418,7 @@ function EInvoicePolicyModule({ profile, onProfileChange, onBack }: { profile: H
       {field('classificationStateTax', 'Classification for State Tax')}
       <button type="button" className={`operational-switch-row ${draft.useSubmissionDateAsDocDate ? 'is-on' : ''}`} onClick={() => setDraft({ ...draft, useSubmissionDateAsDocDate: !draft.useSubmissionDateAsDocDate })}><span>Use Submission Date as Doc Date</span><i aria-hidden="true" /></button>
     </div>
-    <div className="master-page-actions e-invoice-policy-actions"><button className="primary-button" type="button" disabled={!dirty} onClick={async () => { await onProfileChange({ ...profile, operationalPolicy: { ...profile.operationalPolicy, eInvoicePolicy: draft } }); }}>Confirm</button></div>
+    <div className="master-page-actions e-invoice-policy-actions"><button className="primary-button" type="button" disabled={!dirty} onClick={async () => { await onProfileChange(stampedProfile(profile, 'eInvoice', { operationalPolicy: { ...profile.operationalPolicy, eInvoicePolicy: draft } })); }}>Confirm</button></div>
   </section>;
 }
 
@@ -386,7 +511,7 @@ export function HotelSettingsDetail({
   bookings?: Booking[];
   roomTypes?: HotelRoomType[];
   hotelProfile?: HotelProfile;
-  onHotelProfileChange?: (value: HotelProfile) => void | Promise<void>;
+  onHotelProfileChange?: (value: HotelProfile, notice?: string) => void | Promise<void>;
 }) {
   const page = pages[kind];
   const Icon = page.icon;
