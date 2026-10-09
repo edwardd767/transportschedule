@@ -275,7 +275,11 @@ function SmtpSettingsModule({ profile, onProfileChange, onBack }: { profile: Hot
         setTestNote(`Test email sent to ${recipientEmail.trim()}.${attached}`);
         return;
       }
-      setTestNote(`Test send failed: ${result?.error || 'HTTP ' + response.status}`);
+      if (!result) {
+        setTestNote('Test sending only works while running the app on localhost (npm run dev).');
+        return;
+      }
+      setTestNote(`Test send failed: ${result.error || 'HTTP ' + response.status}`);
     } catch {
       setTestNote('Test sending only works while running the app on localhost (npm run dev).');
     }
