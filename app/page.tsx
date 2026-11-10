@@ -245,7 +245,7 @@ function HomeContent({ store }: { store: TransportData }) {
   const setView = (next: Parameters<typeof setViewState>[0]) => {
     setViewState(next);
     if (typeof window !== 'undefined') {
-      window.history.pushState(null, '', slugForView(String(next)));
+      window.history.pushState(null, '', `${slugForView(String(next))}${window.location.hash}`);
     }
   };
   useEffect(() => {
