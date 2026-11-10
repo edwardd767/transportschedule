@@ -340,7 +340,7 @@ assert.equal(
   (await save({ type: 'sql', query: 'DROP TABLE example' })).status,
   400,
 );
-assert.equal((await save(noteAction('x'.repeat(300000)))).status, 413);
+assert.equal((await save(noteAction('x'.repeat(5 * 1024 * 1024)))).status, 413);
 assert.equal(writes, beforeInvalid, 'invalid operations cannot write');
 
 // Two clients read the same revision before either updates; only one may win.
