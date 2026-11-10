@@ -81,6 +81,7 @@ import { CheckIn } from '@/components/check-in';
 import { SegmentModule } from '@/components/segment-module';
 import type { Booking } from '@/lib/bookings';
 import { MonthTimetable } from '@/components/month-timetable';
+import { slugForView, viewForPath } from '@/lib/routes';
 import { ScheduleTemplates } from '@/components/schedule-templates';
 import { BookingTransfers } from '@/components/booking-transfers';
 import { EditTransportTrip } from '@/components/edit-transport-trip';
@@ -214,7 +215,7 @@ function HomeContent({ store }: { store: TransportData }) {
   const [date, setDate] = useState(todayKey);
   const [route, setRoute] = useState('all');
   const [query, setQuery] = useState('');
-  const [view, setView] = useState<
+  const [view, setViewState] = useState<
     | 'schedule'
     | 'setup'
     | 'hotelsettings'
@@ -240,7 +241,18 @@ function HomeContent({ store }: { store: TransportData }) {
     | 'digitaldocument'
     | 'checkout'
     | 'stayview'
-  >('booking');
+  >(() => (typeof window === 'undefined' ? 'booking' : (viewForPath(window.location.pathname) as never)));
+  const setView = (next: Parameters<typeof setViewState>[0]) => {
+    setViewState(next);
+    if (typeof window !== 'undefined') {
+      window.history.pushState(null, '', slugForView(String(next)));
+    }
+  };
+  useEffect(() => {
+    const onPop = () => setViewState(viewForPath(window.location.pathname) as never);
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
   const [rateSetupSection, setRateSetupSection] = useState<RateSetupSection | null>(null);
   const [systemAdminSection, setSystemAdminSection] = useState<SystemAdminSection | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);

@@ -26,6 +26,7 @@ for (const file of ['index.rsc', 'icon.png']) {
 }
 const prefixedHtml = html.replace(/href="\/icon\.png/g, 'href="/transportschedule/icon.png');
 writeFileSync(new URL('index.html', pages), prefixedHtml);
+writeFileSync(new URL('404.html', pages), prefixedHtml);
 writeFileSync(new URL('.nojekyll', pages), '');
 const assetUrls = [...html.matchAll(/(?:src|href)="(\/transportschedule\/[^"?#]+)"/g)];
 for (const [, assetUrl] of assetUrls) {
