@@ -256,7 +256,7 @@ function HomeContent({ store }: { store: TransportData }) {
   }, [profileMenuOpen]);
   const [bookingReference, setBookingReference] = useState<string | null>(null);
   const [bookingEditing, setBookingEditing] = useState(false);
-  const { setup, trips, templates, bookingLegs, hotelMasters, bookings, rateSetup, guestProfiles, users, paymentTypes } = store.state;
+  const { setup, trips, templates, bookingLegs, hotelMasters, bookings, rateSetup, guestProfiles, users, paymentTypes, schedules, dayNotes } = store.state;
   const [reportPdfRequest, setReportPdfRequest] = useState<ReportPdfRequest | null>(null);
   const reportCaptureRef = useRef<HTMLDivElement>(null);
   useEffect(() => onReportPdfRequest((request) => setReportPdfRequest(request)), []);
@@ -1105,6 +1105,42 @@ function HomeContent({ store }: { store: TransportData }) {
               }}
               onBack={() => setView('hotelsettings')}
               onNotice={setNotice}
+              schedules={schedules}
+              onSchedulesChange={async (value) => {
+                await store.run({ type: 'schedules', value });
+                setNotice('Imported schedule saved.');
+              }}
+              onTripsAdd={async (value) => {
+                const key = (item: typeof value[number]) => `${item.date}|${item.time}|${item.direction}|${item.boatId}`;
+                const existing = new Set(trips.map(key));
+                const fresh = value.filter((item) => !existing.has(key(item)));
+                await store.run({ type: 'tripsAdd', value });
+                const skipped = value.length - fresh.length;
+                setNotice(`${fresh.length} trips generated${skipped ? `, ${skipped} already existed` : ''}.`);
+              }}
+              onTripsDelete={async (keys) => {
+                const routeById = new Map(setup.routes.map((route) => [route.id, route]));
+                const exact = new Set(keys.map((key) => `${key.date}|${key.routeId}|${key.boatId}`));
+                const loose = new Set(
+                  keys.map((key) => {
+                    const route = routeById.get(key.routeId);
+                    return `${key.date}|${key.boatId}|${route?.origin ?? ''}|${route?.destination ?? ''}`;
+                  }),
+                );
+                const matched = trips.filter(
+                  (trip) =>
+                    exact.has(`${trip.date}|${trip.direction}|${trip.boatId}`) ||
+                    loose.has(`${trip.date}|${trip.boatId}|${trip.origin}|${trip.destination}`),
+                );
+                const busy = matched.filter((trip) => Boolean(trip.groups?.length));
+                const ids = matched.filter((trip) => !trip.groups?.length).map((trip) => trip.id);
+                if (ids.length) await store.run({ type: 'tripsDelete', ids });
+                setNotice(
+                  busy.length
+                    ? `${ids.length} trips deleted, ${busy.length} kept because guests are assigned.`
+                    : `${ids.length} trips deleted.`,
+                );
+              }}
               departments={hotelMasters.departments}
               scheduleTemplates={
                 <ScheduleTemplates
@@ -1246,9 +1282,12 @@ function HomeContent({ store }: { store: TransportData }) {
                 route={route}
                 onBoat={setBoatFilter}
                 onRoute={setRoute}
-                onDay={(date, routeId) => {
+                notes={dayNotes}
+                onNote={async (date, note) => {
+                  await store.run({ type: 'dayNote', date, note });
+                }}
+                onDay={(date) => {
                   setDate(date);
-                  if (routeId) setRoute(routeId);
                   setStatusFilter('all');
                   setQuery('');
                   setScheduleView('day');

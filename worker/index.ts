@@ -407,7 +407,7 @@ export function createWorker(
           });
         }
         if (path === '/action' && request.method === 'POST') {
-          const body = await jsonBody(request, 256 * 1024);
+          const body = await jsonBody(request, 4 * 1024 * 1024);
           if (!Number.isSafeInteger(body.revision) || Number(body.revision) < 1)
             throw new ApiError(
               'REVISION',

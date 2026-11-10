@@ -1,16 +1,31 @@
 'use client';
-import { HotelDatePicker } from '@/components/hotel-date-picker';
+import { useContext } from 'react';
+import {
+  TransportDataContext,
+  TransportRecovery,
+} from './transport-connection';
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, Plus } from 'lucide-react';
 import { Choice } from '@/components/hotel-choice';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import {
   countPassengers,
   formatDate,
-  tripStatusLabel,
   type Trip,
   type TransportSetup,
 } from '@/lib/transport';
-import { monthDates, shiftMonth } from '@/lib/transport-planning';
+import {
+  emptyDayNote,
+  monthDates,
+  shiftMonth,
+  type DayNote,
+} from '@/lib/transport-planning';
 
 export function MonthTimetable({
   month,
@@ -21,6 +36,8 @@ export function MonthTimetable({
   route,
   onBoat,
   onRoute,
+  notes,
+  onNote,
   onDay,
   onTrip,
   onAdd,
@@ -33,11 +50,19 @@ export function MonthTimetable({
   route: string;
   onBoat: (value: string) => void;
   onRoute: (value: string) => void;
-  onDay: (date: string, routeId?: string) => void;
+  notes: Record<string, DayNote>;
+  onNote: (date: string, note: DayNote) => Promise<void>;
+  onDay: (date: string) => void;
   onTrip: (trip: Trip) => void;
   onAdd: (date: string) => void;
 }) {
+  const pending = Boolean(useContext(TransportDataContext)?.pending);
+  const [editing, setEditing] = useState<{
+    date: string;
+    note: DayNote;
+  } | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const [error, setError] = useState('');
   const dates = monthDates(month);
   const filtered = trips.filter(
     (trip) =>
@@ -59,13 +84,16 @@ export function MonthTimetable({
           >
             <ChevronLeft size={20} />
           </button>
-          <HotelDatePicker
-            mode="month"
-            value={month}
-            onChange={onMonth}
-            ariaLabel="Timetable month"
-            className="hotel-month-field"
-          />
+          <label>
+            <span className="sr-only">Timetable month</span>
+            <input
+              type="month"
+              value={month}
+              onChange={(event) =>
+                event.target.value && onMonth(event.target.value)
+              }
+            />
+          </label>
           <button
             className="icon-button"
             aria-label="Next month"
@@ -114,7 +142,7 @@ export function MonthTimetable({
         <span>
           {showAll
             ? 'Seats shown as booked / capacity. Select a time for trip details.'
-            : 'Trips by direction. Select a date for all departures.'}
+            : 'Trips by direction. Select a date for all departures; use the pencil for daily notes.'}
         </span>
       </div>
       <div
@@ -143,6 +171,7 @@ export function MonthTimetable({
             if (!date)
               return <div className="timetable-blank" key={`blank-${index}`} />;
             const daily = byDate.get(date) ?? [];
+            const note = notes[date] ?? emptyDayNote;
             return (
               <article
                 className={`timetable-day ${index % 7 >= 5 ? 'is-weekend' : ''}`}
@@ -163,6 +192,14 @@ export function MonthTimetable({
                     </span>
                     <span>{daily.length} trips</span>
                   </button>
+                  <button
+                    className={`icon-button ${note.notes ? 'has-daily-note' : ''}`}
+                    title={note.notes || note.tide || note.restricted || 'Daily notes'}
+                    aria-label={`Edit notes for ${formatDate(date)}`}
+                    onClick={() => setEditing({ date, note: { ...note } })}
+                  >
+                    <Pencil size={13} />
+                  </button>
                 </div>
                 {!showAll ? (
                   <div className="compact-directions">
@@ -176,15 +213,7 @@ export function MonthTimetable({
                         <button
                           key={String(direction)}
                           className={`compact-direction ${direction ? 'direction-in' : 'direction-out'}`}
-                          onClick={() =>
-                            onDay(
-                              date,
-                              departures[0]?.direction ??
-                                setup.routes.find(
-                                  (item) => item.toHotel === direction,
-                                )?.id,
-                            )
-                          }
+                          onClick={() => onDay(date)}
                           title={`${formatDate(date)} · ${label}: ${departures.length} trips${first ? ` · First departure ${first.time}, ${first.boat}` : ''}`}
                           aria-label={`${formatDate(date)}, ${departures.length} ${label.toLowerCase()} trips. Open day listing.`}
                         >
@@ -246,7 +275,7 @@ export function MonthTimetable({
                                     <span className="calendar-seats">
                                       {booked}/{trip.capacity}
                                       {status !== 'Scheduled' && (
-                                        <b>{tripStatusLabel(status)}</b>
+                                        <b>{status}</b>
                                       )}
                                     </span>
                                   </button>
@@ -267,6 +296,25 @@ export function MonthTimetable({
                         <Plus size={15} /> Add departure
                       </button>
                     )}
+                    {(note.tide || note.restricted || note.notes) && (
+                      <div className="timetable-notes">
+                        {note.tide && (
+                          <p>
+                            <span>Tide window</span>
+                            {note.tide}
+                          </p>
+                        )}
+                        {note.restricted && (
+                          <p className="tide-restricted">
+                            <span>Restricted window</span>
+                            {note.restricted}
+                          </p>
+                        )}
+                        {note.notes && (
+                          <p className="tide-note">{note.notes}</p>
+                        )}
+                      </div>
+                    )}
                   </>
                 )}
               </article>
@@ -285,6 +333,78 @@ export function MonthTimetable({
           'Month overview · Counts follow your boat and route filters. Times shown are the first departures. Expand the timetable for every trip.'
         )}
       </p>
+      <Dialog
+        open={editing !== null}
+        onOpenChange={(open) => !open && setEditing(null)}
+      >
+        <DialogContent className="hotel-dialog">
+          <DialogHeader>
+            <DialogTitle>Daily notes</DialogTitle>
+            <DialogDescription>
+              {editing ? formatDate(editing.date) : ''}
+            </DialogDescription>
+          </DialogHeader>
+          <TransportRecovery />
+          {editing && (
+            <form
+              className="hotel-form"
+              onSubmit={async (event) => {
+                event.preventDefault();
+                try {
+                  await onNote(editing.date, editing.note);
+                  setError('');
+                  setEditing(null);
+                } catch (e) {
+                  setError((e as Error).message);
+                }
+              }}
+            >
+              {(
+                [
+                  ['tide', 'Tide window'],
+                  ['restricted', 'Restricted window'],
+                  ['notes', 'Operating notes'],
+                ] as const
+              ).map(([key, label]) => (
+                <label key={key}>
+                  {label}
+                  <input
+                    value={editing.note[key]}
+                    maxLength={300}
+                    placeholder={key === 'tide' ? 'e.g. 09:30–16:00' : ''}
+                    onChange={(event) =>
+                      setEditing({
+                        ...editing,
+                        note: { ...editing.note, [key]: event.target.value },
+                      })
+                    }
+                  />
+                </label>
+              ))}
+              <p className="helper-text">
+                These notes do not create or cancel departures.
+              </p>
+              {error && (
+                <p className="form-error" role="alert">
+                  {error}
+                </p>
+              )}
+              <div className="form-actions">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => setEditing(null)}
+                >
+                  Cancel
+                </button>
+                <button className="primary-button" disabled={pending}>
+                  Save notes
+                </button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

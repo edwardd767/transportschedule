@@ -4,7 +4,7 @@ import {
   TransportDataContext,
   TransportRecovery,
 } from './transport-connection';
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -13,9 +13,11 @@ import {
   Pencil,
   Plus,
   Save,
+  Trash2,
   Settings2,
   Ship,
   Users,
+  X,
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
@@ -35,8 +37,10 @@ import {
 } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
 import { Choice } from '@/components/hotel-choice';
+import { HotelDatePicker } from '@/components/hotel-date-picker';
 import {
   validateSetup,
+  tripFromSetup,
   type TransportSetup as Setup,
   type TransportRoute,
   type Boat,
@@ -44,8 +48,11 @@ import {
   type ServiceBookingMode,
   type ServiceType,
   type ServiceChargeRate,
+  type Trip,
 } from '@/lib/transport';
 import type { HotelDepartment } from '@/lib/hotel-masters';
+import { parseScheduleWorkbook, type ScheduleParseResult } from '@/lib/schedule-import';
+import type { ImportedSchedule } from '@/lib/transport-state';
 
 type Editor =
   | { kind: 'route'; record: TransportRoute }
@@ -58,6 +65,10 @@ export function TransportSetup({
   onNotice,
   scheduleTemplates,
   departments = [],
+  schedules = [],
+  onTripsAdd,
+  onTripsDelete,
+  onSchedulesChange,
 }: {
   config: Setup;
   onChange: (value: Setup) => Promise<void>;
@@ -65,11 +76,105 @@ export function TransportSetup({
   onNotice: (message: string) => void;
   scheduleTemplates: ReactNode;
   departments?: HotelDepartment[];
+  schedules?: ImportedSchedule[];
+  onSchedulesChange?: (value: ImportedSchedule[]) => Promise<void>;
+  onTripsAdd?: (value: Trip[]) => Promise<void>;
+  onTripsDelete?: (keys: { date: string; routeId: string; boatId: string }[]) => Promise<void>;
 }) {
   const pending = Boolean(useContext(TransportDataContext)?.pending);
-  const [tab, setTab] = useState('routes');
+  const [tab, setTab] = useState('fleet');
   const [editor, setEditor] = useState<Editor | null>(null);
   const [error, setError] = useState('');
+  const [importPreview, setImportPreview] = useState<{ fileName: string; result: ScheduleParseResult } | null>(null);
+  const [importBoatId, setImportBoatId] = useState('');
+  const [importMersingRoute, setImportMersingRoute] = useState('');
+  const [importRawaRoute, setImportRawaRoute] = useState('');
+  const [importError, setImportError] = useState('');
+  const handleImportFile = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    setImportError('');
+    try {
+      const result = await parseScheduleWorkbook(await file.arrayBuffer());
+      setImportPreview({ fileName: file.name.replace(/\.xlsx$/i, ''), result });
+      setImportBoatId(config.boats[0]?.id ?? '');
+      const mersing = config.routes.find((route) => route.destination.toLowerCase().includes('mersing')) ?? config.routes[0];
+      const rawa = config.routes.find((route) => route.destination.toLowerCase().includes('rawa')) ?? config.routes[1] ?? config.routes[0];
+      setImportMersingRoute(mersing?.id ?? '');
+      setImportRawaRoute(rawa?.id ?? '');
+    } catch (caught) {
+      setImportError(caught instanceof Error ? caught.message : String(caught));
+    }
+  };
+  const saveImport = async () => {
+    if (!importPreview) return;
+    const entries = importPreview.result.months.flatMap((month) =>
+      month.days.flatMap((day) => [
+        ...(day.toMersing.length && importMersingRoute ? [{ date: day.date, routeId: importMersingRoute, times: day.toMersing }] : []),
+        ...(day.toRawa.length && importRawaRoute ? [{ date: day.date, routeId: importRawaRoute, times: day.toRawa }] : []),
+      ]),
+    );
+    if (!onSchedulesChange) return;
+    await onSchedulesChange([...schedules, { id: crypto.randomUUID(), name: importPreview.fileName, boatId: importBoatId, entries }]);
+    setImportPreview(null);
+    onNotice(`Imported ${entries.length} schedule days.`);
+  };
+  const [generateSchedule, setGenerateSchedule] = useState<ImportedSchedule | null>(null);
+  const [generateFrom, setGenerateFrom] = useState('');
+  const [generateUntil, setGenerateUntil] = useState('');
+  const openGenerate = (schedule: ImportedSchedule) => {
+    const dates = schedule.entries.map((entry) => entry.date).sort();
+    setGenerateFrom(dates[0] ?? '');
+    setGenerateUntil(dates[dates.length - 1] ?? '');
+    setGenerateSchedule(schedule);
+  };
+  const generateEntries = generateSchedule
+    ? generateSchedule.entries.filter((entry) => entry.date >= generateFrom && entry.date <= generateUntil)
+    : [];
+  const generateTrips = async () => {
+    if (!generateSchedule || !onTripsAdd) return;
+    const created: Trip[] = [];
+    for (const entry of generateEntries) {
+      for (const time of entry.times) {
+        try {
+          created.push(
+            tripFromSetup(config, {
+              id: crypto.randomUUID(),
+              date: entry.date,
+              time,
+              routeId: entry.routeId,
+              boatId: generateSchedule.boatId,
+            }),
+          );
+        } catch {
+          /* Skip route/service combinations that are no longer active. */
+        }
+      }
+    }
+    await onTripsAdd(created);
+    setGenerateSchedule(null);
+    onNotice(`Generated ${created.length} trips.`);
+  };
+  const [deletingSchedule, setDeletingSchedule] = useState<ImportedSchedule | null>(null);
+  const [deleteFrom, setDeleteFrom] = useState('');
+  const [deleteUntil, setDeleteUntil] = useState('');
+  const openDelete = (schedule: ImportedSchedule) => {
+    const dates = schedule.entries.map((entry) => entry.date).sort();
+    setDeleteFrom(dates[0] ?? '');
+    setDeleteUntil(dates[dates.length - 1] ?? '');
+    setDeletingSchedule(schedule);
+  };
+  const deleteEntries = deletingSchedule
+    ? deletingSchedule.entries
+        .filter((entry) => entry.date >= deleteFrom && entry.date <= deleteUntil)
+        .map((entry) => ({ date: entry.date, routeId: entry.routeId, boatId: deletingSchedule.boatId }))
+    : [];
+  const confirmDeleteTrips = async () => {
+    if (!deletingSchedule || !onTripsDelete) return;
+    await onTripsDelete(deleteEntries);
+    setDeletingSchedule(null);
+  };
   const operatorName = (id: string) =>
     config.operators.find((o) => o.id === id)?.name ?? 'Unassigned';
   const operatorOptions = config.operators.map((o) => ({
@@ -179,6 +284,40 @@ export function TransportSetup({
         : config.operators
     ).some((r) => r.id === editor.record.id);
 
+  const moneyLabel = (value: number) =>
+    value.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const serviceMeta = (boat: Boat) => {
+    const parts: string[] = [boat.serviceType ?? 'Speedboat'];
+    if ((boat.bookingMode ?? 'Scheduled') === 'Scheduled') {
+      parts.push('Scheduled timetable', operatorName(boat.operatorId));
+    }
+    parts.push(`${boat.capacity} seats`);
+    if (boat.incidentalCharge) {
+      parts.push(
+        `Adult ${moneyLabel(boat.incidentalCharge.adultRate)}`,
+        `Child ${moneyLabel(boat.incidentalCharge.childRate)}`,
+        `Infant ${moneyLabel(boat.incidentalCharge.infantRate)}`,
+      );
+    }
+    return parts.join(' • ');
+  };
+  const toggleOperator = (operator: Operator) =>
+    onChange({
+      ...config,
+      operators: config.operators.map((item) =>
+        item.id === operator.id ? { ...item, active: !item.active } : item,
+      ),
+    });
+  const toggleBoat = (boat: Boat) =>
+    onChange({
+      ...config,
+      boats: config.boats.map((item) =>
+        item.id === boat.id
+          ? { ...item, status: item.status === 'Active' ? 'Inactive' : 'Active' }
+          : item,
+      ),
+    });
+
   return (
     <>
       <div className="listing-title">
@@ -192,32 +331,31 @@ export function TransportSetup({
           <ArrowLeft size={17} /> Schedule
         </button>
       </div>
-      <div className="setup-intro">
-        <span className="setup-icon">
-          <Settings2 size={25} />
-        </span>
-        <div>
-          <h2>Set up your transport service</h2>
-          <p>Manage the routes, services and schedule templates used for transport.</p>
+      <div className="setup-head-row">
+        <div className="setup-intro">
+          <span className="setup-icon">
+            <img src="https://dev.hotelx.asia/static/media/transport.e77073f1.svg" alt="" width={26} height={26} />
+          </span>
+          <div>
+            <h2>Set up your transport service</h2>
+            <p>Manage the operators, services, routes and the timetables that generate trips.</p>
+          </div>
         </div>
-      </div>
-      <div className="setup-counts">
-        <div>
-          <MapPin />
-          <strong>{config.routes.filter((r) => r.active).length}</strong>
-          <span>Active routes</span>
-        </div>
-        <div>
-          <Ship />
-          <strong>
-            {config.boats.filter((b) => b.status === 'Active').length}
-          </strong>
-          <span>Available services</span>
-        </div>
-        <div>
-          <Building2 />
-          <strong>{config.operators.filter((o) => o.active).length}</strong>
-          <span>Active operators</span>
+        <div className="setup-counts">
+          <div>
+            <strong>{config.operators.filter((o) => o.active).length}</strong>
+            <span>Active operators</span>
+          </div>
+          <div>
+            <strong>
+              {config.boats.filter((b) => b.status === 'Active').length}
+            </strong>
+            <span>Available services</span>
+          </div>
+          <div>
+            <strong>{config.routes.filter((r) => r.active).length}</strong>
+            <span>Active routes</span>
+          </div>
         </div>
       </div>
       <Tabs
@@ -226,17 +364,67 @@ export function TransportSetup({
         className="setup-tabs"
       >
         <TabsList variant="line">
-          <TabsTrigger value="routes">
-            <MapPin size={17} />
-            Routes & locations
-          </TabsTrigger>
-          <TabsTrigger value="fleet">
-            <Ship size={17} />
-            Services & operators
-          </TabsTrigger>
-          <TabsTrigger value="templates">Schedule templates</TabsTrigger>
+          <TabsTrigger value="fleet">Services &amp; operators</TabsTrigger>
+          <TabsTrigger value="routes">Routes &amp; locations</TabsTrigger>
+          <TabsTrigger value="templates">Timetables</TabsTrigger>
         </TabsList>
-        <TabsContent value="templates">{scheduleTemplates}</TabsContent>
+        <TabsContent value="templates">
+          <div className="setup-panel">
+            <div className="setup-panel-heading">
+              <div>
+                <h3>Imported Timetables</h3>
+                <p>Upload the operator&#39;s yearly speedboat schedule (.xlsx). The file is previewed before anything is saved.</p>
+              </div>
+              <div className="form-actions">
+                <label className="primary-button import-upload">
+                  <Plus size={15} /> Import Timetable
+                  <input type="file" accept=".xlsx" hidden onChange={handleImportFile} />
+                </label>
+              </div>
+            </div>
+            {importError && <p className="setup-import-error">{importError}</p>}
+            {schedules.length ? (
+              <div className="setup-row-list">
+                {schedules.map((schedule) => (
+                  <div className="setup-row" key={schedule.id}>
+                    <div className="setup-row-copy">
+                      <strong>{schedule.name}</strong>
+                      <small>
+                        {schedule.entries.length} operating days ·{' '}
+                        {schedule.entries.reduce((total, entry) => total + entry.times.length, 0)} departures ·{' '}
+                        {config.boats.find((boat) => boat.id === schedule.boatId)?.name ?? '—'}
+                      </small>
+                    </div>
+                    <button
+                      className="edit-button"
+                      onClick={() => openGenerate(schedule)}
+                    >
+                      <Ship size={15} />
+                      <span>Generate trips</span>
+                    </button>
+                    <button
+                      className="edit-button"
+                      onClick={() => openDelete(schedule)}
+                    >
+                      <Trash2 size={15} />
+                      <span>Delete trips</span>
+                    </button>
+                    <button
+                      className="setup-pencil"
+                      aria-label={`Remove ${schedule.name}`}
+                      onClick={() => void onSchedulesChange?.(schedules.filter((item) => item.id !== schedule.id))}
+                    >
+                      <X size={15} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="setup-empty-note">No imported timetables yet. Import the operator&#39;s workbook to create the yearly timetable.</p>
+            )}
+          </div>
+          {scheduleTemplates}
+        </TabsContent>
         <TabsContent value="routes">
           <div className="setup-panel">
             <div className="setup-panel-heading">
@@ -287,153 +475,61 @@ export function TransportSetup({
           </div>
         </TabsContent>
         <TabsContent value="fleet">
-          <div className="setup-panel">
-            <div className="setup-panel-heading">
-              <div>
-                <h3>Transport services & operators</h3>
-                <p>
-                  Manage operators and transport services such as boats, taxis and transfers
-                  together in one place.
-                </p>
-              </div>
-              <div className="form-actions">
-                <button
-                  className="secondary-button"
-                  aria-busy={pending}
-                  onClick={() => open('operator')}
-                >
-                  <Plus size={17} /> Add operator
-                </button>
-                <button
-                  className="primary-button"
-                  onClick={() => open('boat')}
-                >
-                  <Plus size={17} /> Add service
+          <div className="setup-columns">
+            <section className="setup-column">
+              <div className="setup-column-head">
+                <div>
+                  <h4>Operators</h4>
+                  <span>{config.operators.length} configured</span>
+                </div>
+                <button className="primary-button setup-add-button" onClick={() => open('operator')}>
+                  <Plus size={14} /> Add operator
                 </button>
               </div>
-            </div>
-
-            <div className="settings-section-label">
-              <Building2 size={18} />
-              <h4>Operators</h4>
-              <span>{config.operators.length} configured</span>
-            </div>
-            <Table className="setup-table">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Operator</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Phone / email</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>
-                    <span className="sr-only">Actions</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+              <div className="setup-row-list">
                 {config.operators.map((o) => (
-                  <TableRow key={o.id}>
-                    <TableCell>
-                      <span className="table-name">
-                        <Building2 size={18} />
-                        {o.name}
-                      </span>
-                    </TableCell>
-                    <TableCell>{o.contact || '—'}</TableCell>
-                    <TableCell>
-                      <div className="contact-cell">
-                        {o.phone || '—'}
-                        <small>{o.email}</small>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        className={`status-pill ${o.active ? 'boarding' : 'cancelled'}`}
-                      >
-                        {o.active ? 'Active' : 'Inactive'}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <button
-                        className="edit-button"
-                        aria-label={`Edit operator ${o.name}`}
-                        onClick={() => open('operator', o)}
-                      >
-                        <Pencil size={16} />
-                        <span>Edit</span>
-                      </button>
-                    </TableCell>
-                  </TableRow>
+                  <div className="setup-row" key={o.id}>
+                    <div className="setup-row-copy">
+                      <strong>{o.name}</strong>
+                      <small>or: {o.phone || '—'} • {o.email || '—'}</small>
+                    </div>
+                    <span className={`setup-active${o.active ? '' : ' is-off'}`}>{o.active ? 'Active' : 'Inactive'}</span>
+                    <Switch className="setup-switch" checked={o.active} onCheckedChange={() => void toggleOperator(o)} />
+                    <button className="setup-pencil" aria-label={`Edit operator ${o.name}`} onClick={() => open('operator', o)}>
+                      <Pencil size={15} />
+                    </button>
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
-
-            <div className="settings-section-label">
-              <Ship size={18} />
-              <h4>Services</h4>
-              <span>{config.boats.length} configured</span>
-            </div>
-            <Table className="setup-table">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Service</TableHead>
-                  <TableHead>Type / booking</TableHead>
-                  <TableHead>Operator</TableHead>
-                  <TableHead>Passenger capacity</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>
-                    <span className="sr-only">Actions</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+              </div>
+            </section>
+            <section className="setup-column">
+              <div className="setup-column-head">
+                <div>
+                  <h4>Services</h4>
+                  <span>{config.boats.length} configured</span>
+                </div>
+                <button className="primary-button setup-add-button" onClick={() => open('boat')}>
+                  <Plus size={14} /> Add service
+                </button>
+              </div>
+              <div className="setup-row-list">
                 {config.boats.map((b) => (
-                  <TableRow key={b.id}>
-                    <TableCell>
-                      <span className="table-name">
-                        <Ship size={18} />
-                        {b.name}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="contact-cell">
-                        {b.serviceType ?? 'Speedboat'}
-                        <small>
-                          {(b.bookingMode ?? 'Scheduled') === 'Scheduled'
-                            ? 'Booked timetable'
-                            : 'On-demand booking'}
-                        </small>
-                      </div>
-                    </TableCell>
-                    <TableCell>{operatorName(b.operatorId)}</TableCell>
-                    <TableCell>
-                      <span className="seat-cell">
-                        <Users size={15} />
-                        {b.capacity} seats
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        className={`status-pill ${b.status === 'Active' ? 'boarding' : b.status === 'Maintenance' ? 'full' : 'cancelled'}`}
-                      >
-                        {b.status}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <button
-                        className="edit-button"
-                        aria-label={`Edit service ${b.name}`}
-                        onClick={() => open('boat', b)}
-                      >
-                        <Pencil size={16} />
-                        <span>Edit</span>
-                      </button>
-                    </TableCell>
-                  </TableRow>
+                  <div className="setup-row" key={b.id}>
+                    <div className="setup-row-copy">
+                      <strong>{b.name}</strong>
+                      <small>{serviceMeta(b)}</small>
+                    </div>
+                    <span className={`setup-active${b.status === 'Active' ? '' : ' is-off'}`}>{b.status}</span>
+                    <Switch className="setup-switch" checked={b.status === 'Active'} onCheckedChange={() => void toggleBoat(b)} />
+                    <button className="setup-pencil" aria-label={`Edit service ${b.name}`} onClick={() => open('boat', b)}>
+                      <Pencil size={15} />
+                    </button>
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+            </section>
           </div>
+          <p className="setup-column-note">Scheduled services appear in timetables and reserve seats. On-demand services such as taxis are entered directly on the guest booking. Capacity is the maximum passengers for one trip.</p>
         </TabsContent>
       </Tabs>
       <div className="setup-scope-note">
@@ -448,6 +544,104 @@ export function TransportSetup({
         Open your private link to keep your setup across refreshes. Demo mode
         uses sample configuration.
       </p>
+      <Dialog open={deletingSchedule !== null} onOpenChange={(open) => { if (!open) setDeletingSchedule(null); }}>
+        <DialogContent className="hotel-dialog setup-dialog">
+          <DialogHeader>
+            <DialogTitle>Delete generated trips</DialogTitle>
+            <DialogDescription>
+              Remove the departures generated from &quot;{deletingSchedule?.name}&quot; in the selected range. The imported timetable itself is kept.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="form-grid">
+            <label>
+              From
+              <HotelDatePicker required value={deleteFrom} onChange={setDeleteFrom} ariaLabel="Delete from date" />
+            </label>
+            <label>
+              Until
+              <HotelDatePicker required min={deleteFrom} value={deleteUntil} onChange={setDeleteUntil} ariaLabel="Delete until date" />
+            </label>
+          </div>
+          <div className="import-preview">
+            <div>
+              <strong>{deleteEntries.length} schedule entries</strong>
+              <span>matching this range</span>
+            </div>
+          </div>
+          <div className="form-actions">
+            <button className="secondary-button" type="button" onClick={() => setDeletingSchedule(null)}>Cancel</button>
+            <button className="primary-button" type="button" onClick={confirmDeleteTrips}>Delete trips</button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={generateSchedule !== null} onOpenChange={(open) => { if (!open) setGenerateSchedule(null); }}>
+        <DialogContent className="hotel-dialog setup-dialog">
+          <DialogHeader>
+            <DialogTitle>Generate trips</DialogTitle>
+            <DialogDescription>
+              Create departures from &quot;{generateSchedule?.name}&quot; between the selected dates. Existing departures are never duplicated.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="form-grid">
+            <label>
+              From
+              <HotelDatePicker required value={generateFrom} onChange={setGenerateFrom} ariaLabel="Generate from date" />
+            </label>
+            <label>
+              Until
+              <HotelDatePicker required min={generateFrom} value={generateUntil} onChange={setGenerateUntil} ariaLabel="Generate until date" />
+            </label>
+          </div>
+          <div className="import-preview">
+            <div>
+              <strong>{generateEntries.length} days</strong>
+              <span>{generateEntries.reduce((total, entry) => total + entry.times.length, 0)} departures</span>
+            </div>
+          </div>
+          <div className="form-actions">
+            <button className="secondary-button" type="button" onClick={() => setGenerateSchedule(null)}>Cancel</button>
+            <button className="primary-button" type="button" onClick={generateTrips}>Generate trips</button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={importPreview !== null} onOpenChange={(open) => { if (!open) setImportPreview(null); }}>
+        <DialogContent className="hotel-dialog setup-dialog">
+          <DialogHeader>
+            <DialogTitle>Import Timetable</DialogTitle>
+            <DialogDescription>
+              {importPreview
+                ? `${importPreview.result.months.length} months · ${importPreview.result.dates} operating dates · ${importPreview.result.departures} departures`
+                : ''}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="import-fields">
+            <label>
+              Service
+              <Choice label="Imported schedule service" value={importBoatId} onChange={setImportBoatId} items={config.boats.map((boat) => ({ value: boat.id, label: `${boat.name} · ${boat.capacity} seats` }))} />
+            </label>
+            <label>
+              &quot;To Mersing&quot; route
+              <Choice label="To Mersing route" value={importMersingRoute} onChange={setImportMersingRoute} items={config.routes.map((route) => ({ value: route.id, label: `${route.origin} → ${route.destination}` }))} />
+            </label>
+            <label>
+              &quot;To Rawa&quot; route
+              <Choice label="To Rawa route" value={importRawaRoute} onChange={setImportRawaRoute} items={config.routes.map((route) => ({ value: route.id, label: `${route.origin} → ${route.destination}` }))} />
+            </label>
+          </div>
+          <div className="import-preview">
+            {importPreview?.result.months.map((month) => (
+              <div key={month.sheet}>
+                <strong>{month.sheet}</strong>
+                <span>{month.days.length} days · {month.days.reduce((total, day) => total + day.toMersing.length + day.toRawa.length, 0)} departures</span>
+              </div>
+            ))}
+          </div>
+          <div className="form-actions">
+            <button className="secondary-button" type="button" onClick={() => setImportPreview(null)}>Cancel</button>
+            <button className="primary-button" type="button" onClick={saveImport}>Save schedule</button>
+          </div>
+        </DialogContent>
+      </Dialog>
       <Dialog
         open={editor !== null}
         onOpenChange={(open) => {

@@ -137,6 +137,33 @@ export function TransportListingReport({
 
     for (const trip of trips) {
       const service = setup.boats.find((item) => item.id === trip.boatId);
+      if (!trip.groups.length) {
+        result.push({
+          id: `trip-${trip.id}`,
+          date: trip.date,
+          time: trip.time,
+          bookingReference: '—',
+          guest: '—',
+          direction: trip.toHotel ? 'Arrival' : 'Departure',
+          serviceType: service?.serviceType ?? 'Speedboat',
+          mode: 'Scheduled',
+          service: trip.boat,
+          pickup: trip.origin,
+          dropoff: trip.destination,
+          passengers: 0,
+          adults: 0,
+          children: 0,
+          infants: 0,
+          charge: 0,
+          operator: trip.operator,
+          flightReference: '—',
+          vehicleDriver: '—',
+          status: trip.status,
+          remarks: '',
+        });
+        continue;
+      }
+
       for (const group of trip.groups) {
         const reference = group.bookingId ?? group.reference;
         if (group.bookingId && represented.has(`${group.bookingId}|${trip.id}`)) {

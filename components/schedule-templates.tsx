@@ -80,14 +80,14 @@ export function ScheduleTemplates({
     <div className="setup-panel">
       <div className="setup-panel-heading">
         <div>
-          <h3>Schedule templates</h3>
+          <h3>Schedule Timetables</h3>
           <p>
             Define and save recurring transport schedules. Templates are validated
             before the record is saved.
           </p>
         </div>
         <button className="primary-button" onClick={() => open()}>
-          <Plus size={17} /> Add template
+          <Plus size={17} /> Add timetable
         </button>
       </div>
       <div className="template-list">
@@ -199,7 +199,7 @@ export function ScheduleTemplates({
               }}
             >
               <label>
-                Template name
+                Timetable name
                 <input
                   required
                   maxLength={80}

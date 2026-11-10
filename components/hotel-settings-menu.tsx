@@ -71,7 +71,7 @@ const items: MenuItem[] = [
     key: 'transport',
     label: 'Transport Setup',
     detail: 'Transport Services, Routes and Schedule Setup.',
-    iconSrc: 'https://dev.hotelx.asia/static/media/transport.3cf761c5.svg',
+    iconSrc: 'https://dev.hotelx.asia/static/media/transport.e77073f1.svg',
   },
   {
     key: 'payment-type',

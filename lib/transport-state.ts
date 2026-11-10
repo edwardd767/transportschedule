@@ -67,10 +67,13 @@ export type HotelUser = {
   active: boolean;
   updated: string;
 };
+export type ScheduleEntry = { date: string; routeId: string; times: string[] };
+export type ImportedSchedule = { id: string; name: string; boatId: string; entries: ScheduleEntry[] };
 export type TransportState = {
   setup: TransportSetup;
   trips: Trip[];
   templates: ScheduleTemplate[];
+  schedules: ImportedSchedule[];
   dayNotes: Record<string, DayNote>;
   bookingLegs: BookingTransportLeg[];
   hotelMasters: HotelMasters;
@@ -90,6 +93,9 @@ export type DepartureInput = {
 export type TransportAction =
   | { type: 'setup'; value: TransportSetup }
   | { type: 'templates'; value: ScheduleTemplate[] }
+  | { type: 'schedules'; value: ImportedSchedule[] }
+  | { type: 'tripsAdd'; value: Trip[] }
+  | { type: 'tripsDelete'; ids: string[] }
   | { type: 'generate'; template: ScheduleTemplate }
   | { type: 'dayNote'; date: string; note: DayNote }
   | { type: 'addTrip'; values: DepartureInput }
@@ -135,6 +141,7 @@ export function newTransportState(): TransportState {
     setup: initialSetup,
     trips: initialTrips,
     templates: [],
+    schedules: [],
     dayNotes: initialDayNotes,
     bookingLegs: [],
     hotelMasters: initialHotelMasters,
@@ -186,6 +193,7 @@ export function normalizeTransportState(state: TransportState): TransportState {
   };
   return {
     ...state,
+    schedules: Array.isArray(state.schedules) ? state.schedules : [],
     setup: {
       ...state.setup,
       boats: state.setup.boats.map((service) => {
@@ -534,6 +542,22 @@ export function applyTransportAction(
       if (new Set(value.map((item) => item.id)).size !== value.length) throw new Error('Duplicate user IDs.');
       return { ...state, users: value };
     }
+    case 'tripsDelete': {
+      const ids = new Set(Array.isArray(action.ids) ? (action.ids as string[]) : []);
+      return {
+        ...state,
+        trips: state.trips.filter((item) => !ids.has(item.id) || Boolean(item.groups?.length)),
+      };
+    }
+    case 'tripsAdd': {
+      const incoming = Array.isArray(action.value) ? (action.value as Trip[]) : [];
+      const key = (item: Trip) => item.date + '|' + item.time + '|' + item.direction + '|' + item.boatId;
+      const existing = new Set(state.trips.map(key));
+      const fresh = incoming.filter((item) => !existing.has(key(item)));
+      return { ...state, trips: [...state.trips, ...fresh] };
+    }
+    case 'schedules':
+      return { ...state, schedules: list(action.value) as ImportedSchedule[] };
     case 'templates': {
       const templates = list(action.value).map(template);
       unique(templates);

@@ -1204,6 +1204,7 @@ function newTransportState() {
     setup: initialSetup,
     trips: initialTrips,
     templates: [],
+    schedules: [],
     dayNotes: initialDayNotes,
     bookingLegs: [],
     hotelMasters: initialHotelMasters,
@@ -1233,6 +1234,7 @@ function normalizeTransportState(state) {
   };
   return {
     ...state,
+    schedules: Array.isArray(state.schedules) ? state.schedules : [],
     setup: {
       ...state.setup,
       boats: state.setup.boats.map((service) => {
@@ -1562,6 +1564,22 @@ function applyTransportAction(state, input) {
       if (new Set(value.map((item) => item.id)).size !== value.length) throw new Error("Duplicate user IDs.");
       return { ...state, users: value };
     }
+    case "tripsDelete": {
+      const ids = new Set(Array.isArray(action.ids) ? action.ids : []);
+      return {
+        ...state,
+        trips: state.trips.filter((item) => !ids.has(item.id) || Boolean(item.groups?.length))
+      };
+    }
+    case "tripsAdd": {
+      const incoming = Array.isArray(action.value) ? action.value : [];
+      const key2 = (item) => item.date + "|" + item.time + "|" + item.direction + "|" + item.boatId;
+      const existing = new Set(state.trips.map(key2));
+      const fresh = incoming.filter((item) => !existing.has(key2(item)));
+      return { ...state, trips: [...state.trips, ...fresh] };
+    }
+    case "schedules":
+      return { ...state, schedules: list(action.value) };
     case "templates": {
       const templates = list(action.value).map(template);
       unique(templates);
@@ -2778,6 +2796,7 @@ var schemaStatements = [
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS smtp_settings jsonb NOT NULL DEFAULT '{}'::jsonb`,
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS policy_modified jsonb NOT NULL DEFAULT '{}'::jsonb`,
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS housekeeping_notification jsonb NOT NULL DEFAULT '{}'::jsonb`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS transport_schedules jsonb NOT NULL DEFAULT '[]'::jsonb`,
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS child_age_policy integer NOT NULL DEFAULT 0`,
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS standard_check_in_time text NOT NULL DEFAULT '01:00 PM'`,
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS standard_check_out_time text NOT NULL DEFAULT '12:00 PM'`,
@@ -3133,7 +3152,7 @@ var schemaStatements = [
       advance_payment_tax_scheme,
       e_invoice_classification_room_charges, e_invoice_classification_service_charges, e_invoice_classification_advance_payment_forfeit,
       e_invoice_classification_deposit_forfeit, e_invoice_classification_state_tax, e_invoice_use_submission_date_as_doc_date,
-      tnc_guest_notice, tnc_transfer_description, tnc_extend_stay_description, tnc_split_description, smtp_settings, policy_modified, housekeeping_notification
+      tnc_guest_notice, tnc_transfer_description, tnc_extend_stay_description, tnc_split_description, smtp_settings, policy_modified, housekeeping_notification, transport_schedules
     )
     = (
       p_state #>> '{hotelMasters,profile,hotelName}', p_state #>> '{hotelMasters,profile,address}',
@@ -3180,7 +3199,8 @@ var schemaStatements = [
       COALESCE((p_state #>> '{hotelMasters,profile,operationalPolicy,termsConditions,splitDescription}')::boolean, false),
       COALESCE(p_state #> '{hotelMasters,profile,smtpSettings}', '{}'::jsonb),
       COALESCE(p_state #> '{hotelMasters,profile,policyModified}', '{}'::jsonb),
-      COALESCE(p_state #> '{hotelMasters,profile,housekeepingNotification}', '{}'::jsonb)
+      COALESCE(p_state #> '{hotelMasters,profile,housekeepingNotification}', '{}'::jsonb),
+      COALESCE(p_state->'schedules', '[]'::jsonb)
     )
     WHERE property_id = p_property_id;
 
@@ -3723,6 +3743,7 @@ var schemaStatements = [
         FROM public.hotelx_transport_trips AS trip
         WHERE trip.property_id = meta.property_id
       ), '[]'::jsonb),
+      'schedules', COALESCE(transport_schedules, '[]'::jsonb),
       'templates', COALESCE((
         SELECT jsonb_agg(
           jsonb_build_object(
@@ -4314,7 +4335,7 @@ function createWorker(query = queryNeon, verifier = privateLinkSha256) {
           });
         }
         if (path === "/action" && request.method === "POST") {
-          const body = await jsonBody(request, 256 * 1024);
+          const body = await jsonBody(request, 4 * 1024 * 1024);
           if (!Number.isSafeInteger(body.revision) || Number(body.revision) < 1)
             throw new ApiError(
               "REVISION",

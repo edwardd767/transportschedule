@@ -603,6 +603,7 @@ const schemaStatements = [
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS smtp_settings jsonb NOT NULL DEFAULT '{}'::jsonb`,
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS policy_modified jsonb NOT NULL DEFAULT '{}'::jsonb`,
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS housekeeping_notification jsonb NOT NULL DEFAULT '{}'::jsonb`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS transport_schedules jsonb NOT NULL DEFAULT '[]'::jsonb`,
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS child_age_policy integer NOT NULL DEFAULT 0`,
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS standard_check_in_time text NOT NULL DEFAULT '01:00 PM'`,
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS standard_check_out_time text NOT NULL DEFAULT '12:00 PM'`,
@@ -958,7 +959,7 @@ const schemaStatements = [
       advance_payment_tax_scheme,
       e_invoice_classification_room_charges, e_invoice_classification_service_charges, e_invoice_classification_advance_payment_forfeit,
       e_invoice_classification_deposit_forfeit, e_invoice_classification_state_tax, e_invoice_use_submission_date_as_doc_date,
-      tnc_guest_notice, tnc_transfer_description, tnc_extend_stay_description, tnc_split_description, smtp_settings, policy_modified, housekeeping_notification
+      tnc_guest_notice, tnc_transfer_description, tnc_extend_stay_description, tnc_split_description, smtp_settings, policy_modified, housekeeping_notification, transport_schedules
     )
     = (
       p_state #>> '{hotelMasters,profile,hotelName}', p_state #>> '{hotelMasters,profile,address}',
@@ -1005,7 +1006,8 @@ const schemaStatements = [
       COALESCE((p_state #>> '{hotelMasters,profile,operationalPolicy,termsConditions,splitDescription}')::boolean, false),
       COALESCE(p_state #> '{hotelMasters,profile,smtpSettings}', '{}'::jsonb),
       COALESCE(p_state #> '{hotelMasters,profile,policyModified}', '{}'::jsonb),
-      COALESCE(p_state #> '{hotelMasters,profile,housekeepingNotification}', '{}'::jsonb)
+      COALESCE(p_state #> '{hotelMasters,profile,housekeepingNotification}', '{}'::jsonb),
+      COALESCE(p_state->'schedules', '[]'::jsonb)
     )
     WHERE property_id = p_property_id;
 
@@ -1548,6 +1550,7 @@ const schemaStatements = [
         FROM public.hotelx_transport_trips AS trip
         WHERE trip.property_id = meta.property_id
       ), '[]'::jsonb),
+      'schedules', COALESCE(transport_schedules, '[]'::jsonb),
       'templates', COALESCE((
         SELECT jsonb_agg(
           jsonb_build_object(
