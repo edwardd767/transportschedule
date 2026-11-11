@@ -962,6 +962,7 @@ function HomeContent({ store }: { store: TransportData }) {
         ) : view === 'booking' ? (
           <Bookings
             paxCountPolicy={hotelMasters.profile.paxCount}
+            genderInGuestProfile={hotelMasters.profile.genderInGuestProfile}
             childRatesApplied={hotelMasters.profile.childRatesApplied}
             childAgePolicy={hotelMasters.profile.childAgePolicy}
             bookings={bookings}

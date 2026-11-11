@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { roomAssignments, stayDates } from '@/lib/bookings';
 import type { Booking } from '@/lib/bookings';
 import type { GuestProfile } from '@/lib/transport-state';
+import type { HotelProfile } from '@/lib/hotel-masters';
 import { regeneratePaxBilling } from '@/lib/pax-billing';
 import type { RateSetupData } from '@/lib/rate-setup-data';
 import { fallbackGeography } from '@/lib/geography';
@@ -31,7 +32,8 @@ const emptyProfile = (booking: Booking): GuestProfile => ({
   newsletter: false, tourismTax: false, visits: 0, updated: today(),
 });
 
-export function RoomingList({ booking, profiles, onProfilesSave, onBookingSave, onBack, paxCountPolicy, rateSetup, childAgePolicy = 0 }: {
+const GENDER_ITEMS = [{ value: 'Male', label: 'Male' }, { value: 'Female', label: 'Female' }];
+export function RoomingList({ booking, profiles, onProfilesSave, onBookingSave, onBack, paxCountPolicy, rateSetup, childAgePolicy = 0, hotelProfile, genderInGuestProfile }: {
   paxCountPolicy: string;
   childAgePolicy?: number;
   rateSetup: RateSetupData;
@@ -39,8 +41,11 @@ export function RoomingList({ booking, profiles, onProfilesSave, onBookingSave, 
   profiles: GuestProfile[];
   onProfilesSave: (profiles: GuestProfile[]) => Promise<void>;
   onBookingSave: (booking: Booking) => Promise<void>;
+  hotelProfile?: HotelProfile;
+  genderInGuestProfile?: boolean;
   onBack: () => void;
 }) {
+  const genderEnabled = Boolean(genderInGuestProfile ?? hotelProfile?.genderInGuestProfile);
   const [page, setPage] = useState<Page>('rooms');
   const [roomIndex, setRoomIndex] = useState(0);
   const [draft, setDraft] = useState<GuestProfile | null>(null);
@@ -113,7 +118,7 @@ export function RoomingList({ booking, profiles, onProfilesSave, onBookingSave, 
     <div className="rooming-profile-card">
       <div className="rooming-scan"><div><img src="https://hms1.hotelx.asia/static/media/guest-scan.556f8332.svg" alt="Scan an identity document with a phone" /></div><label><ScanLine size={18} /> SCAN ID<input type="file" accept="image/*" capture="environment" hidden disabled={busy} onChange={event => { const file = event.target.files?.[0]; if (file) void run(async () => { const { recognize } = await import('tesseract.js'); const result = await recognize(file, 'eng'); setScanText(result.data.text); }); }} /></label>{scanText && <label className="rooming-scan-result">Scanned text — review before copying into guest fields<textarea value={scanText} onChange={event => setScanText(event.target.value)} /></label>}</div>
       <div className="rooming-form-grid">
-        {([['name', 'Guest Name *'], ['mobile', 'Mobile No.'], ['email', 'Email Address'], ['nationality', 'Nationality *'], ['identityNo', 'NRIC No.'], ['address', 'Address'], ['country', 'Country *'], ['state', 'State *'], ['city', 'City'], ['postcode', 'Postcode'], ['vehicle', 'Vehicle No. / Model'], ['occupation', 'Occupation'], ['birthDate', 'Birth Date'], ['guestType', 'Guest Type *'], ['adultChild', 'Adult/Child *'], ['remark', 'Remark'], ['paymentRemark1', 'PaymentRemark1'], ['paymentRemark2', 'PaymentRemark2'], ['taxExemptReason', 'Tax Exempted Reason Code']] as const).map(([key, label]) => <label className={['name','mobile','email','address','paymentRemark1','paymentRemark2','taxExemptReason'].includes(key) ? 'rooming-wide' : ''} key={key}><span>{key === 'identityNo' ? (draft.nationality === 'Malaysian' ? 'NRIC No.' : 'Passport No.') : label}</span>{key === 'adultChild' ? <Choice label="Adult/Child" value={draft.adultChild || 'Adult'} onChange={value => setDraft({ ...draft, adultChild: value as 'Adult' | 'Child' | 'Infant' })} items={ADULT_CHILD_ITEMS} /> : key === 'country' ? <SearchSelect value={draft.country} onChange={value => updateDraft('country', value)} options={geography.countries} ariaLabel="Country" /> : key === 'state' ? <SearchSelect value={draft.state} onChange={value => updateDraft('state', value)} options={locationStates} placeholder="Select state" ariaLabel="State" /> : key === 'city' ? <SearchSelect value={draft.city} onChange={value => updateDraft('city', value)} options={locationCities} placeholder="Select city" ariaLabel="City" /> : key === 'nationality' ? <SearchSelect value={draft.nationality} onChange={value => updateDraft('nationality', value)} options={geography.nationalities} ariaLabel="Nationality" /> : <input type={key === 'birthDate' ? 'date' : key === 'email' ? 'email' : 'text'} value={draft[key] ?? ''} onChange={event => updateDraft(key, event.target.value)} />}</label>)}        <label className="rooming-check"><input type="checkbox" checked={draft.tourismTax} onChange={event => setDraft({ ...draft, tourismTax: event.target.checked })} /><span>Tourism Tax</span></label>
+        {([['name', 'Guest Name *'], ['mobile', 'Mobile No.'], ...(genderEnabled ? [['gender', 'Gender']] as const : []), ['email', 'Email Address'], ['nationality', 'Nationality *'], ['identityNo', 'NRIC No.'], ['address', 'Address'], ['country', 'Country *'], ['state', 'State *'], ['city', 'City'], ['postcode', 'Postcode'], ['vehicle', 'Vehicle No. / Model'], ['occupation', 'Occupation'], ['birthDate', 'Birth Date'], ['guestType', 'Guest Type *'], ['adultChild', 'Adult/Child *'], ['remark', 'Remark'], ['paymentRemark1', 'PaymentRemark1'], ['paymentRemark2', 'PaymentRemark2'], ['taxExemptReason', 'Tax Exempted Reason Code']] as const).map(([key, label]) => <label className={['name','mobile','email','address','paymentRemark1','paymentRemark2','taxExemptReason'].includes(key) ? 'rooming-wide' : ''} key={key}><span>{key === 'identityNo' ? (draft.nationality === 'Malaysian' ? 'NRIC No.' : 'Passport No.') : label}</span>{key === 'gender' ? <Choice label="Gender" value={draft.gender || ''} onChange={value => updateDraft('gender', value)} items={GENDER_ITEMS} /> : key === 'adultChild' ? <Choice label="Adult/Child" value={draft.adultChild || 'Adult'} onChange={value => setDraft({ ...draft, adultChild: value as 'Adult' | 'Child' | 'Infant' })} items={ADULT_CHILD_ITEMS} /> : key === 'country' ? <SearchSelect value={draft.country} onChange={value => updateDraft('country', value)} options={geography.countries} ariaLabel="Country" /> : key === 'state' ? <SearchSelect value={draft.state} onChange={value => updateDraft('state', value)} options={locationStates} placeholder="Select state" ariaLabel="State" /> : key === 'city' ? <SearchSelect value={draft.city} onChange={value => updateDraft('city', value)} options={locationCities} placeholder="Select city" ariaLabel="City" /> : key === 'nationality' ? <SearchSelect value={draft.nationality} onChange={value => updateDraft('nationality', value)} options={geography.nationalities} ariaLabel="Nationality" /> : <input type={key === 'birthDate' ? 'date' : key === 'email' ? 'email' : 'text'} value={draft[key] ?? ''} onChange={event => updateDraft(key, event.target.value)} />}</label>)}        <label className="rooming-check"><input type="checkbox" checked={draft.tourismTax} onChange={event => setDraft({ ...draft, tourismTax: event.target.checked })} /><span>Tourism Tax</span></label>
       </div>
     </div>
     {error && <p role="alert">{error}</p>}

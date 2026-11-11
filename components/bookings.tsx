@@ -220,6 +220,7 @@ export function Bookings({
   paxCountPolicy = "",
   childRatesApplied = false,
   childAgePolicy = 0,
+  genderInGuestProfile = false,
   bookings,
   roomTypes,
   rateSetup,
@@ -242,6 +243,7 @@ export function Bookings({
   paxCountPolicy?: string;
   childRatesApplied?: boolean;
   childAgePolicy?: number;
+  genderInGuestProfile?: boolean;
   bookings: Booking[];
   roomTypes: HotelRoomType[];
   rateSetup: RateSetupData;
@@ -405,7 +407,7 @@ export function Bookings({
   }
 
   if (booking) {
-    if (roomingOpen) return <RoomingList paxCountPolicy={paxCountPolicy} childAgePolicy={childAgePolicy} rateSetup={rateSetup} booking={booking} profiles={guestProfiles} onProfilesSave={onGuestProfilesSave} onBookingSave={onUpdate} onBack={() => setRoomingOpen(false)} />;
+    if (roomingOpen) return <RoomingList paxCountPolicy={paxCountPolicy} childAgePolicy={childAgePolicy} genderInGuestProfile={genderInGuestProfile} rateSetup={rateSetup} booking={booking} profiles={guestProfiles} onProfilesSave={onGuestProfilesSave} onBookingSave={onUpdate} onBack={() => setRoomingOpen(false)} />;
     if (billingInstructionOpen) return <BillingInstruction booking={booking} onSave={onUpdate} onBack={() => setBillingInstructionOpen(false)} />;
     if (specialRequestOpen) return <SpecialRequest booking={booking} onSave={onUpdate} onBack={() => setSpecialRequestOpen(false)} />;
     if (attachmentsOpen) return <BookingAttachments booking={booking} onSave={onUpdate} onBack={() => setAttachmentsOpen(false)} />;
