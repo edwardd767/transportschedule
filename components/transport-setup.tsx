@@ -491,7 +491,7 @@ export function TransportSetup({
                   <div className="setup-row" key={o.id}>
                     <div className="setup-row-copy">
                       <strong>{o.name}</strong>
-                      <small>{o.contact || '—'}</small>
+                      <small>{o.contact ? `${o.contact} · ` : ''}{o.phone || '—'} · {o.email || '—'}</small>
                     </div>
                     <span className={`setup-active${o.active ? '' : ' is-off'}`}>{o.active ? 'Active' : 'Inactive'}</span>
                     <Switch className="setup-switch" checked={o.active} onCheckedChange={() => void toggleOperator(o)} />
