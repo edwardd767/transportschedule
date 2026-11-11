@@ -600,6 +600,7 @@ const schemaStatements = [
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS pax_count text NOT NULL DEFAULT 'No. of Pax Manual Updated'`,
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS child_rates_applied boolean NOT NULL DEFAULT false`,
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS custom_breakdown boolean NOT NULL DEFAULT false`,
+  `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS gender_in_guest_profile boolean NOT NULL DEFAULT false`,
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS smtp_settings jsonb NOT NULL DEFAULT '{}'::jsonb`,
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS policy_modified jsonb NOT NULL DEFAULT '{}'::jsonb`,
   `ALTER TABLE public.hotelx_hotel_setup ADD COLUMN IF NOT EXISTS housekeeping_notification jsonb NOT NULL DEFAULT '{}'::jsonb`,
@@ -951,7 +952,7 @@ const schemaStatements = [
     UPDATE public.hotelx_hotel_setup SET (
       hotel_name, address, postcode, country, city, state, hotel_type, company_name, company_reg_no,
       sst_reg_no, ttx_reg_no, online_booking_url, live_run_date, contact_person, phone_no, mobile_no, reservation_email,
-      business_email, booking_cancellation_days, currency_code, float_amount, pax_count, child_rates_applied, child_age_policy, custom_breakdown,
+      business_email, booking_cancellation_days, currency_code, float_amount, pax_count, child_rates_applied, child_age_policy, custom_breakdown, gender_in_guest_profile,
       standard_check_in_time, standard_check_out_time, night_audit_cut_off_time, postpaid, floor_plan, cashier_closure,
       occupancy_house_use, occupancy_day_use, occupancy_complimentary, occupancy_ooo, occupancy_ooi,
       security_deposit_amount, key_card_deposit_amount, tax_scheme_forfeited_revenue, prompt_during_walk_in, prompt_during_pre_checkin,
@@ -971,6 +972,7 @@ const schemaStatements = [
       p_state #>> '{hotelMasters,profile,businessEmail}', COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,bookingCancellationDays}', '')::integer, 3),
       COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,currencyCode}', ''), 'MYR'), COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,floatAmount}', '')::numeric, 0),
       COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,paxCount}', ''), 'No. of Pax Manual Updated'), COALESCE((p_state #>> '{hotelMasters,profile,childRatesApplied}')::boolean, false), COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,childAgePolicy}', '')::integer, 0), COALESCE((p_state #>> '{hotelMasters,profile,customBreakdown}')::boolean, false),
+      COALESCE((p_state #>> '{hotelMasters,profile,genderInGuestProfile}')::boolean, false),
       COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,operationalPolicy,standardCheckInTime}', ''), '01:00 PM'),
       COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,operationalPolicy,standardCheckOutTime}', ''), '12:00 PM'),
       COALESCE(NULLIF(p_state #>> '{hotelMasters,profile,operationalPolicy,nightAuditCutOffTime}', ''), '10:00 AM'),
@@ -1270,7 +1272,7 @@ const schemaStatements = [
           'ttxRegNo', ttx_reg_no, 'onlineBookingUrl', online_booking_url, 'liveRunDate', live_run_date,
           'contactPerson', contact_person, 'phoneNo', phone_no, 'mobileNo', mobile_no, 'reservationEmail', reservation_email,
           'businessEmail', business_email, 'bookingCancellationDays', booking_cancellation_days, 'currencyCode', currency_code,
-          'floatAmount', float_amount, 'paxCount', pax_count, 'childRatesApplied', child_rates_applied, 'childAgePolicy', child_age_policy, 'customBreakdown', custom_breakdown, 'smtpSettings', COALESCE(smtp_settings, '{}'::jsonb), 'policyModified', COALESCE(policy_modified, '{}'::jsonb), 'housekeepingNotification', COALESCE(housekeeping_notification, '{}'::jsonb),
+          'floatAmount', float_amount, 'paxCount', pax_count, 'childRatesApplied', child_rates_applied, 'childAgePolicy', child_age_policy, 'customBreakdown', custom_breakdown, 'genderInGuestProfile', gender_in_guest_profile, 'smtpSettings', COALESCE(smtp_settings, '{}'::jsonb), 'policyModified', COALESCE(policy_modified, '{}'::jsonb), 'housekeepingNotification', COALESCE(housekeeping_notification, '{}'::jsonb),
           'operationalPolicy', jsonb_build_object(
             'standardCheckInTime', standard_check_in_time,
             'standardCheckOutTime', standard_check_out_time,
