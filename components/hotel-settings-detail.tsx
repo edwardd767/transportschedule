@@ -218,7 +218,7 @@ function GeneralPolicyModule({ onBack, profile, onProfileChange }: { onBack: () 
       <label>Booking Cancellation Policy (days) *<input type="number" min="0" value={days} onChange={(event) => setDays(event.target.value)} /></label>
       <label>Currency Code *<input value={currency} onChange={(event) => setCurrency(event.target.value.toUpperCase())} /></label>
       <label>Float Amount *<input type="number" min="0" step="0.01" value={floatAmount} onChange={(event) => setFloatAmount(event.target.value)} /></label>
-      <label className="general-policy-toggle"><span>Gender in Guest Profile</span><input type="checkbox" checked={genderInGuestProfile} onChange={(event) => setGenderInGuestProfile(event.target.checked)} /><i /></label>
+      <label className="general-policy-toggle"><span>Show Gender in Guest Profile</span><input type="checkbox" checked={genderInGuestProfile} onChange={(event) => setGenderInGuestProfile(event.target.checked)} /><i /></label>
       <label>Pax Count *<select value={paxCount} onChange={(event) => setPaxCount(event.target.value)}>
         <option>No. of Pax Manual Updated</option>
         <option>No. of Guest Profile Created</option>
