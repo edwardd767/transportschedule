@@ -211,12 +211,14 @@ function GeneralPolicyModule({ onBack, profile, onProfileChange }: { onBack: () 
   const [floatAmount, setFloatAmount] = useState(String(profile.floatAmount ?? 0));
   const [paxCount, setPaxCount] = useState(profile.paxCount || 'No. of Pax Manual Updated');
   const [childRatesApplied, setChildRatesApplied] = useState(Boolean(profile.childRatesApplied));
+  const [genderInGuestProfile, setGenderInGuestProfile] = useState(Boolean(profile.genderInGuestProfile));
   const [childAgePolicy, setChildAgePolicy] = useState(String(profile.childAgePolicy ?? 0));
   return <section className="master-page general-policy-page" aria-label="General Policy">
     <div className="general-policy-card">
       <label>Booking Cancellation Policy (days) *<input type="number" min="0" value={days} onChange={(event) => setDays(event.target.value)} /></label>
       <label>Currency Code *<input value={currency} onChange={(event) => setCurrency(event.target.value.toUpperCase())} /></label>
       <label>Float Amount *<input type="number" min="0" step="0.01" value={floatAmount} onChange={(event) => setFloatAmount(event.target.value)} /></label>
+      <label className="general-policy-toggle"><span>Gender in Guest Profile</span><input type="checkbox" checked={genderInGuestProfile} onChange={(event) => setGenderInGuestProfile(event.target.checked)} /><i /></label>
       <label>Pax Count *<select value={paxCount} onChange={(event) => setPaxCount(event.target.value)}>
         <option>No. of Pax Manual Updated</option>
         <option>No. of Guest Profile Created</option>
@@ -224,7 +226,7 @@ function GeneralPolicyModule({ onBack, profile, onProfileChange }: { onBack: () 
       <label className="general-policy-toggle"><span>Child Rates Applied</span><input type="checkbox" checked={childRatesApplied} onChange={(event) => setChildRatesApplied(event.target.checked)} /><i /></label>
       {childRatesApplied && <label>Child Age Policy *<input type="number" min="0" step="1" inputMode="numeric" value={childAgePolicy} onChange={(event) => setChildAgePolicy(event.target.value.replace(/\D/g, ''))} /></label>}
     </div>
-    <div className="master-page-actions general-policy-actions"><button className="primary-button" type="button" onClick={async () => { await onProfileChange(stampedProfile(profile, 'general', { bookingCancellationDays: Number(days), currencyCode: currency, floatAmount: Number(floatAmount), paxCount, childRatesApplied, childAgePolicy: Number(childAgePolicy) || 0, customBreakdown: Boolean(profile.customBreakdown) }), 'General Policy saved.'); }}>Save</button></div>
+    <div className="master-page-actions general-policy-actions"><button className="primary-button" type="button" onClick={async () => { await onProfileChange(stampedProfile(profile, 'general', { bookingCancellationDays: Number(days), currencyCode: currency, floatAmount: Number(floatAmount), paxCount, childRatesApplied, childAgePolicy: Number(childAgePolicy) || 0, customBreakdown: Boolean(profile.customBreakdown), genderInGuestProfile }), 'General Policy saved.'); }}>Save</button></div>
   </section>;
 }
 
