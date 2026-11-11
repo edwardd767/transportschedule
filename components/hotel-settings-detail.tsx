@@ -211,7 +211,6 @@ function GeneralPolicyModule({ onBack, profile, onProfileChange }: { onBack: () 
   const [floatAmount, setFloatAmount] = useState(String(profile.floatAmount ?? 0));
   const [paxCount, setPaxCount] = useState(profile.paxCount || 'No. of Pax Manual Updated');
   const [childRatesApplied, setChildRatesApplied] = useState(Boolean(profile.childRatesApplied));
-  const [customBreakdown, setCustomBreakdown] = useState(Boolean(profile.customBreakdown));
   const [childAgePolicy, setChildAgePolicy] = useState(String(profile.childAgePolicy ?? 0));
   return <section className="master-page general-policy-page" aria-label="General Policy">
     <div className="general-policy-card">
@@ -223,10 +222,9 @@ function GeneralPolicyModule({ onBack, profile, onProfileChange }: { onBack: () 
         <option>No. of Guest Profile Created</option>
       </select></label>
       <label className="general-policy-toggle"><span>Child Rates Applied</span><input type="checkbox" checked={childRatesApplied} onChange={(event) => setChildRatesApplied(event.target.checked)} /><i /></label>
-      <label className="general-policy-toggle"><span>Custom Breakdown</span><input type="checkbox" checked={customBreakdown} onChange={(event) => setCustomBreakdown(event.target.checked)} /><i /></label>
       {childRatesApplied && <label>Child Age Policy *<input type="number" min="0" step="1" inputMode="numeric" value={childAgePolicy} onChange={(event) => setChildAgePolicy(event.target.value.replace(/\D/g, ''))} /></label>}
     </div>
-    <div className="master-page-actions general-policy-actions"><button className="primary-button" type="button" onClick={async () => { await onProfileChange(stampedProfile(profile, 'general', { bookingCancellationDays: Number(days), currencyCode: currency, floatAmount: Number(floatAmount), paxCount, childRatesApplied, childAgePolicy: Number(childAgePolicy) || 0, customBreakdown }), 'General Policy saved.'); }}>Save</button></div>
+    <div className="master-page-actions general-policy-actions"><button className="primary-button" type="button" onClick={async () => { await onProfileChange(stampedProfile(profile, 'general', { bookingCancellationDays: Number(days), currencyCode: currency, floatAmount: Number(floatAmount), paxCount, childRatesApplied, childAgePolicy: Number(childAgePolicy) || 0, customBreakdown: Boolean(profile.customBreakdown) }), 'General Policy saved.'); }}>Save</button></div>
   </section>;
 }
 
