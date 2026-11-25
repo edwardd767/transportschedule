@@ -28,6 +28,22 @@ function addOnQuantity(room: BookingRoom, basis: string) {
   return 1;
 }
 
+type PaxRate = { basePax?: number; baseAdult?: number; baseChild?: number };
+
+/** Chargeable extra adults/children for a rate that includes baseAdult adults and baseChild children. */
+export function extraPaxCounts(rate: PaxRate | undefined, adults: number, children: number) {
+  const legacyPax = rate?.basePax ?? 2;
+  const includedAdults = rate?.baseAdult ?? legacyPax;
+  const splitPax = rate?.baseAdult !== undefined || rate?.baseChild !== undefined;
+  return {
+    extraAdults: Math.max(0, adults - includedAdults),
+    // Rates saved before #Adult/#Child was split still share the #PAX allowance.
+    extraChildren: splitPax
+      ? Math.max(0, children - (rate?.baseChild ?? 0))
+      : Math.max(0, children - Math.max(0, includedAdults - adults)),
+  };
+}
+
 export function rateAddOnsForNight(
   room: BookingRoom,
   date: string,
@@ -66,9 +82,7 @@ export function paxNight(
 ) {
   const rate = bookingRate(data, code, room.code, date);
   const adults = room.adults ?? 1, children = room.children ?? 0;
-  const included = rate?.basePax ?? 2;
-  const extraAdults = Math.max(0, adults - included);
-  const extraChildren = Math.max(0, children - Math.max(0, included - adults));
+  const { extraAdults, extraChildren } = extraPaxCounts(rate, adults, children);
   const extraAdultRate = rate?.extraAdult ?? 0;
   const extraChildRate = rate?.extraChild ?? 0;
   const extraPax = extraAdults * extraAdultRate + extraChildren * extraChildRate;

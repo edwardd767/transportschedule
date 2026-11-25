@@ -50,7 +50,7 @@ export type RateValidityItem = {
   from: string;
   to: string;
   active: boolean;
-  seasonalRates?: Record<string, Record<string, { amount: number; t1: number; t2: number; t3: number; quotas?: number[]; basePax?: number; extraAdult?: number; extraChild?: number }>>;
+  seasonalRates?: Record<string, Record<string, { amount: number; t1: number; t2: number; t3: number; quotas?: number[]; basePax?: number; baseAdult?: number; baseChild?: number; extraAdult?: number; extraChild?: number }>>;
   inclusiveElements?: string[];
   addOnElements?: string[];
 };

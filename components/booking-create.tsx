@@ -6,7 +6,7 @@ import { User, Baby, CalendarDays, ChevronDown, ChevronUp, Plus, X } from 'lucid
 import { InfantIcon } from '@/components/infant-icon';
 import { BookingAvailability } from '@/components/booking-availability';
 import { bookingRate } from '@/lib/booking-rate';
-import { rateAddOnsForNight } from '@/lib/pax-billing';
+import { extraPaxCounts, rateAddOnsForNight } from '@/lib/pax-billing';
 import { Choice } from '@/components/hotel-choice';
 import { SearchChoice } from '@/components/search-choice';
 import { HotelDatePicker } from '@/components/hotel-date-picker';
@@ -137,9 +137,7 @@ export function BookingCreate({
   const configuredPaxRate = bookingRate(rateSetup, rateCode, roomType, arrival);
   const extraAdultRate = configuredPaxRate?.extraAdult ?? 0;
   const extraChildRate = childRatesApplied ? configuredPaxRate?.extraChild ?? 0 : 0;
-  const basePax = configuredPaxRate?.basePax ?? 2;
-  const extraAdultCount = Math.max(0, adults - basePax);
-  const extraChildCount = Math.max(0, children - Math.max(0, basePax - adults));
+  const { extraAdults: extraAdultCount, extraChildren: extraChildCount } = extraPaxCounts(configuredPaxRate, adults, children);
   const childCharge = extraChildCount * extraChildRate * nights * Math.max(1, roomQty);
   const applicableAddOns = useMemo(() => {
     const room = { code: roomType, count: 1, adults, children, infants, rateCode, roomRate };
